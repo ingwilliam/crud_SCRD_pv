@@ -54,3 +54,21 @@ CREATE TABLE public.ciudades
       REFERENCES public.departamentos (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 )
+CREATE TABLE public.localidades
+(
+  id integer NOT NULL DEFAULT nextval('localidades_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  ciudad integer,
+  CONSTRAINT localidades_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_ciudad FOREIGN KEY (ciudad)
+      REFERENCES public.ciudades (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
