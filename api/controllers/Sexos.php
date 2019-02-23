@@ -70,6 +70,17 @@ $app->get('/select', function () use ($app) {
 );
 
 // Recupera todos los registros
+$app->get('/edwin', function () use ($app) {
+
+    
+            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
+            $robots = $app->modelsManager->executeQuery($phql);
+            echo json_encode($robots);
+            
+}
+);
+
+// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     
     $request = new Request();
