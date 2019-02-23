@@ -49,14 +49,13 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $departamento = $_GET['departamento'];
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = "SELECT * FROM Ciudades AS ciu WHERE ciu.active = true AND ciu.departamento = $departamento  ORDER BY nombre";
+            $phql = 'SELECT * FROM Localidades WHERE active = true ORDER BY nombre';
 
             $robots = $app->modelsManager->executeQuery($phql);
 
@@ -87,25 +86,29 @@ $app->get('/all', function () use ($app) {
             $columns = array(
                 0 => 'p.nombre',
                 1 => 'd.nombre',
-                2 => 'ciu.nombre'
+                2 => 'ciu.nombre',
+                3 => 'l.nombre'
             );
 
-            $where .= " WHERE ciu.active=true";
+            $where .= " WHERE l.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Ciudades AS ciu "
+            $sqlTot = "SELECT count(*) as total FROM Localidades AS l "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
                     . "";
                     
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',ciu.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',ciu.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Ciudades AS ciu "
+            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad," . $columns[3] . " AS localidad, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',l.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',l.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Localidades AS l "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
                     . "";
@@ -138,7 +141,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -170,14 +173,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $ciudad = new Ciudades();
-                $ciudad->creado_por = $user_current["id"];
-                $ciudad->fecha_creacion = date("Y-m-d H:i:s");
-                $ciudad->active = true;
-                if ($ciudad->save($post) === false) {
+                $localidad = new Localidades();
+                $localidad->creado_por = $user_current["id"];
+                $localidad->fecha_creacion = date("Y-m-d H:i:s");
+                $localidad->active = true;
+                if ($localidad->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $ciudad->id;
+                    echo $localidad->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -219,10 +222,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $ciudad = Ciudades::findFirst(json_decode($id));
-                $ciudad->actualizado_por = $user_current["id"];
-                $ciudad->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($ciudad->save($put) === false) {
+                $localidad = Localidades::findFirst(json_decode($id));
+                $localidad->actualizado_por = $user_current["id"];
+                $localidad->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($localidad->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -263,7 +266,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Ciudades::findFirst(json_decode($id));
+                $user = Localidades::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -295,9 +298,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $ciudad = Ciudades::findFirst($id);
-            if (isset($ciudad->id)) {
-                echo json_encode($ciudad);
+            $localidad = Localidades::findFirst($id);
+            if (isset($localidad->id)) {
+                echo json_encode($localidad);
             } else {
                 echo "error";
             }
