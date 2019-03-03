@@ -49,13 +49,14 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $ciudad = $_GET['ciudad'];
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Localidades WHERE active = true ORDER BY nombre';
+            $phql = "SELECT * FROM Localidades AS l WHERE l.active = true AND l.ciudad = $ciudad  ORDER BY nombre";
 
             $robots = $app->modelsManager->executeQuery($phql);
 
@@ -141,7 +142,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode($ex->getMessage());
+        echo json_encode(null);
     }
 }
 );
