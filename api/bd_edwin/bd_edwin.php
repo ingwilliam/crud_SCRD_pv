@@ -125,3 +125,93 @@ CREATE TABLE public.orientacionessexuales
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 )
+
+CREATE TABLE public.identidadesgeneros
+(
+  id integer NOT NULL DEFAULT nextval('identidadesgeneros_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT identidadesgeneros_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+CREATE TABLE public.niveleseducativos
+(
+  id integer NOT NULL DEFAULT nextval('niveleseducativos_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT niveleseducativos_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+CREATE TABLE public.lineasestrategicas
+(
+  id integer NOT NULL DEFAULT nextval('lineasestrategicas_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT lineasestrategicas_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+CREATE TABLE public.areas
+(
+  id integer NOT NULL DEFAULT nextval('areas_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT areas_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+CREATE TABLE public.modalidades
+(
+  id integer NOT NULL DEFAULT nextval('modalidades_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT modalidades_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+
+CREATE TABLE public.documentosconvocatorias
+(
+  id integer NOT NULL DEFAULT nextval('documentosconvocatorias_id_seq'::regclass),
+  nombre character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT documentosconvocatorias_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)

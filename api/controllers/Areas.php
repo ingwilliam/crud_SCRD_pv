@@ -58,10 +58,10 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.nombre',
+                0 => 'a.nombre',
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
@@ -69,8 +69,8 @@ $app->get('/all', function () use ($app) {
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Paises AS u";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Paises AS u";
+            $sqlTot = "SELECT count(*) as total FROM Areas AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Areas AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -132,14 +132,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $pais = new Paises();
-                $pais->creado_por = $user_current["id"];
-                $pais->fecha_creacion = date("Y-m-d H:i:s");
-                $pais->active = true;
-                if ($pais->save($post) === false) {
+                $area = new Areas();
+                $area->creado_por = $user_current["id"];
+                $area->fecha_creacion = date("Y-m-d H:i:s");
+                $area->active = true;
+                if ($area->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $pais->id;
+                    echo $area->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -181,10 +181,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $pais = Paises::findFirst(json_decode($id));
-                $pais->actualizado_por = $user_current["id"];
-                $pais->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($pais->save($put) === false) {
+                $area = Areas::findFirst(json_decode($id));
+                $area->actualizado_por = $user_current["id"];
+                $area->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($area->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -225,7 +225,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Paises::findFirst(json_decode($id));
+                $user = Areas::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -257,9 +257,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $pais = Paises::findFirst($id);
-            if (isset($pais->id)) {
-                echo json_encode($pais);
+            $area = Areas::findFirst($id);
+            if (isset($area->id)) {
+                echo json_encode($area);
             } else {
                 echo "error";
             }
