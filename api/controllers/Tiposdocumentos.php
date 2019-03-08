@@ -1,4 +1,5 @@
 <?php
+
 //error_reporting(E_ALL);
 //ini_set('display_errors', '1');
 use Phalcon\Loader;
@@ -44,49 +45,63 @@ $app = new Micro($di);
 
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
-    
-    $request = new Request();
-    
-    //Defino columnas para el orden desde la tabla html
-    $columns = array( 
-            0 => 't.nombre',
-            1 => 't.descripcion'
-    );
-        
-    $where .=" WHERE t.active=true";
-    //Condiciones para la consulta
-    
-    if( !empty($request->get("search")['value']) ) {               
-            $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-            $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-    }
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
 
-    //Defino el sql del total y el array de datos
-    $sqlTot = "SELECT count(*) as total FROM Tiposdocumentos AS t";
-    $sqlRec = "SELECT " . $columns[0] . " AS nombre, " . $columns[1] . " AS descripcion, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',t.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',t.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS t";
-    
-    //concatenate search sql if value exist
-    if(isset($where) && $where != '') {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
 
-            $sqlTot .= $where;
-            $sqlRec .= $where;
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Defino columnas para el orden desde la tabla html
+            $columns = array(
+                0 => 't.nombre',
+                1 => 't.descripcion'
+            );
+
+            $where .= " WHERE t.active=true";
+            //Condiciones para la consulta
+
+            if (!empty($request->get("search")['value'])) {
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+            }
+
+            //Defino el sql del total y el array de datos
+            $sqlTot = "SELECT count(*) as total FROM Tiposdocumentos AS t";
+            $sqlRec = "SELECT " . $columns[0] . " AS nombre, " . $columns[1] . " AS descripcion, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',t.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',t.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS t";            //concatenate search sql if value exist
+            if (isset($where) && $where != '') {
+
+                $sqlTot .= $where;
+                $sqlRec .= $where;
+            }
+
+            //Concateno el orden y el limit para el paginador
+            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
+            //ejecuto el total de registros actual
+            $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($totalRecords["total"]),
+                "recordsFiltered" => intval($totalRecords["total"]),
+                "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+            );
+            //retorno el array en json
+            echo json_encode($json_data);
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
     }
-    
-    //Concateno el orden y el limit para el paginador
-    $sqlRec .=  " ORDER BY ". $columns[$request->get('order')[0]['column']]."   ".$request->get('order')[0]['dir']."  LIMIT ".$request->get('length')." offset ".$request->get('start')." ";
-    
-    //ejecuto el total de registros actual
-    $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
-    
-    //creo el array
-    $json_data = array(
-			"draw"            => intval( $request->get("draw") ),   
-			"recordsTotal"    => intval( $totalRecords["total"] ),  
-			"recordsFiltered" => intval($totalRecords["total"]),
-			"data"            => $app->modelsManager->executeQuery($sqlRec)   // total data array
-			);
-    //retorno el array en json
-    echo json_encode($json_data);
 }
 );
 
@@ -94,8 +109,8 @@ $app->get('/all', function () use ($app) {
 $app->post('/new', function () use ($app) {
 
     $post = $app->request->getPost();
-    $user = new Tiposdocumentos();    
-    $user->active=true;    
+    $user = new Tiposdocumentos();
+    $user->active = true;
     if ($user->save($post) === false) {
         echo "error";
     } else {
@@ -197,11 +212,11 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 });
 
 // Editar registro
-$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {        
-        $phql = 'SELECT * FROM Tiposdocumentos WHERE id = :id:';
-        $user = $app->modelsManager->executeQuery($phql,['id' => $id,])->getFirst();
-        echo json_encode($user);
-    }
+$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
+    $phql = 'SELECT * FROM Tiposdocumentos WHERE id = :id:';
+    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
+    echo json_encode($user);
+}
 );
 
 

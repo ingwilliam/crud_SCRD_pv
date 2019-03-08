@@ -107,16 +107,16 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Barrios AS b "
-                    . "INNER JOIN Upz AS u ON u.id=b.upz "
-                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
+                    . "LEFT JOIN Upz AS u ON u.id=b.upz "
+                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
                     . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
                     . "";
                     
             $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz , " . $columns[5] . " AS barrio, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',b.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',b.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Barrios AS b "
-                    . "INNER JOIN Upz AS u ON u.id=b.upz "
-                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
+                    . "LEFT JOIN Upz AS u ON u.id=b.upz "
+                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
                     . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
@@ -186,6 +186,10 @@ $app->post('/new', function () use ($app, $config) {
                 $barrio->creado_por = $user_current["id"];
                 $barrio->fecha_creacion = date("Y-m-d H:i:s");
                 $barrio->active = true;
+                if ($post["upz"] == "") {
+                    $post["upz"] = null;
+                }
+                
                 if ($barrio->save($post) === false) {
                     echo "error";
                 } else {
@@ -198,7 +202,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
