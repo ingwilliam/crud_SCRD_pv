@@ -46,33 +46,6 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            
-            $phql = "SELECT * FROM Paises  WHERE active = true ORDER BY nombre";
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo". $ex->getMessage();
-    }
-}
-);
-
-// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -87,19 +60,21 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'p.nombre',
+                0 => 't.tiempo_sesion',
+                1 => 't.numero_propuestas'
             );
 
-            $where .= " WHERE p.active=true";
+            $where .= " WHERE t.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Paises AS p";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',p.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',p.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Paises AS p";
+            $sqlTot = "SELECT count(*) as total FROM Tablasmaestras AS t";
+            $sqlRec = "SELECT " . $columns[0] . " , ". $columns[1] ." , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',t.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',t.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tablasmaestras AS t";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -161,14 +136,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $pais = new Paises();
-                $pais->creado_por = $user_current["id"];
-                $pais->fecha_creacion = date("Y-m-d H:i:s");
-                $pais->active = true;
-                if ($pais->save($post) === false) {
+                $tablamaestra = new Tablasmaestras();
+                $tablamaestra->creado_por = $user_current["id"];
+                $tablamaestra->fecha_creacion = date("Y-m-d H:i:s");
+                $tablamaestra->active = true;
+                if ($tablamaestra->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $pais->id;
+                    echo $tablamaestra->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -210,10 +185,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $pais = Paises::findFirst(json_decode($id));
-                $pais->actualizado_por = $user_current["id"];
-                $pais->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($pais->save($put) === false) {
+                $tablamaestra = Tablasmaestras::findFirst(json_decode($id));
+                $tablamaestra->actualizado_por = $user_current["id"];
+                $tablamaestra->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($tablamaestra->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -254,7 +229,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Paises::findFirst(json_decode($id));
+                $user = Tablasmaestras::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -286,9 +261,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $pais = Paises::findFirst($id);
-            if (isset($pais->id)) {
-                echo json_encode($pais);
+            $tablamaestra = Tablasmaestras::findFirst($id);
+            if (isset($tablamaestra->id)) {
+                echo json_encode($tablamaestra);
             } else {
                 echo "error";
             }

@@ -215,3 +215,20 @@ CREATE TABLE public.documentosconvocatorias
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION
 )
+
+
+CREATE TABLE public.tablasmaestras
+(
+  id integer NOT NULL DEFAULT nextval('tablasmaestras_id_seq'::regclass),
+  tiempo_sesion character varying(160),
+  numero_propuestas character varying(160),
+  active boolean,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer,
+  actualizado_por integer,
+  CONSTRAINT tablasmaestras_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_creado FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
