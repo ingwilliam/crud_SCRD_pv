@@ -1,7 +1,7 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Perfiles extends Model
+class Areas extends Model
 {
     public $id;
 }
