@@ -44,6 +44,31 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual>0) {
+            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
+            $robots = $app->modelsManager->executeQuery($phql);
+            echo json_encode($robots);
+        }
+        else
+        {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }        
+}
+);
+
+// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -105,15 +130,49 @@ $app->get('/all', function () use ($app) {
 );
 
 // Crear registro
-$app->post('/new', function () use ($app) {
+$app->post('/new', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
 
-    $post = $app->request->getPost();
-    $user = new Sexos();
-    $user->active = true;
-    if ($user->save($post) === false) {
-        echo "error";
-    } else {
-        echo $user->id;
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $post = $app->request->getPost();
+                $sexos = new Sexos();
+                $sexos->creado_por = $user_current["id"];
+                $sexos->fecha_creacion = date("Y-m-d H:i:s");
+                $sexos->active = true;
+                if ($sexos->save($post) === false) {
+                    echo "error";
+                } else {
+                    echo $permiso->id;
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
     }
 }
 );
@@ -179,7 +238,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

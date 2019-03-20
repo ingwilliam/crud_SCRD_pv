@@ -10,8 +10,6 @@ use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 
-require "../library/movilmente/ImageUpload.php";
-
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH);
@@ -323,7 +321,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -411,32 +409,6 @@ $app->get('/mi_perfil', function () use ($app, $config) {
         echo "error_metodo";
     }
 });
-
-//Recupera todos los registros
-$app->post('/imageupload', function () use ($app) {
-
-    $ImageUpload = new ImageUpload();
-    $content = file_get_contents("php://input");
-
-    $array = array();
-
-    parse_str($content, $array);
-
-    $validar = $ImageUpload->validate($array['encodedImage']);
-
-    if ($validar == 1) {
-        $imagen = $ImageUpload->save_base64_image($array['encodedImage'], "resources/img/IMG_" . strtoupper(md5($array['encodedImage'])));
-
-        if ($imagen != null) {
-            $ImageUpload->print_json(200, "Completado", $imagen);
-        } else {
-            $ImageUpload->print_json(200, "Este archivo ya existe", null);
-        }
-    } else {
-        $ImageUpload->print_json(200, "Extension invalida", null);
-    }
-});
-
 
 try {
     // Gestionar la consulta
