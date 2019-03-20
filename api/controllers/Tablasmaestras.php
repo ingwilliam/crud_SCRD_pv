@@ -29,6 +29,8 @@ $loader->register();
 // Crear un DI
 $di = new FactoryDefault();
 
+
+
 //Set up the database service
 $di->set('db', function () use ($config) {
     return new DbAdapter(
@@ -44,76 +46,7 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Perfiles WHERE active = true ORDER BY nombre';
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo". $ex->getMessage();
-    }
-}
-);
-
-// Recupera todos los perfiles seleccionados de un usuario determinado
-$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
-
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Perfiles AS p LEFT JOIN Usuariosperfiles AS up ON p.id = up.perfil AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
-
-                $perfiles_usuario = $app->modelsManager->executeQuery($phql);
-
-                echo json_encode($perfiles_usuario);
-            } else {
-                echo "acceso_denegado";
-            }
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-}
-);
-
-// Recupera todos los registros
 $app->get('/all', function () use ($app) {
-
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -127,19 +60,21 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.nombre',
+                0 => 't.tiempo_sesion',
+                1 => 't.numero_propuestas'
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE t.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Perfiles AS u";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Perfiles AS u";
+            $sqlTot = "SELECT count(*) as total FROM Tablasmaestras AS t";
+            $sqlRec = "SELECT " . $columns[0] . " , ". $columns[1] ." , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',t.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',t.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tablasmaestras AS t";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -176,7 +111,6 @@ $app->get('/all', function () use ($app) {
 
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
-
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -202,14 +136,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $perfil = new Perfiles();
-                $perfil->creado_por = $user_current["id"];
-                $perfil->fecha_creacion = date("Y-m-d H:i:s");
-                $perfil->active = true;
-                if ($perfil->save($post) === false) {
+                $tablamaestra = new Tablasmaestras();
+                $tablamaestra->creado_por = $user_current["id"];
+                $tablamaestra->fecha_creacion = date("Y-m-d H:i:s");
+                $tablamaestra->active = true;
+                if ($tablamaestra->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $perfil->id;
+                    echo $tablamaestra->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -251,10 +185,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $perfil = Perfiles::findFirst(json_decode($id));
-                $perfil->actualizado_por = $user_current["id"];
-                $perfil->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($perfil->save($put) === false) {
+                $tablamaestra = Tablasmaestras::findFirst(json_decode($id));
+                $tablamaestra->actualizado_por = $user_current["id"];
+                $tablamaestra->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($tablamaestra->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -271,7 +205,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Editar registro
+// Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -295,7 +229,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Perfiles::findFirst(json_decode($id));
+                $user = Tablasmaestras::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -327,9 +261,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $perfil = Perfiles::findFirst($id);
-            if (isset($perfil->id)) {
-                echo json_encode($perfil);
+            $tablamaestra = Tablasmaestras::findFirst($id);
+            if (isset($tablamaestra->id)) {
+                echo json_encode($tablamaestra);
             } else {
                 echo "error";
             }
