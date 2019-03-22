@@ -2,6 +2,7 @@
 
 //error_reporting(E_ALL);
 //ini_set('display_errors', '1');
+
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -43,35 +44,9 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $localidad = $_GET['localidad'];
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $phql = "SELECT * FROM Barrios AS l WHERE l.active = true AND l.ciudad = $localidad  ORDER BY nombre";
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-}
-);
-
-// Recupera todos los registros
+// Recupera todos los registros, con el fin de cargar la tabla
 $app->get('/all', function () use ($app) {
+
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -82,45 +57,38 @@ $app->get('/all', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'p.nombre',
-                1 => 'd.nombre',
-                2 => 'ciu.nombre',
-                3 => 'l.nombre',
-                4 => 'u.nombre',
-                5 => 'b.nombre'
+                0 => 'td.nombre',
+                1 => 'u.numero_documento',
+                2 => 'u.primer_nombre',
+                3 => 'u.segundo_nombre',
+                4 => 'u.primer_apellido',
+                5 => 'u.segundo_apellido',
+                6 => 'u.username',
+                7 => 'b.nombre',
             );
 
-            $where .= " WHERE b.active=true";
+            $where .= " WHERE u.active=true";
             //Condiciones para la consulta
-
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Barrios AS b "
-                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
-                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
-                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
-                    
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz , " . $columns[5] . " AS barrio, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',b.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',b.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Barrios AS b "
-                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
-                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
-                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
+            $sqlTot = "SELECT count(*) as total FROM Usuarios AS u "
+                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
+                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
+            $sqlRec = "SELECT " . $columns[0] . " AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS sexo , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u "
+                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
+                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -155,8 +123,9 @@ $app->get('/all', function () use ($app) {
 }
 );
 
-// Crear registro
+//Crear registro actual
 $app->post('/new', function () use ($app, $config) {
+
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -179,21 +148,31 @@ $app->post('/new', function () use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $barrio = new Barrios();
-                $barrio->creado_por = $user_current["id"];
-                $barrio->fecha_creacion = date("Y-m-d H:i:s");
-                $barrio->active = true;
-                if ($post["upz"] == "") {
-                    $post["upz"] = null;
-                }
-                
-                if ($barrio->save($post) === false) {
-                    echo "error";
+                $usuario = new Usuarios();
+                $usuario->active = true;
+                $post["password"] = $this->security->hash($post["password"]);
+
+                $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $post["tipo_documento"] . "' AND numero_documento = '" . $post["numero_documento"] . "'");
+
+                if (isset($usuario_validar->id)) {
+                    echo "error_registro";
                 } else {
-                    echo $barrio->id;
+                    $usuario_validar = Usuarios::findFirst("username = '" . $post["username"] . "'");
+
+                    if (isset($usuario_validar->id)) {
+                        echo "error_username";
+                    } else {
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                        if ($usuario->save($post) === false) {
+                            echo "error";
+                        } else {
+                            echo $usuario->id;
+                        }
+                    }
                 }
             } else {
                 echo "acceso_denegado";
@@ -202,12 +181,12 @@ $app->post('/new', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo". $ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
 
-// Editar registro
+// Editar registro actual
 $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -231,17 +210,44 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
-                $put = $app->request->getPut();
-                // Consultar el usuario que se esta editando
-                $barrio = Barrios::findFirst(json_decode($id));
-                $barrio->actualizado_por = $user_current["id"];
-                $barrio->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($barrio->save($put) === false) {
-                    echo "error";
+                $usuario = $app->request->getPut();
+                if ($usuario["password"] != null && $usuario["password"] != "" && $usuario["password"] != "undefined") {
+                    $usuario["password"] = $this->security->hash($usuario["password"]);
                 } else {
-                    echo $id;
+                    unset($usuario["password"]);
+                }
+                // Consultar el usuario que se esta editando
+                $usuario_original = Usuarios::findFirst(json_decode($id));
+
+                if (isset($usuario_original->id)) {
+
+                    if (( $usuario_original->tipo_documento != $usuario["tipo_documento"] ) || ( $usuario_original->numero_documento != $usuario["numero_documento"] )) {
+                        $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $usuario["tipo_documento"] . "' AND numero_documento = '" . $usuario["numero_documento"] . "'");
+                    }
+
+                    if (isset($usuario_validar->id)) {
+                        echo "error_registro";
+                    } else {
+                        if ($usuario_original->username != $usuario["username"]) {
+                            $usuario_validar = Usuarios::findFirst("username = '" . $usuario["username"] . "'");
+                        }
+
+                        if (isset($usuario_validar->id)) {
+                            echo "error_username";
+                        } else {
+                            //Consulto el usuario actual
+                            $user_current = json_decode($token_actual->user_current, true);
+                            $usuario["actualizado_por"] = $user_current["id"];
+                            $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                            if ($usuario_original->save($usuario) === false) {
+                                echo "error";
+                            } else {
+                                echo $id;
+                            }
+                        }
+                    }
+                } else {
+                    echo "error";
                 }
             } else {
                 echo "acceso_denegado";
@@ -251,6 +257,52 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         }
     } catch (Exception $ex) {
         echo "error_metodo";
+    }
+}
+);
+
+// Editar registro actual
+$app->put('/edit_perfil/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //Cargo el usuario que esta en el metodo put
+            $usuario = $app->request->getPut();
+            
+            //Valido si coloco una clave nueva
+            if ($usuario["password"] != null && $usuario["password"] != "" && $usuario["password"] != "undefined") {
+                $usuario["password"] = $this->security->hash($usuario["password"]);
+            } else {
+                unset($usuario["password"]);
+            }
+            // Consultar el usuario que se esta editando
+            $usuario_original = Usuarios::findFirst(json_decode($id));
+
+            if (isset($usuario_original->id)) {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $usuario["actualizado_por"] = $user_current["id"];
+                $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                if ($usuario_original->save($usuario) === false) {
+                    echo "error";
+                } else {
+                    echo $id;
+                }
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -279,9 +331,10 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Barrios::findFirst(json_decode($id));
-                $user->active = false;
-                if ($user->save($user) === false) {
+                $usuario = Usuarios::findFirst(json_decode($id));
+                // Paso el usuario a inactivo
+                $usuario->active = false;
+                if ($usuario->save($usuario) === false) {
                     echo "error";
                 } else {
                     echo "ok";
@@ -311,19 +364,10 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $barrio = Barrios::findFirst($id);
-            if (isset($barrio->id)) {
-                $array["barrio"]=$barrio;
-                $array["localidad"]=$barrio->localidades;
-                $array["upz"]=$barrio->upzs;
-                $array["ciudad"]=$barrio->localidades->ciudades;
-                $array["departamento"]= $barrio->localidades->ciudades->departamentos;
-                $array["pais"]= $barrio->localidades->ciudades->departamentos->paises;                
-                $array["departamentos"]= Departamentos::find("active=true AND pais='".$barrio->localidades->ciudades->departamentos->paises->id."'");
-                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$barrio->localidades->ciudades->departamentos->id."'");
-                $array["localidades"]= Localidades::find("active=true AND ciudad='".$barrio->localidades->ciudades->id."'");
-                $array["upzs"]= Upzs::find("active=true AND localidad='".$barrio->localidades->id."'");
-                echo json_encode($array);                                
+            $usuario = Usuarios::findFirst($id);
+            $usuario->password = "undefined";
+            if (isset($usuario->id)) {
+                echo json_encode($usuario);
             } else {
                 echo "error";
             }
@@ -332,11 +376,39 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo".$ex->getMessage();
+        echo "error_metodo";
     }
-}
-);
+});
 
+//Busca mi perfil
+$app->get('/mi_perfil', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            $usuario = Usuarios::findFirst($user_current["id"]);
+            $usuario->password = "undefined";
+            if (isset($usuario->id)) {
+                echo json_encode($usuario);
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+});
 
 try {
     // Gestionar la consulta

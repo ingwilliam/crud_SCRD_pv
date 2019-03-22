@@ -43,8 +43,9 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
-$app->get('/select', function () use ($app) {
+// Recupera todos los perfiles seleccionados de un usuario determinado
+$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
+
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -55,11 +56,26 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Upz WHERE active = true ORDER BY nombre';
 
-            $robots = $app->modelsManager->executeQuery($phql);
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
 
-            echo json_encode($robots);
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Entidades AS p LEFT JOIN Usuariosentidades AS up ON p.id = up.entidad AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
+
+                $entidades_usuario = $app->modelsManager->executeQuery($phql);
+
+                echo json_encode($entidades_usuario);
+            } else {
+                echo "acceso_denegado";
+            }
         } else {
             echo "error";
         }
@@ -84,38 +100,21 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'p.nombre',
-                1 => 'd.nombre',
-                2 => 'ciu.nombre',
-                3 => 'l.nombre',
-                4 => 'u.nombre'
+                0 => 'a.nombre',
+                1 => 'a.descripcion',
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Upz AS u "
-                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
-                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
-                    
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Upz AS u "
-                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
-                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
+            $sqlTot = "SELECT count(*) as total FROM Entidades AS a";
+            $sqlRec = "SELECT " . $columns[0] . ", " . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Entidades AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -177,14 +176,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $upz = new Upz();
-                $upz->creado_por = $user_current["id"];
-                $upz->fecha_creacion = date("Y-m-d H:i:s");
-                $upz->active = true;
-                if ($upz->save($post) === false) {
+                $area = new Entidades();
+                $area->creado_por = $user_current["id"];
+                $area->fecha_creacion = date("Y-m-d H:i:s");
+                $area->active = true;
+                if ($area->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $upz->id;
+                    echo $area->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -226,10 +225,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $upz = Upz::findFirst(json_decode($id));
-                $upz->actualizado_por = $user_current["id"];
-                $upz->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($upz->save($put) === false) {
+                $area = Entidades::findFirst(json_decode($id));
+                $area->actualizado_por = $user_current["id"];
+                $area->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($area->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -270,7 +269,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Upz::findFirst(json_decode($id));
+                $user = Entidades::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -302,9 +301,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $upz = Upz::findFirst($id);
-            if (isset($upz->id)) {
-                echo json_encode($upz);
+            $area = Entidades::findFirst($id);
+            if (isset($area->id)) {
+                echo json_encode($area);
             } else {
                 echo "error";
             }

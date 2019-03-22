@@ -379,12 +379,16 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../localidades/form.html">Localidades</a>                                    
                                 </li>
                                 <li>
-                                    <a href="../upz/list.html">Upz</a>
-                                    <a style="display: none" href="../upz/form.html">Upz</a>
+                                    <a href="../upzs/list.html">Upzs</a>
+                                    <a style="display: none" href="../upzs/form.html">Upzs</a>
                                 </li>
                                 <li>
                                     <a href="../barrios/list.html">Barrios</a>
                                     <a style="display: none" href="../barrios/form.html">Barrios</a>
+                                </li>
+                                <li>
+                                    <a href="../entidades/list.html">Entidades</a>
+                                    <a style="display: none" href="../entidades/form.html">Entidades</a>
                                 </li>
                                 <li>
                                     <a href="../tiposdocumentos/list.html">Tipos de documentos</a>
@@ -407,21 +411,29 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../niveleseducativos/form.html">Niveles educativos</a>
                                 </li>
                                 <li>
-                                    <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
-                                    <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
-                                </li>
-                                <li>
-                                    <a href="../areas/list.html">Areas</a>
-                                    <a style="display: none" href="../areas/form.html">Areas</a>
+                                    <a href="../programas/list.html">Programas</a>
+                                    <a style="display: none" href="../programas/form.html">Programas</a>
                                 </li>
                                 <li>
                                     <a href="../modalidades/list.html">Modalidades</a>
                                     <a style="display: none" href="../modalidades/form.html">Modalidades</a>
                                 </li>
                                 <li>
-                                    <a href="../documentosconvocatorias/list.html">Documentos convocatorias</a>
-                                    <a style="display: none" href="../documentosconvocatorias/form.html">Documentos convocatorias</a>
+                                    <a href="../areas/list.html">Areas</a>
+                                    <a style="display: none" href="../areas/form.html">Areas</a>
                                 </li>
+                                <li>
+                                    <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
+                                    <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
+                                </li>
+                                <li>
+                                    <a href="../enfoques/list.html">Enfoques</a>
+                                    <a style="display: none" href="../enfoques/form.html">Enfoques</a>
+                                </li>
+                                <li>
+                                    <a href="../coberturas/list.html">Coberturas</a>
+                                    <a style="display: none" href="../coberturas/form.html">Coberturas</a>
+                                </li>                                                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

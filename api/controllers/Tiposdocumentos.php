@@ -87,6 +87,7 @@ $app->get('/all', function () use ($app) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'u.nombre',
+                1 => 'u.descripcion',
             );
 
             $where .= " WHERE u.active=true";
@@ -98,7 +99,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Tiposdocumentos AS u";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS u";
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS u";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {

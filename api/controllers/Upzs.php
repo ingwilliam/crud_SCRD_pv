@@ -49,15 +49,13 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $pais = $request->get('pais');
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
-            $phql = "SELECT * FROM Departamentos AS d WHERE d.active = true AND d.pais = $pais ORDER BY nombre";
+            $phql = 'SELECT * FROM Upzs WHERE active = true AND localidad='.$request->get('localidad').' ORDER BY nombre';
 
             $robots = $app->modelsManager->executeQuery($phql);
 
@@ -66,7 +64,7 @@ $app->get('/select', function () use ($app) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo". $ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
@@ -87,22 +85,35 @@ $app->get('/all', function () use ($app) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'p.nombre',
-                1=> 'd.nombre'
+                1 => 'd.nombre',
+                2 => 'ciu.nombre',
+                3 => 'l.nombre',
+                4 => 'u.nombre'
             );
 
-            $where .= " WHERE d.active=true";
+            $where .= " WHERE u.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Departamentos AS d "
+            $sqlTot = "SELECT count(*) as total FROM Upzs AS u "
+                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
+                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
                     . "";
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Departamentos AS d "
+                    
+            $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Upzs AS u "
+                    . "INNER JOIN Localidades AS l ON l.id=u.localidad "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
+                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
                     . "INNER JOIN Paises AS p ON p.id=d.pais "
                     . "";
 
@@ -166,14 +177,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $departamento = new Departamentos();
-                $departamento->creado_por = $user_current["id"];
-                $departamento->fecha_creacion = date("Y-m-d H:i:s");
-                $departamento->active = true;
-                if ($departamento->save($post) === false) {
+                $upz = new Upzs();
+                $upz->creado_por = $user_current["id"];
+                $upz->fecha_creacion = date("Y-m-d H:i:s");
+                $upz->active = true;
+                if ($upz->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $departamento->id;
+                    echo $upz->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -182,7 +193,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -215,10 +226,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $departamento = Departamentos::findFirst(json_decode($id));
-                $departamento->actualizado_por = $user_current["id"];
-                $departamento->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($departamento->save($put) === false) {
+                $upz = Upzs::findFirst(json_decode($id));
+                $upz->actualizado_por = $user_current["id"];
+                $upz->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($upz->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -259,7 +270,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Departamentos::findFirst(json_decode($id));
+                $user = Upzs::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -291,9 +302,17 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $departamento = Departamentos::findFirst($id);
-            if (isset($departamento->id)) {
-                echo json_encode($departamento);
+            $upz = Upzs::findFirst($id);
+            if (isset($upz->id)) {
+                $array["upz"]=$upz;
+                $array["localidad"]=$upz->localidades;
+                $array["ciudad"]=$upz->localidades->ciudades;
+                $array["departamento"]= $upz->localidades->ciudades->departamentos;
+                $array["pais"]= $upz->localidades->ciudades->departamentos->paises;                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$upz->localidades->ciudades->departamentos->paises->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$upz->localidades->ciudades->departamentos->id."'");
+                $array["localidades"]= Localidades::find("active=true AND ciudad='".$upz->localidades->ciudades->id."'");
+                echo json_encode($array);                
             } else {
                 echo "error";
             }

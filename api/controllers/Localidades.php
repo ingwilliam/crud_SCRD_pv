@@ -301,7 +301,13 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         if ($token_actual > 0) {
             $localidad = Localidades::findFirst($id);
             if (isset($localidad->id)) {
-                echo json_encode($localidad);
+                $array["localidad"]=$localidad;
+                $array["ciudad"]=$localidad->ciudades;
+                $array["departamento"]= $localidad->ciudades->departamentos;
+                $array["pais"]= $localidad->ciudades->departamentos->paises;                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$localidad->ciudades->departamentos->paises->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$localidad->ciudades->departamentos->id."'");
+                echo json_encode($array);
             } else {
                 echo "error";
             }

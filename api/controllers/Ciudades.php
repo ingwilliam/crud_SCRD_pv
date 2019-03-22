@@ -49,7 +49,7 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $departamento = $_GET['departamento'];
+        $departamento = $request->get('departamento');
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
@@ -297,9 +297,12 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         if ($token_actual > 0) {
             $ciudad = Ciudades::findFirst($id);
             if (isset($ciudad->id)) {
-                echo json_encode($ciudad);
+                $array["ciudad"]=$ciudad;
+                $array["departamento"]=$ciudad->departamentos;
+                $array["departamentos"]= Departamentos::find("active=true");
+                echo json_encode($array);
             } else {
-                echo "error";
+                echo json_encode(new Ciudades());
             }
         } else {
             echo "error";

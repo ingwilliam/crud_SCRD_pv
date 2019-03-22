@@ -44,34 +44,6 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $pais = $request->get('pais');
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            
-            $phql = "SELECT * FROM Departamentos AS d WHERE d.active = true AND d.pais = $pais ORDER BY nombre";
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo". $ex->getMessage();
-    }
-}
-);
-
-// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -86,25 +58,19 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'p.nombre',
-                1=> 'd.nombre'
+                0 => 'a.nombre',
             );
 
-            $where .= " WHERE d.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Departamentos AS d "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Departamentos AS d "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
+            $sqlTot = "SELECT count(*) as total FROM Coberturas AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Coberturas AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -166,14 +132,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $departamento = new Departamentos();
-                $departamento->creado_por = $user_current["id"];
-                $departamento->fecha_creacion = date("Y-m-d H:i:s");
-                $departamento->active = true;
-                if ($departamento->save($post) === false) {
+                $area = new Coberturas();
+                $area->creado_por = $user_current["id"];
+                $area->fecha_creacion = date("Y-m-d H:i:s");
+                $area->active = true;
+                if ($area->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $departamento->id;
+                    echo $area->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -215,10 +181,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $departamento = Departamentos::findFirst(json_decode($id));
-                $departamento->actualizado_por = $user_current["id"];
-                $departamento->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($departamento->save($put) === false) {
+                $area = Coberturas::findFirst(json_decode($id));
+                $area->actualizado_por = $user_current["id"];
+                $area->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($area->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -259,7 +225,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Departamentos::findFirst(json_decode($id));
+                $user = Coberturas::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -291,9 +257,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $departamento = Departamentos::findFirst($id);
-            if (isset($departamento->id)) {
-                echo json_encode($departamento);
+            $area = Coberturas::findFirst($id);
+            if (isset($area->id)) {
+                echo json_encode($area);
             } else {
                 echo "error";
             }
