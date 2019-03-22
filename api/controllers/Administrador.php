@@ -395,6 +395,22 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../tiposdocumentos/form.html">Tipos de documentos</a>
                                 </li>
                                 <li>
+                                    <a href="../tiposparticipantes/list.html">Tipos de participantes</a>
+                                    <a style="display: none" href="../tiposparticipantes/form.html">Tipos de participantes</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposconvenios/list.html">Tipos de convenios</a>
+                                    <a style="display: none" href="../tiposconvenios/form.html">Tipos de convenios</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposestimulos/list.html">Tipos de estimulos</a>
+                                    <a style="display: none" href="../tiposestimulos/form.html">Tipos de estimulos</a>
+                                </li>
+                                <li>
+                                    <a href="../estados/list.html">Estados</a>
+                                    <a style="display: none" href="../estados/form.html">Estados</a>
+                                </li>
+                                <li>
                                     <a href="../sexos/list.html">Sexos</a>
                                     <a style="display: none" href="../sexos/form.html">Sexos</a>
                                 </li>
