@@ -46,6 +46,34 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual>0) {
+            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estados_".$request->get('nombre')."'");
+            $array=array();
+            foreach ($tabla_maestra as $registro) {
+                $array[]=$registro;
+            }            
+            echo json_encode(explode(",", $registro->valor));
+        }
+        else
+        {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }        
+}
+);
+
+// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -60,8 +88,8 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 't.tiempo_sesion',
-                1 => 't.numero_propuestas'
+                0 => 't.nombre',
+                1 => 't.valor'
             );
 
             $where .= " WHERE t.active=true";
