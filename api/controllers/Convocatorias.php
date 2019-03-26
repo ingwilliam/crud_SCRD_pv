@@ -43,28 +43,45 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
-$app->get('/select', function () use ($app) {
+// Recupera todos las areas seleccionados de un usuario determinado
+$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
+
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
-            $robots = $app->modelsManager->executeQuery($phql);
-            echo json_encode($robots);
-        }
-        else
-        {
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Convocatorias AS p LEFT JOIN Usuariosareas AS up ON p.id = up.area AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
+
+                $areas_usuario = $app->modelsManager->executeQuery($phql);
+
+                echo json_encode($areas_usuario);
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
             echo "error";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
-    }        
+    }
 }
 );
 
@@ -83,10 +100,10 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 's.nombre',
+                0 => 'a.nombre',
             );
 
-            $where .= " WHERE s.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
@@ -94,9 +111,10 @@ $app->get('/all', function () use ($app) {
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Sexos AS s";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',s.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',s.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Sexos AS s";
+            $sqlTot = "SELECT count(*) as total FROM Convocatorias AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS a";
 
+            //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
@@ -156,14 +174,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $sexos = new Sexos();
-                $sexos->creado_por = $user_current["id"];
-                $sexos->fecha_creacion = date("Y-m-d H:i:s");
-                $sexos->active = true;
-                if ($sexos->save($post) === false) {
+                $area = new Convocatorias();
+                $area->creado_por = $user_current["id"];
+                $area->fecha_creacion = date("Y-m-d H:i:s");
+                $area->active = true;
+                if ($area->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $area->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -205,10 +223,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $sexo = Sexos::findFirst(json_decode($id));
-                $sexo->actualizado_por = $user_current["id"];
-                $sexo->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($sexo->save($put) === false) {
+                $area = Convocatorias::findFirst(json_decode($id));
+                $area->actualizado_por = $user_current["id"];
+                $area->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($area->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -224,6 +242,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
+
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -248,7 +267,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Sexos::findFirst(json_decode($id));
+                $user = Convocatorias::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -268,11 +287,73 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
-// Editar registro
+//Busca el registro
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
-    $phql = 'SELECT * FROM Sexos WHERE id = :id:';
-    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
-    echo json_encode($user);
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $area = Convocatorias::findFirst($id);
+            if (isset($area->id)) {
+                echo json_encode($area);
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+//Busca el registro
+$app->get('/load_search', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $array=array();
+            for($i = date("Y"); $i >= 2016; $i--){
+                $array["anios"][] = $i;
+            }            
+            $array["entidades"]= Entidades::find("active = true");
+            $array["areas"]= Areas::find("active = true");
+            $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
+            $array["enfoques"]=Enfoques::find("active = true");
+            $array["total_creadas"] = Convocatorias::count("estado =1 AND active = true");
+            $array["total_vistos_buenos"] = Convocatorias::count("estado =2 AND active = true");
+            $array["total_verificadas"] = Convocatorias::count("estado =3 AND active = true");
+            $array["total_aprobadas"] = Convocatorias::count("estado =4 AND active = true");
+            $array["total_publicadas"] = Convocatorias::count("estado =5 AND active = true");
+            $array["estados_convocatorias"] = Estados::find(
+                                                            array(
+                                                                "tipo_estado = 'convocatorias' AND active = true",
+                                                                "order" => "orden"
+                                                            )
+                                                            );
+            echo json_encode($array);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
 }
 );
 

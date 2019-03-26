@@ -1,7 +1,7 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Upz extends Model
+class Tiposconvenios extends Model
 {
     public $id;
 }

@@ -263,6 +263,44 @@ $app->post('/permiso_escritura', function () use ($app) {
 }
 );
 
+//Verifica permiso de eliminar para los permisos de control total y lectura e escritura
+$app->post('/permiso_eliminar', function () use ($app) {
+
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            //Consultar todos los permisos
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='".$request->getPost('modulo')."' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].") AND mpp.permiso IN (1) ";
+            $permisos = $app->modelsManager->executeQuery($phql);
+            
+            if( count($permisos)>0)
+            {
+                echo "ok";
+            }
+            else
+            {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {        
+        echo "error_metodo".$ex;
+    }
+}
+);
+
 try {
     // Gestionar la consulta
     $app->handle();

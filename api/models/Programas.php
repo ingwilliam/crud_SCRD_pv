@@ -1,18 +1,19 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Paises extends Model
+class Programas extends Model
 {
     public $id;
     
     public function initialize()
     {
-        //Se define la relación con 1 a N con Departamentos
+        //Se define la relación con 1 a N con Modalidades
         $this->hasMany(
             'id',
-            'Departamentos',
-            'pais'
+            'Modalidades',
+            'programa'
         );                        
     }  
+    
     
 }

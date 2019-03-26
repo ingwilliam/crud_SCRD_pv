@@ -10,8 +10,6 @@ use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 
-require "../library/movilmente/ImageUpload.php";
-
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH);
@@ -61,14 +59,11 @@ $app->get('/all', function () use ($app) {
         if ($token_actual > 0) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'td.nombre',
-                1 => 'u.numero_documento',
-                2 => 'u.primer_nombre',
-                3 => 'u.segundo_nombre',
-                4 => 'u.primer_apellido',
-                5 => 'u.segundo_apellido',
-                6 => 'u.username',
-                7 => 'b.nombre',
+                0 => 'u.primer_nombre',
+                1 => 'u.segundo_nombre',
+                2 => 'u.primer_apellido',
+                3 => 'u.segundo_apellido',
+                4 => 'u.username',                
             );
 
             $where .= " WHERE u.active=true";
@@ -78,20 +73,13 @@ $app->get('/all', function () use ($app) {
                 $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Usuarios AS u "
-                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
-                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
-            $sqlRec = "SELECT " . $columns[0] . " AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS sexo , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u "
-                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
-                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
-
+            $sqlTot = "SELECT count(*) as total FROM Usuarios AS u ";
+            $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u ";
+            
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
@@ -120,7 +108,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -155,25 +143,19 @@ $app->post('/new', function () use ($app, $config) {
                 $usuario->active = true;
                 $post["password"] = $this->security->hash($post["password"]);
 
-                $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $post["tipo_documento"] . "' AND numero_documento = '" . $post["numero_documento"] . "'");
+                $usuario_validar = Usuarios::findFirst("username = '" . $post["username"] . "'");
 
                 if (isset($usuario_validar->id)) {
-                    echo "error_registro";
+                    echo "error_username";
                 } else {
-                    $usuario_validar = Usuarios::findFirst("username = '" . $post["username"] . "'");
-
-                    if (isset($usuario_validar->id)) {
-                        echo "error_username";
+                    //Consulto el usuario actual
+                    $user_current = json_decode($token_actual->user_current, true);
+                    $post["creado_por"] = $user_current["id"];
+                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                    if ($usuario->save($post) === false) {
+                        echo "error";
                     } else {
-                        //Consulto el usuario actual
-                        $user_current = json_decode($token_actual->user_current, true);
-                        $post["creado_por"] = $user_current["id"];
-                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                        if ($usuario->save($post) === false) {
-                            echo "error";
-                        } else {
-                            echo $usuario->id;
-                        }
+                        echo $usuario->id;
                     }
                 }
             } else {
@@ -223,29 +205,21 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                 if (isset($usuario_original->id)) {
 
-                    if (( $usuario_original->tipo_documento != $usuario["tipo_documento"] ) || ( $usuario_original->numero_documento != $usuario["numero_documento"] )) {
-                        $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $usuario["tipo_documento"] . "' AND numero_documento = '" . $usuario["numero_documento"] . "'");
+                    if ($usuario_original->username != $usuario["username"]) {
+                        $usuario_validar = Usuarios::findFirst("username = '" . $usuario["username"] . "'");
                     }
 
                     if (isset($usuario_validar->id)) {
-                        echo "error_registro";
+                        echo "error_username";
                     } else {
-                        if ($usuario_original->username != $usuario["username"]) {
-                            $usuario_validar = Usuarios::findFirst("username = '" . $usuario["username"] . "'");
-                        }
-
-                        if (isset($usuario_validar->id)) {
-                            echo "error_username";
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $usuario["actualizado_por"] = $user_current["id"];
+                        $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                        if ($usuario_original->save($usuario) === false) {
+                            echo "error";
                         } else {
-                            //Consulto el usuario actual
-                            $user_current = json_decode($token_actual->user_current, true);
-                            $usuario["actualizado_por"] = $user_current["id"];
-                            $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                            if ($usuario_original->save($usuario) === false) {
-                                echo "error";
-                            } else {
-                                echo $id;
-                            }
+                            echo $id;
                         }
                     }
                 } else {
@@ -277,7 +251,7 @@ $app->put('/edit_perfil/{id:[0-9]+}', function ($id) use ($app, $config) {
         if ($token_actual > 0) {
             //Cargo el usuario que esta en el metodo put
             $usuario = $app->request->getPut();
-            
+
             //Valido si coloco una clave nueva
             if ($usuario["password"] != null && $usuario["password"] != "" && $usuario["password"] != "undefined") {
                 $usuario["password"] = $this->security->hash($usuario["password"]);
@@ -323,7 +297,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -411,32 +385,6 @@ $app->get('/mi_perfil', function () use ($app, $config) {
         echo "error_metodo";
     }
 });
-
-//Recupera todos los registros
-$app->post('/imageupload', function () use ($app) {
-
-    $ImageUpload = new ImageUpload();
-    $content = file_get_contents("php://input");
-
-    $array = array();
-
-    parse_str($content, $array);
-
-    $validar = $ImageUpload->validate($array['encodedImage']);
-
-    if ($validar == 1) {
-        $imagen = $ImageUpload->save_base64_image($array['encodedImage'], "resources/img/IMG_" . strtoupper(md5($array['encodedImage'])));
-
-        if ($imagen != null) {
-            $ImageUpload->print_json(200, "Completado", $imagen);
-        } else {
-            $ImageUpload->print_json(200, "Este archivo ya existe", null);
-        }
-    } else {
-        $ImageUpload->print_json(200, "Extension invalida", null);
-    }
-});
-
 
 try {
     // Gestionar la consulta
