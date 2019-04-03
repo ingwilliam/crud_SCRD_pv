@@ -402,6 +402,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../tiposdocumentos/form.html">Tipos de documentos</a>
                                 </li>
                                 <li>
+                                    <a href="../tiposprogramas/list.html">Tipos de programas</a>
+                                    <a style="display: none" href="../tiposprogramas/form.html">Tipos de programas</a>
+                                </li>
+                                <li>
                                     <a href="../tiposparticipantes/list.html">Tipos de participantes</a>
                                     <a style="display: none" href="../tiposparticipantes/form.html">Tipos de participantes</a>
                                 </li>
@@ -472,7 +476,14 @@ $app->post('/menu', function () use ($app) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../convocatorias/list.html">Buscar convocatoria</a>
-                                    <a style="display: none" href="../convocatorias/form.html">Buscar convocatoria</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/form.html">Buscar convocatoria</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Información General</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Categorías</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Cronograma</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Doc. Administrativos</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Doc. Tecnicos</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Evaluación</a>
+                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Documentación</a>
                                 </li>                                
                             </ul>
                             <!-- /.nav-second-level -->

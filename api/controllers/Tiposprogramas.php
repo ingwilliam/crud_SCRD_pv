@@ -68,7 +68,7 @@ $app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Convocatorias AS p LEFT JOIN Usuariosareas AS up ON p.id = up.area AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
+                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Tiposprogramas AS p LEFT JOIN Usuariosareas AS up ON p.id = up.area AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
 
                 $areas_usuario = $app->modelsManager->executeQuery($phql);
 
@@ -111,8 +111,8 @@ $app->get('/all', function () use ($app) {
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Convocatorias AS a";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS a";
+            $sqlTot = "SELECT count(*) as total FROM Tiposprogramas AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposprogramas AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -174,7 +174,7 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $area = new Convocatorias();
+                $area = new Tiposprogramas();
                 $area->creado_por = $user_current["id"];
                 $area->fecha_creacion = date("Y-m-d H:i:s");
                 $area->active = true;
@@ -223,7 +223,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $area = Convocatorias::findFirst(json_decode($id));
+                $area = Tiposprogramas::findFirst(json_decode($id));
                 $area->actualizado_por = $user_current["id"];
                 $area->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($area->save($put) === false) {
@@ -267,7 +267,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Convocatorias::findFirst(json_decode($id));
+                $user = Tiposprogramas::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -288,7 +288,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 });
 
 //Busca el registro
-$app->get('/search', function () use ($app) {
+$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -299,71 +299,12 @@ $app->get('/search', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            //Si existe consulto la convocatoria
-            if($request->get('id'))
-            {    
-                $convocatoria = Convocatorias::findFirst($request->get('id'));
+            $area = Tiposprogramas::findFirst($id);
+            if (isset($area->id)) {
+                echo json_encode($area);
+            } else {
+                echo "error";
             }
-            else 
-            {
-                $convocatoria = new Convocatorias();
-            }
-            $array["convocatoria"]=$convocatoria;
-            $array["programas"]= Programas::find("active=true");
-            $array["tipos_participantes"]= Tiposparticipantes::find("active=true");
-            $array["modalidades"]= Modalidades::find("active=true");
-            $array["coberturas"]= Coberturas::find("active=true");
-            $array["modalidades"]= Modalidades::find("active=true");
-            $array["localidades"]= Localidades::find("active=true");
-            $array["enfoques"]= Enfoques::find("active=true");
-            $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
-            $array["areas"]= Areas::find("active=true");            
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");            
-            $array["cantidad_perfil_jurados"] = explode(",", $tabla_maestra[0]->valor);
-            
-            echo json_encode($array);            
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        echo "error_metodo";
-    }
-}
-);
-
-//Busca el registro
-$app->get('/load_search', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $array=array();
-            for($i = date("Y"); $i >= 2016; $i--){
-                $array["anios"][] = $i;
-            }            
-            $array["entidades"]= Entidades::find("active = true");
-            $array["areas"]= Areas::find("active = true");
-            $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
-            $array["enfoques"]=Enfoques::find("active = true");
-            $array["total_creadas"] = Convocatorias::count("estado =1 AND active = true");
-            $array["total_vistos_buenos"] = Convocatorias::count("estado =2 AND active = true");
-            $array["total_verificadas"] = Convocatorias::count("estado =3 AND active = true");
-            $array["total_aprobadas"] = Convocatorias::count("estado =4 AND active = true");
-            $array["total_publicadas"] = Convocatorias::count("estado =5 AND active = true");
-            $array["estados_convocatorias"] = Estados::find(
-                                                            array(
-                                                                "tipo_estado = 'convocatorias' AND active = true",
-                                                                "order" => "orden"
-                                                            )
-                                                            );
-            echo json_encode($array);
         } else {
             echo "error";
         }
