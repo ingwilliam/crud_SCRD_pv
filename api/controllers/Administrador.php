@@ -476,6 +476,7 @@ $app->post('/menu', function () use ($app) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../convocatorias/list.html">Buscar convocatoria</a>
+                                    <a href="../convocatorias/create.html">Crear convocatoria</a>
                                     <a class="menu_convocatoria" style="display: none" href="../convocatorias/form.html">Buscar convocatoria</a>
                                     <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Información General</a>
                                     <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Categorías</a>

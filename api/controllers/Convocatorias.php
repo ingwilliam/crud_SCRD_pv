@@ -112,7 +112,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatorias AS a";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -174,14 +174,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $area = new Convocatorias();
-                $area->creado_por = $user_current["id"];
-                $area->fecha_creacion = date("Y-m-d H:i:s");
-                $area->active = true;
-                if ($area->save($post) === false) {
+                $convocatoria = new Convocatorias();
+                $convocatoria->creado_por = $user_current["id"];
+                $convocatoria->fecha_creacion = date("Y-m-d H:i:s");
+                $convocatoria->active = true;
+                if ($convocatoria->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $area->id;
+                    echo $convocatoria->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -320,7 +320,12 @@ $app->get('/search', function () use ($app) {
             $array["areas"]= Areas::find("active=true");            
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");            
             $array["cantidad_perfil_jurados"] = explode(",", $tabla_maestra[0]->valor);
-            
+            $array["tipos_convenios"]= Tiposconvenios::find("active=true");
+            $array["tipos_estimulos"]= Tiposestimulos::find("active=true");
+            $array["entidades"]= Entidades::find("active=true");
+            for($i = date("Y"); $i >= 2016; $i--){
+                $array["anios"][] = $i;
+            } 
             echo json_encode($array);            
         } else {
             echo "error";
