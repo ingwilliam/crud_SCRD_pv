@@ -450,6 +450,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../areas/form.html">Areas</a>
                                 </li>
                                 <li>
+                                    <a href="../areasconocimientos/list.html">Áreas de conocimientos</a>
+                                    <a style="display: none" href="../areasconocimientos/form.html">Áreas de conocimientos</a>
+                                </li>
+                                <li>
                                     <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
                                     <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
                                 </li>

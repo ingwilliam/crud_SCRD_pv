@@ -360,8 +360,13 @@ $app->get('/search', function () use ($app) {
             //Creo todos los array de la convocatoria
             $array["convocatoria"]=$convocatoria;
             $array["programas"]= Programas::find("active=true");
-            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
             $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
+            if(isset($convocatoria->id))
+            {
+                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id);
+                $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
+            }            
             $array["coberturas"]= Coberturas::find("active=true");            
             $array["localidades"]= Localidades::find("active=true");
             $array["upzs"]=array();
@@ -382,6 +387,8 @@ $app->get('/search', function () use ($app) {
             $array["tipos_convenios"]= Tiposconvenios::find("active=true");
             $array["tipos_estimulos"]= Tiposestimulos::find("active=true");
             $array["entidades"]= Entidades::find("active=true");
+            $array["areas_conocimientos"]= Areasconocimientos::find("active=true AND id<>9");
+            $array["niveles_educativos"]= Niveleseducativos::find("active=true");
             $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");
             for($i = date("Y"); $i >= 2016; $i--){
                 $array["anios"][] = $i;

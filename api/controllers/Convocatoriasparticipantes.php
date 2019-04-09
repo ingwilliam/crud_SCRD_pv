@@ -44,6 +44,55 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            $select = Convocatoriasparticipantes::find(['convocatoria = '.$request->get('convocatoria').' AND tipo_participante IN ('.$request->get('tipo_participante').')','order' => 'orden']);
+
+            echo json_encode($select);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
+
+// Recupera todos los registros
+$app->get('/select_form_convocatoria', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria = ".$request->get('convocatoria'));
+            echo json_encode($select);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
+
+// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -114,7 +163,6 @@ $app->post('/new', function () use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -129,30 +177,59 @@ $app->post('/new', function () use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto si el registro existe con el fin de activarlo
-                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));
-                if(isset($convocatoriasparticipantes->id))
+                
+                //Guardar el perfil de jurados
+                if($request->getPut('tipo_participante')==4)
                 {
-                    $convocatoriasparticipantes->active = true;
-                    $post=$convocatoriasparticipantes;
+                    if( Convocatoriasparticipantes::count("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante')."") < $request->getPut('cantidad_perfil_jurado'))
+                    {
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post = $app->request->getPost();
+                        $post["area_conocimiento"] = json_encode($post["area_conocimiento"]);
+                        $post["nivel_educativo"] = json_encode($post["nivel_educativo"]);                    
+                        $post["area_perfil"] = json_encode($post["area_perfil"]);                    
+                        $convocatoriasparticipantes = new Convocatoriasparticipantes();
+                        $convocatoriasparticipantes->creado_por = $user_current["id"];
+                        $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
+                        $convocatoriasparticipantes->active = true;                    
+                        if ($convocatoriasparticipantes->save($post) === false) {
+                            echo "error";
+                        } else {
+                            echo $convocatoriasparticipantes->id;
+                        }
+                    }                    
+                    else
+                    {
+                        echo "error_maximo_jurados";
+                    }
                 }
                 else
-                {
-                    //Consulto el usuario actual
-                    $user_current = json_decode($token_actual->user_current, true);
-                    $post = $app->request->getPost();
-                    $convocatoriasparticipantes = new Convocatoriasparticipantes();
-                    $convocatoriasparticipantes->creado_por = $user_current["id"];
-                    $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
-                    $convocatoriasparticipantes->active = true;
-                }
-               
-                if ($convocatoriasparticipantes->save($post) === false) {                
-                    echo "error";
-                } else {
-                    //echo $convocatoriasparticipantes->id;
-                    echo 1;                
-                }
+                {                
+                    //Consulto si el registro existe con el fin de activarlo para personas naurales juridicas y agrupaciones
+                    $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));                
+                    if(isset($convocatoriasparticipantes->id))
+                    {
+                        $convocatoriasparticipantes->active = true;
+                        $post=$convocatoriasparticipantes;
+                    }
+                    else
+                    {
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post = $app->request->getPost();
+                        $convocatoriasparticipantes = new Convocatoriasparticipantes();
+                        $convocatoriasparticipantes->creado_por = $user_current["id"];
+                        $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
+                        $convocatoriasparticipantes->active = true;
+                    }
+
+                    if ($convocatoriasparticipantes->save($post) === false) {                
+                        echo "error";
+                    } else {
+                        echo $convocatoriasparticipantes->id;                    
+                    }    
+                }                
             } else {
                 echo "acceso_denegado";
             }
@@ -160,7 +237,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -192,6 +269,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
+                unset($put["id"]);
+                $put["area_conocimiento"] = json_encode($put["area_conocimiento"]);
+                $put["nivel_educativo"] = json_encode($put["nivel_educativo"]);                    
+                $put["area_perfil"] = json_encode($put["area_perfil"]);                    
                 // Consultar el usuario que se esta editando
                 $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));
                 $convocatoriasparticipantes->actualizado_por = $user_current["id"];
@@ -208,12 +289,12 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
 
-// Eliminar registro
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -237,16 +318,79 @@ $app->delete('/delete', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
                 $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));
-                $convocatoriasparticipantes->active = false;
+                if($convocatoriasparticipantes->active==true)
+                {
+                    $convocatoriasparticipantes->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriasparticipantes->active=true;
+                    $retorna="Si";
+                }
                 
                 if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
             }           
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
+
+//Elimina lor perfiles de los jurados
+$app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));               
+                if($convocatoriasparticipantes->active==true)
+                {
+                    $convocatoriasparticipantes->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriasparticipantes->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
+                    echo "error";
+                } else {
+                    echo $retorna;
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+
+            exit;
         } else {
             echo "error";
         }
