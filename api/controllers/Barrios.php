@@ -56,8 +56,15 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = "SELECT * FROM Barrios AS l WHERE l.active = true AND l.ciudad = $localidad  ORDER BY nombre";
-
+            if($request->get('upz'))
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad AND b.upz=".$request->get('upz')."  ORDER BY b.nombre";
+            }
+            else
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad  ORDER BY b.nombre";
+            }
+            
             $robots = $app->modelsManager->executeQuery($phql);
 
             echo json_encode($robots);
@@ -65,7 +72,7 @@ $app->get('/select', function () use ($app) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );

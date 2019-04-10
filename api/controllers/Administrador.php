@@ -402,6 +402,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../tiposdocumentos/form.html">Tipos de documentos</a>
                                 </li>
                                 <li>
+                                    <a href="../tiposprogramas/list.html">Tipos de programas</a>
+                                    <a style="display: none" href="../tiposprogramas/form.html">Tipos de programas</a>
+                                </li>
+                                <li>
                                     <a href="../tiposparticipantes/list.html">Tipos de participantes</a>
                                     <a style="display: none" href="../tiposparticipantes/form.html">Tipos de participantes</a>
                                 </li>
@@ -446,6 +450,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../areas/form.html">Areas</a>
                                 </li>
                                 <li>
+                                    <a href="../areasconocimientos/list.html">Áreas de conocimientos</a>
+                                    <a style="display: none" href="../areasconocimientos/form.html">Áreas de conocimientos</a>
+                                </li>
+                                <li>
                                     <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
                                     <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
                                 </li>
@@ -457,6 +465,10 @@ $app->post('/menu', function () use ($app) {
                                     <a href="../coberturas/list.html">Coberturas</a>
                                     <a style="display: none" href="../coberturas/form.html">Coberturas</a>
                                 </li>                                                                
+                                <li>
+                                    <a href="../recursosnopecuniarios/list.html">Recursos no pecuniarios</a>
+                                    <a style="display: none" href="../recursosnopecuniarios/form.html">Recursos no pecuniarios</a>
+                                </li>                                                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -466,13 +478,28 @@ $app->post('/menu', function () use ($app) {
                         <?php
                         if(count($permisos_convocatorias)>0)
                         {    
+                        
+                        $style_update="display: none";
+                        $style_new="";
+                        if(($request->getPost('modulo')=="convocatoria") AND $request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-files-o fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a href="../convocatorias/list.html">Buscar convocatoria</a>
-                                    <a style="display: none" href="../convocatorias/form.html">Buscar convocatoria</a>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatoria.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                 </li>                                
                             </ul>
                             <!-- /.nav-second-level -->
