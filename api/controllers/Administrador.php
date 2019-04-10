@@ -465,6 +465,10 @@ $app->post('/menu', function () use ($app) {
                                     <a href="../coberturas/list.html">Coberturas</a>
                                     <a style="display: none" href="../coberturas/form.html">Coberturas</a>
                                 </li>                                                                
+                                <li>
+                                    <a href="../recursosnopecuniarios/list.html">Recursos no pecuniarios</a>
+                                    <a style="display: none" href="../recursosnopecuniarios/form.html">Recursos no pecuniarios</a>
+                                </li>                                                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -474,21 +478,28 @@ $app->post('/menu', function () use ($app) {
                         <?php
                         if(count($permisos_convocatorias)>0)
                         {    
+                        
+                        $style_update="display: none";
+                        $style_new="";
+                        if(($request->getPost('modulo')=="convocatoria") AND $request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-files-o fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a href="../convocatorias/list.html">Buscar convocatoria</a>
-                                    <a href="../convocatorias/create.html">Crear convocatoria</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/form.html">Buscar convocatoria</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Información General</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Categorías</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Cronograma</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Doc. Administrativos</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Doc. Tecnicos</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Evaluación</a>
-                                    <a class="menu_convocatoria" style="display: none" href="../convocatorias/list.html">Documentación</a>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatoria.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                 </li>                                
                             </ul>
                             <!-- /.nav-second-level -->

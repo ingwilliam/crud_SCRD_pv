@@ -272,10 +272,14 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $area = Convocatorias::findFirst(json_decode($id));
-                $area->actualizado_por = $user_current["id"];
-                $area->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($area->save($put) === false) {
+                $convocatoria = Convocatorias::findFirst(json_decode($id));
+                $convocatoria->actualizado_por = $user_current["id"];
+                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                if($put["numero_estimulos"]=="")
+                {
+                    unset($put["numero_estimulos"]);
+                }                
+                if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -360,25 +364,19 @@ $app->get('/search', function () use ($app) {
             //Creo todos los array de la convocatoria
             $array["convocatoria"]=$convocatoria;
             $array["programas"]= Programas::find("active=true");
-            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
-            $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
-            if(isset($convocatoria->id))
-            {
-                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id);
-                $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
-            }            
+            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");                                   
             $array["coberturas"]= Coberturas::find("active=true");            
             $array["localidades"]= Localidades::find("active=true");
             $array["upzs"]=array();
-            if(isset($convocatoria->id))
-            {
-                $array["upzs"]= Upzs::find("active=true AND localidad="+$convocatoria->localidad);
-            }
             $array["barrios"]=array();
             if(isset($convocatoria->id))
             {
+                $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
+                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id);
+                $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
+                $array["upzs"]= Upzs::find("active=true AND localidad="+$convocatoria->localidad);
                 $array["barrios"]= Barrios::find("active=true AND localidad="+$convocatoria->localidad);
-            }
+            }             
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
             $array["areas"]= Areas::find("active=true");            
@@ -389,7 +387,22 @@ $app->get('/search', function () use ($app) {
             $array["entidades"]= Entidades::find("active=true");
             $array["areas_conocimientos"]= Areasconocimientos::find("active=true AND id<>9");
             $array["niveles_educativos"]= Niveleseducativos::find("active=true");
-            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");
+            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");            
+            $array["distribuciones_bolsas"]= $convocatoria->getConvocatoriasrecursos([
+                                                                                        'tipo_recurso = :tipo_recurso:',
+                                                                                        'bind' => [
+                                                                                            'tipo_recurso' => 'Bolsa'
+                                                                                        ],
+                                                                                        'order'      => 'orden ASC',
+                                                                                    ]);
+            $array["distribuciones_especies"]= $convocatoria->getConvocatoriasrecursos([
+                                                                                        'tipo_recurso = :tipo_recurso:',
+                                                                                        'bind' => [
+                                                                                            'tipo_recurso' => 'Especie'
+                                                                                        ],
+                                                                                        'order'      => 'orden ASC',
+                                                                                    ]);
+            $array["recursos_no_pecunarios"]= Recursosnopecuniarios::find("active=true");
             for($i = date("Y"); $i >= 2016; $i--){
                 $array["anios"][] = $i;
             } 
@@ -399,7 +412,7 @@ $app->get('/search', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
