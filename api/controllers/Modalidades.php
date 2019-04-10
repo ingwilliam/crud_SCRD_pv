@@ -43,6 +43,29 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
+// Recupera todos las modalidades dependiendo el programa
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {            
+            $array = Modalidades::find("active = true AND programa=".$request->get('programa')."");            
+            echo json_encode($array);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
+
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
@@ -58,19 +81,25 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'm.nombre',
+                0 => 'p.nombre',
+                1 => 'd.nombre',
             );
 
-            $where .= " WHERE m.active=true";
+            $where .= " WHERE d.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Modalidades AS m";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',m.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',m.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Modalidades AS m";
+            $sqlTot = "SELECT count(*) as total FROM Modalidades AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
+            $sqlRec = "SELECT " . $columns[0] . " AS  programa," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Modalidades AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -215,7 +244,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

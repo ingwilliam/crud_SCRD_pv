@@ -1,28 +1,27 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Departamentos extends Model
+class Upzs extends Model
 {
     public $id;
     
     public function initialize()
     {
-        //Se define la relación con 1 a N con Ciudades
+        //Se define la relación con 1 a N con Barrio
         $this->hasMany(
             'id',
-            'Ciudades',
-            'departamento'
+            'Barrio',
+            'upz'
         );
         
-        //Se define relacion de N a 1 con Paises
+        //Se define relacion de N a 1 con Localidades
         $this->belongsTo(
-            'pais',
-            'Paises',
+            'localidad',
+            'Localidades',
             'id',
             [
                 'foreignKey' => true
             ]
         );
-        
-    }    
+    }
 }

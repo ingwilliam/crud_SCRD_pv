@@ -56,8 +56,15 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = "SELECT * FROM Barrios AS l WHERE l.active = true AND l.ciudad = $localidad  ORDER BY nombre";
-
+            if($request->get('upz'))
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad AND b.upz=".$request->get('upz')."  ORDER BY b.nombre";
+            }
+            else
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad  ORDER BY b.nombre";
+            }
+            
             $robots = $app->modelsManager->executeQuery($phql);
 
             echo json_encode($robots);
@@ -65,7 +72,7 @@ $app->get('/select', function () use ($app) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -107,7 +114,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Barrios AS b "
-                    . "LEFT JOIN Upz AS u ON u.id=b.upz "
+                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
                     . "INNER JOIN Localidades AS l ON l.id=b.localidad "
                     . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
@@ -115,7 +122,7 @@ $app->get('/all', function () use ($app) {
                     . "";
                     
             $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz , " . $columns[5] . " AS barrio, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',b.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',b.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Barrios AS b "
-                    . "LEFT JOIN Upz AS u ON u.id=b.upz "
+                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
                     . "INNER JOIN Localidades AS l ON l.id=b.localidad "
                     . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
                     . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
@@ -269,7 +276,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -313,7 +320,17 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         if ($token_actual > 0) {
             $barrio = Barrios::findFirst($id);
             if (isset($barrio->id)) {
-                echo json_encode($barrio);
+                $array["barrio"]=$barrio;
+                $array["localidad"]=$barrio->localidades;
+                $array["upz"]=$barrio->upzs;
+                $array["ciudad"]=$barrio->localidades->ciudades;
+                $array["departamento"]= $barrio->localidades->ciudades->departamentos;
+                $array["pais"]= $barrio->localidades->ciudades->departamentos->paises;                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$barrio->localidades->ciudades->departamentos->paises->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$barrio->localidades->ciudades->departamentos->id."'");
+                $array["localidades"]= Localidades::find("active=true AND ciudad='".$barrio->localidades->ciudades->id."'");
+                $array["upzs"]= Upzs::find("active=true AND localidad='".$barrio->localidades->id."'");
+                echo json_encode($array);                                
             } else {
                 echo "error";
             }
@@ -322,7 +339,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );

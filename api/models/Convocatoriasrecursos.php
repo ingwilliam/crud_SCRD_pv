@@ -1,21 +1,22 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Modalidades extends Model
+class Convocatoriasrecursos extends Model
 {
     public $id;
     
     public function initialize()
     {
-        //Se define relacion de N a 1 con Paises
+        //Se define relacion de N a 1 con Convocatorias
         $this->belongsTo(
-            'programa',
-            'Programas',
+            'convocatoria',
+            'Convocatorias',
             'id',
             [
                 'foreignKey' => true
             ]
         );
         
-    }
+    } 
+    
 }
