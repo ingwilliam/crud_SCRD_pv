@@ -81,7 +81,7 @@ $app->get('/select_form_convocatoria', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             
-            $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria = ".$request->get('convocatoria'));
+            $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$request->get('convocatoria')." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
             echo json_encode($select);
         } else {
             echo "error";

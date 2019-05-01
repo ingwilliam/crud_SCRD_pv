@@ -298,18 +298,70 @@ $app->post('/new_categoria', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $convocatoria = Convocatorias::findFirst(json_decode($post["convocatoria"]));
+                $convocatoria = Convocatorias::findFirst(json_decode($post["convocatoria_padre_categoria"]));
                 $convocatoria->id = null;
                 $convocatoria->creado_por = $user_current["id"];
                 $convocatoria->fecha_creacion = date("Y-m-d H:i:s");
                 $convocatoria->active = true;
                 $convocatoria->estado = null;                
-                $convocatoria->convocatoria_padre_categoria = $post["convocatoria"];                
+                $convocatoria->convocatoria_padre_categoria = $post["convocatoria_padre_categoria"];                
                 if ($convocatoria->save($post) === false) {
                     echo "error";
                 } else {
                     echo $convocatoria->id;
                 }                
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
+
+// Editar registro
+$app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $convocatoria = Convocatorias::findFirst(json_decode($id));
+                $convocatoria->actualizado_por = $user_current["id"];
+                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                if($put["numero_estimulos"]=="")
+                {
+                    unset($put["numero_estimulos"]);
+                }                
+                if ($convocatoria->save($put) === false) {
+                    echo "error";
+                } else {
+                    echo $id;
+                }
             } else {
                 echo "acceso_denegado";
             }
@@ -356,6 +408,18 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if($put["numero_estimulos"]=="")
                 {
                     unset($put["numero_estimulos"]);
+                }                
+                if($put["localidad"]=="")
+                {
+                    unset($put["localidad"]);
+                }                
+                if($put["upz"]=="")
+                {
+                    unset($put["upz"]);
+                }                
+                if($put["barrio"]=="")
+                {
+                    unset($put["barrio"]);
                 }                
                 if ($convocatoria->save($put) === false) {
                     echo "error";
