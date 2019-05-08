@@ -148,20 +148,47 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'a.nombre',
+                0 => 'c.nombre',
+                1 => 'c.descripcion',
             );
 
-            $where .= " WHERE a.active=true";
-            //Condiciones para la consulta
-
-            if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+            
+            
+            if(!empty($request->get('convocatoria')))
+            {
+                $where .= " WHERE c.active IN (true,false)";
+                $where .= " AND c.convocatoria_padre_categoria=".$request->get('convocatoria');
             }
-
+            else
+            {
+                $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
+            }
+            
+            //Condiciones para la consulta
+            if (!empty($request->get("search")['value'])) {
+                if(!empty($request->get('convocatoria')))
+                {
+                    $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }
+                else
+                {
+                    $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }                
+            }
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Convocatorias AS a";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS a";
-
+            $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";
+            
+            if(!empty($request->get('convocatoria')))
+            {
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
+            }
+            else
+            {
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " ,concat('<input onclick=\"activar_categoria(,c.id,)\" type=\"checkbox\" class=\"check_activar_',c.active,'\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',c.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS c";
+            }
+            
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
@@ -186,11 +213,11 @@ $app->get('/all', function () use ($app) {
             echo json_encode($json_data);
         } else {
             //retorno el array en json null
-            echo json_encode(null);
+            echo json_encode(111);
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -244,6 +271,109 @@ $app->post('/new', function () use ($app, $config) {
 }
 );
 
+// Crear registro
+$app->post('/new_categoria', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $post = $app->request->getPost();
+                $convocatoria = Convocatorias::findFirst(json_decode($post["convocatoria_padre_categoria"]));
+                $convocatoria->id = null;
+                $convocatoria->creado_por = $user_current["id"];
+                $convocatoria->fecha_creacion = date("Y-m-d H:i:s");
+                $convocatoria->active = true;
+                $convocatoria->estado = null;                
+                $convocatoria->convocatoria_padre_categoria = $post["convocatoria_padre_categoria"];                
+                if ($convocatoria->save($post) === false) {
+                    echo "error";
+                } else {
+                    echo $convocatoria->id;
+                }                
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
+
+// Editar registro
+$app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $convocatoria = Convocatorias::findFirst(json_decode($id));
+                $convocatoria->actualizado_por = $user_current["id"];
+                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                if($put["numero_estimulos"]=="")
+                {
+                    unset($put["numero_estimulos"]);
+                }                
+                if ($convocatoria->save($put) === false) {
+                    echo "error";
+                } else {
+                    echo $id;
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
+
 // Editar registro
 $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -278,6 +408,18 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if($put["numero_estimulos"]=="")
                 {
                     unset($put["numero_estimulos"]);
+                }                
+                if($put["localidad"]=="")
+                {
+                    unset($put["localidad"]);
+                }                
+                if($put["upz"]=="")
+                {
+                    unset($put["upz"]);
+                }                
+                if($put["barrio"]=="")
+                {
+                    unset($put["barrio"]);
                 }                
                 if ($convocatoria->save($put) === false) {
                     echo "error";
@@ -340,6 +482,50 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
+// Eliminar registro
+$app->delete('/delete_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $user = Convocatorias::findFirst(json_decode($id));
+                $user->active = $request->getPut('active');
+                if ($user->save($user) === false) {
+                    echo "error";
+                } else {
+                    echo "ok";
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+
+            exit;
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
+
 //Busca el registro
 $app->get('/search', function () use ($app) {
     try {
@@ -372,10 +558,10 @@ $app->get('/search', function () use ($app) {
             if(isset($convocatoria->id))
             {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
-                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4 AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id);
+                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
-                $array["upzs"]= Upzs::find("active=true AND localidad="+$convocatoria->localidad);
-                $array["barrios"]= Barrios::find("active=true AND localidad="+$convocatoria->localidad);
+                $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
+                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
             }             
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");

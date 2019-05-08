@@ -212,10 +212,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $area = Convocatoriasrecursos::findFirst(json_decode($id));
-                $area->actualizado_por = $user_current["id"];
-                $area->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($area->save($put) === false) {
+                $convocatoriasrecursos = Convocatoriasrecursos::findFirst(json_decode($id));
+                $convocatoriasrecursos->actualizado_por = $user_current["id"];
+                $convocatoriasrecursos->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($convocatoriasrecursos->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;

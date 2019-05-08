@@ -29,8 +29,6 @@ $loader->register();
 // Crear un DI
 $di = new FactoryDefault();
 
-
-
 //Set up the database service
 $di->set('db', function () use ($config) {
     return new DbAdapter(
@@ -44,68 +42,6 @@ $di->set('db', function () use ($config) {
 });
 
 $app = new Micro($di);
-
-// Recupera el registro deacuerdo al nombre de la variable
-$app->get('/select_general', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-        
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$request->get('nombre')."'");
-            $array=array();
-            foreach ($tabla_maestra as $registro) {
-                $array[]=$registro;
-            }            
-            echo json_encode(explode(",", $registro->valor));
-        }
-        else
-        {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
-}
-);
-
-
-
-
-
-
-
-// Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-        
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estados_".$request->get('nombre')."'");
-            $array=array();
-            foreach ($tabla_maestra as $registro) {
-                $array[]=$registro;
-            }            
-            echo json_encode(explode(",", $registro->valor));
-        }
-        else
-        {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
-}
-);
 
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
@@ -122,21 +58,19 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 't.nombre',
-                1 => 't.valor'
+                0 => 'a.nombre',
             );
 
-            $where .= " WHERE t.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Tablasmaestras AS t";
-            $sqlRec = "SELECT " . $columns[0] . " , ". $columns[1] ." , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',t.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',t.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tablasmaestras AS t";
+            $sqlTot = "SELECT count(*) as total FROM Requisitos AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Requisitos AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -198,14 +132,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $tablamaestra = new Tablasmaestras();
-                $tablamaestra->creado_por = $user_current["id"];
-                $tablamaestra->fecha_creacion = date("Y-m-d H:i:s");
-                $tablamaestra->active = true;
-                if ($tablamaestra->save($post) === false) {
+                $requisito = new Requisitos();
+                $requisito->creado_por = $user_current["id"];
+                $requisito->fecha_creacion = date("Y-m-d H:i:s");
+                $requisito->active = true;
+                if ($requisito->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $tablamaestra->id;
+                    echo $requisito->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -247,10 +181,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $tablamaestra = Tablasmaestras::findFirst(json_decode($id));
-                $tablamaestra->actualizado_por = $user_current["id"];
-                $tablamaestra->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($tablamaestra->save($put) === false) {
+                $requisito = Requisitos::findFirst(json_decode($id));
+                $requisito->actualizado_por = $user_current["id"];
+                $requisito->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($requisito->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -291,9 +225,9 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Tablasmaestras::findFirst(json_decode($id));
-                $user->active = false;
-                if ($user->save($user) === false) {
+                $requisito = Requisitos::findFirst(json_decode($id));
+                $requisito->active = false;
+                if ($requisito->save($requisito) === false) {
                     echo "error";
                 } else {
                     echo "ok";
@@ -323,9 +257,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $tablamaestra = Tablasmaestras::findFirst($id);
-            if (isset($tablamaestra->id)) {
-                echo json_encode($tablamaestra);
+            $requisito = Requisitos::findFirst($id);
+            if (isset($requisito->id)) {
+                echo json_encode($requisito);
             } else {
                 echo "error";
             }

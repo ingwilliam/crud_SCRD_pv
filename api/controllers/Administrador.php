@@ -469,6 +469,10 @@ $app->post('/menu', function () use ($app) {
                                     <a href="../recursosnopecuniarios/list.html">Recursos no pecuniarios</a>
                                     <a style="display: none" href="../recursosnopecuniarios/form.html">Recursos no pecuniarios</a>
                                 </li>                                                                
+                                <li>
+                                    <a href="../requisitos/list.html">Requisitos</a>
+                                    <a style="display: none" href="../requisitos/form.html">Requisitos</a>
+                                </li>                                                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
