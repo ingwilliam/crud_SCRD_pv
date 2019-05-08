@@ -560,8 +560,8 @@ $app->get('/search', function () use ($app) {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
-                $array["upzs"]= Upzs::find("active=true AND localidad="+$convocatoria->localidad);
-                $array["barrios"]= Barrios::find("active=true AND localidad="+$convocatoria->localidad);
+                $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
+                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
             }             
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
