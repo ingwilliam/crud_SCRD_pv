@@ -177,26 +177,41 @@ $app->get('/all', function () use ($app) {
                 $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
             }
             
-            //Condiciones para la consulta
+            //Condiciones para la consulta del input filter de la tabla categorias
             if (!empty($request->get("search")['value'])) {
                 if(!empty($request->get('convocatoria')))
                 {
                     $where .= " AND ( UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-                }
-                else
-                {
-                    $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                    
-                    $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                    
-                    $where .= " OR UPPER(" . $columns[8] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-                }                
+                }                                
             }
+            
+            //Condiciones para la consulta del select del buscador principal
+            if (!empty($request->get("params"))) {                
+                foreach (json_decode($request->get("params")) AS $clave=>$valor)
+                {
+                    if($clave=="nombre" && $valor!="")
+                    {
+                        $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($valor) . "%' ";
+                        $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($valor) . "%' ";
+                        $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($valor) . "%' ";
+                        $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($valor) . "%' ";
+                        $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($valor) . "%' ";                    
+                        $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($valor) . "%' ";                    
+                        $where .= " OR UPPER(" . $columns[8] . ") LIKE '%" . strtoupper($valor) . "%' )";
+                    }
+                    
+                    if($valor!="" && $clave!="nombre")
+                    {
+                        $where=$where." AND c.".$clave." = ".$valor;                            
+                    }
+                }
+            }
+            
+            
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";
+            $sqlTotEstado = "SELECT c.estado,count(c.id) as total FROM Convocatorias AS c";
             
             if(!empty($request->get('convocatoria')))
             {
@@ -211,11 +226,15 @@ $app->get('/all', function () use ($app) {
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
+                $sqlTotEstado .= $where;
                 $sqlRec .= $where;
             }
 
             //Concateno el orden y el limit para el paginador
-            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";            
+            
+            //Concateno el group by de estados
+            $sqlTotEstado .= " GROUP BY 1";
             
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -225,6 +244,7 @@ $app->get('/all', function () use ($app) {
                 "draw" => intval($request->get("draw")),
                 "recordsTotal" => intval($totalRecords["total"]),
                 "recordsFiltered" => intval($totalRecords["total"]),
+                "dataEstados" => $app->modelsManager->executeQuery($sqlTotEstado),
                 "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
             );
             //retorno el array en json
@@ -668,11 +688,6 @@ $app->get('/load_search', function () use ($app) {
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
             $array["programas"]= Programas::find("active = true");
             $array["enfoques"]=Enfoques::find("active = true");
-            $array["total_creadas"] = Convocatorias::count("estado =1 AND active = true");
-            $array["total_vistos_buenos"] = Convocatorias::count("estado =2 AND active = true");
-            $array["total_verificadas"] = Convocatorias::count("estado =3 AND active = true");
-            $array["total_aprobadas"] = Convocatorias::count("estado =4 AND active = true");
-            $array["total_publicadas"] = Convocatorias::count("estado =5 AND active = true");
             $array["estados_convocatorias"] = Estados::find(
                                                             array(
                                                                 "tipo_estado = 'convocatorias' AND active = true",
