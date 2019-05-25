@@ -59,18 +59,20 @@ $app->get('/all', function () use ($app) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'a.nombre',
+                1 => 'a.tipo_requisito',
             );
 
             $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR  UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Requisitos AS a";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Requisitos AS a";
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Requisitos AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {

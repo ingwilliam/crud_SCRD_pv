@@ -444,6 +444,12 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $convocatoria = Convocatorias::findFirst(json_decode($id));
                 $convocatoria->actualizado_por = $user_current["id"];
                 $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                if($put["tiene_categorias"]=="false")
+                {
+                    $put["diferentes_categorias"]=FALSE;
+                    $put["mismos_jurados_categorias"]=FALSE;
+                }
+                
                 if($put["numero_estimulos"]=="")
                 {
                     unset($put["numero_estimulos"]);
