@@ -54,14 +54,46 @@ $app->get('/select_convocatoria', function () use ($app) {
         
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual>0) {
+            
             $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
-            $array=$convocatoria->getConvocatoriasrecursos([
+            
+            //Valido si es especie con el fin de mostrar el nombre del recurso no pecuniario
+            if($request->get('tipo_recurso')=="Especie")
+            {
+                $array_especie=$convocatoria->getConvocatoriasrecursos([
                                                                                         'tipo_recurso = :tipo_recurso:',
                                                                                         'bind' => [
                                                                                             'tipo_recurso' => $request->get('tipo_recurso')
                                                                                         ],
                                                                                         'order'      => 'orden ASC',
-                                                                                    ]);            
+                                                                                    ]);                 
+                $array = array();
+            
+                foreach ($array_especie as $especie) {                
+                    $array_interno=array();
+                    $array_interno["id"]=$especie->id;
+                    $array_interno["orden"]=$especie->orden;
+                    $array_interno["recurso_no_pecuniario"]=$especie->recurso_no_pecuniario;
+                    $array_interno["nombre_recurso_no_pecuniario"]=$especie->getRecursosnopecuniarios()->nombre;
+                    $array_interno["valor_recurso"]=$especie->valor_recurso;
+                    $array_interno["descripcion_recurso"]=$especie->descripcion_recurso;
+                    $array[]=$array_interno;
+                }
+                                
+            }
+            else
+            {
+                $array=$convocatoria->getConvocatoriasrecursos([
+                                                                                        'tipo_recurso = :tipo_recurso:',
+                                                                                        'bind' => [
+                                                                                            'tipo_recurso' => $request->get('tipo_recurso')
+                                                                                        ],
+                                                                                        'order'      => 'orden ASC',                                                                                    ]); 
+            }
+            
+                       
+            
+            //SE QUEDO AL MOMENTO DE GUARDARLO QUE CARGUE EL NOMBRE BIEN
             echo json_encode($array);
         }
         else
@@ -176,7 +208,7 @@ $app->post('/new', function () use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -224,7 +256,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";

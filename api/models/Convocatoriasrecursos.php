@@ -17,6 +17,13 @@ class Convocatoriasrecursos extends Model
             ]
         );
         
+        //Se define relacion de N a 1 con Convocatoria Recursos NO OBLIGATORIA
+        $this->belongsTo(
+            'recurso_no_pecuniario',
+            'Recursosnopecuniarios',
+            'id'            
+        );
+        
     } 
     
 }

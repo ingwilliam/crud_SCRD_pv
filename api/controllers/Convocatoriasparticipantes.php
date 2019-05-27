@@ -234,7 +234,7 @@ $app->post('/new', function () use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo".$ex->getMessage();
@@ -286,7 +286,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo".$ex->getMessage();

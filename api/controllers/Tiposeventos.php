@@ -43,6 +43,29 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
+// Recupera todos las tipo eventos dependiendo el programa
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {            
+            $array = Tiposeventos::find("active = true AND programa=".$request->get('programa')."");            
+            echo json_encode($array);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
+
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
@@ -58,21 +81,25 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'a.nombre',
-                1 => 'a.tipo_requisito',
+                0 => 'p.nombre',
+                1 => 'd.nombre',
             );
 
-            $where .= " WHERE a.active=true";
+            $where .= " WHERE d.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR  UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Requisitos AS a";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Requisitos AS a";
+            $sqlTot = "SELECT count(*) as total FROM Tiposeventos AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
+            $sqlRec = "SELECT " . $columns[0] . " AS  programa," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposeventos AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -134,14 +161,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $requisito = new Requisitos();
-                $requisito->creado_por = $user_current["id"];
-                $requisito->fecha_creacion = date("Y-m-d H:i:s");
-                $requisito->active = true;
-                if ($requisito->save($post) === false) {
+                $modalidad = new Tiposeventos();
+                $modalidad->creado_por = $user_current["id"];
+                $modalidad->fecha_creacion = date("Y-m-d H:i:s");
+                $modalidad->active = true;
+                if ($modalidad->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $requisito->id;
+                    echo $modalidad->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -183,10 +210,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $requisito = Requisitos::findFirst(json_decode($id));
-                $requisito->actualizado_por = $user_current["id"];
-                $requisito->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($requisito->save($put) === false) {
+                $modalidad = Tiposeventos::findFirst(json_decode($id));
+                $modalidad->actualizado_por = $user_current["id"];
+                $modalidad->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($modalidad->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -227,9 +254,9 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $requisito = Requisitos::findFirst(json_decode($id));
-                $requisito->active = false;
-                if ($requisito->save($requisito) === false) {
+                $user = Tiposeventos::findFirst(json_decode($id));
+                $user->active = false;
+                if ($user->save($user) === false) {
                     echo "error";
                 } else {
                     echo "ok";
@@ -259,9 +286,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $requisito = Requisitos::findFirst($id);
-            if (isset($requisito->id)) {
-                echo json_encode($requisito);
+            $modalidad = Tiposeventos::findFirst($id);
+            if (isset($modalidad->id)) {
+                echo json_encode($modalidad);
             } else {
                 echo "error";
             }

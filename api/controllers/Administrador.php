@@ -418,6 +418,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../tiposestimulos/form.html">Tipos de estimulos</a>
                                 </li>
                                 <li>
+                                    <a href="../tiposeventos/list.html">Tipos de Eventos</a>
+                                    <a style="display: none" href="../tiposeventos/form.html">Tipos de Eventos</a>
+                                </li>                                                                
+                                <li>
                                     <a href="../estados/list.html">Estados</a>
                                     <a style="display: none" href="../estados/form.html">Estados</a>
                                 </li>
@@ -472,7 +476,7 @@ $app->post('/menu', function () use ($app) {
                                 <li>
                                     <a href="../requisitos/list.html">Requisitos</a>
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
-                                </li>                                                                
+                                </li>                                                                                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

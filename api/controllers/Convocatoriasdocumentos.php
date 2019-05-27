@@ -43,8 +43,8 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
-$app->get('/all', function () use ($app) {
+// Recupera todos las modalidades dependiendo el programa
+$app->get('/select', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -54,36 +54,67 @@ $app->get('/all', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if ($token_actual > 0) {            
+            $array = Convocatoriasdocumentos::find("active = true");            
+            echo json_encode($array);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
 
+// Recupera todos los registros
+$app->get('/all', function () use ($app) {
+    try {        
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token exisr y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {            
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'a.nombre',
-                1 => 'a.tipo_requisito',
+                0 => 'r.nombre',
+                1 => 'cd.subsanable',
+                2 => 'cd.obligatorio',
+                3 => 'cd.descripcion',
+                4 => 'cd.active',
+                5 => 'cd.convocatoria',
+                6 => 'c.nombre',
+                7 => 'cd.orden',
             );
 
-            $where .= " WHERE a.active=true";
+            $where .= " INNER JOIN Requisitos AS r ON r.id=cd.requisito";
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cd.categoria";
+            $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."'";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR  UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-            }
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+            }                                
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Requisitos AS a";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Requisitos AS a";
+            $sqlTot = "SELECT count(*) as total FROM Convocatoriasdocumentos AS cd";
+            $sqlRec = "SELECT " . $columns[0] . " AS requisito," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . "," . $columns[6] . " AS categoria," . $columns[7] . ",concat('<input title=\"',cd.id,'\" type=\"checkbox\" class=\"check_activar_',cd.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cd.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriasdocumentos AS cd";
 
-            //concatenate search sql if value exist
+            //concarnar search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
                 $sqlRec .= $where;
             }
 
-            //Concateno el orden y el limit para el paginador
+            //Concarno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+            
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -133,24 +164,24 @@ $app->post('/new', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-                $post = $app->request->getPost();
-                $requisito = new Requisitos();
-                $requisito->creado_por = $user_current["id"];
-                $requisito->fecha_creacion = date("Y-m-d H:i:s");
-                $requisito->active = true;
-                if ($requisito->save($post) === false) {
+                $post = $app->request->getPost();                                
+                $convocatoriadocumento = new Convocatoriasdocumentos();
+                $convocatoriadocumento->creado_por = $user_current["id"];
+                $convocatoriadocumento->fecha_creacion = date("Y-m-d H:i:s");
+                $convocatoriadocumento->active = true;
+                if ($convocatoriadocumento->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $requisito->id;
+                    echo $convocatoriadocumento->id;
                 }
             } else {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -183,10 +214,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $requisito = Requisitos::findFirst(json_decode($id));
-                $requisito->actualizado_por = $user_current["id"];
-                $requisito->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($requisito->save($put) === false) {
+                $convocatoriadocumento = Convocatoriasdocumentos::findFirst(json_decode($id));
+                $convocatoriadocumento->actualizado_por = $user_current["id"];
+                $convocatoriadocumento->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($convocatoriadocumento->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -195,7 +226,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -203,7 +234,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Eliminar registro
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -211,7 +242,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -223,32 +253,40 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
+        
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $requisito = Requisitos::findFirst(json_decode($id));
-                $requisito->active = false;
-                if ($requisito->save($requisito) === false) {
+                // Consultar el registro
+                $convocatoriadocumento = Convocatoriasdocumentos::findFirst(json_decode($id));                
+                if($convocatoriadocumento->active==true)
+                {
+                    $convocatoriadocumento->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriadocumento->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriadocumento->save($convocatoriadocumento) === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
-            }
-
-            exit;
+            }           
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
 
 //Busca el registro
-$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
+$app->get('/search', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -259,14 +297,24 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $requisito = Requisitos::findFirst($id);
-            if (isset($requisito->id)) {
-                echo json_encode($requisito);
-            } else {
-                echo "error";
+            //Si existe consulto la convocatoria
+            if($request->get('id'))
+            {    
+                $convocatoriadocumento = Convocatoriasdocumentos::findFirst($request->get('id'));                                
             }
+            else 
+            {
+                $convocatoriadocumento = new Convocatoriasdocumentos();
+            }
+            //Cargo la convocatoria actual
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
+            //Creo todos los array de la convocatoria cronograma
+            $array["convocatoriadocumento"]=$convocatoriadocumento;
+            $array["requisitos"]= Requisitos::find("active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'");
+            //Retorno el array
+            echo json_encode($array);       
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
