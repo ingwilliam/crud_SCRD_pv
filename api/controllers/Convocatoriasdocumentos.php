@@ -91,7 +91,8 @@ $app->get('/all', function () use ($app) {
             );
 
             $where .= " INNER JOIN Requisitos AS r ON r.id=cd.requisito";
-            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cd.categoria";
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cd.convocatoria";
+            $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
             $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."'";
             //Condiciones para la consulta
 
@@ -103,7 +104,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatoriasdocumentos AS cd";
-            $sqlRec = "SELECT " . $columns[0] . " AS requisito," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . "," . $columns[6] . " AS categoria," . $columns[7] . ",concat('<input title=\"',cd.id,'\" type=\"checkbox\" class=\"check_activar_',cd.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cd.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriasdocumentos AS cd";
+            $sqlRec = "SELECT " . $columns[0] . " AS requisito," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ,c.nombre AS categoria, cpad.nombre AS convocatoria," . $columns[7] . ",concat('<input title=\"',cd.id,'\" type=\"checkbox\" class=\"check_activar_',cd.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cd.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriasdocumentos AS cd";
 
             //concarnar search sql if value exist
             if (isset($where) && $where != '') {
@@ -166,6 +167,10 @@ $app->post('/new', function () use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();                                
                 $convocatoriadocumento = new Convocatoriasdocumentos();
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
                 $convocatoriadocumento->creado_por = $user_current["id"];
                 $convocatoriadocumento->fecha_creacion = date("Y-m-d H:i:s");
                 $convocatoriadocumento->active = true;
@@ -215,6 +220,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
                 $convocatoriadocumento = Convocatoriasdocumentos::findFirst(json_decode($id));
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $put["convocatoria"] == "" ){
+                    $put["convocatoria"]=$put["convocatoria_padre_categoria"];                    
+                }
                 $convocatoriadocumento->actualizado_por = $user_current["id"];
                 $convocatoriadocumento->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($convocatoriadocumento->save($put) === false) {
@@ -307,7 +316,7 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriadocumento = new Convocatoriasdocumentos();
             }
             //Cargo la convocatoria actual
-            $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
             //Creo todos los array de la convocatoria cronograma
             $array["convocatoriadocumento"]=$convocatoriadocumento;
             $array["requisitos"]= Requisitos::find("active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'");

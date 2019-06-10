@@ -619,7 +619,7 @@ $app->get('/search', function () use ($app) {
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
                 $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
                 $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
-                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id,'order' => 'nombre']);                
+                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);                
             }             
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
