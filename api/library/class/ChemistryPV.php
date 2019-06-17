@@ -1,7 +1,7 @@
 <?php
 
-require_once ('../atom/cmis/cmis_repository_wrapper.php');
-require_once ('../atom/cmis/cmis_service.php');
+require_once ('atom/cmis/cmis_repository_wrapper.php');
+require_once ('xatom/cmis/cmis_service.php');
 
 /**
  * Clase para gestionar los 

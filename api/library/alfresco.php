@@ -1,14 +1,14 @@
 <?php
 //LINK DE EJEMPLOS https://hotexamples.com/examples/-/CMISService/getContentStream/php-cmisservice-getcontentstream-method-examples.html
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 
 require_once ('class/ChemistryPV.php');
 
 $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom", "admin", "ingwilliam10");
 //CREAR CARPETA
-$ojj= $chemistry_alfresco->newFolder("/Sites/convocatorias", "CONRED");
+$ojj= $chemistry_alfresco->newFolder("/Sites/convocatorias", "CESARBRITTTO");
 //echo "<pre>";
 //print_r($ojj);
 
