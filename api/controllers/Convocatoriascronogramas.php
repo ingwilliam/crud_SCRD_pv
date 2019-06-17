@@ -88,22 +88,26 @@ $app->get('/all', function () use ($app) {
                 4 => 'cc.active',
                 5 => 'cc.convocatoria',
                 6 => 'c.nombre',
+                7 => 'ccat.nombre',
+                8 => 'cpad.nombre',
             );
 
             $where .= " INNER JOIN Tiposeventos AS te ON te.id=cc.tipo_evento";
-            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cc.categoria";
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cc.convocatoria";
+            $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
             $where .= " WHERE cc.active IN (true,false)";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }                                
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatoriascronogramas AS cc";
-            $sqlRec = "SELECT " . $columns[0] . " AS tipo_evento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . "," . $columns[6] . " AS categoria,concat('<input title=\"',cc.id,'\" type=\"checkbox\" class=\"check_activar_',cc.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cc.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriascronogramas AS cc";
+            $sqlRec = "SELECT " . $columns[0] . " AS tipo_evento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',cc.id,'\" type=\"checkbox\" class=\"check_activar_',cc.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cc.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriascronogramas AS cc";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -114,7 +118,7 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+            
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -133,7 +137,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -177,13 +181,21 @@ $app->post('/new', function () use ($app, $config) {
                     $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
                     $post["fecha_fin"]=$post["fecha_fin"]." ".$tabla_maestra[0]->valor;                    
                     $post["fecha_inicio"]=$post["fecha_inicio"]." ".$tabla_maestra[0]->valor;                    
-                }                
+                }
+                
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
                 $convocatoriacronograma = new Convocatoriascronogramas();
                 $convocatoriacronograma->creado_por = $user_current["id"];
                 $convocatoriacronograma->fecha_creacion = date("Y-m-d H:i:s");
                 $convocatoriacronograma->active = true;
                 if ($convocatoriacronograma->save($post) === false) {
-                    echo "error";
+                    foreach ($convocatoriacronograma->getMessages() as $message) {
+                      echo $message;
+                    }
                 } else {
                     echo $convocatoriacronograma->id;
                 }
@@ -240,7 +252,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
                     $put["fecha_fin"]=$put["fecha_fin"]." ".$tabla_maestra[0]->valor;                    
                     $put["fecha_inicio"]=$put["fecha_inicio"]." ".$tabla_maestra[0]->valor;                    
-                }                
+                }        
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $put["convocatoria"] == "" ){
+                    $put["convocatoria"]=$put["convocatoria_padre_categoria"];                    
+                }
                 $convocatoriacronograma->actualizado_por = $user_current["id"];
                 $convocatoriacronograma->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($convocatoriacronograma->save($put) === false) {
@@ -335,7 +351,7 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriacronograma = new Convocatoriascronogramas();
             }
             //Cargo la convocatoria actual
-            $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
             //Creo todos los array de la convocatoria cronograma
             $array["convocatoriacronograma"]=$convocatoriacronograma;
             $array["tipos_eventos"]= Tiposeventos::find("active=true AND programa=".$convocatoria->programa);
