@@ -4,7 +4,7 @@ use Phalcon\Mvc\Model;
 class Convocatorias extends Model
 {
     public $id;
-    
+
     public function initialize()
     {
         //Se define la relación con 1 a N con Convocatoriasrecursos
@@ -12,7 +12,26 @@ class Convocatorias extends Model
             'id',
             'Convocatoriasrecursos',
             'convocatoria'
-        );                        
-    } 
-    
+        );
+
+        //Cesar Britto
+       /*Se define la relación con 1 a N con Convocatorias, con el fin de
+       *obtener las categorias (Convocatorias)
+       */
+      $this->hasMany(
+          'id',
+          'Convocatorias',
+          'convocatoria_padre_categoria'
+      );
+
+        //Cesar Britto
+      /*Se define la relación con 1 a N con Convocatoriasrondas, con el fin
+      de obtener las rondas*/
+      $this->hasMany(
+          'id',
+          'Convocatoriasrondas',
+          'convocatoria'
+      );
+    }
+
 }

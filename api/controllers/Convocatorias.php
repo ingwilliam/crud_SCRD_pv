@@ -714,6 +714,95 @@ $app->get('/load_search', function () use ($app) {
 );
 
 
+
+/*Cesar britto
+Retorna información de id y nombre las categorias asociadas a la convocatoria */
+$app->get('/select_categorias', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $categorias=  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual != false ) {
+
+            //Si existe consulto la convocatoria
+            if($request->get('id'))
+            {
+              $convocatorias = Convocatorias::find(
+                  [
+                      "convocatoria_padre_categoria = ".$request->get('id'),
+                      'order' => 'nombre',
+                  ]
+                );
+
+                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+              foreach ( $convocatorias as $key => $value) {
+                      $categorias[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                }
+
+            }
+
+            echo json_encode($categorias);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
+
+
+/*Retorna información de id y nombre las categorias asociadas a la convocatoria */
+$app->get('/rondas', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $rondas=  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual != false ) {
+
+            //Si existe consulto la convocatoria
+            if($request->get('idcat'))
+            {
+              $rondas = Convocatoriasrondas::find(
+                  [
+                      "convocatoria= ".$request->get('idcat'),
+                      'order' => 'numero_ronda',
+                  ]
+                );
+
+                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+              /*foreach ( $convocatorias as $key => $value) {
+                      $rondas[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                }*/
+
+            }
+
+            echo json_encode($rondas);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
+
+
+
+
+
 try {
     // Gestionar la consulta
     $app->handle();
