@@ -21,6 +21,7 @@ $loader = new Loader();
 $loader->registerDirs(
         [
             APP_PATH . '/models/',
+            APP_PATH . '/library/class/',
         ]
 );
 
@@ -264,9 +265,11 @@ $app->get('/all', function () use ($app) {
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
     try {
+                
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
@@ -295,8 +298,21 @@ $app->post('/new', function () use ($app, $config) {
                 $convocatoria->estado = 1;
                 if ($convocatoria->save($post) === false) {
                     echo "error";
-                } else {
-                    echo $convocatoria->id;
+                } else {                                        
+                    //Se crea la carpeta principal de la convocatoria
+                    if( $chemistry_alfresco->newFolder("/Sites/convocatorias", $convocatoria->id) == "ok" )
+                    {
+                        //Se crea las carpetas necesarias para los posibles archivos
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "documentacion");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "listados");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "avisos");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "propuestas");                                                
+                        echo $convocatoria->id;
+                    }
+                    else
+                    {
+                        echo "error_alfresco";
+                    }                    
                 }
             } else {
                 echo "acceso_denegado";

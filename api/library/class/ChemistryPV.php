@@ -1,7 +1,7 @@
 <?php
 
-require_once ('atom/cmis/cmis_repository_wrapper.php');
-require_once ('xatom/cmis/cmis_service.php');
+require_once ('../library/atom/cmis/cmis_repository_wrapper.php');
+require_once ('../library/atom/cmis/cmis_service.php');
 
 /**
  * Clase para gestionar los 
@@ -17,11 +17,23 @@ class ChemistryPV {
         $this->client = new CMISService($url, $username, $password);
     }
 
+    function searchFolder($repository) {
+        try {
+            echo $this->client->getObjectByPath($repository)->id;                        
+        } catch (CmisObjectNotFoundException $e) {
+            return "Error 2: ".$e->getCode();
+        } catch (CmisRuntimeException $e) {
+            return "Error 1: ".$e->getCode();
+        } catch (Exception $ex) {
+            return "Error: método";
+        }
+    }
+    
     function newFolder($repository, $new_folder) {
         try {
             $myfolder = $this->client->getObjectByPath($repository);
             $this->client->createFolder($myfolder->id, $new_folder);            
-            echo "ok";
+            return "ok";
         } catch (CmisObjectNotFoundException $e) {
             return "Error 2: ".$e->getCode();
         } catch (CmisRuntimeException $e) {
@@ -38,9 +50,9 @@ class ChemistryPV {
         } catch (CmisObjectNotFoundException $e) {
             return "Error 2: ".$e->getCode();
         } catch (CmisRuntimeException $e) {
-            return "Error 1: ".$e->getCode();
+            return "Error 1: ".$e->getCode;
         } catch (Exception $ex) {
-            return "Error: método";
+            return "Error: método".$ex->getMessage();
         }
     }
 
