@@ -86,7 +86,7 @@ $app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
 );
 
 /* Verificar si un usuario puede cambiar el estado a una convocatoria
- * @param estado 1 Creada, 2 Visto bueno, 3 Verificada, 4 Aprobada, 5 Publicada 
+ * @param estado 1 Creada, 2 Visto bueno, 3 Verificada, 4 Aprobada, 5 Publicada
  */
 $app->get('/verificar_estado', function () use ($app, $config) {
 
@@ -153,14 +153,14 @@ $app->get('/all', function () use ($app) {
                 2 => 'a.nombre',
                 3 => 'l.nombre',
                 4 => 'en.nombre',
-                5 => 'c.nombre',                
-                6 => 'c.descripcion',                
+                5 => 'c.nombre',
+                6 => 'c.descripcion',
                 7 => 'p.nombre',
-                8 => 'es.nombre',                
+                8 => 'es.nombre',
             );
 
-            
-            
+
+
             if(!empty($request->get('convocatoria')))
             {
                 $where .= " WHERE c.active IN (true,false)";
@@ -176,18 +176,18 @@ $app->get('/all', function () use ($app) {
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
                 $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
             }
-            
+
             //Condiciones para la consulta del input filter de la tabla categorias
             if (!empty($request->get("search")['value'])) {
                 if(!empty($request->get('convocatoria')))
                 {
                     $where .= " AND ( UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-                }                                
+                }
             }
-            
+
             //Condiciones para la consulta del select del buscador principal
-            if (!empty($request->get("params"))) {                
+            if (!empty($request->get("params"))) {
                 foreach (json_decode($request->get("params")) AS $clave=>$valor)
                 {
                     if($clave=="nombre" && $valor!="")
@@ -196,23 +196,23 @@ $app->get('/all', function () use ($app) {
                         $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($valor) . "%' ";
                         $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($valor) . "%' ";
                         $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($valor) . "%' ";
-                        $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($valor) . "%' ";                    
-                        $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($valor) . "%' ";                    
+                        $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($valor) . "%' ";
+                        $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($valor) . "%' ";
                         $where .= " OR UPPER(" . $columns[8] . ") LIKE '%" . strtoupper($valor) . "%' )";
                     }
-                    
+
                     if($valor!="" && $clave!="nombre")
                     {
-                        $where=$where." AND c.".$clave." = ".$valor;                            
+                        $where=$where." AND c.".$clave." = ".$valor;
                     }
                 }
             }
-            
-            
+
+
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";
             $sqlTotEstado = "SELECT c.estado,count(c.id) as total FROM Convocatorias AS c";
-            
+
             if(!empty($request->get('convocatoria')))
             {
                 $sqlRec = "SELECT ". $columns[5] . "," . $columns[6] . ",concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
@@ -221,7 +221,7 @@ $app->get('/all', function () use ($app) {
             {
                 $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input onclick=\"activar_categoria(,c.id,)\" type=\"checkbox\" class=\"check_activar_',c.active,'\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',c.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS c";
             }
-            
+
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
@@ -231,12 +231,12 @@ $app->get('/all', function () use ($app) {
             }
 
             //Concateno el orden y el limit para el paginador
-            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";            
-            
-            
+            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
+
             //Concateno el group by de estados
             $sqlTotEstado .= " GROUP BY 1";
-            
+
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -319,7 +319,7 @@ $app->post('/new_categoria', function () use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -342,13 +342,13 @@ $app->post('/new_categoria', function () use ($app, $config) {
                 $convocatoria->creado_por = $user_current["id"];
                 $convocatoria->fecha_creacion = date("Y-m-d H:i:s");
                 $convocatoria->active = true;
-                $convocatoria->estado = null;                
-                $convocatoria->convocatoria_padre_categoria = $post["convocatoria_padre_categoria"];                
+                $convocatoria->estado = null;
+                $convocatoria->convocatoria_padre_categoria = $post["convocatoria_padre_categoria"];
                 if ($convocatoria->save($post) === false) {
                     echo "error";
                 } else {
                     echo $convocatoria->id;
-                }                
+                }
             } else {
                 echo "acceso_denegado";
             }
@@ -395,7 +395,7 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if($put["numero_estimulos"]=="")
                 {
                     unset($put["numero_estimulos"]);
-                }                
+                }
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
@@ -449,23 +449,23 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $put["diferentes_categorias"]=FALSE;
                     $put["mismos_jurados_categorias"]=FALSE;
                 }
-                
+
                 if($put["numero_estimulos"]=="")
                 {
                     unset($put["numero_estimulos"]);
-                }                
+                }
                 if($put["localidad"]=="")
                 {
                     unset($put["localidad"]);
-                }                
+                }
                 if($put["upz"]=="")
                 {
                     unset($put["upz"]);
-                }                
+                }
                 if($put["barrio"]=="")
                 {
                     unset($put["barrio"]);
-                }                
+                }
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
@@ -585,16 +585,16 @@ $app->get('/search', function () use ($app) {
         if ($token_actual > 0) {
             //Si existe consulto la convocatoria
             if($request->get('id'))
-            {    
+            {
                 $convocatoria = Convocatorias::findFirst($request->get('id'));
             }
-            else 
+            else
             {
                 $convocatoria = new Convocatorias();
             }
             //Creo todos los array de la convocatoria
             $array["convocatoria"]=$convocatoria;
-            
+
             //Ejemplo de como llamar los objetos relacionados
             /*
             $array["barrio_w"]= Barrios::findFirst("id=1");
@@ -605,10 +605,10 @@ $app->get('/search', function () use ($app) {
             $array["barrio_localidad_ciudad_obj_w"]= $array["barrio_w"]->getLocalidades()->getCiudades();
             $array["barrio_localidad_ciudad_nombre_w"]= $array["barrio_w"]->getLocalidades()->getCiudades()->nombre;
             */
-            
+
             $array["programas"]= Programas::find("active=true");
-            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");                                   
-            $array["coberturas"]= Coberturas::find("active=true");            
+            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+            $array["coberturas"]= Coberturas::find("active=true");
             $array["localidades"]= Localidades::find("active=true");
             $array["upzs"]=array();
             $array["barrios"]=array();
@@ -618,20 +618,20 @@ $app->get('/search', function () use ($app) {
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
                 $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
-                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
-                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);                
-            }             
+                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
+                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);
+            }
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
-            $array["areas"]= Areas::find("active=true");            
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");            
+            $array["areas"]= Areas::find("active=true");
+            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");
             $array["cantidad_perfil_jurados"] = explode(",", $tabla_maestra[0]->valor);
             $array["tipos_convenios"]= Tiposconvenios::find("active=true");
             $array["tipos_estimulos"]= Tiposestimulos::find("active=true");
             $array["entidades"]= Entidades::find("active=true");
             $array["areas_conocimientos"]= Areasconocimientos::find("active=true AND id<>9");
             $array["niveles_educativos"]= Niveleseducativos::find("active=true");
-            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");            
+            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");
             $array["distribuciones_bolsas"]= $convocatoria->getConvocatoriasrecursos([
                                                                                         'tipo_recurso = :tipo_recurso:',
                                                                                         'bind' => [
@@ -645,10 +645,10 @@ $app->get('/search', function () use ($app) {
                                                                                             'tipo_recurso' => 'Especie'
                                                                                         ],
                                                                                         'order'      => 'orden ASC',
-                                                                                    ]);      
+                                                                                    ]);
             $array["distribuciones_especies"] = array();
-            
-            foreach ($array_distribuciones_especies as $especie) {                
+
+            foreach ($array_distribuciones_especies as $especie) {
                 $array_interno=array();
                 $array_interno["id"]=$especie->id;
                 $array_interno["orden"]=$especie->orden;
@@ -658,13 +658,13 @@ $app->get('/search', function () use ($app) {
                 $array_interno["descripcion_recurso"]=$especie->descripcion_recurso;
                 $array["distribuciones_especies"][]=$array_interno;
             }
-            
-            
+
+
             $array["recursos_no_pecunarios"]= Recursosnopecuniarios::find("active=true");
             for($i = date("Y"); $i >= 2016; $i--){
                 $array["anios"][] = $i;
-            } 
-            echo json_encode($array);            
+            }
+            echo json_encode($array);
         } else {
             echo "error_token";
         }
@@ -690,7 +690,7 @@ $app->get('/load_search', function () use ($app) {
             $array=array();
             for($i = date("Y"); $i >= 2016; $i--){
                 $array["anios"][] = $i;
-            }            
+            }
             $array["entidades"]= Entidades::find("active = true");
             $array["areas"]= Areas::find("active = true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
@@ -732,17 +732,24 @@ $app->get('/select_categorias', function () use ($app) {
             //Si existe consulto la convocatoria
             if($request->get('id'))
             {
-              $convocatorias = Convocatorias::find(
-                  [
-                      "convocatoria_padre_categoria = ".$request->get('id'),
-                      'order' => 'nombre',
-                  ]
-                );
+                //Valida que la convocatoria tenga categorias
+                if( Convocatorias::count( "id=".$request->get('id')." AND tiene_categorias = true" ) > 0  ){
+                  
+                  $convocatorias = Convocatorias::find(
+                      [
+                          "convocatoria_padre_categoria = ".$request->get('id'),
+                          'order' => 'nombre',
+                      ]
+                    );
 
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-              foreach ( $convocatorias as $key => $value) {
-                      $categorias[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                    //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+                  foreach ( $convocatorias as $key => $value) {
+                          $categorias[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                    }
+
                 }
+
+
 
             }
 

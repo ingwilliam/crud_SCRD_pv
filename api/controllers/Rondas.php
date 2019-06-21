@@ -221,7 +221,7 @@ $app->post('/new', function () use ($app, $config) {
 );
 
 // Editar registro
-/*
+
 $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -249,10 +249,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $area = Entidades::findFirst(json_decode($id));
-                $area->actualizado_por = $user_current["id"];
-                $area->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($area->save($put) === false) {
+                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
+                $ronda->actualizado_por = $user_current["id"];
+                $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($ronda->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -268,11 +268,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
-*/
 
 
-// Eliminar registro
-/*
+
+
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -280,7 +280,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -295,30 +294,37 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $user = Entidades::findFirst(json_decode($id));
-                $user->active = false;
-                if ($user->save($user) === false) {
+                // Consultar el registro
+                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
+                if($ronda->active==true)
+                {
+                    $ronda->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $ronda->active=true;
+                    $retorna="Si";
+                }
+
+                if ($ronda->save() === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
             }
-
-            exit;
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
-*/
 
 //Busca el registro
-/*
+
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -330,9 +336,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $area = Entidades::findFirst($id);
-            if (isset($area->id)) {
-                echo json_encode($area);
+            $ronda = Convocatoriasrondas::findFirst($id);
+            if (isset($ronda->id)) {
+                echo json_encode($ronda);
             } else {
                 echo "error";
             }
@@ -345,7 +351,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     }
 }
 );
-*/
+
 
 /*Retorna información de id y nombre las categorias asociadas a la convocatoria */
 /*
