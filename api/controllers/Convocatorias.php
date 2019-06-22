@@ -126,7 +126,7 @@ $app->get('/verificar_estado', function () use ($app, $config) {
             }
             echo json_encode($usuariosperfiles->id);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -171,9 +171,9 @@ $app->get('/all', function () use ($app) {
             {
                 $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
                 $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
-                $where .= " INNER JOIN Areas AS a ON a.id=c.area";
-                $where .= " INNER JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
-                $where .= " INNER JOIN Enfoques AS en ON en.id=c.enfoque";
+                $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
+                $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
+                $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
                 $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
             }
@@ -491,7 +491,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo".$ex->getMessage();
@@ -633,8 +633,11 @@ $app->get('/search', function () use ($app) {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
-                $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
-                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
+                if(isset($convocatoria->localidad))
+                {
+                    $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
+                    $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
+                }                
                 $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);                
             }             
             $array["enfoques"]= Enfoques::find("active=true");
@@ -686,7 +689,7 @@ $app->get('/search', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo".$ex->getMessage();
+        echo "error_metodo";
     }
 }
 );

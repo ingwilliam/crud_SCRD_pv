@@ -77,6 +77,7 @@ $app->get('/select_convocatoria', function () use ($app) {
                     $array_interno["nombre_recurso_no_pecuniario"]=$especie->getRecursosnopecuniarios()->nombre;
                     $array_interno["valor_recurso"]=$especie->valor_recurso;
                     $array_interno["descripcion_recurso"]=$especie->descripcion_recurso;
+                    $array_interno["active"]=$especie->active;
                     $array[]=$array_interno;
                 }
                                 
@@ -98,7 +99,7 @@ $app->get('/select_convocatoria', function () use ($app) {
         }
         else
         {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo".$ex->getMessage();
@@ -310,7 +311,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             exit;
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
