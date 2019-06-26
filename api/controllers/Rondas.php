@@ -421,19 +421,28 @@ $app->get('/all_convocatoria', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
-          $convocatorias = Convocatorias::find(
-            [
-              "convocatoria_padre_categoria = ".$request->get('idcat')
-            ]
 
-          );
+          //validar si tiene $categorias
+          $convocatoria = Convocatorias::findFirst($request->get('idcat'));
 
-          //id relacionados con las categorias(convocatoria)
-          foreach ($convocatorias as $convocatoria) {
-            array_push($array, $convocatoria->id);
+          if( $convocatoria->tiene_categorias){
+
+            $convocatorias = Convocatorias::find(
+              [
+                "convocatoria_padre_categoria = ".$request->get('idcat')
+              ]
+            );
+
+            //id relacionados con las categorias(convocatoria)
+            foreach ($convocatorias as $conv) {
+              array_push($array, $conv->id);
+            }
+
+              //array_push($array, $convocatoria->id);
+          }else{
+              array_push($array, $convocatoria->id);
           }
 
-        //  echo "string".print_r($array);
 
 
           //resultado con filtro

@@ -190,20 +190,22 @@ $app->post('/new', function () use ($app, $config) {
                 //$area->fecha_creacion = date("Y-m-d H:i:s");
                 //$area->active = true;
 
-                $ronda = new Convocatoriasrondas();
-                $ronda->creado_por = $user_current["id"];
-                $ronda->fecha_creacion = date("Y-m-d H:i:s");
-                $ronda->active = true;
+                $criterio = new Convocatoriasrondascriterios();
+                $criterio->creado_por = $user_current["id"];
+                $criterio->fecha_creacion = date("Y-m-d H:i:s");
+                $criterio->active = true;
 
 
-                if ($ronda->save($post) === false) {
+                if ($criterio->save($post) === false) {
 
-                  /*  foreach ($ronda->getMessages() as $message) {
+                    /*
+                    foreach ($criterio->getMessages() as $message) {
                       echo $message;
-                    }*/
+                    }
+                    */
                     echo "error";
                 } else {
-                    echo $ronda->id;
+                    echo $criterio->id;
                 }
 
 
@@ -249,10 +251,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
-                $ronda->actualizado_por = $user_current["id"];
-                $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($ronda->save($put) === false) {
+                $criterio = Convocatoriasrondascriterios::findFirst(json_decode($id));
+                $criterio->actualizado_por = $user_current["id"];
+                $criterio->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                if ($criterio->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -295,19 +298,19 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el registro
-                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
-                if($ronda->active==true)
+                $criterio = Convocatoriasrondascriterios::findFirst(json_decode($id));
+                if($criterio->active==true)
                 {
-                    $ronda->active=false;
+                    $criterio->active=false;
                     $retorna="No";
                 }
                 else
                 {
-                    $ronda->active=true;
+                    $criterio->active=true;
                     $retorna="Si";
                 }
 
-                if ($ronda->save() === false) {
+                if ($criterio->save() === false) {
                     echo "error";
                 } else {
                     echo $retorna;
@@ -336,9 +339,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $ronda = Convocatoriasrondas::findFirst($id);
-            if (isset($ronda->id)) {
-                echo json_encode($ronda);
+            $criterio = Convocatoriasrondascriterios::findFirst($id);
+            if (isset($criterio->id)) {
+                echo json_encode($criterio);
             } else {
                 echo "error";
             }
@@ -421,7 +424,7 @@ $app->get('/all_criterios_ronda', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
-/*
+          /*
           $convocatorias = Convocatorias::find(
             [
               "convocatoria_padre_categoria = ".$request->get('idcat')
@@ -436,7 +439,7 @@ $app->get('/all_criterios_ronda', function () use ($app) {
 
         //  echo "string".print_r($array);
 
-*/
+        */
           //resultado con filtro
           $criterios = Convocatoriasrondascriterios::find(
               [
