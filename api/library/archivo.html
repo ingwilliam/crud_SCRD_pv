@@ -1,0 +1,58 @@
+<?php ?>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Imagen Rest</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>   
+        <script src="js/bootstrap.min.js" type="text/javascript"></script>   
+        <script type="text/javascript">
+            $(document).ready(function ()
+            {
+                $('input[type="file"]').change(function (evt) {
+
+                    var f = evt.target.files[0];
+                    var reader = new FileReader();
+
+                    // Cierre para capturar la información del archivo.
+                    reader.onload = function (fileLoadedEvent) {
+                        var srcData = fileLoadedEvent.target.result; // <--- data: base64
+                        var srcName = f.name;
+                        var srcSize = f.size;
+                        var srcType = f.type;
+                        $.post("http://localhost/Chemistry-Convocatorias/archivo_cargar.php", {srcData: srcData, srcName: srcName, srcSize: srcSize, srcType: srcType}).done(function (data) {
+
+                        });
+                    };
+                     // Leer en el archivo como una URL de datos.                
+                    reader.readAsDataURL(f);
+                });
+
+
+
+            });
+            
+        </script>   
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col s12 m6 l6">
+                    <div class="col s12">                        
+                        <input type="file"/>                        
+                        <input type="file"/>                        
+                        <input type="file"/>                        
+                    </div>
+                    <div class="col s12">
+                        <div id="imgCont">
+
+                        </div>
+                    </div>                    
+                </div>                
+            </div>
+        </div> 
+    </body>
+</html>

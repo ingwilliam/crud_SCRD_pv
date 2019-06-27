@@ -61,7 +61,7 @@ $app->get('/select', function () use ($app) {
 
             echo json_encode($robots);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";

@@ -60,7 +60,7 @@ $app->get('/select', function () use ($app) {
 
             echo json_encode($select);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo". $ex->getMessage();
@@ -84,7 +84,7 @@ $app->get('/select_form_convocatoria', function () use ($app) {
             $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$request->get('convocatoria')." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
             echo json_encode($select);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo". $ex->getMessage();
@@ -338,7 +338,7 @@ $app->delete('/delete', function () use ($app, $config) {
                 echo "acceso_denegado";
             }           
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -392,7 +392,7 @@ $app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $con
 
             exit;
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";

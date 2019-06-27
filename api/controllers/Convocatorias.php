@@ -21,6 +21,7 @@ $loader = new Loader();
 $loader->registerDirs(
         [
             APP_PATH . '/models/',
+            APP_PATH . '/library/class/',
         ]
 );
 
@@ -125,7 +126,7 @@ $app->get('/verificar_estado', function () use ($app, $config) {
             }
             echo json_encode($usuariosperfiles->id);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -170,9 +171,9 @@ $app->get('/all', function () use ($app) {
             {
                 $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
                 $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
-                $where .= " INNER JOIN Areas AS a ON a.id=c.area";
-                $where .= " INNER JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
-                $where .= " INNER JOIN Enfoques AS en ON en.id=c.enfoque";
+                $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
+                $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
+                $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
                 $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
             }
@@ -264,9 +265,11 @@ $app->get('/all', function () use ($app) {
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
     try {
+                
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
@@ -295,8 +298,21 @@ $app->post('/new', function () use ($app, $config) {
                 $convocatoria->estado = 1;
                 if ($convocatoria->save($post) === false) {
                     echo "error";
-                } else {
-                    echo $convocatoria->id;
+                } else {                                        
+                    //Se crea la carpeta principal de la convocatoria
+                    if( $chemistry_alfresco->newFolder("/Sites/convocatorias", $convocatoria->id) == "ok" )
+                    {
+                        //Se crea las carpetas necesarias para los posibles archivos
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "documentacion");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "listados");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "avisos");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "propuestas");                                                
+                        echo $convocatoria->id;
+                    }
+                    else
+                    {
+                        echo "error_alfresco";
+                    }                    
                 }
             } else {
                 echo "acceso_denegado";
@@ -475,7 +491,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo".$ex->getMessage();
@@ -617,10 +633,13 @@ $app->get('/search', function () use ($app) {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
-                $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
-                $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
-                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);
-            }
+                if(isset($convocatoria->localidad))
+                {
+                    $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
+                    $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
+                }                
+                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);                
+            }             
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
             $array["areas"]= Areas::find("active=true");
@@ -670,7 +689,7 @@ $app->get('/search', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo".$ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
