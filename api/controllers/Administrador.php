@@ -79,6 +79,13 @@ $app->post('/menu', function () use ($app) {
             
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
             
+            //Consultar todos los permiso del menu participante
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Menu Participante' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+            
+            $permisos_menu_participante = $app->modelsManager->executeQuery($phql);
+            
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -489,7 +496,7 @@ $app->post('/menu', function () use ($app) {
                         
                         $style_update="display: none";
                         $style_new="";
-                        if(($request->getPost('modulo')=="convocatoria") AND $request->getPost('id')!="")
+                        if($request->getPost('id')!="")
                         {
                             $style_update="";
                             $style_new="display: none";
@@ -515,6 +522,34 @@ $app->post('/menu', function () use ($app) {
                         <?php
                         }
                         ?>
+                        <?php
+                        if(count($permisos_menu_participante)>0)
+                        {    
+                        ?>
+                        <li>
+                            <a href="../datosaccesos/form.html"><i class="fa fa-lock fa-fw"></i> Cambiar contraseña</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-users fa-fw"></i> Perfiles del participante<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="../perfilesparticipantes/persona_natural.html">Persona natural</a>                                    
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/persona_juridica.html">Persona jurídica</a>                                    
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/agrupacion.html">Agrupación</a>                                    
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/jurado.html">Jurado</a>                                    
+                                </li>                                
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
@@ -522,7 +557,7 @@ $app->post('/menu', function () use ($app) {
             <!-- /.navbar-static-side -->
             <?php
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo" . $ex;

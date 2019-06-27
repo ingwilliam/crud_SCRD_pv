@@ -99,7 +99,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatoriasanexos AS ca";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<input title=\"',ca.id,'\" type=\"checkbox\" class=\"check_activar_',ca.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',ca.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriasanexos AS ca";
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<input title=\"',ca.id,'\" type=\"checkbox\" class=\"check_activar_',ca.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',ca.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button><button title=\"',ca.id_alfresco,'\" type=\"button\" class=\"btn btn-primary download_file\"><span class=\"glyphicon glyphicon-download-alt\"></span></button>') as acciones FROM Convocatoriasanexos AS ca";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -353,6 +353,31 @@ $app->get('/search', function () use ($app, $config) {
             
             //Retorno el array
             echo json_encode($array);       
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+//WILLIAM ARREGLAR DEBIDO A QUE NO ESTA DESCARGADO EL TIPO DE ARCHIVO
+$app->post('/download_file', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
+        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            echo $chemistry_alfresco->download($request->getPost('cod'));            
         } else {
             echo "error_token";
         }
