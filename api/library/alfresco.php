@@ -7,6 +7,13 @@ ini_set('display_errors', '1');
 require_once ('class/ChemistryPV.php');
 
 $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom", "admin", "ingwilliam10");
+
+//Validar si existe la carpeta creada
+$ojj= $chemistry_alfresco->searchFolder("/Sites/convocatorias/App");
+echo "<pre>";
+print_r($ojj);
+
+
 //CREAR CARPETA
 $ojj= $chemistry_alfresco->newFolder("/Sites/convocatorias", "CESARBRITTTO");
 //echo "<pre>";

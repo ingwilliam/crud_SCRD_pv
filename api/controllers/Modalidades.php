@@ -58,7 +58,7 @@ $app->get('/select', function () use ($app) {
             $array = Modalidades::find("active = true AND programa=".$request->get('programa')."");            
             echo json_encode($array);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo". $ex->getMessage();
