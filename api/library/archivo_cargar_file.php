@@ -9,13 +9,13 @@
         $fileType = $valor['type'];
         $fileNameCmps = explode(".", $valor["name"]);
         $fileExtension = strtolower(end($fileNameCmps));                                
-        $fileName = "file_".$i.".".$fileExtension;
+        $fileName = "file_".date("YmdHis").".".$fileExtension;
         $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom", "admin", "ingwilliam10");        
-        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/App/", $fileName, file_get_contents($fileTmpPath), $fileType);    
-        move_uploaded_file($fileTmpPath,"/archivos_jurados/".$fileName);
+        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/App/", $fileName, file_get_contents($fileTmpPath), trim($fileType));    
+        //move_uploaded_file($fileTmpPath,"/archivos_jurados/".$fileName);
         print_r($return);
-        echo "<br/>";echo "<br/>";                
-        $i++;
+        exit;
+        echo "<br/>";echo "<br/>";                        
     }
     exit;
     //error_reporting(E_ALL);

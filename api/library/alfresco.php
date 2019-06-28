@@ -8,14 +8,20 @@ require_once ('class/ChemistryPV.php');
 
 $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom", "admin", "ingwilliam10");
 
+$chemistry_alfresco->download("63c92781-148e-4deb-9aed-3b636d086756;1.0");
+
+
+
+//print_r($chemistry_alfresco->renameFile("53386057-3f91-4d64-b5c7-05ee1c9344d9;1.0", "BARBOSA.pdf"));
+
 //Validar si existe la carpeta creada
-$ojj= $chemistry_alfresco->searchFolder("/Sites/convocatorias/App");
-echo "<pre>";
-print_r($ojj);
+//$ojj= $chemistry_alfresco->searchFolder("/Sites/convocatorias/App");
+//echo "<pre>";
+//print_r($ojj);
 
 
 //CREAR CARPETA
-$ojj= $chemistry_alfresco->newFolder("/Sites/convocatorias", "CESARBRITTTO");
+//$ojj= $chemistry_alfresco->newFolder("/Sites/convocatorias", "CESARBRITTTO");
 //echo "<pre>";
 //print_r($ojj);
 
