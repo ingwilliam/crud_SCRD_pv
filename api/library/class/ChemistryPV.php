@@ -55,17 +55,41 @@ class ChemistryPV {
             return "Error: método".$ex->getMessage();
         }
     }
+    
+    public function renameFile($objectId, $name)
+    {
+        $properties = array(
+            'cmis:name' => $name
+        );
+        $options = array(
+            'title' => $name,
+            'summary' => $name,
+        );
+        return $this->client->updateProperties($objectId, $properties, $options);
+    }
 
     function download($object_id) {
         try {
             $props = $this->client->getProperties($object_id);
-            $file_name = $props->properties['cmis:name'];
-            $file_size = $props->properties['cmis:contentStreamLength'];
-            $mime_type = $props->properties['cmis:contentStreamMimeType'];
+            $file_name = trim($props->properties['cmis:name']);
+            $file_size = trim($props->properties['cmis:contentStreamLength']);
+            $mime_type = trim($props->properties['cmis:contentStreamMimeType']);
             header('Content-type: ' . $mime_type);
             header('Content-Disposition: attachment; filename="' . $file_name . '"');
             header("Content-length: {$file_size}");
-            echo $this->client->getContentStream($object_id);            
+            return $this->client->getContentStream($object_id);            
+        } catch (CmisObjectNotFoundException $e) {
+            return "Error 2: ".$e->getCode();
+        } catch (CmisRuntimeException $e) {
+            return "Error 1: ".$e->getCode();
+        } catch (Exception $ex) {
+            return "Error: método";
+        }
+    }
+    
+    function view_objet($object_id) {
+        try {
+            return $this->client->getObject($object_id);            
         } catch (CmisObjectNotFoundException $e) {
             return "Error 2: ".$e->getCode();
         } catch (CmisRuntimeException $e) {

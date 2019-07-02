@@ -375,8 +375,7 @@ $app->post('/download_file', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            
+        if ($token_actual > 0) {            
             echo $chemistry_alfresco->download($request->getPost('cod'));            
         } else {
             echo "error_token";

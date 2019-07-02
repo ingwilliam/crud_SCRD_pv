@@ -225,9 +225,19 @@ $app->get('/search', function () use ($app, $config) {
             $array["sexo"]= Sexos::find("active=true");
             $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
             $array["identidad_genero"]= Identidadesgeneros::find("active=true");
-            $array["grupo_etnico"]= Gruposetnicos::find("active=true");
-            $array["ciudad"]= Ciudades::find("active=true");
-            $array["barrio"]= Barrios::find("active=true");
+            $array["grupo_etnico"]= Gruposetnicos::find("active=true");            
+            $array_ciudades=array();
+            foreach( Ciudades::find("active=true") as $value )
+            {
+                $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);                
+            }            
+            $array["ciudad"]=$array_ciudades; 
+            $array_barrios=array();
+            foreach( Barrios::find("active=true") as $value )
+            {
+                $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);                
+            }
+            $array["barrio"]= $array_barrios;
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
             
