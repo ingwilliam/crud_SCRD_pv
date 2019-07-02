@@ -8,7 +8,11 @@ require_once ('class/ChemistryPV.php');
 
 $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-default-/public/cmis/versions/1.0/atom", "admin", "ingwilliam10");
 
-$chemistry_alfresco->download("63c92781-148e-4deb-9aed-3b636d086756;1.0");
+echo "<pre>";
+print_r($chemistry_alfresco->view_objet("63c92781-148e-4deb-9aed-3b636d086756;1.0"));
+echo ""
+print_r($chemistry_alfresco->view_objet("63c92781-148e-4deb-9aed-3b636d086756;1.0"));
+
 
 
 
