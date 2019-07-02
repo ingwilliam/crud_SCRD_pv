@@ -57,35 +57,35 @@ $app->post('/menu', function () use ($app) {
         if ($token_actual > 0) {
             //Extraemos el usuario del token
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consultar todos los permiso del panel de seguridad
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Panel de Seguridad' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_panel_de_seguridad = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso de la administración
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Administración' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_administracion = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso de la administración
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Convocatorias' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso del menu participante
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Menu Participante' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_menu_participante = $app->modelsManager->executeQuery($phql);
-            
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -335,7 +335,7 @@ $app->post('/menu', function () use ($app) {
                         </li>
                         <?php
                         if(count($permisos_panel_de_seguridad)>0)
-                        {    
+                        {
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-lock fa-fw"></i> Panel de Seguridad<span class="fa arrow"></span></a>
@@ -345,7 +345,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../usuarios/form.html">Usuarios</a>
                                 </li>
                                 <li>
-                                    <a href="../seguridad/list.html">Seguridad</a>                    
+                                    <a href="../seguridad/list.html">Seguridad</a>
                                 </li>
                                 <li>
                                     <a href="../perfiles/list.html">Perfiles</a>
@@ -353,7 +353,7 @@ $app->post('/menu', function () use ($app) {
                                 </li>
                                 <li>
                                     <a href="../modulos/list.html">Modulos</a>
-                                    <a style="display: none" href="../modulos/form.html">Modulos</a>                                    
+                                    <a style="display: none" href="../modulos/form.html">Modulos</a>
                                 </li>
                                 <li>
                                     <a href="../permisos/list.html">Permisos</a>
@@ -367,7 +367,7 @@ $app->post('/menu', function () use ($app) {
                         ?>
                         <?php
                         if(count($permisos_administracion)>0)
-                        {    
+                        {
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-table fa-fw"></i> Administracion<span class="fa arrow"></span></a>
@@ -381,7 +381,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../paises/form.html">Paises</a>
                                 </li>
                                 <li>
-                                    <a href="../departamentos/list.html">Departamentos</a>                    
+                                    <a href="../departamentos/list.html">Departamentos</a>
                                     <a style="display: none" href="../departamentos/form.html">Departamentos</a>
                                 </li>
                                 <li>
@@ -390,7 +390,7 @@ $app->post('/menu', function () use ($app) {
                                 </li>
                                 <li>
                                     <a href="../localidades/list.html">Localidades</a>
-                                    <a style="display: none" href="../localidades/form.html">Localidades</a>                                    
+                                    <a style="display: none" href="../localidades/form.html">Localidades</a>
                                 </li>
                                 <li>
                                     <a href="../upzs/list.html">Upzs</a>
@@ -427,7 +427,7 @@ $app->post('/menu', function () use ($app) {
                                 <li>
                                     <a href="../tiposeventos/list.html">Tipos de Eventos</a>
                                     <a style="display: none" href="../tiposeventos/form.html">Tipos de Eventos</a>
-                                </li>                                                                
+                                </li>
                                 <li>
                                     <a href="../estados/list.html">Estados</a>
                                     <a style="display: none" href="../estados/form.html">Estados</a>
@@ -475,15 +475,15 @@ $app->post('/menu', function () use ($app) {
                                 <li>
                                     <a href="../coberturas/list.html">Coberturas</a>
                                     <a style="display: none" href="../coberturas/form.html">Coberturas</a>
-                                </li>                                                                
+                                </li>
                                 <li>
                                     <a href="../recursosnopecuniarios/list.html">Recursos no pecuniarios</a>
                                     <a style="display: none" href="../recursosnopecuniarios/form.html">Recursos no pecuniarios</a>
-                                </li>                                                                
+                                </li>
                                 <li>
                                     <a href="../requisitos/list.html">Requisitos</a>
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
-                                </li>                                                                                                
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -492,8 +492,8 @@ $app->post('/menu', function () use ($app) {
                         ?>
                         <?php
                         if(count($permisos_convocatorias)>0)
-                        {    
-                        
+                        {
+
                         $style_update="display: none";
                         $style_new="";
                         if($request->getPost('id')!="")
@@ -515,7 +515,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatoria.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
-                                </li>                                
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -524,7 +524,7 @@ $app->post('/menu', function () use ($app) {
                         ?>
                         <?php
                         if(count($permisos_menu_participante)>0)
-                        {    
+                        {
                         ?>
                         <li>
                             <a href="../datosaccesos/form.html"><i class="fa fa-lock fa-fw"></i> Cambiar contraseña</a>
@@ -533,17 +533,26 @@ $app->post('/menu', function () use ($app) {
                             <a href="#"><i class="fa fa-users fa-fw"></i> Perfiles del participante<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a href="../perfilesparticipantes/persona_natural.html">Persona natural</a>                                    
+                                    <a href="../perfilesparticipantes/persona_natural.html">Persona natural</a>
                                 </li>
                                 <li>
-                                    <a href="../perfilesparticipantes/persona_juridica.html">Persona jurídica</a>                                    
+                                    <a href="../perfilesparticipantes/persona_juridica.html">Persona jurídica</a>
                                 </li>
                                 <li>
-                                    <a href="../perfilesparticipantes/agrupacion.html">Agrupación</a>                                    
+                                    <a href="../perfilesparticipantes/agrupacion.html">Agrupación</a>
                                 </li>
                                 <li>
-                                    <a href="../perfilesparticipantes/jurado.html">Jurado</a>                                    
-                                </li>                                
+                                    <a href="../perfilesparticipantes/jurado.html">Jurado</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-users fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="../perfilesparticipantes/persona_natural.html">Buscar convocatoria</a>
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
