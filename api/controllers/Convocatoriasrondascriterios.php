@@ -45,49 +45,7 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los perfiles seleccionados de un usuario determinado
-/*
-$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
 
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Entidades AS p LEFT JOIN Usuariosentidades AS up ON p.id = up.entidad AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
-
-                $entidades_usuario = $app->modelsManager->executeQuery($phql);
-
-                echo json_encode($entidades_usuario);
-            } else {
-                echo "acceso_denegado";
-            }
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-}
-);
-*/
 
 // Recupera todos los registros
 /*
@@ -356,59 +314,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 );
 
 
-/*Retorna información de id y nombre las categorias asociadas a la convocatoria */
- /*
-$app->get('/p_all', function () use ($app) {
 
-
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $rondas=  array();
-        //Consulto si al menos hay un token
-        //$token_actual = $tokens->verificar_token($request->get('token'));
-        $token_actual = true;
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
-
-            //Si existe consulto la convocatoria
-            if($request->get('idcat'))
-            {
-
-
-                $convocatorias = Convocatorias::find(
-                  [
-                      "convocatoria_padre_categoria= ".$request->get('idcat')
-                  ]
-                );
-
-
-
-            }
-
-          //  echo json_encode($convocatorias);
-
-            //creo el array
-            $json_data = array(
-                "draw" => intval($request->get("draw")),
-                "recordsTotal" => intval($totalRecords["total"]),
-                "recordsFiltered" => intval($totalRecords["total"]),
-                "data" => $convocatorias   // total data array
-            );
-            //retorno el array en json
-            echo json_encode($json_data);
-        } else {
-            echo "error";
-        }
-
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        echo "error_metodo".$ex->getMessage();
-    }
-}
-);
-*/
 
 // Recupera todos los registros
 $app->get('/all_criterios_ronda', function () use ($app) {
@@ -475,6 +381,48 @@ $app->get('/all_criterios_ronda', function () use ($app) {
             );
             //retorno el array en json
            echo json_encode($json_data);
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
+    }
+}
+);
+
+
+// Recupera todos los registros
+$app->get('/criterios_ronda', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $array =  array();
+        $response =  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+          //resultado con filtro
+          $criterios = Convocatoriasrondascriterios::find(
+              [
+                  "convocatoria_ronda = ".$request->get('idRonda')." AND descripcion_criterio LIKE '%".$request->get("search")['value']."%'",
+                ]
+            );
+
+
+            foreach ($criterios as $criterio) {
+                  $criterio->actualizado_por = null;
+                  $criterio->creado_por = null;
+                  array_push($response, $criterio);
+              }
+
+           //retorno el array en json
+           echo json_encode($response);
         } else {
             //retorno el array en json null
             echo json_encode(null);

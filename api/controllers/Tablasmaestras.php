@@ -53,14 +53,14 @@ $app->get('/select_general', function () use ($app) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual>0) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$request->get('nombre')."'");
             $array=array();
             foreach ($tabla_maestra as $registro) {
                 $array[]=$registro;
-            }            
+            }
             echo json_encode(explode(",", $registro->valor));
         }
         else
@@ -69,7 +69,7 @@ $app->get('/select_general', function () use ($app) {
         }
     } catch (Exception $ex) {
         echo "error_metodo";
-    }        
+    }
 }
 );
 
@@ -87,14 +87,14 @@ $app->get('/select', function () use ($app) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual>0) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estados_".$request->get('nombre')."'");
             $array=array();
             foreach ($tabla_maestra as $registro) {
                 $array[]=$registro;
-            }            
+            }
             echo json_encode(explode(",", $registro->valor));
         }
         else
@@ -103,7 +103,7 @@ $app->get('/select', function () use ($app) {
         }
     } catch (Exception $ex) {
         echo "error_metodo";
-    }        
+    }
 }
 );
 
@@ -338,6 +338,42 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     }
 }
 );
+
+
+//Cesar britto
+//Busca el registro por nombre
+// Recupera el registro deacuerdo al nombre de la variable
+$app->get('/search_nombre', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual>0) {
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('nombre')."'");
+            /*
+            $array=array();
+            foreach ($tabla_maestra as $registro) {
+                $array[]=$registro;
+            }
+            echo json_encode(explode(",", $registro->valor));
+            */
+            echo json_encode($tabla_maestra);
+        }
+        else
+        {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
+
+
 
 
 try {
