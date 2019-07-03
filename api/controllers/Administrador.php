@@ -514,7 +514,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatoria.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/publicar.html?id=<?php echo $request->getPost('id');?>">Publicar</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

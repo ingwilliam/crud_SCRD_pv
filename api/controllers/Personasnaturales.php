@@ -73,8 +73,7 @@ $app->post('/new', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
@@ -94,34 +93,40 @@ $app->post('/new', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
+                                
+                //Consulto si existe el usuario perfil
+                $usuario_perfil = Usuariosperfiles::find("usuario=".$user_current["id"]." AND perfil=6");
+                
+                //Verifico si existe, con el fin de crearlo
+                if(!isset($usuario_perfil->id))
+                {
+                    $usuario_perfil = new Usuariosperfiles();
+                    $usuario_perfil->usuario = $user_current["id"];
+                    $usuario_perfil->perfil = 6;                    
+                    if ($usuario_perfil->save($usuario_perfil) === false) {
+                        echo "error_usuario_perfil";
+                    }                     
+                }
+                
+                //Trae los datos del formulario por post
                 $post = $app->request->getPost();
+                
+                //Creo el objeto del particpante de persona natural
                 $participante = new Participantes();
                 $participante->creado_por = $user_current["id"];
                 $participante->fecha_creacion = date("Y-m-d H:i:s");
-                $participante->active = true;
+                $participante->fecha_creacion = date("Y-m-d H:i:s");
+                $participante->usuario_perfil = $usuario_perfil->id;
+                
+                //Verificar en la tabla participante tipo, numero y perfil del usuario actual
+                
+                
                 if ($participante->save($post) === false) {
                     echo "error";
-                } else {
-
-                    //Recorro todos los posibles archivos
-                    foreach ($_FILES as $clave => $valor) {
-                        $fileTmpPath = $valor['tmp_name'];
-                        $fileType = $valor['type'];
-                        $fileNameCmps = explode(".", $valor["name"]);
-                        $fileExtension = strtolower(end($fileNameCmps));
-                        $fileName = "c" . $request->getPost('convocatoria') . "d" . $participante->id . "u" . $participante->creado_por . "f" . date("YmdHis") . "." . $fileExtension;
-                        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/" . $request->getPost('convocatoria') . "/documentacion/", $fileName, file_get_contents($fileTmpPath), $fileType);
-                        if (strpos($return, "Error") !== FALSE) {
-                            echo "error_creo_alfresco";
-                        } else {
-                            $participante->id_alfresco = $return;
-                            if ($participante->save($participante) === false) {
-                                echo "error";
-                            } else {
-                                echo $participante->id;
-                            }
-                        }
-                    }
+                }
+                else 
+                {
+                    echo $participante->id;
                 }
             } else {
                 echo "acceso_denegado";

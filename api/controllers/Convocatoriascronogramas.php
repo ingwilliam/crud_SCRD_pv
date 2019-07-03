@@ -95,7 +95,7 @@ $app->get('/all', function () use ($app) {
             $where .= " INNER JOIN Tiposeventos AS te ON te.id=cc.tipo_evento";
             $where .= " LEFT JOIN Convocatorias AS c ON c.id=cc.convocatoria";
             $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
-            $where .= " WHERE cc.active IN (true,false)";
+            $where .= " WHERE cc.active IN (true,false) AND cc.convocatoria=".$request->get("convocatoria");
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {

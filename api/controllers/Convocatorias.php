@@ -145,7 +145,7 @@ $app->get('/all', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (0 == 0) {
+        if ($token_actual > 0) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
@@ -175,7 +175,7 @@ $app->get('/all', function () use ($app) {
                 $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
                 $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
-                $where .= " WHERE c.active = true AND c.convocatoria_padre_categoria IS NULL";
+                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL";
             }
 
             //Condiciones para la consulta del input filter de la tabla categorias
@@ -220,7 +220,7 @@ $app->get('/all', function () use ($app) {
             }
             else
             {
-                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input onclick=\"activar_categoria(,c.id,)\" type=\"checkbox\" class=\"check_activar_',c.active,'\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',c.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatorias AS c";
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
             }
 
             //concatenate search sql if value exist

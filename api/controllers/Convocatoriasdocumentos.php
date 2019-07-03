@@ -93,7 +93,7 @@ $app->get('/all', function () use ($app) {
             $where .= " INNER JOIN Requisitos AS r ON r.id=cd.requisito";
             $where .= " LEFT JOIN Convocatorias AS c ON c.id=cd.convocatoria";
             $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
-            $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."'";
+            $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."' AND cd.convocatoria=".$request->get('convocatoria');
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
