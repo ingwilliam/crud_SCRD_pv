@@ -160,32 +160,14 @@ $app->get('/all', function () use ($app) {
                 8 => 'es.nombre',
             );
 
-
-
-            if(!empty($request->get('convocatoria')))
-            {
-                $where .= " WHERE c.active IN (true,false)";
-                $where .= " AND c.convocatoria_padre_categoria=".$request->get('convocatoria');
-            }
-            else
-            {
-                $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
-                $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
-                $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
-                $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
-                $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
-                $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
-                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL";
-            }
-
-            //Condiciones para la consulta del input filter de la tabla categorias
-            if (!empty($request->get("search")['value'])) {
-                if(!empty($request->get('convocatoria')))
-                {
-                    $where .= " AND ( UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-                }
-            }
+            //Inner de la consulta
+            $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
+            $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
+            $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
+            $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
+            $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
+            $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
+            $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL AND c.estado IN (5,6)";            
 
             //Condiciones para la consulta del select del buscador principal
             if (!empty($request->get("params"))) {
@@ -212,17 +194,10 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";
-            $sqlTotEstado = "SELECT c.estado,count(c.id) as total FROM Convocatorias AS c";
+            $sqlTotEstado = "SELECT es.nombre,count(c.id) as total  FROM Convocatorias AS c";            
 
-            if(!empty($request->get('convocatoria')))
-            {
-                $sqlRec = "SELECT ". $columns[5] . "," . $columns[6] . ",concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
-            }
-            else
-            {
-                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
-            }
-
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria(',c.modalidad,',',c.id,')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>') as acciones FROM Convocatorias AS c";
+            
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
@@ -233,11 +208,10 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
-
+            
             //Concateno el group by de estados
             $sqlTotEstado .= " GROUP BY 1";
-
+            
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -715,12 +689,10 @@ $app->get('/load_search', function () use ($app) {
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
             $array["programas"]= Programas::find("active = true");
             $array["enfoques"]=Enfoques::find("active = true");
-            $array["estados_convocatorias"] = Estados::find(
-                                                            array(
-                                                                "tipo_estado = 'convocatorias' AND active = true AND id NOT IN (6)",
-                                                                "order" => "orden"
-                                                            )
-                                                            );
+            $array["estados_convocatorias"][0] = Estados::findFirst(5)->nombre;
+            $array["estados_convocatorias"][1] = "Abierta";
+            $array["estados_convocatorias"][2] = "Cerrada";
+            $array["estados_convocatorias"][3] = Estados::findFirst(6)->nombre;
             echo json_encode($array);
         } else {
             echo "error";
