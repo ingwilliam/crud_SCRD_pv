@@ -88,9 +88,14 @@ $app->get('/all', function () use ($app) {
                 3 => 'ca.orden',
             );
 
-            $where .= " WHERE ca.active IN (true,false)";
+            //consulto los tipos anexos
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
+            $tipo_documento = str_replace(",", "','", "'".$tabla_maestra->valor."'");
+            
+            //Condiciones basicas
+            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria=".$request->get("convocatoria")." AND ca.tipo_documento IN (".$tipo_documento.")";
+            
             //Condiciones para la consulta
-
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
@@ -177,7 +182,7 @@ $app->post('/new', function () use ($app, $config) {
                         $fileNameCmps = explode(".", $valor["name"]);
                         $fileExtension = strtolower(end($fileNameCmps));                                
                         $fileName = "c".$request->getPost('convocatoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
-                        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/documentacion/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
+                        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
                         if(strpos($return, "Error") !== FALSE){
                             echo "error_creo_alfresco";
                         }
@@ -246,7 +251,7 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $fileNameCmps = explode(".", $valor["name"]);
                     $fileExtension = strtolower(end($fileNameCmps));                                
                     $fileName = "c".$request->getPost('convocatoria')."d".$id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
-                    $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/documentacion/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
+                    $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
                     if(strpos($return, "Error") !== FALSE){
                         echo "error_creo_alfresco";
                     }
@@ -348,7 +353,7 @@ $app->get('/search', function () use ($app, $config) {
             $array["convocatoriaanexo"]=$convocatoriaanexo;
             
             //Creo los tipos de documentos para anexar
-            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='tipo_documento'");                        
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
             $array["tipo_documento"]=explode(",", $tabla_maestra->valor);            
             
             //Retorno el array

@@ -514,7 +514,10 @@ $app->post('/menu', function () use ($app) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatoria.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/publicar.html?id=<?php echo $request->getPost('id');?>">Publicar</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -550,9 +553,30 @@ $app->post('/menu', function () use ($app) {
                         <li>
                             <a href="#"><i class="fa fa-users fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="../perfilesparticipantes/persona_natural.html">Buscar convocatoria</a>
-                                </li>
+                                <?php
+                                //Solo se activa cuando no viaja el parametro de modalidad                                 
+                                if($request->getPost('m')=="")
+                                {
+                                ?>
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <?php
+                                }
+                                //El sub menu de jurados, debido a la modalidad de la convocatoria
+                                if($request->getPost('m')==2)
+                                {
+                                ?>
+                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Basica</a></li>
+                                <li><a href="../propuestasjurados/educacion_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación formal</a></li>
+                                <li><a href="../propuestasjurados/educacion_no_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación no formal</a></li>
+                                <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia profesional</a></li>
+                                <li><a href="../propuestasjurados/experiencia_jurado.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia como jurado de convocatorias</a></li>
+                                <li><a href="../propuestasjurados/reconocimiento.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Reconocimientos (Distinciones o Premios)</a></li>
+                                <li><a href="../propuestasjurados/publicaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Publicaciones</a></li>
+                                <li><a href="../propuestasjurados/documentos_administrativos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentos administrativos</a></li>
+                                <li><a href="../propuestasjurados/postular_hoja_vida.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Postular hoja de vida</a></li>
+                                <?php
+                                }
+                                ?>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
