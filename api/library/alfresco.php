@@ -10,7 +10,7 @@ $chemistry_alfresco=new ChemistryPV("http://192.168.56.101:8080/alfresco/api/-de
 
 echo "<pre>";
 print_r($chemistry_alfresco->view_objet("63c92781-148e-4deb-9aed-3b636d086756;1.0"));
-echo ""
+echo "";
 print_r($chemistry_alfresco->view_objet("63c92781-148e-4deb-9aed-3b636d086756;1.0"));
 
 
@@ -46,7 +46,7 @@ foreach ($objs->objectList as $obj)
     if ($obj->properties['cmis:baseTypeId'] == "cmis:document")
     {
         $chemistry_alfresco->download($obj->id);
-        
+
     }
     elseif ($obj->properties['cmis:baseTypeId'] == "cmis:folder")
     {
