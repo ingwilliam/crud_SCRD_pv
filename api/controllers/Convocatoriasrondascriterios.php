@@ -1,5 +1,7 @@
 <?php
-
+/*
+*Cesar britto
+*/
 //error_reporting(E_ALL);
 //ini_set('display_errors', '1');
 use Phalcon\Loader;
@@ -43,34 +45,10 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
-$app->get('/select', function () use ($app) {
 
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Tiposdocumentos WHERE active = TRUE ORDER BY nombre';
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-}
-);
 
 // Recupera todos los registros
+/*
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -83,23 +61,23 @@ $app->get('/all', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
-
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.nombre',
-                1 => 'u.descripcion',
+                0 => 'a.nombre',
+                1 => 'a.descripcion',
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Tiposdocumentos AS u";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS u";
+            $sqlTot = "SELECT count(*) as total FROM Entidades AS a";
+            $sqlRec = "SELECT " . $columns[0] . ", " . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Entidades AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -108,8 +86,8 @@ $app->get('/all', function () use ($app) {
                 $sqlRec .= $where;
             }
 
-            //Concateno el orden y el limit para el paginador
-            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            //Concateno el orden y el limit para el paginador2
+            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') ." ";
 
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -133,10 +111,14 @@ $app->get('/all', function () use ($app) {
     }
 }
 );
+*/
 
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
+
     try {
+
+
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
@@ -149,33 +131,49 @@ $app->post('/new', function () use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl."Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
+        //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
+
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $tipo_documento = new Tiposdocumentos();
-                $tipo_documento->creado_por = $user_current["id"];
-                $tipo_documento->fecha_creacion = date("Y-m-d H:i:s");
-                $tipo_documento->active = true;
-                if ($tipo_documento->save($post) === false) {
+                //$area = new Entidades();
+                //$area->creado_por = $user_current["id"];
+                //$area->fecha_creacion = date("Y-m-d H:i:s");
+                //$area->active = true;
+
+                $criterio = new Convocatoriasrondascriterios();
+                $criterio->creado_por = $user_current["id"];
+                $criterio->fecha_creacion = date("Y-m-d H:i:s");
+                $criterio->active = true;
+
+
+                if ($criterio->save($post) === false) {
+
+                    /*
+                    foreach ($criterio->getMessages() as $message) {
+                      echo $message;
+                    }
+                    */
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $criterio->id;
                 }
+
+
             } else {
                 echo "acceso_denegado";
             }
         } else {
             echo "error";
         }
+
     } catch (Exception $ex) {
         echo "error_metodo";
     }
@@ -183,6 +181,7 @@ $app->post('/new', function () use ($app, $config) {
 );
 
 // Editar registro
+
 $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -210,10 +209,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $tipo_documento = Tiposdocumentos::findFirst(json_decode($id));
-                $tipo_documento->actualizado_por = $user_current["id"];
-                $tipo_documento->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($tipo_documento->save($put) === false) {
+                $criterio = Convocatoriasrondascriterios::findFirst(json_decode($id));
+                $criterio->actualizado_por = $user_current["id"];
+                $criterio->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                if ($criterio->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -230,7 +230,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Editar registro
+
+
+
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -238,7 +241,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -253,28 +255,37 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $tipo_documento = Tiposdocumentos::findFirst(json_decode($id));
-                $tipo_documento->active = false;
-                if ($tipo_documento->save($tipo_documento) === false) {
+                // Consultar el registro
+                $criterio = Convocatoriasrondascriterios::findFirst(json_decode($id));
+                if($criterio->active==true)
+                {
+                    $criterio->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $criterio->active=true;
+                    $retorna="Si";
+                }
+
+                if ($criterio->save() === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
             }
-
-            exit;
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
 
-// Editar registro
+//Busca el registro
+
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -286,9 +297,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $tipo_documento = Tiposdocumentos::findFirst($id);
-            if (isset($tipo_documento->id)) {
-                echo json_encode($tipo_documento);
+            $criterio = Convocatoriasrondascriterios::findFirst($id);
+            if (isset($criterio->id)) {
+                echo json_encode($criterio);
             } else {
                 echo "error";
             }
@@ -301,6 +312,129 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     }
 }
 );
+
+
+
+
+// Recupera todos los registros
+$app->get('/all_criterios_ronda', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $array =  array();
+        $response =  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+          /*
+          $convocatorias = Convocatorias::find(
+            [
+              "convocatoria_padre_categoria = ".$request->get('idcat')
+            ]
+
+          );
+
+          //id relacionados con las categorias(convocatoria)
+          foreach ($convocatorias as $convocatoria) {
+            array_push($array, $convocatoria->id);
+          }
+
+        //  echo "string".print_r($array);
+
+        */
+          //resultado con filtro
+          $criterios = Convocatoriasrondascriterios::find(
+              [
+                  "convocatoria_ronda = ".$request->get('idRonda')." AND descripcion_criterio LIKE '%".$request->get("search")['value']."%'",
+                  "order" => 'orden',
+                  "limit" =>  $request->get('length'),
+                  "offset" =>  $request->get('start'),
+
+                ]
+            );
+
+
+            foreach ($criterios as $criterio) {
+                  $criterio->actualizado_por = null;
+                  $criterio->creado_por = null;
+                  array_push($response, $criterio);
+              }
+
+
+            //resultado sin filtro
+            $trondas = Convocatoriasrondascriterios::find(
+                [
+                    "convocatoria_ronda  = ".$request->get('idRonda'),
+                ]
+              );
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($trondas->count()),
+                "recordsFiltered" => intval($trondas->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
+    }
+}
+);
+
+
+// Recupera todos los registros
+$app->get('/criterios_ronda', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $array =  array();
+        $response =  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+          //resultado con filtro
+          $criterios = Convocatoriasrondascriterios::find(
+              [
+                  "convocatoria_ronda = ".$request->get('idRonda')." AND descripcion_criterio LIKE '%".$request->get("search")['value']."%'",
+                ]
+            );
+
+
+            foreach ($criterios as $criterio) {
+                  $criterio->actualizado_por = null;
+                  $criterio->creado_por = null;
+                  array_push($response, $criterio);
+              }
+
+           //retorno el array en json
+           echo json_encode($response);
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
+    }
+}
+);
+
+
 
 try {
     // Gestionar la consulta

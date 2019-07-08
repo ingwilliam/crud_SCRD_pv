@@ -49,22 +49,31 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $localidad = $_GET['localidad'];
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
+        if ($token_actual > 0) {
+            if($request->get('upz'))
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad AND b.upz=".$request->get('upz')."  ORDER BY b.nombre";
+            }
+            else
+            {
+                $phql = "SELECT b.* FROM Barrios AS b WHERE b.active = true AND b.localidad = $localidad  ORDER BY b.nombre";
+            }
+            
             $robots = $app->modelsManager->executeQuery($phql);
+
             echo json_encode($robots);
-        }
-        else
-        {
-            echo "error";
+        } else {
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
+        echo "error_metodo".$ex->getMessage();
+    }
 }
 );
 
@@ -83,20 +92,44 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 's.nombre',
+                0 => 'p.nombre',
+                1 => 'd.nombre',
+                2 => 'ciu.nombre',
+                3 => 'l.nombre',
+                4 => 'u.nombre',
+                5 => 'b.nombre'
             );
 
-            $where .= " WHERE s.active=true";
+            $where .= " WHERE b.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Sexos AS s";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',s.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',s.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Sexos AS s";
+            $sqlTot = "SELECT count(*) as total FROM Barrios AS b "
+                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
+                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
+                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
+                    . "INNER JOIN Paises AS p ON p.id=d.pais "
+                    . "";
+                    
+            $sqlRec = "SELECT " . $columns[0] . " AS  pais ," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad ," . $columns[3] . " AS localidad ," . $columns[4] . " AS upz , " . $columns[5] . " AS barrio, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',b.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',b.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Barrios AS b "
+                    . "LEFT JOIN Upzs AS u ON u.id=b.upz "
+                    . "INNER JOIN Localidades AS l ON l.id=b.localidad "
+                    . "INNER JOIN Ciudades AS ciu ON l.ciudad=ciu.id "
+                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
+                    . "INNER JOIN Paises AS p ON p.id=d.pais "
+                    . "";
 
+            //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
@@ -156,14 +189,18 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $sexos = new Sexos();
-                $sexos->creado_por = $user_current["id"];
-                $sexos->fecha_creacion = date("Y-m-d H:i:s");
-                $sexos->active = true;
-                if ($sexos->save($post) === false) {
+                $barrio = new Barrios();
+                $barrio->creado_por = $user_current["id"];
+                $barrio->fecha_creacion = date("Y-m-d H:i:s");
+                $barrio->active = true;
+                if ($post["upz"] == "") {
+                    $post["upz"] = null;
+                }
+                
+                if ($barrio->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $barrio->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -172,7 +209,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
@@ -205,10 +242,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $sexo = Sexos::findFirst(json_decode($id));
-                $sexo->actualizado_por = $user_current["id"];
-                $sexo->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($sexo->save($put) === false) {
+                $barrio = Barrios::findFirst(json_decode($id));
+                $barrio->actualizado_por = $user_current["id"];
+                $barrio->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($barrio->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -224,6 +261,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
+
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -248,7 +286,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Sexos::findFirst(json_decode($id));
+                $user = Barrios::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -268,11 +306,41 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
-// Editar registro
+//Busca el registro
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
-    $phql = 'SELECT * FROM Sexos WHERE id = :id:';
-    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
-    echo json_encode($user);
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $barrio = Barrios::findFirst($id);
+            if (isset($barrio->id)) {
+                $array["barrio"]=$barrio;
+                $array["localidad"]=$barrio->localidades;
+                $array["upz"]=$barrio->upzs;
+                $array["ciudad"]=$barrio->localidades->ciudades;
+                $array["departamento"]= $barrio->localidades->ciudades->departamentos;
+                $array["pais"]= $barrio->localidades->ciudades->departamentos->paises;                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$barrio->localidades->ciudades->departamentos->paises->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$barrio->localidades->ciudades->departamentos->id."'");
+                $array["localidades"]= Localidades::find("active=true AND ciudad='".$barrio->localidades->ciudades->id."'");
+                $array["upzs"]= Upzs::find("active=true AND localidad='".$barrio->localidades->id."'");
+                echo json_encode($array);                                
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo".$ex->getMessage();
+    }
 }
 );
 

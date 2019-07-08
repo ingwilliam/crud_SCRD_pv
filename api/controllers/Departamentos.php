@@ -49,22 +49,25 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $pais = $request->get('pais');
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
+        if ($token_actual > 0) {
+            
+            $phql = "SELECT * FROM Departamentos AS d WHERE d.active = true AND d.pais = $pais ORDER BY nombre";
+
             $robots = $app->modelsManager->executeQuery($phql);
+
             echo json_encode($robots);
-        }
-        else
-        {
+        } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
+        echo "error_metodo". $ex->getMessage();
+    }
 }
 );
 
@@ -83,20 +86,27 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 's.nombre',
+                0 => 'p.nombre',
+                1=> 'd.nombre'
             );
 
-            $where .= " WHERE s.active=true";
+            $where .= " WHERE d.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Sexos AS s";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',s.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',s.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Sexos AS s";
+            $sqlTot = "SELECT count(*) as total FROM Departamentos AS d "
+                    . "INNER JOIN Paises AS p ON p.id=d.pais "
+                    . "";
+            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Departamentos AS d "
+                    . "INNER JOIN Paises AS p ON p.id=d.pais "
+                    . "";
 
+            //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
@@ -156,14 +166,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $sexos = new Sexos();
-                $sexos->creado_por = $user_current["id"];
-                $sexos->fecha_creacion = date("Y-m-d H:i:s");
-                $sexos->active = true;
-                if ($sexos->save($post) === false) {
+                $departamento = new Departamentos();
+                $departamento->creado_por = $user_current["id"];
+                $departamento->fecha_creacion = date("Y-m-d H:i:s");
+                $departamento->active = true;
+                if ($departamento->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $departamento->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -205,10 +215,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $sexo = Sexos::findFirst(json_decode($id));
-                $sexo->actualizado_por = $user_current["id"];
-                $sexo->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($sexo->save($put) === false) {
+                $departamento = Departamentos::findFirst(json_decode($id));
+                $departamento->actualizado_por = $user_current["id"];
+                $departamento->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($departamento->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -224,6 +234,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
+
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -248,7 +259,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Sexos::findFirst(json_decode($id));
+                $user = Departamentos::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -268,11 +279,31 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
-// Editar registro
+//Busca el registro
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
-    $phql = 'SELECT * FROM Sexos WHERE id = :id:';
-    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
-    echo json_encode($user);
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $departamento = Departamentos::findFirst($id);
+            if (isset($departamento->id)) {
+                echo json_encode($departamento);
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
 }
 );
 

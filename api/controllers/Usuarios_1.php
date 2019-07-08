@@ -59,11 +59,14 @@ $app->get('/all', function () use ($app) {
         if ($token_actual > 0) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.primer_nombre',
-                1 => 'u.segundo_nombre',
-                2 => 'u.primer_apellido',
-                3 => 'u.segundo_apellido',
-                4 => 'u.username',                
+                0 => 'td.nombre',
+                1 => 'u.numero_documento',
+                2 => 'u.primer_nombre',
+                3 => 'u.segundo_nombre',
+                4 => 'u.primer_apellido',
+                5 => 'u.segundo_apellido',
+                6 => 'u.username',
+                7 => 'b.nombre',
             );
 
             $where .= " WHERE u.active=true";
@@ -73,13 +76,20 @@ $app->get('/all', function () use ($app) {
                 $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                 $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Usuarios AS u ";
-            $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u ";
-            
+            $sqlTot = "SELECT count(*) as total FROM Usuarios AS u "
+                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
+                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
+            $sqlRec = "SELECT " . $columns[0] . " AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS sexo , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u "
+                    . "INNER JOIN Sexos AS b ON b.id=u.sexo "
+                    . "INNER JOIN Tiposdocumentos AS td ON td.id=u.tipo_documento ";
+
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
@@ -108,7 +118,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode($ex->getMessage());
+        echo json_encode(null);
     }
 }
 );
@@ -143,19 +153,25 @@ $app->post('/new', function () use ($app, $config) {
                 $usuario->active = true;
                 $post["password"] = $this->security->hash($post["password"]);
 
-                $usuario_validar = Usuarios::findFirst("username = '" . $post["username"] . "'");
+                $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $post["tipo_documento"] . "' AND numero_documento = '" . $post["numero_documento"] . "'");
 
                 if (isset($usuario_validar->id)) {
-                    echo "error_username";
+                    echo "error_registro";
                 } else {
-                    //Consulto el usuario actual
-                    $user_current = json_decode($token_actual->user_current, true);
-                    $post["creado_por"] = $user_current["id"];
-                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                    if ($usuario->save($post) === false) {
-                        echo "error";
+                    $usuario_validar = Usuarios::findFirst("username = '" . $post["username"] . "'");
+
+                    if (isset($usuario_validar->id)) {
+                        echo "error_username";
                     } else {
-                        echo $usuario->id;
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                        if ($usuario->save($post) === false) {
+                            echo "error";
+                        } else {
+                            echo $usuario->id;
+                        }
                     }
                 }
             } else {
@@ -205,21 +221,29 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                 if (isset($usuario_original->id)) {
 
-                    if ($usuario_original->username != $usuario["username"]) {
-                        $usuario_validar = Usuarios::findFirst("username = '" . $usuario["username"] . "'");
+                    if (( $usuario_original->tipo_documento != $usuario["tipo_documento"] ) || ( $usuario_original->numero_documento != $usuario["numero_documento"] )) {
+                        $usuario_validar = Usuarios::findFirst("tipo_documento = '" . $usuario["tipo_documento"] . "' AND numero_documento = '" . $usuario["numero_documento"] . "'");
                     }
 
                     if (isset($usuario_validar->id)) {
-                        echo "error_username";
+                        echo "error_registro";
                     } else {
-                        //Consulto el usuario actual
-                        $user_current = json_decode($token_actual->user_current, true);
-                        $usuario["actualizado_por"] = $user_current["id"];
-                        $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                        if ($usuario_original->save($usuario) === false) {
-                            echo "error";
+                        if ($usuario_original->username != $usuario["username"]) {
+                            $usuario_validar = Usuarios::findFirst("username = '" . $usuario["username"] . "'");
+                        }
+
+                        if (isset($usuario_validar->id)) {
+                            echo "error_username";
                         } else {
-                            echo $id;
+                            //Consulto el usuario actual
+                            $user_current = json_decode($token_actual->user_current, true);
+                            $usuario["actualizado_por"] = $user_current["id"];
+                            $usuario["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                            if ($usuario_original->save($usuario) === false) {
+                                echo "error";
+                            } else {
+                                echo $id;
+                            }
                         }
                     }
                 } else {
@@ -251,7 +275,7 @@ $app->put('/edit_perfil/{id:[0-9]+}', function ($id) use ($app, $config) {
         if ($token_actual > 0) {
             //Cargo el usuario que esta en el metodo put
             $usuario = $app->request->getPut();
-
+            
             //Valido si coloco una clave nueva
             if ($usuario["password"] != null && $usuario["password"] != "" && $usuario["password"] != "undefined") {
                 $usuario["password"] = $this->security->hash($usuario["password"]);

@@ -55,13 +55,12 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Perfiles WHERE active = true ORDER BY nombre';
+            
+            $select = Convocatoriasparticipantes::find(['convocatoria = '.$request->get('convocatoria').' AND tipo_participante IN ('.$request->get('tipo_participante').')','order' => 'orden']);
 
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
+            echo json_encode($select);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo". $ex->getMessage();
@@ -69,9 +68,8 @@ $app->get('/select', function () use ($app) {
 }
 );
 
-// Recupera todos los perfiles seleccionados de un usuario determinado
-$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
-
+// Recupera todos los registros
+$app->get('/select_form_convocatoria', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -82,38 +80,20 @@ $app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Perfiles AS p LEFT JOIN Usuariosperfiles AS up ON p.id = up.perfil AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
-
-                $perfiles_usuario = $app->modelsManager->executeQuery($phql);
-
-                echo json_encode($perfiles_usuario);
-            } else {
-                echo "acceso_denegado";
-            }
+            
+            $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$request->get('convocatoria')." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+            echo json_encode($select);
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
 
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
-
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -127,10 +107,10 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.nombre',
+                0 => 'a.nombre',
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE a.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
@@ -138,8 +118,8 @@ $app->get('/all', function () use ($app) {
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Perfiles AS u";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Perfiles AS u";
+            $sqlTot = "SELECT count(*) as total FROM Convocatoriasparticipantes AS a";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',a.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',a.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Convocatoriasparticipantes AS a";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -176,7 +156,6 @@ $app->get('/all', function () use ($app) {
 
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
-
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -184,7 +163,6 @@ $app->post('/new', function () use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -199,26 +177,67 @@ $app->post('/new', function () use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
-                $post = $app->request->getPost();
-                $perfil = new Perfiles();
-                $perfil->creado_por = $user_current["id"];
-                $perfil->fecha_creacion = date("Y-m-d H:i:s");
-                $perfil->active = true;
-                if ($perfil->save($post) === false) {
-                    echo "error";
-                } else {
-                    echo $perfil->id;
+                
+                //Guardar el perfil de jurados
+                if($request->getPut('tipo_participante')==4)
+                {
+                    if( Convocatoriasparticipantes::count("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante')."") < $request->getPut('cantidad_perfil_jurado'))
+                    {
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post = $app->request->getPost();
+                        $post["area_conocimiento"] = json_encode($post["area_conocimiento"]);
+                        $post["nivel_educativo"] = json_encode($post["nivel_educativo"]);                    
+                        $post["area_perfil"] = json_encode($post["area_perfil"]);                    
+                        $convocatoriasparticipantes = new Convocatoriasparticipantes();
+                        $convocatoriasparticipantes->creado_por = $user_current["id"];
+                        $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
+                        $convocatoriasparticipantes->active = true;                    
+                        if ($convocatoriasparticipantes->save($post) === false) {
+                            echo "error";
+                        } else {
+                            echo $convocatoriasparticipantes->id;
+                        }
+                    }                    
+                    else
+                    {
+                        echo "error_maximo_jurados";
+                    }
                 }
+                else
+                {                
+                    //Consulto si el registro existe con el fin de activarlo para personas naurales juridicas y agrupaciones
+                    $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));                
+                    if(isset($convocatoriasparticipantes->id))
+                    {
+                        $convocatoriasparticipantes->active = true;
+                        $post=$convocatoriasparticipantes;
+                    }
+                    else
+                    {
+                        //Consulto el usuario actual
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $post = $app->request->getPost();
+                        $convocatoriasparticipantes = new Convocatoriasparticipantes();
+                        $convocatoriasparticipantes->creado_por = $user_current["id"];
+                        $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
+                        $convocatoriasparticipantes->active = true;
+                    }
+
+                    if ($convocatoriasparticipantes->save($post) === false) {                
+                        echo "error";
+                    } else {
+                        echo $convocatoriasparticipantes->id;                    
+                    }    
+                }                
             } else {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -250,11 +269,15 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
+                unset($put["id"]);
+                $put["area_conocimiento"] = json_encode($put["area_conocimiento"]);
+                $put["nivel_educativo"] = json_encode($put["nivel_educativo"]);                    
+                $put["area_perfil"] = json_encode($put["area_perfil"]);                    
                 // Consultar el usuario que se esta editando
-                $perfil = Perfiles::findFirst(json_decode($id));
-                $perfil->actualizado_por = $user_current["id"];
-                $perfil->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($perfil->save($put) === false) {
+                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));
+                $convocatoriasparticipantes->actualizado_por = $user_current["id"];
+                $convocatoriasparticipantes->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($convocatoriasparticipantes->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -263,16 +286,67 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
 
-// Editar registro
-$app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
+// Eliminar registro de los perfiles de las convocatorias
+$app->delete('/delete', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+        
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));
+                if($convocatoriasparticipantes->active==true)
+                {
+                    $convocatoriasparticipantes->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriasparticipantes->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
+                    echo "error";
+                } else {
+                    echo $retorna;
+                }
+            } else {
+                echo "acceso_denegado";
+            }           
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
+
+//Elimina lor perfiles de los jurados
+$app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -295,12 +369,22 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Perfiles::findFirst(json_decode($id));
-                $user->active = false;
-                if ($user->save($user) === false) {
+                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));               
+                if($convocatoriasparticipantes->active==true)
+                {
+                    $convocatoriasparticipantes->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriasparticipantes->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
@@ -308,7 +392,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
             exit;
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -327,9 +411,9 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $perfil = Perfiles::findFirst($id);
-            if (isset($perfil->id)) {
-                echo json_encode($perfil);
+            $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst($id);
+            if (isset($convocatoriasparticipantes->id)) {
+                echo json_encode($convocatoriasparticipantes);
             } else {
                 echo "error";
             }

@@ -43,9 +43,8 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
+// Recupera todos las modalidades dependiendo el programa
 $app->get('/select', function () use ($app) {
-
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -55,17 +54,14 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Tiposdocumentos WHERE active = TRUE ORDER BY nombre';
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
+        if ($token_actual > 0) {            
+            $array = Convocatoriascronogramas::find("active = true");            
+            echo json_encode($array);
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
@@ -83,23 +79,35 @@ $app->get('/all', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
-
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'u.nombre',
-                1 => 'u.descripcion',
+                0 => 'te.nombre',
+                1 => 'cc.fecha_inicio',
+                2 => 'cc.fecha_fin',
+                3 => 'cc.descripcion',
+                4 => 'cc.active',
+                5 => 'cc.convocatoria',
+                6 => 'c.nombre',
+                7 => 'ccat.nombre',
+                8 => 'cpad.nombre',
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " INNER JOIN Tiposeventos AS te ON te.id=cc.tipo_evento";
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=cc.convocatoria";
+            $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
+            $where .= " WHERE cc.active IN (true,false) AND cc.convocatoria=".$request->get("convocatoria");
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-            }
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+            }                                
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Tiposdocumentos AS u";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Tiposdocumentos AS u";
+            $sqlTot = "SELECT count(*) as total FROM Convocatoriascronogramas AS cc";
+            $sqlRec = "SELECT " . $columns[0] . " AS tipo_evento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',cc.id,'\" type=\"checkbox\" class=\"check_activar_',cc.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cc.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriascronogramas AS cc";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -110,7 +118,7 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+            
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -129,7 +137,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -160,21 +168,42 @@ $app->post('/new', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-                $post = $app->request->getPost();
-                $tipo_documento = new Tiposdocumentos();
-                $tipo_documento->creado_por = $user_current["id"];
-                $tipo_documento->fecha_creacion = date("Y-m-d H:i:s");
-                $tipo_documento->active = true;
-                if ($tipo_documento->save($post) === false) {
-                    echo "error";
+                $post = $app->request->getPost();                                
+                //Si es periodo por defecto es hasta la media noche
+                $tipo_evento= Tiposeventos::findFirst($post["tipo_evento"]);                
+                if($tipo_evento->periodo)
+                {
+                    $post["fecha_fin"]=$post["fecha_fin"]." 23:59:59";                    
+                }
+                //Valido que es el evento fecha cierre con el fin de asignarle la hora de cierre de la tabla maestra
+                if($tipo_evento->id==12)
+                {
+                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
+                    $post["fecha_fin"]=$post["fecha_fin"]." ".$tabla_maestra[0]->valor;                    
+                    $post["fecha_inicio"]=$post["fecha_inicio"]." ".$tabla_maestra[0]->valor;                    
+                }
+                
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
+                $convocatoriacronograma = new Convocatoriascronogramas();
+                $convocatoriacronograma->creado_por = $user_current["id"];
+                $convocatoriacronograma->fecha_creacion = date("Y-m-d H:i:s");
+                $convocatoriacronograma->active = true;
+                if ($convocatoriacronograma->save($post) === false) {
+                    foreach ($convocatoriacronograma->getMessages() as $message) {
+                      echo $message;
+                    }
                 } else {
-                    echo $permiso->id;
+                    echo $convocatoriacronograma->id;
                 }
             } else {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -210,10 +239,27 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $tipo_documento = Tiposdocumentos::findFirst(json_decode($id));
-                $tipo_documento->actualizado_por = $user_current["id"];
-                $tipo_documento->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($tipo_documento->save($put) === false) {
+                $convocatoriacronograma = Convocatoriascronogramas::findFirst(json_decode($id));
+                //Si es periodo por defecto es hasta la media noche
+                $tipo_evento= Tiposeventos::findFirst($put["tipo_evento"]);                
+                if($tipo_evento->periodo)
+                {
+                    $put["fecha_fin"]=$put["fecha_fin"]." 23:59:59";                    
+                }
+                //Valido que es el evento fecha cierre con el fin de asignarle la hora de cierre de la tabla maestra
+                if($tipo_evento->id==12)
+                {
+                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
+                    $put["fecha_fin"]=$put["fecha_fin"]." ".$tabla_maestra[0]->valor;                    
+                    $put["fecha_inicio"]=$put["fecha_inicio"]." ".$tabla_maestra[0]->valor;                    
+                }        
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $put["convocatoria"] == "" ){
+                    $put["convocatoria"]=$put["convocatoria_padre_categoria"];                    
+                }
+                $convocatoriacronograma->actualizado_por = $user_current["id"];
+                $convocatoriacronograma->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($convocatoriacronograma->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -222,7 +268,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -230,7 +276,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Editar registro
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -238,7 +284,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -250,32 +295,40 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
+        
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $tipo_documento = Tiposdocumentos::findFirst(json_decode($id));
-                $tipo_documento->active = false;
-                if ($tipo_documento->save($tipo_documento) === false) {
+                // Consultar el registro
+                $convocatoriacronograma = Convocatoriascronogramas::findFirst(json_decode($id));                
+                if($convocatoriacronograma->active==true)
+                {
+                    $convocatoriacronograma->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriacronograma->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriacronograma->save($convocatoriacronograma) === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
-            }
-
-            exit;
+            }           
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
 
-// Editar registro
-$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
+//Busca el registro
+$app->get('/search', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -286,14 +339,26 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $tipo_documento = Tiposdocumentos::findFirst($id);
-            if (isset($tipo_documento->id)) {
-                echo json_encode($tipo_documento);
-            } else {
-                echo "error";
+            //Si existe consulto la convocatoria
+            if($request->get('id'))
+            {    
+                $convocatoriacronograma = Convocatoriascronogramas::findFirst($request->get('id'));                
+                $convocatoriacronograma->fecha_inicio = (new DateTime($convocatoriacronograma->fecha_inicio))->format('Y-m-d');
+                $convocatoriacronograma->fecha_fin = (new DateTime($convocatoriacronograma->fecha_fin))->format('Y-m-d');                
             }
+            else 
+            {
+                $convocatoriacronograma = new Convocatoriascronogramas();
+            }
+            //Cargo la convocatoria actual
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
+            //Creo todos los array de la convocatoria cronograma
+            $array["convocatoriacronograma"]=$convocatoriacronograma;
+            $array["tipos_eventos"]= Tiposeventos::find("active=true AND programa=".$convocatoria->programa);
+            //Retorno el array
+            echo json_encode($array);       
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
@@ -301,6 +366,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
     }
 }
 );
+
 
 try {
     // Gestionar la consulta

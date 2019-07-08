@@ -43,28 +43,26 @@ $di->set('db', function () use ($config) {
 
 $app = new Micro($di);
 
-// Recupera todos los registros
+// Recupera todos las modalidades dependiendo el programa
 $app->get('/select', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
-            $robots = $app->modelsManager->executeQuery($phql);
-            echo json_encode($robots);
-        }
-        else
-        {
-            echo "error";
+        if ($token_actual > 0) {            
+            $array = Modalidades::find("active = true AND programa=".$request->get('programa')."");            
+            echo json_encode($array);
+        } else {
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
+        echo "error_metodo". $ex->getMessage();
+    }
 }
 );
 
@@ -83,20 +81,27 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 's.nombre',
+                0 => 'p.nombre',
+                1 => 'd.nombre',
             );
 
-            $where .= " WHERE s.active=true";
+            $where .= " WHERE d.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Sexos AS s";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',s.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',s.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Sexos AS s";
+            $sqlTot = "SELECT count(*) as total FROM Modalidades AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
+            $sqlRec = "SELECT " . $columns[0] . " AS  programa," . $columns[1] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',d.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',d.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Modalidades AS d "
+                    . "INNER JOIN Programas AS p ON p.id=d.programa "
+                    . "";
 
+            //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
@@ -156,14 +161,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $sexos = new Sexos();
-                $sexos->creado_por = $user_current["id"];
-                $sexos->fecha_creacion = date("Y-m-d H:i:s");
-                $sexos->active = true;
-                if ($sexos->save($post) === false) {
+                $modalidad = new Modalidades();
+                $modalidad->creado_por = $user_current["id"];
+                $modalidad->fecha_creacion = date("Y-m-d H:i:s");
+                $modalidad->active = true;
+                if ($modalidad->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $modalidad->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -205,10 +210,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $sexo = Sexos::findFirst(json_decode($id));
-                $sexo->actualizado_por = $user_current["id"];
-                $sexo->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($sexo->save($put) === false) {
+                $modalidad = Modalidades::findFirst(json_decode($id));
+                $modalidad->actualizado_por = $user_current["id"];
+                $modalidad->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($modalidad->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -224,6 +229,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
+
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -248,7 +254,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Sexos::findFirst(json_decode($id));
+                $user = Modalidades::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -268,11 +274,31 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
-// Editar registro
+//Busca el registro
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
-    $phql = 'SELECT * FROM Sexos WHERE id = :id:';
-    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
-    echo json_encode($user);
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $modalidad = Modalidades::findFirst($id);
+            if (isset($modalidad->id)) {
+                echo json_encode($modalidad);
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
 }
 );
 

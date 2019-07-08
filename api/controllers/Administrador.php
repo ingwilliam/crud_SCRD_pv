@@ -57,21 +57,35 @@ $app->post('/menu', function () use ($app) {
         if ($token_actual > 0) {
             //Extraemos el usuario del token
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consultar todos los permiso del panel de seguridad
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Panel de Seguridad' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_panel_de_seguridad = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso de la administración
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Administración' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $permisos_administracion = $app->modelsManager->executeQuery($phql);
-            
+
+            //Consultar todos los permiso de la administración
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Convocatorias' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
+
+            //Consultar todos los permiso del menu participante
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Menu Participante' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_menu_participante = $app->modelsManager->executeQuery($phql);
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -321,7 +335,7 @@ $app->post('/menu', function () use ($app) {
                         </li>
                         <?php
                         if(count($permisos_panel_de_seguridad)>0)
-                        {    
+                        {
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-lock fa-fw"></i> Panel de Seguridad<span class="fa arrow"></span></a>
@@ -331,7 +345,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../usuarios/form.html">Usuarios</a>
                                 </li>
                                 <li>
-                                    <a href="../seguridad/list.html">Seguridad</a>                    
+                                    <a href="../seguridad/list.html">Seguridad</a>
                                 </li>
                                 <li>
                                     <a href="../perfiles/list.html">Perfiles</a>
@@ -339,7 +353,7 @@ $app->post('/menu', function () use ($app) {
                                 </li>
                                 <li>
                                     <a href="../modulos/list.html">Modulos</a>
-                                    <a style="display: none" href="../modulos/form.html">Modulos</a>                                    
+                                    <a style="display: none" href="../modulos/form.html">Modulos</a>
                                 </li>
                                 <li>
                                     <a href="../permisos/list.html">Permisos</a>
@@ -353,10 +367,10 @@ $app->post('/menu', function () use ($app) {
                         ?>
                         <?php
                         if(count($permisos_administracion)>0)
-                        {    
+                        {
                         ?>
                         <li>
-                            <a href="#"><i class="fa fa-lock fa-fw"></i> Administracion<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-table fa-fw"></i> Administracion<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../tablasmaestras/list.html">Tablas maestras</a>
@@ -367,7 +381,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../paises/form.html">Paises</a>
                                 </li>
                                 <li>
-                                    <a href="../departamentos/list.html">Departamentos</a>                    
+                                    <a href="../departamentos/list.html">Departamentos</a>
                                     <a style="display: none" href="../departamentos/form.html">Departamentos</a>
                                 </li>
                                 <li>
@@ -376,19 +390,47 @@ $app->post('/menu', function () use ($app) {
                                 </li>
                                 <li>
                                     <a href="../localidades/list.html">Localidades</a>
-                                    <a style="display: none" href="../localidades/form.html">Localidades</a>                                    
+                                    <a style="display: none" href="../localidades/form.html">Localidades</a>
                                 </li>
                                 <li>
-                                    <a href="../upz/list.html">Upz</a>
-                                    <a style="display: none" href="../upz/form.html">Upz</a>
+                                    <a href="../upzs/list.html">Upzs</a>
+                                    <a style="display: none" href="../upzs/form.html">Upzs</a>
                                 </li>
                                 <li>
                                     <a href="../barrios/list.html">Barrios</a>
                                     <a style="display: none" href="../barrios/form.html">Barrios</a>
                                 </li>
                                 <li>
+                                    <a href="../entidades/list.html">Entidades</a>
+                                    <a style="display: none" href="../entidades/form.html">Entidades</a>
+                                </li>
+                                <li>
                                     <a href="../tiposdocumentos/list.html">Tipos de documentos</a>
                                     <a style="display: none" href="../tiposdocumentos/form.html">Tipos de documentos</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposprogramas/list.html">Tipos de programas</a>
+                                    <a style="display: none" href="../tiposprogramas/form.html">Tipos de programas</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposparticipantes/list.html">Tipos de participantes</a>
+                                    <a style="display: none" href="../tiposparticipantes/form.html">Tipos de participantes</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposconvenios/list.html">Tipos de convenios</a>
+                                    <a style="display: none" href="../tiposconvenios/form.html">Tipos de convenios</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposestimulos/list.html">Tipos de estimulos</a>
+                                    <a style="display: none" href="../tiposestimulos/form.html">Tipos de estimulos</a>
+                                </li>
+                                <li>
+                                    <a href="../tiposeventos/list.html">Tipos de Eventos</a>
+                                    <a style="display: none" href="../tiposeventos/form.html">Tipos de Eventos</a>
+                                </li>
+                                <li>
+                                    <a href="../estados/list.html">Estados</a>
+                                    <a style="display: none" href="../estados/form.html">Estados</a>
                                 </li>
                                 <li>
                                     <a href="../sexos/list.html">Sexos</a>
@@ -407,21 +449,134 @@ $app->post('/menu', function () use ($app) {
                                     <a style="display: none" href="../niveleseducativos/form.html">Niveles educativos</a>
                                 </li>
                                 <li>
-                                    <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
-                                    <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
-                                </li>
-                                <li>
-                                    <a href="../areas/list.html">Areas</a>
-                                    <a style="display: none" href="../areas/form.html">Areas</a>
+                                    <a href="../programas/list.html">Programas</a>
+                                    <a style="display: none" href="../programas/form.html">Programas</a>
                                 </li>
                                 <li>
                                     <a href="../modalidades/list.html">Modalidades</a>
                                     <a style="display: none" href="../modalidades/form.html">Modalidades</a>
                                 </li>
                                 <li>
-                                    <a href="../documentosconvocatorias/list.html">Documentos convocatorias</a>
-                                    <a style="display: none" href="../documentosconvocatorias/form.html">Documentos convocatorias</a>
+                                    <a href="../areas/list.html">Areas</a>
+                                    <a style="display: none" href="../areas/form.html">Areas</a>
                                 </li>
+                                <li>
+                                    <a href="../areasconocimientos/list.html">Áreas de conocimientos</a>
+                                    <a style="display: none" href="../areasconocimientos/form.html">Áreas de conocimientos</a>
+                                </li>
+                                <li>
+                                    <a href="../lineasestrategicas/list.html">Líneas estratégicas</a>
+                                    <a style="display: none" href="../lineasestrategicas/form.html">Líneas estratégicas</a>
+                                </li>
+                                <li>
+                                    <a href="../enfoques/list.html">Enfoques</a>
+                                    <a style="display: none" href="../enfoques/form.html">Enfoques</a>
+                                </li>
+                                <li>
+                                    <a href="../coberturas/list.html">Coberturas</a>
+                                    <a style="display: none" href="../coberturas/form.html">Coberturas</a>
+                                </li>
+                                <li>
+                                    <a href="../recursosnopecuniarios/list.html">Recursos no pecuniarios</a>
+                                    <a style="display: none" href="../recursosnopecuniarios/form.html">Recursos no pecuniarios</a>
+                                </li>
+                                <li>
+                                    <a href="../requisitos/list.html">Requisitos</a>
+                                    <a style="display: none" href="../requisitos/form.html">Requisitos</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        <?php
+                        if(count($permisos_convocatorias)>0)
+                        {
+
+                        $style_update="display: none";
+                        $style_new="";
+                        if($request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-files-o fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/publicar.html?id=<?php echo $request->getPost('id');?>">Publicar</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        <?php
+                        if(count($permisos_menu_participante)>0)
+                        {
+                        ?>
+                        <li>
+                            <a href="../datosaccesos/form.html"><i class="fa fa-lock fa-fw"></i> Cambiar contraseña</a>
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-users fa-fw"></i> Perfiles del participante<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="../perfilesparticipantes/persona_natural.html">Persona natural</a>
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/persona_juridica.html">Persona jurídica</a>
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/agrupacion.html">Agrupación</a>
+                                </li>
+                                <li>
+                                    <a href="../perfilesparticipantes/jurado.html">Jurado</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa fa-users fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <?php
+                                //Solo se activa cuando no viaja el parametro de modalidad                                 
+                                if($request->getPost('m')=="")
+                                {
+                                ?>
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <?php
+                                }
+                                //El sub menu de jurados, debido a la modalidad de la convocatoria
+                                if($request->getPost('m')==2)
+                                {
+                                ?>
+                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Basica</a></li>
+                                <li><a href="../propuestasjurados/educacion_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación formal</a></li>
+                                <li><a href="../propuestasjurados/educacion_no_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación no formal</a></li>
+                                <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia profesional</a></li>
+                                <li><a href="../propuestasjurados/experiencia_jurado.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia como jurado de convocatorias</a></li>
+                                <li><a href="../propuestasjurados/reconocimiento.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Reconocimientos (Distinciones o Premios)</a></li>
+                                <li><a href="../propuestasjurados/publicaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Publicaciones</a></li>
+                                <li><a href="../propuestasjurados/documentos_administrativos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentos administrativos</a></li>
+                                <li><a href="../propuestasjurados/postular_hoja_vida.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Postular hoja de vida</a></li>
+                                <?php
+                                }
+                                ?>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -435,7 +590,7 @@ $app->post('/menu', function () use ($app) {
             <!-- /.navbar-static-side -->
             <?php
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo" . $ex;

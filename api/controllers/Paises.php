@@ -29,6 +29,8 @@ $loader->register();
 // Crear un DI
 $di = new FactoryDefault();
 
+
+
 //Set up the database service
 $di->set('db', function () use ($config) {
     return new DbAdapter(
@@ -49,22 +51,24 @@ $app->get('/select', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
-            $phql = 'SELECT * FROM Sexos WHERE active = true ORDER BY nombre';
+        if ($token_actual > 0) {
+            
+            $phql = "SELECT * FROM Paises  WHERE active = true ORDER BY nombre";
+
             $robots = $app->modelsManager->executeQuery($phql);
+
             echo json_encode($robots);
-        }
-        else
-        {
+        } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
-    }        
+        echo "error_metodo". $ex->getMessage();
+    }
 }
 );
 
@@ -83,10 +87,10 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 's.nombre',
+                0 => 'p.nombre',
             );
 
-            $where .= " WHERE s.active=true";
+            $where .= " WHERE p.active=true";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
@@ -94,9 +98,10 @@ $app->get('/all', function () use ($app) {
             }
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Sexos AS s";
-            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',s.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',s.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Sexos AS s";
+            $sqlTot = "SELECT count(*) as total FROM Paises AS p";
+            $sqlRec = "SELECT " . $columns[0] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',p.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',p.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Paises AS p";
 
+            //concatenate search sql if value exist
             if (isset($where) && $where != '') {
 
                 $sqlTot .= $where;
@@ -156,14 +161,14 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $sexos = new Sexos();
-                $sexos->creado_por = $user_current["id"];
-                $sexos->fecha_creacion = date("Y-m-d H:i:s");
-                $sexos->active = true;
-                if ($sexos->save($post) === false) {
+                $pais = new Paises();
+                $pais->creado_por = $user_current["id"];
+                $pais->fecha_creacion = date("Y-m-d H:i:s");
+                $pais->active = true;
+                if ($pais->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $permiso->id;
+                    echo $pais->id;
                 }
             } else {
                 echo "acceso_denegado";
@@ -205,10 +210,10 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $user_current = json_decode($token_actual->user_current, true);
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
-                $sexo = Sexos::findFirst(json_decode($id));
-                $sexo->actualizado_por = $user_current["id"];
-                $sexo->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($sexo->save($put) === false) {
+                $pais = Paises::findFirst(json_decode($id));
+                $pais->actualizado_por = $user_current["id"];
+                $pais->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($pais->save($put) === false) {
                     echo "error";
                 } else {
                     echo $id;
@@ -224,6 +229,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 }
 );
+
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
@@ -248,7 +254,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $user = Sexos::findFirst(json_decode($id));
+                $user = Paises::findFirst(json_decode($id));
                 $user->active = false;
                 if ($user->save($user) === false) {
                     echo "error";
@@ -268,11 +274,31 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
-// Editar registro
+//Busca el registro
 $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
-    $phql = 'SELECT * FROM Sexos WHERE id = :id:';
-    $user = $app->modelsManager->executeQuery($phql, ['id' => $id,])->getFirst();
-    echo json_encode($user);
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            $pais = Paises::findFirst($id);
+            if (isset($pais->id)) {
+                echo json_encode($pais);
+            } else {
+                echo "error";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
 }
 );
 
