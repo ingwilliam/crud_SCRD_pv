@@ -19,6 +19,13 @@ class Programas extends Model
             'id',
             'Tiposeventos',
             'programa'
+        );
+        
+        //Se define la relación con 1 a N con Convocatorias
+        $this->hasMany(
+            'id',
+            'Convocatorias',
+            'programa'
         );                        
     }  
     
