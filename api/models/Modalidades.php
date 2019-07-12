@@ -7,7 +7,7 @@ class Modalidades extends Model
     
     public function initialize()
     {
-        //Se define relacion de N a 1 con Paises
+        //Se define relacion de N a 1 con Programas
         $this->belongsTo(
             'programa',
             'Programas',

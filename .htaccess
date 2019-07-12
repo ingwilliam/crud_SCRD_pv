@@ -1,0 +1,9 @@
+#crud_pv/api/.htaccess
+AddDefaultCharset UTF-8
+<IfModule mod_rewrite.c>
+    Options -Indexes
+</IfModule>
+<FilesMatch "\.(htaccess|htpasswd|ini|phps|log|bak|txt)$">
+ Order Allow,Deny
+ Deny from all
+</FilesMatch>

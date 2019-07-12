@@ -17,5 +17,12 @@ class Tiposeventos extends Model
             ]
         );
         
+        //Se define la relación con 1 a N con Convocatorias
+        $this->hasMany(
+            'id',
+            'Convocatoriascronogramas',
+            'tipo_evento'
+        );  
+        
     }
 }
