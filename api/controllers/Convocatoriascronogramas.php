@@ -173,7 +173,8 @@ $app->post('/new', function () use ($app, $config) {
                 $tipo_evento= Tiposeventos::findFirst($post["tipo_evento"]);                
                 if($tipo_evento->periodo)
                 {
-                    $post["fecha_fin"]=$post["fecha_fin"]." 23:59:59";                    
+                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
+                    $post["fecha_fin"]=$post["fecha_fin"]." ".$tabla_maestra[0]->valor;                                                           
                 }
                 //Valido que es el evento fecha cierre con el fin de asignarle la hora de cierre de la tabla maestra
                 if($tipo_evento->id==12)
@@ -244,7 +245,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $tipo_evento= Tiposeventos::findFirst($put["tipo_evento"]);                
                 if($tipo_evento->periodo)
                 {
-                    $put["fecha_fin"]=$put["fecha_fin"]." 23:59:59";                    
+                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
+                    $put["fecha_fin"]=$put["fecha_fin"]." ".$tabla_maestra[0]->valor;                                                            
                 }
                 //Valido que es el evento fecha cierre con el fin de asignarle la hora de cierre de la tabla maestra
                 if($tipo_evento->id==12)

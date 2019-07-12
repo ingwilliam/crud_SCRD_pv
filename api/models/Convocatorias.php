@@ -55,6 +55,7 @@ class Convocatorias extends Model {
         $this->belongsTo(
                 'area', 'Areas', 'id'
         );
+                
     }
 
 }
