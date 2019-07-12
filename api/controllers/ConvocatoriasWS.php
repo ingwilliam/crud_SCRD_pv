@@ -59,6 +59,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["tiene_categorias"] = $convocatoria->tiene_categorias;
         $array_convocatoria["bolsa_concursable"] = $convocatoria->bolsa_concursable;
         $array_convocatoria["descripcion_bolsa"] = $convocatoria->descripcion_bolsa;
+        $array_convocatoria["objeto"] = $convocatoria->objeto;
 
         //Valido que la convocatoria no tenga categorias
         if ($convocatoria->tiene_categorias == false) {
@@ -125,10 +126,25 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             }
         } else {
             $conditions = ['convocatoria' => $id, 'active' => true];
-            $cronogramas[$id] = Convocatoriascronogramas::find(([
+            $consulta_cronogramas = Convocatoriascronogramas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                         'bind' => $conditions,
             ]));
+            
+            
+            foreach ($consulta_cronogramas as $evento) {
+                $cronogramas[$evento->id]["tipo_evento"]=$evento->getTiposeventos()->nombre;                
+                if($evento->getTiposeventos()->periodo)
+                {
+                    $cronogramas[$evento->id]["fecha"]="desde ".date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a')." hasta ".date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');                
+                }
+                else
+                {
+                    $cronogramas[$evento->id]["fecha"]=date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');                
+                }                
+                $cronogramas[$evento->id]["descripcion"]=$evento->descripcion;                
+                $cronogramas[$evento->id]["convocatoria"]=$id;                                
+            }                        
 
             $documentos_administrativos[$id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Administrativos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $id);
 
