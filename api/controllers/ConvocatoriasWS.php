@@ -53,7 +53,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["convocatoria"] = $convocatoria->nombre;
         $array_convocatoria["entidad"] = $convocatoria->getEntidades()->nombre;
         $array_convocatoria["descripcion"] = $convocatoria->descripcion;
-        $array_convocatoria["estado"] = "Estados : " . $convocatoria->getEstados()->nombre;
+        $array_convocatoria["estado"] = "Estado : " . $convocatoria->getEstados()->nombre;
         $array_convocatoria["linea"] = $convocatoria->getLineasestrategicas()->nombre;
         $array_convocatoria["area"] = $convocatoria->getAreas()->nombre;
         $array_convocatoria["tiene_categorias"] = $convocatoria->tiene_categorias;
@@ -64,8 +64,33 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
         $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
 
-        //Valido que la convocatoria no tenga categorias
+        $conditions = ['convocatoria_padre_categoria' => $id, 'active' => true];
+        $categorias = Convocatorias::find(([
+                    'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                    'bind' => $conditions,
+        ]));
+
+        //Si tiene diferentes_categorias esta en true debo hacer el filtro por cada categoria
+        //De lo contrario el cronograma, administrativos, tecnicos y rondas es el mismo para todas sus categorias
+        if ($convocatoria->diferentes_categorias) {
+            foreach ($categorias as $categoria) {
+                $conditions = ['convocatoria' => $categoria->id, 'active' => true];
+                $cronogramas[$categoria->id] = Convocatoriascronogramas::find(([
+                            'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+
+                $documentos_administrativos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Administrativos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
+
+                $documentos_tecnicos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Tecnicos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
+
+                $rondas_evaluacion[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasrondas.*  FROM Convocatoriasrondas WHERE Convocatoriasrondas.active=true AND Convocatoriasrondas.convocatoria = " . $categoria->id);
+            }
+        }
+
+        //Creo el array de las convocatorias que no tienen categorias
         if ($convocatoria->tiene_categorias == false) {
+
             $array_convocatoria["valor_total_estimulos"] = "$ " . number_format($convocatoria->valor_total_estimulos, 0, '', '.');
             //Verifico si el bolsa y su dritribucion
             if ($convocatoria->bolsa_concursable) {
@@ -98,33 +123,6 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             } else {
                 $array_convocatoria["numero_estimulos"] = $convocatoria->numero_estimulos;
             }
-        } else {
-            
-        }
-
-        $conditions = ['convocatoria_padre_categoria' => $id, 'active' => true];
-        $categorias = Convocatorias::find(([
-                    'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
-                    'bind' => $conditions,
-        ]));
-
-        //Si tiene diferentes_categorias esta en true debo hacer el filtro por cada categoria
-        //De lo contrario el cronograma, administrativos, tecnicos y rondas es el mismo para todas sus categorias
-        if ($convocatoria->diferentes_categorias) {
-            foreach ($categorias as $categoria) {
-                $conditions = ['convocatoria' => $categoria->id, 'active' => true];
-                $cronogramas[$categoria->id] = Convocatoriascronogramas::find(([
-                            'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
-                            'bind' => $conditions,
-                ]));
-
-                $documentos_administrativos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Administrativos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
-
-                $documentos_tecnicos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Tecnicos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
-
-                $rondas_evaluacion[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasrondas.*  FROM Convocatoriasrondas WHERE Convocatoriasrondas.active=true AND Convocatoriasrondas.convocatoria = " . $categoria->id);
-            }
-        } else {
 
             //Se crea todo el array del cronograma de actividades de la convocatoria simple            
             $conditions = ['convocatoria' => $id, 'active' => true];
@@ -199,35 +197,34 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                                 ]
                 );
             }
+
+            //consulto los tipos anexos listados
+            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
+            $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+            $conditions = ['convocatoria' => $id, 'active' => true];
+            $listados = Convocatoriasanexos::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
+                        'bind' => $conditions,
+            ]));
+
+            //consulto los tipos anexos documentacion
+            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='documentacion'");
+            $tipo_documento_documentacion = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+            $conditions = ['convocatoria' => $id, 'active' => true];
+            $documentacion = Convocatoriasanexos::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_documentacion . ')',
+                        'bind' => $conditions,
+            ]));
+
+            //consulto los tipos anexos avisos
+            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='avisos'");
+            $tipo_documento_avisos = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+            $conditions = ['convocatoria' => $id, 'active' => true];
+            $avisos = Convocatoriasanexos::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
+                        'bind' => $conditions,
+            ]));
         }
-
-        //consulto los tipos anexos listados
-        $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
-        $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
-        $conditions = ['convocatoria' => $id, 'active' => true];
-        $listados = Convocatoriasanexos::find(([
-                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
-                    'bind' => $conditions,
-        ]));
-
-        //consulto los tipos anexos documentacion
-        $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='documentacion'");
-        $tipo_documento_documentacion = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
-        $conditions = ['convocatoria' => $id, 'active' => true];
-        $documentacion = Convocatoriasanexos::find(([
-                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_documentacion . ')',
-                    'bind' => $conditions,
-        ]));
-
-        //consulto los tipos anexos avisos
-        $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='avisos'");
-        $tipo_documento_avisos = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
-        $conditions = ['convocatoria' => $id, 'active' => true];
-        $avisos = Convocatoriasanexos::find(([
-                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
-                    'bind' => $conditions,
-        ]));
-
 
         //Creo todos los array del registro
         $array["convocatoria"] = $array_convocatoria;
@@ -248,6 +245,20 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         echo "error_metodo";
     }
 });
+
+$app->post('/download_file', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        echo $chemistry_alfresco->download($request->getPost('cod'));
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
 
 try {
     // Gestionar la consulta
