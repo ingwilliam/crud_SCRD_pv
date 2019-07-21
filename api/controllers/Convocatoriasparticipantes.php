@@ -55,7 +55,7 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
+
             $select = Convocatoriasparticipantes::find(['convocatoria = '.$request->get('convocatoria').' AND tipo_participante IN ('.$request->get('tipo_participante').')','order' => 'orden']);
 
             echo json_encode($select);
@@ -80,7 +80,7 @@ $app->get('/select_form_convocatoria', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
+
             $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$request->get('convocatoria')." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
             echo json_encode($select);
         } else {
@@ -177,7 +177,7 @@ $app->post('/new', function () use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                
+
                 //Guardar el perfil de jurados
                 if($request->getPut('tipo_participante')==4)
                 {
@@ -187,27 +187,27 @@ $app->post('/new', function () use ($app, $config) {
                         $user_current = json_decode($token_actual->user_current, true);
                         $post = $app->request->getPost();
                         $post["area_conocimiento"] = json_encode($post["area_conocimiento"]);
-                        $post["nivel_educativo"] = json_encode($post["nivel_educativo"]);                    
-                        $post["area_perfil"] = json_encode($post["area_perfil"]);                    
+                        $post["nivel_educativo"] = json_encode($post["nivel_educativo"]);
+                        $post["area_perfil"] = json_encode($post["area_perfil"]);
                         $convocatoriasparticipantes = new Convocatoriasparticipantes();
                         $convocatoriasparticipantes->creado_por = $user_current["id"];
                         $convocatoriasparticipantes->fecha_creacion = date("Y-m-d H:i:s");
-                        $convocatoriasparticipantes->active = true;                    
+                        $convocatoriasparticipantes->active = true;
                         if ($convocatoriasparticipantes->save($post) === false) {
                             echo "error";
                         } else {
                             echo $convocatoriasparticipantes->id;
                         }
-                    }                    
+                    }
                     else
                     {
                         echo "error_maximo_jurados";
                     }
                 }
                 else
-                {                
+                {
                     //Consulto si el registro existe con el fin de activarlo para personas naurales juridicas y agrupaciones
-                    $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));                
+                    $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst("convocatoria=".$request->getPut('convocatoria')." AND tipo_participante=".$request->getPut('tipo_participante'));
                     if(isset($convocatoriasparticipantes->id))
                     {
                         $convocatoriasparticipantes->active = true;
@@ -224,12 +224,12 @@ $app->post('/new', function () use ($app, $config) {
                         $convocatoriasparticipantes->active = true;
                     }
 
-                    if ($convocatoriasparticipantes->save($post) === false) {                
+                    if ($convocatoriasparticipantes->save($post) === false) {
                         echo "error";
                     } else {
-                        echo $convocatoriasparticipantes->id;                    
-                    }    
-                }                
+                        echo $convocatoriasparticipantes->id;
+                    }
+                }
             } else {
                 echo "acceso_denegado";
             }
@@ -271,8 +271,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $put = $app->request->getPut();
                 unset($put["id"]);
                 $put["area_conocimiento"] = json_encode($put["area_conocimiento"]);
-                $put["nivel_educativo"] = json_encode($put["nivel_educativo"]);                    
-                $put["area_perfil"] = json_encode($put["area_perfil"]);                    
+                $put["nivel_educativo"] = json_encode($put["nivel_educativo"]);
+                $put["area_perfil"] = json_encode($put["area_perfil"]);
                 // Consultar el usuario que se esta editando
                 $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));
                 $convocatoriasparticipantes->actualizado_por = $user_current["id"];
@@ -313,7 +313,7 @@ $app->delete('/delete', function () use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-        
+
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
@@ -328,7 +328,7 @@ $app->delete('/delete', function () use ($app, $config) {
                     $convocatoriasparticipantes->active=true;
                     $retorna="Si";
                 }
-                
+
                 if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
                     echo "error";
                 } else {
@@ -336,7 +336,7 @@ $app->delete('/delete', function () use ($app, $config) {
                 }
             } else {
                 echo "acceso_denegado";
-            }           
+            }
         } else {
             echo "error_token";
         }
@@ -369,7 +369,7 @@ $app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $con
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el usuario que se esta editando
-                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));               
+                $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst(json_decode($id));
                 if($convocatoriasparticipantes->active==true)
                 {
                     $convocatoriasparticipantes->active=false;
@@ -380,7 +380,7 @@ $app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $con
                     $convocatoriasparticipantes->active=true;
                     $retorna="Si";
                 }
-                
+
                 if ($convocatoriasparticipantes->save($convocatoriasparticipantes) === false) {
                     echo "error";
                 } else {

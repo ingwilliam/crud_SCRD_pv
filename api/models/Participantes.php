@@ -15,5 +15,12 @@ class Participantes extends Model
            'Usuariosperfiles',
            'id'
        );
+
+       //hasMany	Defines a 1-n relationship
+       $this->hasMany(
+           'id',
+           'Propuestas',
+           'participante'
+       );
    }
 }
