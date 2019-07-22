@@ -14,6 +14,15 @@ class Usuariosperfiles extends Model
          'Participantes',
          'usuario_perfil'
      );
+
+
+     //hasMany	Defines a 1-n relationship
+     $this->hasMany(
+         'id',
+         'Educacionformal',
+         'usuario_perfil'
+     );
+
    }
-   
+
 }

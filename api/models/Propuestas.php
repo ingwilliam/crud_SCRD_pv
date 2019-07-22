@@ -7,8 +7,8 @@ class Propuestas extends Model
 
     public function initialize()
     {
-      //belongsTo	Defines a n-1 relationship
-        $this->belongsTo(
+        //hasOne	Defines a 1-1 relationship
+        $this->hasOne(
             'participante',
             'Participantes',
             'id'

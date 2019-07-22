@@ -16,8 +16,8 @@ class Participantes extends Model
            'id'
        );
 
-       //hasMany	Defines a 1-n relationship
-       $this->hasMany(
+       //hasOne	Defines a 1-1 relationship
+       $this->hasOne(
            'id',
            'Propuestas',
            'participante'

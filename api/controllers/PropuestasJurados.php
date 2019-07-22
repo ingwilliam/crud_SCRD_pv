@@ -142,6 +142,7 @@ $app->get('/search', function () use ($app, $config) {
 
 
                          //Creo los array de los select del formulario
+                         $array["categoria"]= $participante->propuestas->modalidad_participa;
                          $array["tipo_documento"]= Tiposdocumentos::find("active=true");
                          $array["sexo"]= Sexos::find("active=true");
                          $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
@@ -248,11 +249,16 @@ $app->post('/edit_participante', function () use ($app, $config) {
                     " participante = ".$participante->id." AND convocatoria = ".$request->get('idc')
                   ]);
 
+                  //return json_encode(  $participante->propuestas );
+
                   //valido si la propuesta tiene el estado 9 (registrada)
                   if( $propuesta != null and $propuesta->estado == 9 ){
+
+                      $propuesta->modalidad_participa = $request->get('categoria');
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
+                      $participante->propuestas = $propuesta;
 
                     if ($participante->save($post) === false) {
                         echo "error";
@@ -289,6 +295,349 @@ $app->post('/edit_participante', function () use ($app, $config) {
 }
 );
 
+
+
+//Busca el registro información básica
+$app->get('/search', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+
+
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                     if( $usuario_perfil->id != null ){
+
+                       /*
+                       *Si el usuario que inicio sesion tiene perfil de jurado, asi mismo registro de  participante
+                       * y  tiene asociada una convocatoria "idc"
+                       */
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->execute()
+                         ->getFirst();
+
+
+
+                       if( $participante->id == null ){
+
+                         //busca la información del ultimo perfil creado
+                         $old_participante = Participantes::findFirst(
+                           [
+                             "usuario_perfil = ".$usuario_perfil->id,
+                             "order" => "id DESC" //trae el último
+                           ]
+                          );
+
+                         $new_participante = clone $old_participante;
+                         $new_participante->id = null;
+                         $new_participante->actualizado_por = null;
+                         $new_participante->fecha_actualizacion = null;
+                         $new_participante->creado_por = $user_current["id"];
+                         $new_participante->fecha_creacion = date("Y-m-d H:i:s");
+                         $new_participante->participante_padre = $old_participante->id;
+                         $new_participante->tipo = "Participante";
+
+                         $propuesta = new Propuestas();
+                         $propuesta->convocatoria = $request->get('idc');
+                         $propuesta->creado_por = $user_current["id"];
+                         $propuesta->fecha_creacion = date("Y-m-d H:i:s");
+                         //Estado 9	Registrada
+                         $propuesta->estado = 9;
+
+                         $new_participante->propuestas = $propuesta;
+
+                         if ($new_participante->save($post) === false) {
+
+                           echo "error";
+
+                           //Para auditoria en versión de pruebas
+                           /*
+                           foreach ($participante->getMessages() as $message) {
+                                   echo $message;
+                                 }
+                           */
+
+                         }else{
+                            //Asigno el nuevo participante al array
+                            $array["participante"] = $new_participante;
+                          }
+
+                      }else{
+
+                        //Asigno el participante al array
+                        $array["participante"] = $participante;
+                      }
+
+
+                         //Creo los array de los select del formulario
+                         $array["categoria"]= $participante->propuestas->modalidad_participa;
+                         $array["tipo_documento"]= Tiposdocumentos::find("active=true");
+                         $array["sexo"]= Sexos::find("active=true");
+                         $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
+                         $array["identidad_genero"]= Identidadesgeneros::find("active=true");
+                         $array["grupo_etnico"]= Gruposetnicos::find("active=true");
+                         $array_ciudades=array();
+
+                         //Ciudades
+                         foreach( Ciudades::find("active=true") as $value )
+                         {
+                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
+
+                             if($participante->ciudad_nacimiento == $value->id ){
+                               $participante->ciudad_nacimiento = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
+                             }
+
+                             if($participante->ciudad_residencia == $value->id ){
+                               $participante->ciudad_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
+                             }
+                         }
+                         $array["ciudad"]=$array_ciudades;
+
+                         //Barrios
+                         $array_barrios=array();
+                         foreach( Barrios::find("active=true") as $value )
+                         {
+                             $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
+
+                             if($participante->barrio_residencia == $value->id ){
+                               $participante->barrio_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
+                             }
+
+                         }
+                         $array["barrio"]= $array_barrios;
+
+                         $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");
+                         $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
+
+                         //Retorno el array
+                        return json_encode( $array );
+
+                     }else{
+
+                       return json_encode( new Participantes() );
+                     }
+
+            }
+
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+        echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      //echo "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+
+//Busca el registro información básica
+$app->get('/search_educacion_formal', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+
+
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                     if( $usuario_perfil->id != null ){
+
+
+                        $array["usuario_perfil"]=$usuario_perfil->id;
+
+                         //Ciudades
+                         foreach( Ciudades::find("active=true") as $value )
+                         {
+                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
+
+                         }
+                         $array["ciudad"]=$array_ciudades;
+
+                         $array["niveleseducativos"] = Niveleseducativos::find("active=true");
+                         $array["areasconocimientos"] = Areasconocimientos::find("active=true");
+
+                         //Retorno el array
+                        return json_encode( $array );
+
+                     }else{
+                       return json_encode( array() );
+                     }
+
+            }
+
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+        echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      //echo "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+
+//Busca los registros de educacion formal
+$app->get('/all_educacion_formal', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                       $response = Educacionformal::find(
+                         [
+                           "usuario_perfil= ".$usuario_perfil->id." AND titulo LIKE '%".$request->get("search")['value']."%'",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       //resultado sin filtro
+                       $teducacionformal = Educacionformal::find([
+                         "usuario_perfil = ".$usuario_perfil->id
+                       ]);
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($teducacionformal->count()),
+                "recordsFiltered" => intval($teducacionformal->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+        echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      //echo "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+
+/*Cesar britto
+Retorna información de id y nombre las categorias asociadas a la convocatoria */
+$app->get('/select_nucleobasico', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $categorias=  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual != false ) {
+
+            //Si existe consulto la convocatoria
+            if($request->get('id'))
+            {
+
+                $rs = Nucleosbasicos::find(
+                  [
+                    "area_conocimiento = ".$request->get('id')
+                  ]
+                );
+
+                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+              foreach ( $rs as $key => $value) {
+                      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                }
+
+
+            }
+
+            echo json_encode($nucleosbasicos);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo".$ex->getMessage();
+    }
+}
+);
 
 try {
     // Gestionar la consulta
