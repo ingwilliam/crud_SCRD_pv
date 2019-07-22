@@ -166,11 +166,13 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();                                
+                
                 $convocatoriadocumento = new Convocatoriasdocumentos();
                 //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
                 if( $post["convocatoria"] == "" ){
                     $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
                 }
+                $post["archivos_permitidos"] = json_encode($post["archivos_permitidos"]);
                 $convocatoriadocumento->creado_por = $user_current["id"];
                 $convocatoriadocumento->fecha_creacion = date("Y-m-d H:i:s");
                 $convocatoriadocumento->active = true;
@@ -224,6 +226,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if( $put["convocatoria"] == "" ){
                     $put["convocatoria"]=$put["convocatoria_padre_categoria"];                    
                 }
+                $put["archivos_permitidos"] = json_encode($put["archivos_permitidos"]);
                 $convocatoriadocumento->actualizado_por = $user_current["id"];
                 $convocatoriadocumento->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($convocatoriadocumento->save($put) === false) {
@@ -321,7 +324,9 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_archivos_tecnicos'");
             $array["tipos_archivos_tecnicos"] = explode(",", $tabla_maestra[0]->valor);
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_archivos_administrativos'");
-            $array["tipos_archivos_administrativos"] = explode(",", $tabla_maestra[0]->valor);
+            $array["tipos_archivos_administrativos"] = explode(",", $tabla_maestra[0]->valor);            
+            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_tamano_archivos'");
+            $array["tamanos_permitidos"] = explode(",", $tabla_maestra[0]->valor);            
             $array["convocatoriadocumento"]=$convocatoriadocumento;
             $array["requisitos"]= Requisitos::find("active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'");
             //Retorno el array
