@@ -158,6 +158,7 @@ $app->get('/all', function () use ($app) {
                 6 => 'c.descripcion',
                 7 => 'p.nombre',
                 8 => 'es.nombre',
+                9 => 'c.orden',
             );
 
 
@@ -216,11 +217,11 @@ $app->get('/all', function () use ($app) {
 
             if(!empty($request->get('convocatoria')))
             {
-                $sqlRec = "SELECT ". $columns[5] . "," . $columns[6] . ",concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
+                $sqlRec = "SELECT ". $columns[5] . "," . $columns[6] . "," . $columns[9] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button title=\"',c.id,'\" type=\"button\" class=\"btn btn-warning btn_categoria\" data-toggle=\"modal\" data-target=\"#editar_convocatoria\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
             }
             else
             {
-                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
             }
 
             //concatenate search sql if value exist
@@ -231,8 +232,16 @@ $app->get('/all', function () use ($app) {
                 $sqlRec .= $where;
             }
 
-            //Concateno el orden y el limit para el paginador
-            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            if(!empty($request->get('convocatoria')))
+            {
+                //Concateno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY " . $columns[9] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            }
+            else
+            {
+                //Concateno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            }
 
 
             //Concateno el group by de estados
