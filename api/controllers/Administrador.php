@@ -44,7 +44,7 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->post('/menu', function () use ($app) {
+$app->post('/menu', function () use ($app,$config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -517,7 +517,7 @@ $app->post('/menu', function () use ($app) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/publicar.html?id=<?php echo $request->getPost('id');?>">Publicar</a>
+                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Publicar</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
