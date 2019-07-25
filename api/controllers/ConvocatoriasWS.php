@@ -115,8 +115,29 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 
             //Valido que la convocatorias tenga categorias generales
             if($convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == false){                                 
+
                 $tipo_convocatoria="general";
                 
+                //Se crea todo el array de las rondas de evaluacion
+                foreach ($categorias as $categoria) {
+                    $conditions = ['convocatoria' => $categoria->id, 'active' => true];
+                    $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
+                                'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                                'bind' => $conditions,
+                    ]));
+
+                    foreach ($consulta_rondas_evaluacion as $ronda) {
+                        $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
+                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> ".$categoria->nombre." <br/><b>Ronda:</b> ".$ronda->nombre_ronda;
+                        $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
+                        $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
+                                        [
+                                            "convocatoria_ronda = " . $ronda->id . "",
+                                            "order" => 'orden'
+                                        ]
+                        );
+                    }    
+                }
             }
             else
             {
@@ -180,6 +201,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                         'bind' => $conditions,
+                        'order' => 'orden ASC',
             ]));
             foreach ($consulta_documentos_administrativos as $documento) {
                 if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
@@ -201,25 +223,6 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
             }
 
-            //Se crea todo el array de las rondas de evaluacion
-            $conditions = ['convocatoria' => $id, 'active' => true];
-            $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
-                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
-                        'bind' => $conditions,
-            ]));
-
-            foreach ($consulta_rondas_evaluacion as $ronda) {
-                $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
-                $rondas_evaluacion[$ronda->id]["nombre"] = $ronda->nombre_ronda;
-                $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
-                $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
-                                [
-                                    "convocatoria_ronda = " . $ronda->id . "",
-                                    "order" => 'orden'
-                                ]
-                );
-            }
-
             //consulto los tipos anexos listados
             $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
             $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
@@ -227,6 +230,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             $listados = Convocatoriasanexos::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
                         'bind' => $conditions,
+                        'order' => 'orden ASC',
             ]));
 
             //consulto los tipos anexos documentacion
@@ -236,6 +240,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             $documentacion = Convocatoriasanexos::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_documentacion . ')',
                         'bind' => $conditions,
+                        'order' => 'orden ASC',
             ]));
 
             //consulto los tipos anexos avisos
@@ -245,6 +250,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             $avisos = Convocatoriasanexos::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
                         'bind' => $conditions,
+                        'order' => 'orden ASC',
             ]));
         }                       
         

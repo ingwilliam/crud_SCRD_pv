@@ -633,6 +633,8 @@ $app->get('/search', function () use ($app) {
             $array["barrio_localidad_ciudad_id_w"]= $array["barrio_w"]->getLocalidades()->id;
             $array["barrio_localidad_ciudad_obj_w"]= $array["barrio_w"]->getLocalidades()->getCiudades();
             $array["barrio_localidad_ciudad_nombre_w"]= $array["barrio_w"]->getLocalidades()->getCiudades()->nombre;
+            Ejemplo claro para traer todos los hijos de una entidad
+            $convocatoria->Convocatorias
             */
 
             $array["programas"]= Programas::find("active=true");

@@ -87,9 +87,8 @@ $app->get('/all', function () use ($app) {
                 3 => 'cc.descripcion',
                 4 => 'cc.active',
                 5 => 'cc.convocatoria',
-                6 => 'c.nombre',
-                7 => 'ccat.nombre',
-                8 => 'cpad.nombre',
+                6 => 'c.nombre',                
+                7 => 'cpad.nombre',
             );
 
             $where .= " INNER JOIN Tiposeventos AS te ON te.id=cc.tipo_evento";
@@ -100,8 +99,7 @@ $app->get('/all', function () use ($app) {
 
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
                 $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }                                
 
