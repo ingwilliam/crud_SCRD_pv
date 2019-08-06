@@ -94,12 +94,23 @@ $app->get('/all', function () use ($app) {
             $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
             $tipo_documento = str_replace(",", "','", "'".$tabla_maestra->valor."'");
             
-            //OJO WILLIAM DEBE ARREGLAR QUE TRAIGA TODAS PADRE E HIJAS SE ESTAN REVOLVIENDO
-            
+            //Array para consultar las posibles categorias de la convocatoria
+            $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
+            $categorias = Convocatorias::find([
+                        'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                        'bind' => $conditions,
+                        "order" => 'orden',
+            ]);
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";
+            }            
+            $array_categorias=$array_categorias.$request->get("convocatoria");
+                        
             //Condiciones basicas
             $where .= " LEFT JOIN Convocatorias AS c ON c.id=ca.convocatoria";
             $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
-            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria=".$request->get("convocatoria")." AND ca.tipo_documento IN (".$tipo_documento.")";
+            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria IN (".$array_categorias.") AND ca.tipo_documento IN (".$tipo_documento.")";
             
             //Condiciones para la consulta
             if (!empty($request->get("search")['value'])) {

@@ -102,6 +102,16 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
             }
             
+            //creo los listado de la convocatoria general
+            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
+            $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+            $conditions = ['convocatoria' => $id, 'active' => true];
+            $listados = Convocatoriasanexos::find(([
+                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
+                    'bind' => $conditions,
+                    'order' => 'orden ASC',
+            ]));
+                        
         }
         else
         {
@@ -112,6 +122,13 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         "order" => 'orden',
             ]);
+            
+            //Creo el in de categorias
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";                
+            }                        
+            $array_categorias=$array_categorias.$id;            
                 
             //Valido que la convocatorias tenga categorias generales
             if($convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == false){                                 
@@ -138,6 +155,25 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         );
                     }    
                 }
+                
+                //Se crea todo el array de las listados por categorias
+                foreach ($categorias as $categoria) {
+                    //consulto los tipos anexos listados
+                    $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
+                    $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+                    $conditions = ['convocatoria' => $categoria->id, 'active' => true];
+                    $consulta_listados = Convocatoriasanexos::find(([
+                            'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
+                            'bind' => $conditions,
+                            'order' => 'orden ASC',
+                    ]));
+                    
+                    foreach ($consulta_listados as $listado) {
+                        $listados[$categoria->orden]["nombre"] = "<b>Categoría:</b> ".$categoria->nombre;
+                        $listados[$categoria->orden]["listados"][] = $listado;
+                    }    
+                }
+                
             }
             else
             {
@@ -223,16 +259,6 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
             }
 
-            //consulto los tipos anexos listados
-            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
-            $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
-            $conditions = ['convocatoria' => $id, 'active' => true];
-            $listados = Convocatoriasanexos::find(([
-                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
-                        'bind' => $conditions,
-                        'order' => 'orden ASC',
-            ]));
-
             //consulto los tipos anexos documentacion
             $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='documentacion'");
             $tipo_documento_documentacion = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
@@ -242,16 +268,18 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         'order' => 'orden ASC',
             ]));
-
+            
+            
             //consulto los tipos anexos avisos
             $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='avisos'");
             $tipo_documento_avisos = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
             $conditions = ['convocatoria' => $id, 'active' => true];
             $avisos = Convocatoriasanexos::find(([
-                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
-                        'bind' => $conditions,
-                        'order' => 'orden ASC',
+                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
+                    'bind' => $conditions,
+                    'order' => 'orden ASC',
             ]));
+
         }                       
         
         //Creo todos los array del registro
@@ -270,7 +298,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         echo json_encode($array);
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
 
