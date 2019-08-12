@@ -86,14 +86,31 @@ $app->get('/all', function () use ($app) {
                 1 => 'ca.nombre',
                 2 => 'ca.descripcion',
                 3 => 'ca.orden',
+                4 => 'c.nombre',                
+                5 => 'cpad.nombre',
             );
 
             //consulto los tipos anexos
             $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
             $tipo_documento = str_replace(",", "','", "'".$tabla_maestra->valor."'");
             
+            //Array para consultar las posibles categorias de la convocatoria
+            $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
+            $categorias = Convocatorias::find([
+                        'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                        'bind' => $conditions,
+                        "order" => 'orden',
+            ]);
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";
+            }            
+            $array_categorias=$array_categorias.$request->get("convocatoria");
+                        
             //Condiciones basicas
-            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria=".$request->get("convocatoria")." AND ca.tipo_documento IN (".$tipo_documento.")";
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=ca.convocatoria";
+            $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
+            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria IN (".$array_categorias.") AND ca.tipo_documento IN (".$tipo_documento.")";
             
             //Condiciones para la consulta
             if (!empty($request->get("search")['value'])) {
@@ -104,7 +121,7 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatoriasanexos AS ca";
-            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<input title=\"',ca.id,'\" type=\"checkbox\" class=\"check_activar_',ca.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',ca.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button><button title=\"',ca.id_alfresco,'\" type=\"button\" class=\"btn btn-primary download_file\"><span class=\"glyphicon glyphicon-download-alt\"></span></button>') as acciones FROM Convocatoriasanexos AS ca";
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',ca.id,'\" type=\"checkbox\" class=\"check_activar_',ca.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',ca.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button><button title=\"',ca.id_alfresco,'\" type=\"button\" class=\"btn btn-primary download_file\"><span class=\"glyphicon glyphicon-download-alt\"></span></button>') as acciones FROM Convocatoriasanexos AS ca";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -134,7 +151,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -166,7 +183,13 @@ $app->post('/new', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-                $post = $app->request->getPost();                                
+                $post = $app->request->getPost();
+                
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
                 $convocatoriaanexo = new Convocatoriasanexos();                
                 $convocatoriaanexo->creado_por = $user_current["id"];
                 $convocatoriaanexo->fecha_creacion = date("Y-m-d H:i:s");
@@ -181,8 +204,8 @@ $app->post('/new', function () use ($app, $config) {
                         $fileType = $valor['type'];
                         $fileNameCmps = explode(".", $valor["name"]);
                         $fileExtension = strtolower(end($fileNameCmps));                                
-                        $fileName = "c".$request->getPost('convocatoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
-                        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
+                        $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
+                        $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
                         if(strpos($return, "Error") !== FALSE){
                             echo "error_creo_alfresco";
                         }
@@ -239,6 +262,11 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
                 // Consultar el usuario que se esta editando
                 $convocatoriaanexo = Convocatoriasanexos::findFirst(json_decode($id));                
                 $convocatoriaanexo->actualizado_por = $user_current["id"];
@@ -250,8 +278,8 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $fileType = $valor['type'];
                     $fileNameCmps = explode(".", $valor["name"]);
                     $fileExtension = strtolower(end($fileNameCmps));                                
-                    $fileName = "c".$request->getPost('convocatoria')."d".$id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
-                    $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
+                    $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;                        
+                    $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);                                                                            
                     if(strpos($return, "Error") !== FALSE){
                         echo "error_creo_alfresco";
                     }

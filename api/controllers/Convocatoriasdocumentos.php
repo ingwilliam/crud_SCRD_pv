@@ -328,7 +328,10 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_tamano_archivos'");
             $array["tamanos_permitidos"] = explode(",", $tabla_maestra[0]->valor);            
             $array["convocatoriadocumento"]=$convocatoriadocumento;
-            $array["requisitos"]= Requisitos::find("active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'");
+            $array["requisitos"]= Requisitos::find([
+                                                        'conditions' => "active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'",
+                                                        "order" => 'orden',
+                                                    ]);
             //Retorno el array
             echo json_encode($array);       
         } else {

@@ -104,7 +104,11 @@ $app->get('/verificar_estado', function () use ($app, $config) {
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
             /* Perfiles de los usuarios
-             * 11 Crear convocatorias, 12 Visto bueno a las convocatorias, 13 Verificar convocatorias, 14 Aprobar convocatorias, 15 Publicar convocatorias
+             * 11 Crear convocatorias, 
+             * 12 Visto bueno a las convocatorias, 
+             * 13 Verificar convocatorias, 
+             * 14 Aprobar convocatorias, 
+             * 15 Publicar convocatorias
              */
             $usuariosperfiles = array();
             switch ($request->get('estado')) {
@@ -629,6 +633,8 @@ $app->get('/search', function () use ($app) {
             $array["barrio_localidad_ciudad_id_w"]= $array["barrio_w"]->getLocalidades()->id;
             $array["barrio_localidad_ciudad_obj_w"]= $array["barrio_w"]->getLocalidades()->getCiudades();
             $array["barrio_localidad_ciudad_nombre_w"]= $array["barrio_w"]->getLocalidades()->getCiudades()->nombre;
+            Ejemplo claro para traer todos los hijos de una entidad
+            $convocatoria->Convocatorias
             */
 
             $array["programas"]= Programas::find("active=true");
@@ -665,7 +671,7 @@ $app->get('/search', function () use ($app) {
             $array["entidades"]= Entidades::find("active=true");
             $array["areas_conocimientos"]= Areasconocimientos::find("active=true AND id<>9");
             $array["niveles_educativos"]= Niveleseducativos::find("active=true");
-            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' AND id<>5 ORDER BY orden");
+            $array["estados"]= Estados::find("active=true AND tipo_estado='convocatorias' ORDER BY orden");
             $array["distribuciones_bolsas"]= $convocatoria->getConvocatoriasrecursos([
                                                                                         'tipo_recurso = :tipo_recurso:',
                                                                                         'bind' => [
@@ -732,7 +738,7 @@ $app->get('/load_search', function () use ($app) {
             $array["enfoques"]=Enfoques::find("active = true");
             $array["estados_convocatorias"] = Estados::find(
                                                             array(
-                                                                "tipo_estado = 'convocatorias' AND active = true AND id NOT IN (6)",
+                                                                "tipo_estado = 'convocatorias' AND active = true AND id IN (1,2,3,4,5,6)",
                                                                 "order" => "orden"
                                                             )
                                                             );
