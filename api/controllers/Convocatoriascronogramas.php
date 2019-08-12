@@ -1,5 +1,6 @@
 <?php
-
+//WILLIAM YA TERMINOD DE REVISAR FUNCIONAMIENTO DE CATEGORIAS Y CRONOGRAMA
+//POR FAVOR VERIFICAR QUE AL MOMETO DE PUBLICAR MUESTRE BIEN LO DE CATEGORIAS Y CRONOGRAMA
 //error_reporting(E_ALL);
 //ini_set('display_errors', '1');
 use Phalcon\Loader;
@@ -81,33 +82,45 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'te.nombre',
-                1 => 'cc.fecha_inicio',
-                2 => 'cc.fecha_fin',
-                3 => 'cc.descripcion',
-                4 => 'cc.active',
-                5 => 'cc.convocatoria',
-                6 => 'c.nombre',
-                7 => 'ccat.nombre',
-                8 => 'cpad.nombre',
+                0 => 'cpad.nombre',                
+                1 => 'c.nombre',
+                2 => 'te.nombre',
+                3 => 'cc.fecha_inicio',
+                4 => 'cc.fecha_fin',
+                5 => 'cc.descripcion',
+                6 => 'cc.active',
+                7 => 'cc.convocatoria',                
             );
+            
 
+            //Array para consultar las posibles categorias de la convocatoria
+            $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
+            $categorias = Convocatorias::find([
+                        'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                        'bind' => $conditions,
+                        "order" => 'orden',
+            ]);
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";
+            }            
+            $array_categorias=$array_categorias.$request->get("convocatoria");
+            
             $where .= " INNER JOIN Tiposeventos AS te ON te.id=cc.tipo_evento";
             $where .= " LEFT JOIN Convocatorias AS c ON c.id=cc.convocatoria";
             $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
-            $where .= " WHERE cc.active IN (true,false) AND cc.convocatoria=".$request->get("convocatoria");
+            $where .= " WHERE cc.active IN (true,false) AND cc.convocatoria IN (".$array_categorias.")";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[7] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
             }                                
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatoriascronogramas AS cc";
-            $sqlRec = "SELECT " . $columns[0] . " AS tipo_evento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . " ," . $columns[5] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',cc.id,'\" type=\"checkbox\" class=\"check_activar_',cc.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cc.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriascronogramas AS cc";
+            $sqlRec = "SELECT " . $columns[2] . " AS tipo_evento," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . " ," . $columns[7] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',cc.id,'\" type=\"checkbox\" class=\"check_activar_',cc.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',cc.id,'\" type=\"button\" class=\"btn btn-warning btn_cargar\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriascronogramas AS cc";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
