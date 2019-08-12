@@ -46,7 +46,7 @@ foreach ($objs->objectList as $obj)
     if ($obj->properties['cmis:baseTypeId'] == "cmis:document")
     {
         $chemistry_alfresco->download($obj->id);
-        
+
     }
     elseif ($obj->properties['cmis:baseTypeId'] == "cmis:folder")
     {
