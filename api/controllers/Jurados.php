@@ -133,7 +133,9 @@ $app->post('/new', function () use ($app, $config) {
                             $participante->creado_por = $user_current["id"];
                             $participante->fecha_creacion = date("Y-m-d H:i:s");
                             $participante->active = true;
+                            $participante->tipo  = 'Inicial';
                             $participante->usuario_perfil = $usuario_perfil->id;
+
 
                             if ($participante->save($post) === false) {
                                 echo "error";

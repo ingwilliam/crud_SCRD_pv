@@ -13,6 +13,28 @@ class Educacionformal extends Model
             'Usuariosperfiles',
             'id'
         );
+
+        //belongsTo	Defines a n-1 relationship
+        $this->hasMany(
+            'propuesta',
+            'Propuestas',
+            'id'
+        );
     }
-    
+
+     public function validation(){       
+
+       if ($this->area_conocimiento == "") {
+         $this->area_conocimiento = null;
+       }
+
+
+       if ($this->nucleo_basico == "") {
+         $this->nucleo_basico = null;
+       }
+
+       return true;
+     }
+
+
 }
