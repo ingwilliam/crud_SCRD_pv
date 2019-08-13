@@ -1,24 +1,82 @@
 # Cesar Britto Ambiente de desarrollo
 
-#agregar usuario cesar.britto
-INSERT INTO public.usuarios (id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,username,"password",active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
-	VALUES (17,'Cesar','Augusto','Britto','Moreno','cesar.britto@scrd.gov.co','$2y$08$ODNPTlRFQ0J4ZzdMcG9VTe3UE6UcW8Wb66C0gAuxbTz66g39ClH9u',true,'2019-06-26 21:52:58','2019-02-14 11:01:13',7,7);
+#Tabla educación formal
+-- Drop table
 
-#asignar rol de usuario a cesar.britto
-INSERT INTO public.usuariosperfiles (usuario,perfil)
-	VALUES (17,16)
+-- DROP TABLE public.educacionformal;
+
+CREATE TABLE public.educacionformal (
+	id serial NOT NULL,
+	usuario_perfil int4 NULL,
+	nivel_educacion int4 NULL,
+	titulo varchar(100) NULL,
+	institucion varchar(100) NULL,
+	ciudad int4 NULL,
+	numero_semestres varchar(100) NULL,
+	graduado bool NULL DEFAULT false,
+	fecha_graduacion date NULL,
+	file varchar(100) NULL,
+	area_conocimiento int4 NULL,
+	nucleo_basico int4 NULL,
+	actualizado_por int4 NULL,
+	creado_por int4 NULL,
+	fecha_actualizacion timestamp NULL,
+	fecha_creacion timestamp NULL,
+	propuesta int4 NULL,
+	active bool NOT NULL DEFAULT false,
+	CONSTRAINT jurado_educacion_formal_pkey PRIMARY KEY (id),
+	CONSTRAINT jurado_educacion_formal_actualizado_por_fkey FOREIGN KEY (actualizado_por) REFERENCES usuarios(id),
+	CONSTRAINT jurado_educacion_formal_area_conocimiento_fkey FOREIGN KEY (area_conocimiento) REFERENCES areasconocimientos(id),
+	CONSTRAINT jurado_educacion_formal_creado_por_fkey FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+	CONSTRAINT jurado_educacion_formal_jurado_fkey FOREIGN KEY (usuario_perfil) REFERENCES usuariosperfiles(id),
+	CONSTRAINT jurado_educacion_formal_nivel_educacion_fkey FOREIGN KEY (nivel_educacion) REFERENCES niveleseducativos(id),
+	CONSTRAINT jurado_educacion_formal_nucleo_basico_fkey FOREIGN KEY (nucleo_basico) REFERENCES nucleosbasicos(id)
+);
+
+-- Permissions
+
+ALTER TABLE public.educacionformal OWNER TO postgres;
+GRANT ALL ON TABLE public.educacionformal TO postgres;
+
+
 
 #Estados de las propuestas
 INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
-	VALUES (7,'propuestas','Registrada',true,'2019-07-15 11:41:09',7,1)
+	VALUES (7,'propuestas','Registrada',true,'2019-07-15 11:41:09',7,1);
 INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
 	VALUES (8,'propuestas','Inscrita',true,'2019-07-15 11:41:26',7,2)
+
+
+#estados de la propuesta
+INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
+	VALUES (15,'estados_propuestas','Registrada,Inscrita',true,'2019-07-15 11:40:48','2019-07-14 21:10:44',7,7)
 
 #estados del participante
 INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_creacion,creado_por)
 	VALUES (16,'estado_participante','Inicial,Participante,Integrante,Respresentante',true,'2019-07-15 09:58:56',7)
 
-#estados de la propuesta
-INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
-	VALUES (15,'estados_propuestas','Registrada,Inscrita',true,'2019-07-15 11:40:48','2019-07-14 21:10:44',7,7)
+#agregar usuario cesar.britto
+INSERT INTO public.usuarios (id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,username,"password",active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
+	VALUES ('Cesar','Augusto','Britto','Moreno','cesar.britto@scrd.gov.co','$2y$08$ODNPTlRFQ0J4ZzdMcG9VTe3UE6UcW8Wb66C0gAuxbTz66g39ClH9u',true,'2019-06-26 21:52:58','2019-02-14 11:01:13',7,7);
+
+#asignar rol de usuario a cesar.britto
+INSERT INTO public.usuariosperfiles (usuario,perfil)
+	VALUES (17,16)
+
+#para el usuario usuario cesar.britto
+INSERT INTO public.usuariosperfiles
+(id, usuario, perfil)
+VALUES(44, 17, 17);
+
+
+#para el usuario usuario cesar.britto
+INSERT INTO public.participantes
+(id, tipo_documento, numero_documento, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, orientacion_sexual, identidad_genero, grupo_etnico, ciudad_nacimiento, ciudad_residencia, barrio_residencia, direccion_residencia, direccion_correspondencia, estrato, numero_telefono, numero_celular, correo_electronico, numero_celular_tercero, nombre_completo_tercero, redes_sociales, links, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por, participante_padre, tipo, usuario_perfil)
+VALUES(3, 1, '123456', 'armando', '', 'casas', '', '2019-06-24', 2, 1, 1, 6, 1, 1, 1, 'calle 1 kra 1', ' calle 1 kra 1', 1, '1', '1', 'xxx@gmail.com', NULL, NULL, NULL, NULL, true, NULL, '2019-07-25 12:10:47.000', 17, NULL, NULL, 'Inicial', 44);
+
+#registro de educación formal para el  usuario cesar.britto
+INSERT INTO public.educacionformal
+(usuario_perfil, nivel_educacion, titulo, institucion, ciudad, numero_semestres, graduado, fecha_graduacion, file, area_conocimiento, nucleo_basico, actualizado_por, creado_por, fecha_actualizacion, fecha_creacion, propuesta, active)
+VALUES( 44, 4, 'bachiller', 'el hueco', 1, NULL, true, '2010-07-28', NULL, NULL, NULL, 17, 17, '2019-08-12 06:37:26.000', '2019-07-25 20:08:43.000', 21, false);
+
 

@@ -118,10 +118,10 @@ $app->post('/new', function () use ($app, $config) {
 
     try {
 
-
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $total=0;
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
@@ -137,6 +137,7 @@ $app->post('/new', function () use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
+
         //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
@@ -154,13 +155,39 @@ $app->post('/new', function () use ($app, $config) {
                 $criterio->active = true;
 
 
+                  //Verificar que la suma de los puntajes no sea mayor a puntaje_maximo_criterios
+                  $criterios = Convocatoriasrondascriterios::find(
+                      [
+                          "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
+                          ]
+                    );
+
+                      //echo json_encode($criterios);
+
+                    $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
+
+                    foreach ($criterios as $c) {
+
+                      $total = $total + $c->puntaje_maximo;
+
+                      }
+
+                      $total = $total + $post["puntaje_maximo"];
+
+                      if( $total > $tabla_maestra->valor ){
+                          return "error_puntaje";
+                      }
+
+
                 if ($criterio->save($post) === false) {
 
+                    //Para auditoria en versión de pruebas
                     /*
                     foreach ($criterio->getMessages() as $message) {
                       echo $message;
                     }
                     */
+
                     echo "error";
                 } else {
                     echo $criterio->id;
@@ -175,7 +202,10 @@ $app->post('/new', function () use ($app, $config) {
         }
 
     } catch (Exception $ex) {
-        echo "error_metodo";
+        //echo "error_metodo";
+
+        //Para auditoria en versión de pruebas
+        echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
     }
 }
 );
@@ -213,7 +243,40 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $criterio->actualizado_por = $user_current["id"];
                 $criterio->fecha_actualizacion = date("Y-m-d H:i:s");
 
+
+                //Verificar que la suma de los puntajes no sea mayor a puntaje_maximo_criterios
+                $criterios = Convocatoriasrondascriterios::find(
+                    [
+                        "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
+                        ]
+                  );
+
+                    //echo json_encode($criterios);
+
+                  $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
+
+                  foreach ($criterios as $c) {
+
+                    $total = $total + $c->puntaje_maximo;
+
+                    }
+
+                    $total = $total + $post["puntaje_maximo"];
+
+                    if( $total > $tabla_maestra->valor ){
+                        return "error_puntaje";
+                    }
+
+
                 if ($criterio->save($put) === false) {
+
+
+                    //Para auditoria en versión de pruebas
+                    /*
+                    foreach ($criterio->getMessages() as $message) {
+                      echo $message;
+                    }
+                    */
                     echo "error";
                 } else {
                     echo $id;

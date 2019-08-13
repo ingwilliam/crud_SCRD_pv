@@ -437,7 +437,7 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                        foreach ($educacionformales as $educacionformal) {
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
-                          array_push($response,$educacionformal);
+                         array_push($response,$educacionformal);
                        }
 
                        //resultado sin filtro
@@ -465,10 +465,10 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
         }
     } catch (Exception $ex) {
 
-        echo "error_metodo";
+      //  echo "error_metodo";
 
       //Para auditoria en versión de pruebas
-      //echo "error_metodo" . $ex->getMessage();
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
