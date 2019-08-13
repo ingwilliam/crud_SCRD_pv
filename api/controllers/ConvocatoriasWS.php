@@ -179,21 +179,154 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             {
                 //Valido que la convocatorias tenga categorias especiales            
                 if($convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == true){
-                    $tipo_convocatoria="especifica";
+                    $tipo_convocatoria="especial";
                     if ($convocatoria->diferentes_categorias) {
+                        
+                        //Recorro todas las categorias especiales
                         foreach ($categorias as $categoria) {
-                            $conditions = ['convocatoria' => $categoria->id, 'active' => true];
-                            $cronogramas[$categoria->id] = Convocatoriascronogramas::find(([
+                            
+                            //Creo el array del estimulo
+                            $categorias_estimulos[$categoria->id]["categoria"] = $categoria->nombre;
+                            $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = $categoria->numero_estimulos;
+                            $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["valor_total_estimulos"] = "$ " . number_format($categoria->valor_total_estimulos, 0, '', '.');
+                            $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["bolsa_concursable"] = $categoria->bolsa_concursable;
+                            $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["descripcion_bolsa"] = $categoria->descripcion_bolsa;
+                            //Verifico si el bolsa y su dritribucion
+                            if ($categoria->bolsa_concursable) {
+                                //Si es Dinero
+                                if ($categoria->tipo_estimulo == 1) {
+                                    $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
+                                                'tipo_recurso = :tipo_recurso:',
+                                                'bind' => [
+                                                    'tipo_recurso' => 'Bolsa'
+                                                ],
+                                                'order' => 'orden ASC',
+                                    ]));
+                                }
+
+                                //Si es especie
+                                if ($categoria->tipo_estimulo == 2) {
+                                    $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
+                                                'tipo_recurso = :tipo_recurso:',
+                                                'bind' => [
+                                                    'tipo_recurso' => 'Especie'
+                                                ],
+                                                'order' => 'orden ASC',
+                                    ]));
+                                }
+
+                                //Si es mixta
+                                if ($categoria->tipo_estimulo == 3) {
+                                    $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos());
+                                }
+                            }
+                            
+                            //Consulto el cronograma por categoria
+                            $conditions = ['convocatoria' => $categoria->id, 'active' => true];                            
+                            $consulta_cronogramas = Convocatoriascronogramas::find(([
+                                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                                        'bind' => $conditions,
+                            ]));
+                            
+                            //Creo el cronograma de las categorias especiales
+                            foreach ($consulta_cronogramas as $evento) {
+                                $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
+                                $cronogramas[$categoria->id]["eventos"][$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                                if ($evento->getTiposeventos()->periodo) {
+                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
+                                } else {
+                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
+                                }
+                                $cronogramas[$categoria->id]["eventos"][$evento->id]["descripcion"] = $evento->descripcion;
+                                $cronogramas[$categoria->id]["eventos"][$evento->id]["convocatoria"] = $categoria->id;
+                            }
+                            
+                            
+                            //Se crea todo el array de participantes por convocatoria
+                            $consulta_participantes = Convocatoriasparticipantes::find(([
+                                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_participante IN (1,2,3)',
+                                        'bind' => $conditions,
+                            ]));
+                            foreach ($consulta_participantes as $participante) {
+                                $participantes[$categoria->id]["categoria"] = $categoria->nombre;                                
+                                $participantes[$categoria->id]["participantes"][$participante->id]["participante"] = $participante->getTiposParticipantes()->nombre;
+                                $participantes[$categoria->id]["participantes"][$participante->id]["descripcion"] = $participante->descripcion_perfil;                                
+                            }
+                            
+                            
+                            //consulto los tipos anexos listados
+                            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
+                            $tipo_documento_listados = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");                            
+                            $consulta_listados = Convocatoriasanexos::find(([
+                                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_listados . ')',
+                                    'bind' => $conditions,
+                                    'order' => 'orden ASC',
+                            ]));
+                            foreach ($consulta_listados as $listado) {
+                                $listados[$categoria->orden]["nombre"] = "<b>Categoría:</b> ".$categoria->nombre;
+                                $listados[$categoria->orden]["listados"][] = $listado;
+                            }
+                            
+                            //consulto los tipos anexos avisos
+                            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='avisos'");
+                            $tipo_documento_avisos = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");                            
+                            $consulta_avisos = Convocatoriasanexos::find(([
+                                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
+                                    'bind' => $conditions,
+                                    'order' => 'orden ASC',
+                            ]));
+                            foreach ($consulta_avisos as $listado) {
+                                $avisos[$categoria->orden]["nombre"] = "<b>Categoría:</b> ".$categoria->nombre;
+                                $avisos[$categoria->orden]["avisos"][] = $listado;
+                            } 
+                            
+                            //Se crea todo el array de documentos administrativos y tecnicos
+                            $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
+                                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                                        'bind' => $conditions,
+                                        'order' => 'orden ASC',
+                            ]));
+                            foreach ($consulta_documentos_administrativos as $documento) {
+                                if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
+                                    $documentos_administrativos[$categoria->id]["categoria"] = $categoria->nombre;                                                                                                                
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["orden"] = $documento->orden;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                }
+
+                                if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
+                                    $documentos_tecnicos[$categoria->id]["categoria"] = $categoria->nombre;                                                                                                                                                                                                
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["orden"] = $documento->orden;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                }
+                            }
+                            
+                            $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
                                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                                         'bind' => $conditions,
                             ]));
 
-                            $documentos_administrativos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Administrativos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
-
-                            $documentos_tecnicos[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasdocumentos.*  FROM Convocatoriasdocumentos INNER JOIN Requisitos ON Requisitos.id = Convocatoriasdocumentos.requisito AND Requisitos.tipo_requisito='Tecnicos' WHERE Convocatoriasdocumentos.active=true AND Convocatoriasdocumentos.convocatoria = " . $categoria->id);
-
-                            $rondas_evaluacion[$categoria->id] = $app->modelsManager->executeQuery("SELECT  Convocatoriasrondas.*  FROM Convocatoriasrondas WHERE Convocatoriasrondas.active=true AND Convocatoriasrondas.convocatoria = " . $categoria->id);
+                            foreach ($consulta_rondas_evaluacion as $ronda) {
+                                $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
+                                $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> ".$categoria->nombre." <br/><b>Ronda:</b> ".$ronda->nombre_ronda;
+                                $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
+                                $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
+                                                [
+                                                    "convocatoria_ronda = " . $ronda->id . "",
+                                                    "order" => 'orden'
+                                                ]
+                                );
+                            } 
+                            
                         }
+                        
                     }
                     
                 }
@@ -259,16 +392,6 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
             }
 
-            //consulto los tipos anexos documentacion
-            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='documentacion'");
-            $tipo_documento_documentacion = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
-            $conditions = ['convocatoria' => $id, 'active' => true];
-            $documentacion = Convocatoriasanexos::find(([
-                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_documentacion . ')',
-                        'bind' => $conditions,
-                        'order' => 'orden ASC',
-            ]));
-            
             
             //consulto los tipos anexos avisos
             $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='avisos'");
@@ -280,13 +403,25 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                     'order' => 'orden ASC',
             ]));
 
-        }                       
+        }
+        
+        //consulto los tipos anexos documentacion, aplica para las convocatorias sencillas, categorias generales y especiales
+        $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='documentacion'");
+        $tipo_documento_documentacion = str_replace(",", "','", "'" . $tabla_maestra->valor . "'");
+        $conditions = ['convocatoria' => $id, 'active' => true];
+        $documentacion = Convocatoriasanexos::find(([
+                    'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_documentacion . ')',
+                    'bind' => $conditions,
+                    'order' => 'orden ASC',
+        ]));
+        
         
         //Creo todos los array del registro
         $array["convocatoria"] = $array_convocatoria;
         $array["categorias"] = $categorias;
         $array["cronogramas"] = $cronogramas;
         $array["participantes"] = $participantes;
+        $array["categorias_estimulos"] = $categorias_estimulos;
         $array["documentos_administrativos"] = $documentos_administrativos;
         $array["documentos_tecnicos"] = $documentos_tecnicos;
         $array["rondas_evaluacion"] = $rondas_evaluacion;

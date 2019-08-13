@@ -90,10 +90,23 @@ $app->get('/all', function () use ($app) {
                 7 => 'cd.orden',
             );
 
+            //Array para consultar las posibles categorias de la convocatoria
+            $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
+            $categorias = Convocatorias::find([
+                        'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                        'bind' => $conditions,
+                        "order" => 'orden',
+            ]);
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";
+            }            
+            $array_categorias=$array_categorias.$request->get("convocatoria");
+            
             $where .= " INNER JOIN Requisitos AS r ON r.id=cd.requisito";
             $where .= " LEFT JOIN Convocatorias AS c ON c.id=cd.convocatoria";
             $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
-            $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."' AND cd.convocatoria=".$request->get('convocatoria');
+            $where .= " WHERE cd.active IN (true,false) AND r.tipo_requisito='".$request->get('tipo_requisito')."' AND cd.convocatoria IN (".$array_categorias.")";
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
