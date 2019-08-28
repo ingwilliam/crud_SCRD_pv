@@ -1,4 +1,55 @@
 # Cesar Britto Ambiente de desarrollo
+--Tabla niveles educativos
+-- Drop table
+
+-- DROP TABLE public.niveleseducativos;
+
+CREATE TABLE public.niveleseducativos (
+	id serial NOT NULL,
+	nombre varchar(160) NULL,
+	active bool NULL,
+	fecha_actualizacion timestamp NULL,
+	fecha_creacion timestamp NULL,
+	creado_por int4 NULL,
+	actualizado_por int4 NULL,
+	CONSTRAINT niveleseducativos_pkey PRIMARY KEY (id),
+	CONSTRAINT niveleseducativos_creado_por_fkey FOREIGN KEY (creado_por) REFERENCES usuarios(id)
+);
+
+--datos 
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(1, 'Básica Primaria', true, '2019-04-05 19:04:05.000', '2019-03-21 15:04:22.000', 7, 7);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(2, 'Básica Secundaria', true, NULL, '2019-04-05 19:04:10.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(3, 'Técnica', true, NULL, '2019-04-05 19:04:15.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(4, 'Tecnológica', true, NULL, '2019-04-05 19:04:21.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(5, 'Tecnológica Especializada', true, NULL, '2019-04-05 19:04:25.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(6, 'Universitaria', true, NULL, '2019-04-05 19:04:30.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(7, 'Especialización', true, NULL, '2019-04-05 19:04:46.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(8, 'Maestría', true, NULL, '2019-04-05 19:04:50.000', 7, NULL);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(9, 'Doctorado', true, '2019-04-05 19:05:36.000', '2019-04-05 19:04:55.000', 7, 7);
+INSERT INTO public.niveleseducativos
+(id, nombre, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por)
+VALUES(10, 'Post Doctorado', true, NULL, '2019-04-05 19:05:40.000', 7, NULL);
+
+
+
 
 --Tabla categoriajurado donde se guarda informacion de los select
 -- Drop table
