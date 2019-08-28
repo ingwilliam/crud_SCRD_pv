@@ -660,22 +660,22 @@ COMMENT ON COLUMN public.propuestajuradopublicacion.fecha_creacion IS 'Fecha de 
 
 
 #Estados de las propuestas
-INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
-	VALUES (7,'propuestas','Registrada',true,'2019-07-15 11:41:09',7,1);
-INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
-	VALUES (8,'propuestas','Inscrita',true,'2019-07-15 11:41:26',7,2)
+INSERT INTO public.estados (,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
+	VALUES ('propuestas','Registrada',true,'2019-07-15 11:41:09',7,1);
+INSERT INTO public.estados (tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
+	VALUES ('propuestas','Inscrita',true,'2019-07-15 11:41:26',7,2)
 
 
 #estados de la propuesta
-INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
-	VALUES (15,'estados_propuestas','Registrada,Inscrita',true,'2019-07-15 11:40:48','2019-07-14 21:10:44',7,7)
+INSERT INTO public.tablasmaestras (nombre,valor,active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
+	VALUES ('estados_propuestas','Registrada,Inscrita',true,'2019-07-15 11:40:48','2019-07-14 21:10:44',7,7)
 
 #estados del participante
-INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_creacion,creado_por)
-	VALUES (16,'estado_participante','Inicial,Participante,Integrante,Respresentante',true,'2019-07-15 09:58:56',7)
+INSERT INTO public.tablasmaestras (nombre,valor,active,fecha_creacion,creado_por)
+	VALUES ('estado_participante','Inicial,Participante,Integrante,Respresentante',true,'2019-07-15 09:58:56',7)
 
 --agregar usuario cesar.britto
-INSERT INTO public.usuarios (id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,username,"password",active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
+INSERT INTO public.usuarios (primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,username,"password",active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
 	VALUES ('Cesar','Augusto','Britto','Moreno','cesar.britto@scrd.gov.co','$2y$08$ODNPTlRFQ0J4ZzdMcG9VTe3UE6UcW8Wb66C0gAuxbTz66g39ClH9u',true,'2019-06-26 21:52:58','2019-02-14 11:01:13',7,7);
 
 --asignar rol de usuario a cesar.britto (idusuario,idperfil)
@@ -684,14 +684,14 @@ INSERT INTO public.usuariosperfiles (usuario,perfil)
 
 --para el usuario usuario cesar.britto
 INSERT INTO public.usuariosperfiles
-(id, usuario, perfil)
-VALUES(44, 17, 17);
+(usuario, perfil)
+VALUES(17, 17);
 
 
 #para el usuario usuario cesar.britto
 INSERT INTO public.participantes
-(id, tipo_documento, numero_documento, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, orientacion_sexual, identidad_genero, grupo_etnico, ciudad_nacimiento, ciudad_residencia, barrio_residencia, direccion_residencia, direccion_correspondencia, estrato, numero_telefono, numero_celular, correo_electronico, numero_celular_tercero, nombre_completo_tercero, redes_sociales, links, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por, participante_padre, tipo, usuario_perfil)
-VALUES(3, 1, '123456', 'armando', '', 'casas', '', '2019-06-24', 2, 1, 1, 6, 1, 1, 1, 'calle 1 kra 1', ' calle 1 kra 1', 1, '1', '1', 'xxx@gmail.com', NULL, NULL, NULL, NULL, true, NULL, '2019-07-25 12:10:47.000', 17, NULL, NULL, 'Inicial', 44);
+(tipo_documento, numero_documento, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, fecha_nacimiento, sexo, orientacion_sexual, identidad_genero, grupo_etnico, ciudad_nacimiento, ciudad_residencia, barrio_residencia, direccion_residencia, direccion_correspondencia, estrato, numero_telefono, numero_celular, correo_electronico, numero_celular_tercero, nombre_completo_tercero, redes_sociales, links, active, fecha_actualizacion, fecha_creacion, creado_por, actualizado_por, participante_padre, tipo, usuario_perfil)
+VALUES(, 1, '123456', 'armando', '', 'casas', '', '2019-06-24', 2, 1, 1, 6, 1, 1, 1, 'calle 1 kra 1', ' calle 1 kra 1', 1, '1', '1', 'xxx@gmail.com', NULL, NULL, NULL, NULL, true, NULL, '2019-07-25 12:10:47.000', 17, NULL, NULL, 'Inicial', 44);
 
 #registro de educación formal para el  usuario cesar.britto
 INSERT INTO public.educacionformal
