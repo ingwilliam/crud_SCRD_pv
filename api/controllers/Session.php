@@ -21,6 +21,7 @@ $loader = new Loader();
 $loader->registerDirs(
         [
             APP_PATH . '/models/',
+            APP_PATH . '/library/class/',
         ]
 );
 
@@ -57,23 +58,23 @@ $app->post('/iniciar_session', function () use ($app, $config) {
             $fecha_actual = date("Y-m-d H:i:s");
             //Fecha limite de videgncia del token de de acceso
             $fecha_limit = date("Y-m-d H:i:s", strtotime('+' . $config->database->time_session . ' minute', strtotime($fecha_actual)));
-            
+
             //Consulto y elimino todos los tokens que ya no se encuentren vigentes
             $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
             $tokens_eliminar->delete();
 
             //Elimino el token del usuario
-            unset($usuario_validar->password);           
+            unset($usuario_validar->password);
             //Creo el token de acceso para el usuario solicitado, con vigencia del valor configurado en el $config time_session
-            $tokens = new Tokens();            
+            $tokens = new Tokens();
             $tokens->token = $this->security->hash($usuario_validar->id . "-" . $usuario_validar->tipo_documento . "-" . $usuario_validar->numero_documento);
             $tokens->user_current = json_encode($usuario_validar);
             $tokens->date_create = $fecha_actual;
             $tokens->date_limit = $fecha_limit;
             $tokens->save();
-            
+
             //Genero el array que retornare como json, para el manejo del localStorage en el cliente
-            $token_actual = array("token"=>$tokens->token, "usuario"=>$usuario_validar->primer_nombre." ".$usuario_validar->segundo_nombre." ".$usuario_validar->primer_apellido." ".$usuario_validar->segundo_apellido );            
+            $token_actual = array("token" => $tokens->token, "usuario" => $usuario_validar->primer_nombre . " " . $usuario_validar->segundo_nombre . " " . $usuario_validar->primer_apellido . " " . $usuario_validar->segundo_apellido);
             echo json_encode($token_actual);
         } else {
             echo "error";
@@ -84,6 +85,91 @@ $app->post('/iniciar_session', function () use ($app, $config) {
         // it will always be computing a hash.        
         //echo $this->security->hash(rand());
         echo "error_metodo";
+    }
+}
+);
+
+// Crea el usuario
+$app->post('/crear_usuario', function () use ($app, $config) {
+    try {
+
+        $mail = new PHPMailer();
+
+        $mail = new PHPMailer();
+        $mail->IsSMTP();
+        $mail->SMTPAuth = true;
+        $mail->Host = "smtp.gmail.com";
+        $mail->SMTPSecure = 'ssl';
+        $mail->Username = "convocatorias@scrd.gov.co";
+        $mail->Password = "fomento2017";
+        $mail->Port = 465;
+        $mail->CharSet = "UTF-8";
+        $mail->IsHTML(true); // El correo se env  a como HTML
+        $mail->From = "convocatorias@scrd.gov.co";
+        $mail->FromName = "Sistema de Convocatorias";        
+        $mail->AddAddress("william.barbosa@scrd.gov.co");
+        $mail->Subject = "Prueba Acuse de mensaje enviado";
+        $mail->Body = "VER HTML";
+
+        $exito = $mail->Send(); // Env  a el correo.
+
+        if ($exito) {
+            echo "Se envio el acuse enviado al origen";
+        } else {
+            echo "No se envio el acuse enviado al origen" . $mail->ErrorInfo;
+        }
+
+
+
+        exit;
+
+
+        // your secret key
+        $secret = "6LdwFnkUAAAAADBimwYjHGnZyPqRjkClp3183lVB";
+        // empty response
+        $response = null;
+        // check secret key
+        $reCaptcha = new ReCaptcha($secret);
+
+        // if submitted check response
+        if ($this->request->getPost('g-recaptcha-response')) {
+            $response = $reCaptcha->verifyResponse($config->sistema->dominio, $this->request->getPost('g-recaptcha-response'));
+        }
+
+        if ($response != null && $response->success) {
+            //Saco todos los parametros de post
+            $post = $app->request->getPost();
+
+            //Valido si existe el correo electronico
+            $usuario_validar = Usuarios::findFirst("username = '" . $post["correo_electronico"] . "'");
+            if (isset($usuario_validar->id)) {
+                echo "error_username";
+            } else {
+                //Creo objeto usuario
+                $usuario = new Usuarios();
+                $usuario->active = false;
+                $post["username"] = $post["correo_electronico"];
+                $post["password"] = $this->security->hash($post["password"]);
+                $post["creado_por"] = "7";
+                $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                if ($usuario->save($post) === false) {
+                    echo "error";
+                } else {
+                    $usuario_perfile = new Usuariosperfiles();
+                    $array_new["usuario"] = $usuario->id;
+                    $array_new["perfil"] = 16;
+                    if ($usuario_perfile->save($array_new) === false) {
+                        echo "error_perfil";
+                    } else {
+                        echo $usuario->id . " " . $usuario_perfile->id;
+                    }
+                }
+            }
+        } else {
+            echo "robot";
+        }
+    } catch (Exception $ex) {
+        echo $ex->getMessage();
     }
 }
 );
@@ -117,7 +203,6 @@ $app->get('/login_actions', function () use ($app, $config) {
 
     //Phalcon permite buscar directamente por nombre del campo, con metodo independiente
     //$user = Usuarios::findFirstByUsername("ingeniero.wb@gmail.com");
-    
     //Consulto el usuario por username del parametro get
     $usuario_validar = Usuarios::findFirst("username = '" . $this->request->get('username') . "'");
 
@@ -125,7 +210,7 @@ $app->get('/login_actions', function () use ($app, $config) {
     if (isset($usuario_validar->id)) {
         //Valido si la clave es igual al token del usuario
         if ($this->security->checkHash($this->request->get('password'), $usuario_validar->password)) {
-            
+
             //Fecha actual
             $fecha_actual = date("Y-m-d H:i:s");
             //Fecha limite de videgncia del token de de acceso
@@ -135,14 +220,14 @@ $app->get('/login_actions', function () use ($app, $config) {
             $tokens_eliminar->delete();
 
             //Elimino el token del usuario
-            unset($usuario_validar->password);           
+            unset($usuario_validar->password);
             //Creo el token de acceso para el usuario solicitado, con vigencia del valor configurado en el $config time_session
-            $tokens = new Tokens();            
+            $tokens = new Tokens();
             $tokens->token = $this->security->hash($usuario_validar->id . "-" . $usuario_validar->tipo_documento . "-" . $usuario_validar->numero_documento);
             $tokens->user_current = json_encode($usuario_validar);
             $tokens->date_create = $fecha_actual;
             $tokens->date_limit = $fecha_limit;
-            $tokens->save();            
+            $tokens->save();
             echo $tokens->token;
         } else {
             echo "error";
@@ -171,26 +256,23 @@ $app->post('/permiso_lectura', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consultar todos los permisos
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                    . "WHERE m.nombre='".$request->getPost('modulo')."' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+                    . "WHERE m.nombre='" . $request->getPost('modulo') . "' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=" . $user_current["id"] . ")";
             $permisos = $app->modelsManager->executeQuery($phql);
-            
-            if( count($permisos)>0)
-            {
+
+            if (count($permisos) > 0) {
                 echo "ok";
-            }
-            else
-            {
+            } else {
                 echo "acceso_denegado";
             }
         } else {
             echo "error";
         }
-    } catch (Exception $ex) {        
-        echo "error_metodo".$ex;
+    } catch (Exception $ex) {
+        echo "error_metodo" . $ex;
     }
 }
 );
@@ -208,19 +290,16 @@ $app->post('/cerrar_session', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            if($token_actual->delete() != false) 
-            {
+            if ($token_actual->delete() != false) {
                 echo "ok";
-            }
-            else
-            {
+            } else {
                 echo "error";
             }
         } else {
             echo "error";
         }
-    } catch (Exception $ex) {        
-        echo "error_metodo".$ex;
+    } catch (Exception $ex) {
+        echo "error_metodo" . $ex;
     }
 }
 );
@@ -239,26 +318,23 @@ $app->post('/permiso_escritura', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consultar todos los permisos
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                    . "WHERE m.nombre='".$request->getPost('modulo')."' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].") AND mpp.permiso IN (1,2) ";
+                    . "WHERE m.nombre='" . $request->getPost('modulo') . "' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=" . $user_current["id"] . ") AND mpp.permiso IN (1,2) ";
             $permisos = $app->modelsManager->executeQuery($phql);
-            
-            if( count($permisos)>0)
-            {
+
+            if (count($permisos) > 0) {
                 echo "ok";
-            }
-            else
-            {
+            } else {
                 echo "acceso_denegado";
             }
         } else {
             echo "error";
         }
-    } catch (Exception $ex) {        
-        echo "error_metodo".$ex;
+    } catch (Exception $ex) {
+        echo "error_metodo" . $ex;
     }
 }
 );
@@ -277,26 +353,23 @@ $app->post('/permiso_eliminar', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consultar todos los permisos
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                    . "WHERE m.nombre='".$request->getPost('modulo')."' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].") AND mpp.permiso IN (1) ";
+                    . "WHERE m.nombre='" . $request->getPost('modulo') . "' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=" . $user_current["id"] . ") AND mpp.permiso IN (1) ";
             $permisos = $app->modelsManager->executeQuery($phql);
-            
-            if( count($permisos)>0)
-            {
+
+            if (count($permisos) > 0) {
                 echo "ok";
-            }
-            else
-            {
+            } else {
                 echo "acceso_denegado";
             }
         } else {
             echo "error";
         }
-    } catch (Exception $ex) {        
-        echo "error_metodo".$ex;
+    } catch (Exception $ex) {
+        echo "error_metodo" . $ex;
     }
 }
 );
