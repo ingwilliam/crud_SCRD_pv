@@ -89,40 +89,95 @@ $app->post('/iniciar_session', function () use ($app, $config) {
 }
 );
 
+// Recupera todos los registros
+$app->post('/recordar_usuario', function () use ($app, $config) {
+
+    try {
+        //Consulto el usuario por username del parametro get
+        $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
+
+        //Valido si existe
+        if (isset($usuario_validar->id)) {
+            $usuario_validar->password = $this->security->hash(date("Ymd"));
+            if ($usuario_validar->save() === false) {
+                echo "error_editar";
+            } else {
+                //Creo el cuerpo del messaje html del email
+                $html_recordar_usuario= Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
+                $html_recordar_usuario= str_replace("**password**", date("Ymd"), $html_recordar_usuario);                
+
+                $mail = new PHPMailer();
+                $mail->IsSMTP();
+                $mail->SMTPAuth = true;
+                $mail->Host = "smtp.gmail.com";
+                $mail->SMTPSecure = 'ssl';
+                $mail->Username = "convocatorias@scrd.gov.co";
+                $mail->Password = "fomento2017";
+                $mail->Port = 465;
+                $mail->CharSet = "UTF-8";
+                $mail->IsHTML(true); // El correo se env  a como HTML
+                $mail->From = "convocatorias@scrd.gov.co";
+                $mail->FromName = "Sistema de Convocatorias";        
+                $mail->AddAddress($this->request->getPost('username'));
+                $mail->Subject = "Sistema de Convocatorias - Recordar Contraseña";
+                $mail->Body = $html_recordar_usuario;
+
+                $exito = $mail->Send(); // Env  a el correo.
+
+                if ($exito) {
+                    echo "exito";
+                } else {
+                    echo "error_email";
+                }                                                 
+            }
+        } else {
+            echo "error_usuario";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
+
+// Verifica el usuario
+$app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {        
+        //Valido si existe el correo electronico
+            $usuario_validar = Usuarios::findFirst("id = '".$id."'");
+            if (isset($usuario_validar->id)) {  
+                if ($usuario_validar->active) {  
+                    //Redireccionar                    
+                    header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
+                    exit();
+                }
+                else
+                {
+                    $usuario_validar->active = true;
+                    $usuario_validar->actualizado_por = "7";
+                    $usuario_validar->fecha_actualizacion = date("Y-m-d H:i:s");
+                    if ($usuario_validar->save() === false) {
+                        //Redireccionar                    
+                        header('Location: '.$config->sistema->url_admin.'index.html?msg=Se registro un error en el método, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
+                        exit();
+                    } else {
+                        //Redireccionar                    
+                        header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
+                        exit();
+                    }
+                }                                
+            } else {
+                //Redireccionar                
+                header('Location: '.$config->sistema->url_admin.'index.html?msg=No es un usuario valido, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
+                exit();
+            }                
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }    
+});
+
 // Crea el usuario
 $app->post('/crear_usuario', function () use ($app, $config) {
     try {
-
-        $mail = new PHPMailer();
-
-        $mail = new PHPMailer();
-        $mail->IsSMTP();
-        $mail->SMTPAuth = true;
-        $mail->Host = "smtp.gmail.com";
-        $mail->SMTPSecure = 'ssl';
-        $mail->Username = "convocatorias@scrd.gov.co";
-        $mail->Password = "fomento2017";
-        $mail->Port = 465;
-        $mail->CharSet = "UTF-8";
-        $mail->IsHTML(true); // El correo se env  a como HTML
-        $mail->From = "convocatorias@scrd.gov.co";
-        $mail->FromName = "Sistema de Convocatorias";        
-        $mail->AddAddress("william.barbosa@scrd.gov.co");
-        $mail->Subject = "Prueba Acuse de mensaje enviado";
-        $mail->Body = "VER HTML";
-
-        $exito = $mail->Send(); // Env  a el correo.
-
-        if ($exito) {
-            echo "Se envio el acuse enviado al origen";
-        } else {
-            echo "No se envio el acuse enviado al origen" . $mail->ErrorInfo;
-        }
-
-
-
-        exit;
-
 
         // your secret key
         $secret = "6LdwFnkUAAAAADBimwYjHGnZyPqRjkClp3183lVB";
@@ -152,6 +207,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                 $post["password"] = $this->security->hash($post["password"]);
                 $post["creado_por"] = "7";
                 $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                $post["key_verificacion"] = $key_verificacion;
                 if ($usuario->save($post) === false) {
                     echo "error";
                 } else {
@@ -161,7 +217,36 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                     if ($usuario_perfile->save($array_new) === false) {
                         echo "error_perfil";
                     } else {
-                        echo $usuario->id . " " . $usuario_perfile->id;
+                        
+                        //Creo el cuerpo del messaje html del email
+                        $html_solicitud_usuario= Tablasmaestras::find("active=true AND nombre='html_solicitud_usuario'")[0]->valor;
+                        $html_solicitud_usuario= str_replace("**usuario**", $post["correo_electronico"], $html_solicitud_usuario);
+                        $html_solicitud_usuario= str_replace("**srcverificacion**", $config->sistema->url_curl."Session/verificar_usuario/".$usuario->id, $html_solicitud_usuario);
+
+
+                        $mail = new PHPMailer();
+                        $mail->IsSMTP();
+                        $mail->SMTPAuth = true;
+                        $mail->Host = "smtp.gmail.com";
+                        $mail->SMTPSecure = 'ssl';
+                        $mail->Username = "convocatorias@scrd.gov.co";
+                        $mail->Password = "fomento2017";
+                        $mail->Port = 465;
+                        $mail->CharSet = "UTF-8";
+                        $mail->IsHTML(true); // El correo se env  a como HTML
+                        $mail->From = "convocatorias@scrd.gov.co";
+                        $mail->FromName = "Sistema de Convocatorias";        
+                        $mail->AddAddress($post["username"]);
+                        $mail->Subject = "Sistema de Convocatorias - Verifición correo electrónico";
+                        $mail->Body = $html_solicitud_usuario;
+
+                        $exito = $mail->Send(); // Env  a el correo.
+
+                        if ($exito) {
+                            echo "exito";
+                        } else {
+                            echo "error_email";
+                        }                                                
                     }
                 }
             }
@@ -169,7 +254,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
             echo "robot";
         }
     } catch (Exception $ex) {
-        echo $ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
