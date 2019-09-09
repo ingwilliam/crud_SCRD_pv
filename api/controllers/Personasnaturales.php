@@ -216,6 +216,10 @@ $app->get('/search', function () use ($app, $config) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
+            
+            //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
+            //
+            
             //Si existe consulto la registro
             if ($request->get('id')) {
                 $participante = Participantes::findFirst($request->get('id'));
