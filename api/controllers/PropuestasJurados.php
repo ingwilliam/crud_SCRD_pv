@@ -132,7 +132,7 @@ $app->get('/search', function () use ($app, $config) {
                             $filepath = "/Sites/convocatorias/".$propuesta->convocatoria."/propuestas/";
                             //echo "ruta-->>".$filepath.$new_participante->propuestas->id;
                             $return =   $chemistry_alfresco->newFolder($filepath, $new_participante->propuestas->id);
-                            echo $return;
+                            //echo $return;
                             if(strpos($return, "Error") !== FALSE){
                                 echo "error_creo_alfresco";
                             }
@@ -250,22 +250,14 @@ $app->post('/edit_participante', function () use ($app, $config) {
                   //(return $request->get('idp');
                 $participante = Participantes::findFirst($request->get('idp'));
 
-
-
                 if( $participante->tipo == 'Participante'){
 
                   //valido si existe una propuesta del participante y convocatoria con el estado 9 (registrada)
-                  $propuesta = Propuestas::findFirst([
-                    " participante = ".$participante->id." AND convocatoria = ".$request->get('idc')
-                  ]);
-
-                  //return json_encode(  $participante->propuestas );
-
                   //valido si la propuesta tiene el estado registrada
 
-                  if( $propuesta != null and $propuesta->estado == 7 ){
+                  if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
 
-                      $propuesta->modalidad_participa = $request->get('categoria');
+                      $participante->propuestas->modalidad_participa = $request->get('categoria');
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -424,8 +416,6 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
 
-
-
                       $participante = Participantes::query()
                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
@@ -575,30 +565,25 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                     $usuario_perfil  = Usuariosperfiles::findFirst(
                       [
-                        " usuario = ".$user_current["id"]." AND perfil =17"
+                        " usuario = ".$user_current["id"]." AND perfil =17 "
                       ]
                     );
 
-
                      if( $usuario_perfil->id != null ){
 
-
-                        $propuesta = Propuestas::findFirst([
-                          "convocatoria = ".$request->getPost('idc')
-                        ]);
+                        $participante = Participantes::query()
+                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                           //perfil = 17  perfil de jurado
+                          ->where("Usuariosperfiles.perfil = 17 ")
+                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                          ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                          ->execute()
+                          ->getFirst();
 
                         //valido si la propuesta tiene el estado registrada
-                      if( $propuesta != null and $propuesta->estado == 7 ){
-
-                       $participante = Participantes::query()
-                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
-                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
-                          //perfil = 17  perfil de jurado
-                         ->where("Usuariosperfiles.perfil = 17 ")
-                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
-                         ->execute()
-                         ->getFirst();
+                      //if( $propuesta != null and $propuesta->estado == 7 ){
+                        if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $educacionformal = new Educacionformal();
                          $educacionformal->creado_por = $user_current["id"];
@@ -758,12 +743,18 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
 
                      if( $usuario_perfil->id != null ){
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                            $educacionformal = Educacionformal::findFirst($id);
                            $educacionformal->actualizado_por = $user_current["id"];
@@ -908,12 +899,19 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                       $educacionformal = Educacionformal::findFirst($id);
 
@@ -1079,8 +1077,6 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
 
-
-
                       $participante = Participantes::query()
                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
@@ -1186,15 +1182,7 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                       ]
                     );
 
-
                      if( $usuario_perfil->id != null ){
-
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
-
-                       //valido si la propuesta tiene el estado registrada
-                     if( $propuesta != null and $propuesta->estado == 7 ){
 
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
@@ -1205,6 +1193,8 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                          ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $educacionnoformal = new Educacionnoformal();
                          $educacionnoformal->creado_por = $user_current["id"];
@@ -1271,7 +1261,7 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                                $fileName = "p".$educacionnoformal->propuesta."enf".$educacionnoformal->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
                                $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$educacionnoformal->propuesta;
                                $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
-                                echo "    ".json_encode($return);
+                              //  echo "    ".json_encode($return);
                                if(strpos($return, "Error") !== FALSE){
                                   //  echo "    ".json_encode($return);
                                    echo "error_creo_alfresco";
@@ -1362,13 +1352,18 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
 
                      if( $usuario_perfil->id != null ){
 
-
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
 
                            $educacionnoformal = Educacionnoformal::findFirst($id);
                            $educacionnoformal->actualizado_por = $user_current["id"];
@@ -1487,12 +1482,19 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                       $educacionnoformal = Educacionnoformal::findFirst($id);
 
@@ -1728,9 +1730,10 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -1739,7 +1742,7 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -1761,22 +1764,18 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
 
                      if( $usuario_perfil->id != null ){
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
-
-                       //valido si la propuesta tiene el estado registrada
-                     if( $propuesta != null and $propuesta->estado == 7 ){
-
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
                           //perfil = 17  perfil de jurado
                          ->where("Usuariosperfiles.perfil = 17 ")
                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $experiencialaboral = new Experiencialaboral();
                          $experiencialaboral->creado_por = $user_current["id"];
@@ -1788,8 +1787,8 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
 
                          $post["id"]= null;
 
-                        echo "educacionnoformal---->>".json_encode($educacionnoformal);
-                          echo "post---->>".json_encode($post);
+                      //  echo "educacionnoformal---->>".json_encode($educacionnoformal);
+                        //  echo "post---->>".json_encode($post);
                          if ($experiencialaboral->save($post) === false) {
                                   //  return json_encode($user_current);
 
@@ -1799,6 +1798,48 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                                 }
 
                          } else {
+
+                           //echo "guardando archivo";
+                           //echo json_encode($_FILES);
+                           //Recorro todos los posibles archivos
+                           foreach($_FILES as $clave => $valor){
+                               $fileTmpPath = $valor['tmp_name'];
+                               $fileType = $valor['type'];
+                               $fileNameCmps = explode(".", $valor["name"]);
+                               $fileExtension = strtolower(end($fileNameCmps));
+                              // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                              // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                             if($valor['error'] == 0){
+                              /*
+                              * propuesta[codigo]experiencialaboral[codigo]usuario[codigo]fecha[YmdHis].extension
+                              * p(cod)el(cod)u(cod)f(YmdHis).(ext)
+                              */
+                               $fileName = "p".$experiencialaboral->propuesta."el".$experiencialaboral->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                               $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$experiencialaboral->propuesta;
+                               $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                              //  echo "    ".json_encode($return);
+                               if(strpos($return, "Error") !== FALSE){
+                                  //  echo "    ".json_encode($return);
+                                   echo "error_creo_alfresco";
+                               }else{
+
+                                   $experiencialaboral->file = $return;
+                                   if ($experiencialaboral->save() === false) {
+                                       echo "error";
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($experiencialaboral->getMessages() as $message) {
+                                           echo $message;
+                                         }
+                                   }
+
+                               }
+                             }else{
+                               //echo "error".$valor['error'];
+                             }
+
+                           }
+
                              echo $experiencialaboral->id;
                          }
 
@@ -1811,10 +1852,10 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                        }
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -1825,7 +1866,7 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
 );
 
 // Edita el registro
-$app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
 
@@ -1833,9 +1874,11 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -1844,7 +1887,7 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -1852,7 +1895,7 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPut();
+                $post = $app->request->getPost();
 
                 $user_current = json_decode($token_actual->user_current, true);
 
@@ -1863,16 +1906,20 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
                       ]
                     );
 
-
                      if( $usuario_perfil->id != null ){
 
-
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPut('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                            $experiencialaboral = Experiencialaboral::findFirst($id);
                            $experiencialaboral->actualizado_por = $user_current["id"];
@@ -1882,17 +1929,59 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
                             //echo "post---->>".json_encode($post);
                            if ($experiencialaboral->save($post) === false) {
                                     //  return json_encode($user_current);
-
+                                     echo "error";
                                //Para auditoria en versión de pruebas
                                foreach ($experiencialaboral->getMessages() as $message) {
                                     echo $message;
                                   }
 
                            } else {
+
+                             //echo "guardando archivo";
+                             //echo json_encode($_FILES);
+                             //Recorro todos los posibles archivos
+                             foreach($_FILES as $clave => $valor){
+                                 $fileTmpPath = $valor['tmp_name'];
+                                 $fileType = $valor['type'];
+                                 $fileNameCmps = explode(".", $valor["name"]);
+                                 $fileExtension = strtolower(end($fileNameCmps));
+                                // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                                // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                               if($valor['error'] == 0){
+                                /*
+                                * propuesta[codigo]experiencialaboral[codigo]usuario[codigo]fecha[YmdHis].extension
+                                * p(cod)el(cod)u(cod)f(YmdHis).(ext)
+                                */
+                                 $fileName = "p".$experiencialaboral->propuesta."el".$experiencialaboral->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                                 $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$experiencialaboral->propuesta;
+                                 $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                                //  echo "    ".json_encode($return);
+                                 if(strpos($return, "Error") !== FALSE){
+                                    //  echo "    ".json_encode($return);
+                                     echo "error_creo_alfresco";
+                                 }else{
+
+                                     $experiencialaboral->file = $return;
+                                     if ($experiencialaboral->save() === false) {
+                                         echo "error";
+                                        //Para auditoria en versión de pruebas
+                                        foreach ($experiencialaboral->getMessages() as $message) {
+                                             echo $message;
+                                           }
+                                     }
+
+                                 }
+                               }else{
+                                 //echo "error".$valor['error'];
+                               }
+
+                             }
+
                                return $experiencialaboral->id;
                            }
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      } else {
@@ -1903,7 +1992,7 @@ $app->put('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $co
                 return "acceso_denegado";
             }
         } else {
-            return "error";
+          return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -1951,12 +2040,18 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
 
                       $experiencialaboral = Experiencialaboral::findFirst($id);
 
@@ -2200,9 +2295,11 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -2211,7 +2308,7 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -2233,22 +2330,18 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
 
                      if( $usuario_perfil->id != null ){
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
-
-                       //valido si la propuesta tiene el estado registrada
-                     if( $propuesta != null and $propuesta->estado == 7 ){
-
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
                           //perfil = 17  perfil de jurado
                          ->where("Usuariosperfiles.perfil = 17 ")
                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $experienciajurado = new Experienciajurado();
                          $experienciajurado->creado_por = $user_current["id"];
@@ -2260,8 +2353,8 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
 
                          $post["id"]= null;
 
-                        echo "educacionnoformal---->>".json_encode($experienciajurado);
-                          echo "post---->>".json_encode($post);
+                        //echo "educacionnoformal---->>".json_encode($experienciajurado);
+                          //echo "post---->>".json_encode($post);
                          if ($experienciajurado->save($post) === false) {
                                   //  return json_encode($user_current);
 
@@ -2271,11 +2364,52 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                                 }
 
                          } else {
+                           //echo "guardando archivo";
+                           //echo json_encode($_FILES);
+                           //Recorro todos los posibles archivos
+                           foreach($_FILES as $clave => $valor){
+                               $fileTmpPath = $valor['tmp_name'];
+                               $fileType = $valor['type'];
+                               $fileNameCmps = explode(".", $valor["name"]);
+                               $fileExtension = strtolower(end($fileNameCmps));
+                              // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                              // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                             if($valor['error'] == 0){
+                              /*
+                              * propuesta[codigo]experienciajurado[codigo]usuario[codigo]fecha[YmdHis].extension
+                              * p(cod)ej(cod)u(cod)f(YmdHis).(ext)
+                              */
+                               $fileName = "p".$experienciajurado->propuesta."ej".$experienciajurado->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                               $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$experienciajurado->propuesta;
+                               $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                              //  echo "    ".json_encode($return);
+                               if(strpos($return, "Error") !== FALSE){
+                                  //  echo "    ".json_encode($return);
+                                   echo "error_creo_alfresco";
+                               }else{
+
+                                   $experienciajurado->file = $return;
+                                   if ($experienciajurado->save() === false) {
+                                       echo "error";
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($experienciajurado->getMessages() as $message) {
+                                           echo $message;
+                                         }
+                                   }
+
+                               }
+                             }else{
+                               //echo "error".$valor['error'];
+                             }
+
+                           }
+
                              echo $experienciajurado->id;
                          }
 
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      }else {
@@ -2283,10 +2417,10 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                        }
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -2297,7 +2431,7 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
 );
 
 // Edita el registro
-$app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
 
@@ -2305,9 +2439,10 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -2316,7 +2451,7 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -2324,7 +2459,7 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPut();
+                $post = $app->request->getPost();
 
                 $user_current = json_decode($token_actual->user_current, true);
 
@@ -2339,12 +2474,18 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
                      if( $usuario_perfil->id != null ){
 
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPut('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                            $experienciajurado = Experienciajurado::findFirst($id);
                            $experienciajurado->actualizado_por = $user_current["id"];
@@ -2361,10 +2502,52 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
                                   }
 
                            } else {
+
+                             //echo "guardando archivo";
+                             //echo json_encode($_FILES);
+                             //Recorro todos los posibles archivos
+                             foreach($_FILES as $clave => $valor){
+                                 $fileTmpPath = $valor['tmp_name'];
+                                 $fileType = $valor['type'];
+                                 $fileNameCmps = explode(".", $valor["name"]);
+                                 $fileExtension = strtolower(end($fileNameCmps));
+                                // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                                // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                               if($valor['error'] == 0){
+                                /*
+                                * propuesta[codigo]experienciajurado[codigo]usuario[codigo]fecha[YmdHis].extension
+                                * p(cod)ej(cod)u(cod)f(YmdHis).(ext)
+                                */
+                                 $fileName = "p".$experienciajurado->propuesta."ej".$experienciajurado->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                                 $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$experienciajurado->propuesta;
+                                 $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                                //  echo "    ".json_encode($return);
+                                 if(strpos($return, "Error") !== FALSE){
+                                    //  echo "    ".json_encode($return);
+                                     echo "error_creo_alfresco";
+                                 }else{
+
+                                     $experienciajurado->file = $return;
+                                     if ($experienciajurado->save() === false) {
+                                         echo "error";
+                                        //Para auditoria en versión de pruebas
+                                        foreach ($experienciajurado->getMessages() as $message) {
+                                             echo $message;
+                                           }
+                                     }
+
+                                 }
+                               }else{
+                                 //echo "error".$valor['error'];
+                               }
+
+                             }
+
                                return $experienciajurado->id;
                            }
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      } else {
@@ -2375,7 +2558,7 @@ $app->put('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $con
                 return "acceso_denegado";
             }
         } else {
-            return "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -2423,12 +2606,19 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                       $experienciajurado = Experienciajurado::findFirst($id);
 
@@ -2666,9 +2856,11 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -2677,7 +2869,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -2699,22 +2891,18 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
 
                      if( $usuario_perfil->id != null ){
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
-
-                       //valido si la propuesta tiene el estado registrada
-                     if( $propuesta != null and $propuesta->estado == 7 ){
-
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
                           //perfil = 17  perfil de jurado
                          ->where("Usuariosperfiles.perfil = 17 ")
                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $reconocimiento = new Propuestajuradoreconocimiento();
                          $reconocimiento->creado_por = $user_current["id"];
@@ -2726,8 +2914,8 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
 
                          $post["id"]= null;
 
-                        echo "educacionnoformal---->>".json_encode($reconocimiento);
-                          echo "post---->>".json_encode($post);
+                        //echo "educacionnoformal---->>".json_encode($reconocimiento);
+                        //  echo "post---->>".json_encode($post);
                          if ($reconocimiento->save($post) === false) {
                                   //  return json_encode($user_current);
 
@@ -2737,11 +2925,53 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
                                 }
 
                          } else {
+
+                           //echo "guardando archivo";
+                           //echo json_encode($_FILES);
+                           //Recorro todos los posibles archivos
+                           foreach($_FILES as $clave => $valor){
+                               $fileTmpPath = $valor['tmp_name'];
+                               $fileType = $valor['type'];
+                               $fileNameCmps = explode(".", $valor["name"]);
+                               $fileExtension = strtolower(end($fileNameCmps));
+                              // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                              // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                             if($valor['error'] == 0){
+                              /*
+                              * propuesta[codigo]reconocimiento[codigo]usuario[codigo]fecha[YmdHis].extension
+                              * p(cod)rj(cod)u(cod)f(YmdHis).(ext)
+                              */
+                               $fileName = "p".$reconocimiento->propuesta."rj".$reconocimiento->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                               $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$reconocimiento->propuesta;
+                               $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                              //  echo "    ".json_encode($return);
+                               if(strpos($return, "Error") !== FALSE){
+                                  //  echo "    ".json_encode($return);
+                                   echo "error_creo_alfresco";
+                               }else{
+
+                                   $reconocimiento->file = $return;
+                                   if ($reconocimiento->save() === false) {
+                                       echo "error";
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($reconocimiento->getMessages() as $message) {
+                                           echo $message;
+                                         }
+                                   }
+
+                               }
+                             }else{
+                               //echo "error".$valor['error'];
+                             }
+
+                           }
+
                              echo $reconocimiento->id;
                          }
 
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      }else {
@@ -2749,10 +2979,10 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
                        }
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -2763,7 +2993,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
 );
 
 // Edita el registro
-$app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
 
@@ -2771,9 +3001,11 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -2782,7 +3014,7 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -2790,7 +3022,7 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPut();
+                $post = $app->request->getPost();
 
                 $user_current = json_decode($token_actual->user_current, true);
 
@@ -2805,12 +3037,18 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
                      if( $usuario_perfil->id != null ){
 
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPut('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                            $reconocimiento= Propuestajuradoreconocimiento::findFirst($id);
                            $reconocimiento->actualizado_por = $user_current["id"];
@@ -2827,10 +3065,52 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
                                   }
 
                            } else {
+
+                             //echo "guardando archivo";
+                             //echo json_encode($_FILES);
+                             //Recorro todos los posibles archivos
+                             foreach($_FILES as $clave => $valor){
+                                 $fileTmpPath = $valor['tmp_name'];
+                                 $fileType = $valor['type'];
+                                 $fileNameCmps = explode(".", $valor["name"]);
+                                 $fileExtension = strtolower(end($fileNameCmps));
+                                // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                                // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                               if($valor['error'] == 0){
+                                /*
+                                * propuesta[codigo]reconocimiento[codigo]usuario[codigo]fecha[YmdHis].extension
+                                * p(cod)rj(cod)u(cod)f(YmdHis).(ext)
+                                */
+                                 $fileName = "p".$reconocimiento->propuesta."rj".$reconocimiento->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                                 $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$reconocimiento->propuesta;
+                                 $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                                //  echo "    ".json_encode($return);
+                                 if(strpos($return, "Error") !== FALSE){
+                                    //  echo "    ".json_encode($return);
+                                     echo "error_creo_alfresco";
+                                 }else{
+
+                                     $reconocimiento->file = $return;
+                                     if ($reconocimiento->save() === false) {
+                                         echo "error";
+                                        //Para auditoria en versión de pruebas
+                                        foreach ($reconocimiento->getMessages() as $message) {
+                                             echo $message;
+                                           }
+                                     }
+
+                                 }
+                               }else{
+                                 //echo "error".$valor['error'];
+                               }
+
+                             }
+
                                return $reconocimiento->id;
                            }
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      } else {
@@ -2841,7 +3121,7 @@ $app->put('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config)
                 return "acceso_denegado";
             }
         } else {
-            return "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -2889,12 +3169,20 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                       $reconocimiento = Propuestajuradoreconocimiento::findFirst($id);
 
@@ -3143,9 +3431,11 @@ $app->post('/new_publicacion', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -3154,7 +3444,7 @@ $app->post('/new_publicacion', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -3176,22 +3466,18 @@ $app->post('/new_publicacion', function () use ($app, $config) {
 
                      if( $usuario_perfil->id != null ){
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPost('idc')
-                       ]);
-
-                       //valido si la propuesta tiene el estado registrada
-                     if( $propuesta != null and $propuesta->estado == 7 ){
-
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
                           //perfil = 17  perfil de jurado
                          ->where("Usuariosperfiles.perfil = 17 ")
                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                          $publicacion = new Propuestajuradopublicacion();
                          $publicacion->creado_por = $user_current["id"];
@@ -3203,8 +3489,8 @@ $app->post('/new_publicacion', function () use ($app, $config) {
 
                          $post["id"]= null;
 
-                        echo "educacionnoformal---->>".json_encode($publicacion);
-                          echo "post---->>".json_encode($post);
+                        //echo "educacionnoformal---->>".json_encode($publicacion);
+                          //echo "post---->>".json_encode($post);
                          if ($publicacion->save($post) === false) {
                                   //  return json_encode($user_current);
 
@@ -3214,11 +3500,54 @@ $app->post('/new_publicacion', function () use ($app, $config) {
                                 }
 
                          } else {
+
+                           //echo "guardando archivo";
+                           //echo json_encode($_FILES);
+                           //Recorro todos los posibles archivos
+                           foreach($_FILES as $clave => $valor){
+                               $fileTmpPath = $valor['tmp_name'];
+                               $fileType = $valor['type'];
+                               $fileNameCmps = explode(".", $valor["name"]);
+                               $fileExtension = strtolower(end($fileNameCmps));
+                              // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                              // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                             if($valor['error'] == 0){
+                              /*
+                              * propuesta[codigo]publicacion[codigo]usuario[codigo]fecha[YmdHis].extension
+                              * p(cod)pj(cod)u(cod)f(YmdHis).(ext)
+                              */
+                               $fileName = "p".$publicacion->propuesta."pj".$publicacion->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                               $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$publicacion->propuesta;
+                               $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                              //  echo "    ".json_encode($return);
+                               if(strpos($return, "Error") !== FALSE){
+                                  //  echo "    ".json_encode($return);
+                                   echo "error_creo_alfresco";
+                               }else{
+
+                                   $publicacion->file = $return;
+                                   if ($publicacion->save() === false) {
+                                       echo "error";
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($publicacion->getMessages() as $message) {
+                                           echo $message;
+                                         }
+                                   }
+
+                               }
+                             }else{
+                               //echo "error".$valor['error'];
+                             }
+
+                           }
+
+
                              echo $publicacion->id;
                          }
 
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      }else {
@@ -3226,10 +3555,10 @@ $app->post('/new_publicacion', function () use ($app, $config) {
                        }
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -3240,7 +3569,7 @@ $app->post('/new_publicacion', function () use ($app, $config) {
 );
 
 // Edita el registro
-$app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
 
@@ -3248,9 +3577,11 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -3259,7 +3590,7 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -3267,7 +3598,7 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPut();
+                $post = $app->request->getPost();
 
                 $user_current = json_decode($token_actual->user_current, true);
 
@@ -3282,12 +3613,18 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
                      if( $usuario_perfil->id != null ){
 
 
-                       $propuesta = Propuestas::findFirst([
-                         "convocatoria = ".$request->getPut('idc')
-                       ]);
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $propuesta != null and $propuesta->estado == 7 ){
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                            $publicacion= Propuestajuradopublicacion::findFirst($id);
                            $publicacion->actualizado_por = $user_current["id"];
@@ -3304,10 +3641,53 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
                                   }
 
                            } else {
+
+
+                                //echo "guardando archivo";
+                                //echo json_encode($_FILES);
+                                //Recorro todos los posibles archivos
+                                foreach($_FILES as $clave => $valor){
+                                    $fileTmpPath = $valor['tmp_name'];
+                                    $fileType = $valor['type'];
+                                    $fileNameCmps = explode(".", $valor["name"]);
+                                    $fileExtension = strtolower(end($fileNameCmps));
+                                   // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                                   // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                                  if($valor['error'] == 0){
+                                   /*
+                                   * propuesta[codigo]publicacion[codigo]usuario[codigo]fecha[YmdHis].extension
+                                   * p(cod)pj(cod)u(cod)f(YmdHis).(ext)
+                                   */
+                                    $fileName = "p".$publicacion->propuesta."pj".$publicacion->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                                    $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$publicacion->propuesta;
+                                    $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                                   //  echo "    ".json_encode($return);
+                                    if(strpos($return, "Error") !== FALSE){
+                                       //  echo "    ".json_encode($return);
+                                        echo "error_creo_alfresco";
+                                    }else{
+
+                                        $publicacion->file = $return;
+                                        if ($publicacion->save() === false) {
+                                            echo "error";
+                                           //Para auditoria en versión de pruebas
+                                           foreach ($publicacion->getMessages() as $message) {
+                                                echo $message;
+                                              }
+                                        }
+
+                                    }
+                                  }else{
+                                    //echo "error".$valor['error'];
+                                  }
+
+                                }
+
                                return $publicacion->id;
                            }
                        }else{
-                         echo "deshabilitado";
+                         return "deshabilitado";
                        }
 
                      } else {
@@ -3318,7 +3698,7 @@ $app->put('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
                 return "acceso_denegado";
             }
         } else {
-            return "error";
+            return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -3366,12 +3746,19 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
 
 
                   if( $usuario_perfil->id != null ){
-                    $propuesta = Propuestas::findFirst([
-                      "convocatoria = ".$request->getPut('idc')
-                    ]);
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $propuesta != null and $propuesta->estado == 7 ){
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
 
                       $publicacion = Propuestajuradopublicacion::findFirst($id);
 
@@ -3440,6 +3827,726 @@ $app->post('/download_file', function () use ($app, $config) {
     }
 }
 );
+
+
+
+// Accion de postular la hoja de vida del perfil jurado
+$app->get('/postular', function () use ($app, $config) {
+
+  try {
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $post = $app->request->get();
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                    $usuario_perfil  = Usuariosperfiles::findFirst(
+                      [
+                        " usuario = ".$user_current["id"]." AND perfil =17"
+                      ]
+                    );
+
+
+
+                     if( $usuario_perfil->id != null ){
+
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->execute()
+                         ->getFirst();
+
+                         //valido si la propuesta tiene el estado registrada
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+
+                           $participante->propuestas->estado = 8; //inscrita
+                           $participante->propuestas->actualizado_por = $user_current["id"];
+                           $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                        //  echo "educacionformal---->>".json_encode($educacionformal);
+                            //echo "post---->>".json_encode($post);
+                           if ($participante->propuestas->save() === false) {
+                                    //  return json_encode($user_current);
+
+                               //Para auditoria en versión de pruebas
+                               foreach ($participante->propuestas->getMessages() as $message) {
+                                    echo $message;
+                                  }
+
+                           } else {
+
+                               echo $participante->propuestas->id;
+                           }
+                       }else{
+                         return "deshabilitado";
+                       }
+
+                     } else {
+                           return "error";
+                       }
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //echo "error_metodo".$ex->getMessage();
+        //Para auditoria en versión de pruebas
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+
+}
+);
+
+// lista la propuesta asociada a la convocatoria
+$app->get('/propuesta', function () use ($app, $config) {
+
+  try {
+
+      //Instancio los objetos que se van a manejar
+      $request = new Request();
+      $tokens = new Tokens();
+
+
+      //Consulto si al menos hay un token
+      $token_actual = $tokens->verificar_token($request->get('token'));
+
+      //Si el token existe y esta activo entra a realizar la tabla
+      if ($token_actual > 0) {
+
+          //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+          $ch = curl_init();
+          curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+          curl_setopt($ch, CURLOPT_POST, 2);
+          curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+          $permiso_escritura = curl_exec($ch);
+          curl_close($ch);
+
+          //Verifico que la respuesta es ok, para poder realizar la escritura
+          if ($permiso_escritura == "ok") {
+              //Consulto el usuario actual
+              $post = $app->request->get();
+
+              $user_current = json_decode($token_actual->user_current, true);
+
+              // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                  $usuario_perfil  = Usuariosperfiles::findFirst(
+                    [
+                      " usuario = ".$user_current["id"]." AND perfil =17"
+                    ]
+                  );
+
+
+
+                   if( $usuario_perfil->id != null ){
+
+                     $participante = Participantes::query()
+                       ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                       ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                        //perfil = 17  perfil de jurado
+                       ->where("Usuariosperfiles.perfil = 17 ")
+                       ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                       ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                       ->execute()
+                       ->getFirst();
+
+                       echo json_encode($participante->propuestas);
+
+                   } else {
+                         return "error";
+                     }
+
+          } else {
+              return "acceso_denegado";
+          }
+      } else {
+          return "error_token";
+      }
+
+    } catch (Exception $ex) {
+        //echo "error_metodo".$ex->getMessage();
+        //Para auditoria en versión de pruebas
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+
+}
+);
+
+
+//Busca el registro experiencia_laboral
+$app->get('/search_documento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+
+
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                     if( $usuario_perfil->id != null ){
+
+                       //cargar los datos del registro
+                      // echo "-->>>>".$request->get('idregistro');
+
+                       if( $request->get('idregistro') ){
+                             $documento=Propuestajuradodocumento::findFirst( $request->get('idregistro') );
+                       }
+
+
+                        $array["usuario_perfil"]=$usuario_perfil->id;
+
+
+                        $tipos =Categoriajurado::find("active=true AND tipo='anexo'");
+                        $array["tipo"]=array();
+                        foreach ( $tipos as $tipo) {
+                          array_push($array["tipo"], ["id"=> $tipo->id, "nombre"=> $tipo->nombre ] );
+                        }
+
+                        $array["documento"] = $documento;
+
+                         //Retorno el array
+                        return json_encode( $array );
+
+                     }else{
+                       return json_encode( array() );
+                     }
+
+            }
+
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+        //echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+//Busca los registros de educacion formal
+$app->get('/all_documento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+
+                       $documentos = Propuestajuradodocumento::find(
+                         [
+                           "usuario_perfil= ".$usuario_perfil->id
+                           ." AND propuesta = ".$participante->propuestas->id,
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($documentos as $documento) {
+
+                         $tipo = Categoriajurado::findFirst(
+                           ["active=true AND id=".$documento->categoria_jurado]
+                         );
+                         $documento->categoria_jurado = $tipo->nombre;
+
+                         $documento->creado_por = null;
+                         $documento->actualizado_por = null;
+                         array_push($response,$documento);
+                       }
+
+                       //resultado sin filtro
+                       $tdocumento = Propuestajuradodocumento::find([
+                         "usuario_perfil = ".$usuario_perfil->id
+                       ]);
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tdocumento ->count()),
+                "recordsFiltered" => intval($documentos->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+// Crea el registro
+$app->post('/new_documento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $post = $app->request->getPost();
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                    $usuario_perfil  = Usuariosperfiles::findFirst(
+                      [
+                        " usuario = ".$user_current["id"]." AND perfil =17"
+                      ]
+                    );
+
+
+                     if( $usuario_perfil->id != null ){
+
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
+
+                       //valido si la propuesta tiene el estado registrada
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+
+                         $documento = new Propuestajuradodocumento();
+                         $documento->creado_por = $user_current["id"];
+                         $documento->fecha_creacion = date("Y-m-d H:i:s");
+                         $documento->active = true;
+                         //al asignarle un objeto genera error, por tal motivo se envia solo el id
+                         $documento->propuesta = $participante->propuestas->id;
+                         $documento->usuario_perfil = $participante->usuario_perfil;
+
+                         $post["id"]= null;
+
+                        //echo "educacionnoformal---->>".json_encode($publicacion);
+                          //echo "post---->>".json_encode($post);
+                         if ($documento->save($post) === false) {
+                                  //  return json_encode($user_current);
+
+                             //Para auditoria en versión de pruebas
+                             foreach ($documento->getMessages() as $message) {
+                                  echo $message;
+                                }
+
+                         } else {
+
+                           //echo "guardando archivo";
+                           //echo json_encode($_FILES);
+                           //Recorro todos los posibles archivos
+                           foreach($_FILES as $clave => $valor){
+                               $fileTmpPath = $valor['tmp_name'];
+                               $fileType = $valor['type'];
+                               $fileNameCmps = explode(".", $valor["name"]);
+                               $fileExtension = strtolower(end($fileNameCmps));
+                              // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                              // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                             if($valor['error'] == 0){
+                              /*
+                              * propuesta[codigo]documento[codigo]usuario[codigo]fecha[YmdHis].extension
+                              * p(cod)dj(cod)u(cod)f(YmdHis).(ext)
+                              */
+                               $fileName = "p".$documento->propuesta."dj".$documento->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                               $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$documento->propuesta;
+                               $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                              //  echo "    ".json_encode($return);
+                               if(strpos($return, "Error") !== FALSE){
+                                  //  echo "    ".json_encode($return);
+                                   echo "error_creo_alfresco";
+                               }else{
+
+                                   $documento->file = $return;
+                                   if ($documento->save() === false) {
+                                       echo "error";
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($documento->getMessages() as $message) {
+                                           echo $message;
+                                         }
+                                   }
+
+                               }
+                             }else{
+                               //echo "error".$valor['error'];
+                             }
+
+                           }
+
+
+                             echo $documento->id;
+                         }
+
+                       }else{
+                         return "deshabilitado";
+                       }
+
+                     }else {
+                           return "error";
+                       }
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //echo "error_metodo".$ex->getMessage();
+        //Para auditoria en versión de pruebas
+        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+// Edita el registro
+$app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
+
+  try {
+
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $post = $app->request->getPost();
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                    $usuario_perfil  = Usuariosperfiles::findFirst(
+                      [
+                        " usuario = ".$user_current["id"]." AND perfil =17"
+                      ]
+                    );
+
+
+                     if( $usuario_perfil->id != null ){
+
+
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                         ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
+                         ->execute()
+                         ->getFirst();
+
+                         //valido si la propuesta tiene el estado registrada
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+
+                           $documento= Propuestajuradodocumento::findFirst($id);
+                           $documento->actualizado_por = $user_current["id"];
+                           $documento->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                          //echo "educacionformal---->>".json_encode($documento);
+                            //echo "post---->>".json_encode($post);
+                           if ($documento->save($post) === false) {
+                                    //  return json_encode($user_current);
+
+                               //Para auditoria en versión de pruebas
+                               foreach ($documento->getMessages() as $message) {
+                                    echo $message;
+                                  }
+
+                           } else {
+
+
+                                //echo "guardando archivo";
+                                //echo json_encode($_FILES);
+                                //Recorro todos los posibles archivos
+                                foreach($_FILES as $clave => $valor){
+                                    $fileTmpPath = $valor['tmp_name'];
+                                    $fileType = $valor['type'];
+                                    $fileNameCmps = explode(".", $valor["name"]);
+                                    $fileExtension = strtolower(end($fileNameCmps));
+                                   // $fileName = "c".$request->getPost('convocatoria_padre_categoria')."d".$convocatoriaanexo->id."u".$convocatoriaanexo->creado_por."f".date("YmdHis").".".$fileExtension;
+                                   // $return = $chemistry_alfresco->newFile("/Sites/convocatorias/".$request->getPost('convocatoria_padre_categoria')."/".$request->getPost('anexos')."/", $fileName, file_get_contents($fileTmpPath), $fileType);
+
+                                  if($valor['error'] == 0){
+                                   /*
+                                   * propuesta[codigo]documento[codigo]usuario[codigo]fecha[YmdHis].extension
+                                   * p(cod)dj(cod)u(cod)f(YmdHis).(ext)
+                                   */
+                                    $fileName = "p".$documento->propuesta."dj".$documento->id."u".$user_current["id"]."f".date("YmdHis").".".$fileExtension;
+                                    $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$documento->propuesta;
+                                    $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
+                                     echo "    ".json_encode($return);
+                                    if(strpos($return, "Error") !== FALSE){
+                                         echo "    ".json_encode($return);
+                                        echo "error_creo_alfresco";
+                                    }else{
+
+                                        $documento->file = $return;
+                                        if ($documento->save() === false) {
+                                            echo "error";
+                                           //Para auditoria en versión de pruebas
+                                           foreach ($documento->getMessages() as $message) {
+                                                echo $message;
+                                              }
+                                        }
+
+                                    }
+                                  }else{
+                                    //echo "error".$valor['error'];
+                                  }
+
+                                }
+
+                               return $documento->id;
+                           }
+                       }else{
+                         return "deshabilitado";
+                       }
+
+                     } else {
+                           return "error";
+                       }
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //echo "error_metodo".$ex->getMessage();
+        //Para auditoria en versión de pruebas
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+
+}
+);
+
+// Eliminar registro
+$app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+              //Consulto el usuario actual
+              $post = $app->request->getPut();
+
+              $user_current = json_decode($token_actual->user_current, true);
+
+              // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                  $usuario_perfil  = Usuariosperfiles::findFirst(
+                    [
+                      " usuario = ".$user_current["id"]." AND perfil =17"
+                    ]
+                  );
+
+
+                  if( $usuario_perfil->id != null ){
+
+                    $participante = Participantes::query()
+                      ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                      ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                       //perfil = 17  perfil de jurado
+                      ->where("Usuariosperfiles.perfil = 17 ")
+                      ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
+                      ->execute()
+                      ->getFirst();
+
+                      //valido si la propuesta tiene el estado registrada
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+
+                      $documento = Propuestajuradodocumento::findFirst($id);
+
+                      if($documento->active==true){
+                          $documento->active=false;
+                          $retorna="No";
+                      }else{
+                          $documento->active=true;
+                          $retorna="Si";
+                      }
+
+                      $documento->actualizado_por = $user_current["id"];
+                      $documento->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                      if ($documento->save($post) === false) {
+                        //Para auditoria en versión de pruebas
+                        foreach ($documento->getMessages() as $message) {
+                          echo $message;
+                          }
+
+                      }else {
+                        return $retorna;
+                      }
+
+                  }else{
+                        echo "deshabilitado";
+                  }
+
+                }else {
+                    return "error";
+                }
+
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        //echo "error_metodo".$ex->getMessage();
+        //Para auditoria en versión de pruebas
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+});
+
 
 
 try {
