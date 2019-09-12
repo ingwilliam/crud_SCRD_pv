@@ -340,7 +340,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 );
 
 
-//Cesar britto
+//Cesar Britto
 //Busca el registro por nombre
 // Recupera el registro deacuerdo al nombre de la variable
 $app->get('/search_nombre', function () use ($app) {

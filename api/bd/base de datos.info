@@ -1,24 +1,2 @@
 # Cesar Britto Ambiente de desarrollo
 
-#agregar usuario cesar.britto
-INSERT INTO public.usuarios (id,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,username,"password",active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
-	VALUES (17,'Cesar','Augusto','Britto','Moreno','cesar.britto@scrd.gov.co','$2y$08$ODNPTlRFQ0J4ZzdMcG9VTe3UE6UcW8Wb66C0gAuxbTz66g39ClH9u',true,'2019-06-26 21:52:58','2019-02-14 11:01:13',7,7);
-
-#asignar rol de usuario a cesar.britto
-INSERT INTO public.usuariosperfiles (usuario,perfil)
-	VALUES (17,16)
-
-#Estados de las propuestas
-INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
-	VALUES (7,'propuestas','Registrada',true,'2019-07-15 11:41:09',7,1)
-INSERT INTO public.estados (id,tipo_estado,nombre,active,fecha_creacion,creado_por,orden)
-	VALUES (8,'propuestas','Inscrita',true,'2019-07-15 11:41:26',7,2)
-
-#estados del participante
-INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_creacion,creado_por)
-	VALUES (16,'estado_participante','Inicial,Participante,Integrante,Respresentante',true,'2019-07-15 09:58:56',7)
-
-#estados de la propuesta
-INSERT INTO public.tablasmaestras (id,nombre,valor,active,fecha_actualizacion,fecha_creacion,creado_por,actualizado_por)
-	VALUES (15,'estados_propuestas','Registrada,Inscrita',true,'2019-07-15 11:40:48','2019-07-14 21:10:44',7,7)
-

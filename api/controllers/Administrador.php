@@ -554,7 +554,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa fa-users fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <?php
-                                //Solo se activa cuando no viaja el parametro de modalidad                                 
+                                //Solo se activa cuando no viaja el parametro de modalidad
                                 if($request->getPost('m')=="")
                                 {
                                 ?>
@@ -565,7 +565,8 @@ $app->post('/menu', function () use ($app,$config) {
                                 if($request->getPost('m')==2)
                                 {
                                 ?>
-                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Basica</a></li>
+                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Básica</a></li>
+                                <li><a href="../propuestasjurados/postulaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Mis postulaciones</a></li>
                                 <li><a href="../propuestasjurados/educacion_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación formal</a></li>
                                 <li><a href="../propuestasjurados/educacion_no_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación no formal</a></li>
                                 <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia profesional</a></li>
