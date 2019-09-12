@@ -33,29 +33,37 @@ class Convocatorias extends Model {
                 'foreignKey' => true
                 ]
         );
-        
+
         //Se define relacion de N a 1 con Entidades
         $this->belongsTo(
                 'entidad', 'Entidades', 'id', [
                 'foreignKey' => true
                 ]
         );
-        
+
         //Se define relacion de N a 1 con Estados
         $this->belongsTo(
                 'estado', 'Estados', 'id'
         );
-        
+
         //Se define relacion de N a 1 con Lineasestrategicas
         $this->belongsTo(
                 'linea_estrategica', 'Lineasestrategicas', 'id'
         );
-        
+
         //Se define relacion de N a 1 con Areas
         $this->belongsTo(
                 'area', 'Areas', 'id'
         );
-                
+
+        //Cesar Britto
+        //hasMany	Defines a 1-n relationship
+        $this->belongsTo(
+                'id',
+                'Propuestas',
+                'convocatoria'
+        );
+
     }
 
 }

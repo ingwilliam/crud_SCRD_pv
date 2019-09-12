@@ -278,11 +278,11 @@ $app->get('/all', function () use ($app) {
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
     try {
-                
+
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
@@ -311,7 +311,7 @@ $app->post('/new', function () use ($app, $config) {
                 $convocatoria->estado = 1;
                 if ($convocatoria->save($post) === false) {
                     echo "error";
-                } else {                                        
+                } else {
                     //Se crea la carpeta principal de la convocatoria
                     if( $chemistry_alfresco->newFolder("/Sites/convocatorias", $convocatoria->id) == "ok" )
                     {
@@ -319,13 +319,13 @@ $app->post('/new', function () use ($app, $config) {
                         $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "documentacion");
                         $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "listados");
                         $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "avisos");
-                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "propuestas");                                                
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "propuestas");
                         echo $convocatoria->id;
                     }
                     else
                     {
                         echo "error_alfresco";
-                    }                    
+                    }
                 }
             } else {
                 echo "acceso_denegado";
@@ -638,7 +638,9 @@ $app->get('/search', function () use ($app) {
             */
 
             $array["programas"]= Programas::find("active=true");
-            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+            //$array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+            //cesar britto
+            $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id WHERE Tiposparticipantes.active=true");
             $array["coberturas"]= Coberturas::find("active=true");
             $array["localidades"]= Localidades::find("active=true");
             $array["upzs"]=array();
@@ -646,15 +648,19 @@ $app->get('/search', function () use ($app) {
             if(isset($convocatoria->id))
             {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
-                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
+                /*
+                $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE /Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");*/
+                //cesar britto
+                  $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE Tiposparticipantes.active=true");
+
                 $array["perfiles_jurados"]= Convocatoriasparticipantes::find(['convocatoria = '.$convocatoria->id.' AND tipo_participante=4','order' => 'orden']);
                 if(isset($convocatoria->localidad))
                 {
                     $array["upzs"]= Upzs::find("active=true AND localidad=".$convocatoria->localidad);
-                    $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);                
-                }                
-                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);                
-            }             
+                    $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
+                }
+                $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);
+            }
             $array["enfoques"]= Enfoques::find("active=true");
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
             $array["areas"]= Areas::find("active=true");
@@ -768,7 +774,7 @@ $app->get('/select_categorias', function () use ($app) {
             {
                 //Valida que la convocatoria tenga categorias
                 if( Convocatorias::count( "id=".$request->get('id')." AND tiene_categorias = true" ) > 0  ){
-                  
+
                   $convocatorias = Convocatorias::find(
                       [
                           "convocatoria_padre_categoria = ".$request->get('id'),
