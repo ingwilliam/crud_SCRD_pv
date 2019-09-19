@@ -163,7 +163,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo" . $ex->getMessage();
+        echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
     }
 }
 );
@@ -299,6 +299,16 @@ $app->get('/search', function () use ($app, $config) {
                         " usuario_perfil = ".$usuario_perfil->id." AND active = true "
                       ]
                     );
+                  }else{
+
+                     $usuario = Usuarios::findFirst($user_current["id"]);
+
+                     $participante = new Participantes();
+                     $participante->primer_nombre = $usuario->primer_nombre;
+                     $participante->segundo_nombre = $usuario->segundo_nombre;
+                     $participante->primer_apellido = $usuario->primer_apellido;
+                     $participante->segundo_apellido = $usuario->segundo_apellido;
+                     $participante->correo_electronico = $usuario->username;
                   }
 
 
@@ -315,6 +325,7 @@ $app->get('/search', function () use ($app, $config) {
             $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
             $array["identidad_genero"]= Identidadesgeneros::find("active=true");
             $array["grupo_etnico"]= Gruposetnicos::find("active=true");
+
             $array_ciudades=array();
             foreach( Ciudades::find("active=true") as $value )
             {

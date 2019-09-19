@@ -21,10 +21,17 @@ class Propuestas extends Model
             'id'
         );
 
-        //hasMany	Defines a 1-n relationship
+        //hasOne	Defines a 1-1 relationship
         $this->hasOne(
             'id',
             'Educacionformal',
+            'propuesta'
+        );
+
+        //hasMany	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Juradospostulados',
             'propuesta'
         );
 

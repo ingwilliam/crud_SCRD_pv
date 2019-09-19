@@ -23,4 +23,29 @@ class Participantes extends Model
            'participante'
        );
    }
+
+   public function validation(){
+
+    if ($this->orientacion_sexual == "") {
+      $this->orientacion_sexual = null;
+    }
+
+     if ($this->identidad_genero == "") {
+       $this->identidad_genero = null;
+     }
+
+      if ($this->grupo_etnico == "") {
+        $this->grupo_etnico = null;
+      }
+
+      if ($this->ciudad_nacimiento == "") {
+        $this->ciudad_nacimiento = null;
+      }
+
+     if ($this->barrio_residencia == "") {
+       $this->barrio_residencia = null;
+     }
+     
+     return true;
+   }
 }
