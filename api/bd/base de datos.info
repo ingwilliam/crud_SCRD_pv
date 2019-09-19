@@ -1,2 +1,7 @@
 # Cesar Britto Ambiente de desarrollo
+# cambiar el puerto local
+cd /etc/postgresql/10/main
+sudo nano pg_hba.conf 
 
+#Ajustar las secuencias
+ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
