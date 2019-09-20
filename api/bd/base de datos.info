@@ -5,3 +5,45 @@ sudo nano pg_hba.conf
 
 #Ajustar las secuencias
 ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
+
+
+# Convocatorias Septiembre 19 del 2019
+ALTER TABLE convocatorias ADD palabras_claves TEXT;
+ALTER TABLE convocatorias ADD cerrada boolean DEFAULT false;
+ALTER TABLE convocatorias ADD cronograma boolean DEFAULT false;
+ALTER TABLE convocatorias ADD presupuesto boolean DEFAULT false;
+ALTER TABLE convocatorias ADD propuestas_permitidas boolean DEFAULT false;
+
+CREATE TABLE public.convocatoriaspropuestasparametros
+(
+  id serial NOT NULL,
+  label TEXT,
+  valores TEXT,
+  estado boolean,
+  tipo_parametro TEXT,
+  campo TEXT,
+  orden integer,
+  obligatorio boolean DEFAULT false,
+  mensaje TEXT,
+  convocatoria integer NOT NULL,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT convocatoriaspropuestasparametros PRIMARY KEY (id),
+  CONSTRAINT convocatoriaspropuestasparametros_convocatoria_fkey FOREIGN KEY (convocatoria)
+      REFERENCES public.convocatorias (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT convocatoriaspropuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+INSERT INTO public.tablasmaestras (nombre, valor, active, fecha_creacion, creado_por) VALUES('tipo_parametro', 'TextoLargo,Fecha,Check,Numero,Lista,Texto,Salto,Radio', true, '2019-09-20 23:51:50', 7);
+
+
+
+
+
+
+
