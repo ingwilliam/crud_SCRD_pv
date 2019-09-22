@@ -52,6 +52,7 @@ $app->get('/search', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
@@ -123,14 +124,14 @@ $app->get('/search', function () use ($app, $config) {
 
                          if ($new_participante->save() === false) {
 
-                           echo "error";
+                           //echo "error";
 
                            //Para auditoria en versión de pruebas
-                           /*
+
                            foreach ($participante->getMessages() as $message) {
                                    echo $message;
                                  }
-                           */
+
                          }else{
 
                             //Se crea la carpeta donde se guardaran los documentos de la propuesta (hoja de vida) del jurado
@@ -654,8 +655,10 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                                $filepath = "/Sites/convocatorias/".$request->getPost('idc')."/propuestas/".$educacionformal->propuesta;
                                $return = $chemistry_alfresco->newFile($filepath, $fileName, file_get_contents($fileTmpPath), $fileType);
 
+                               //echo "archivo".$fileName;
+                               //echo "path".$filepath;
                                if(strpos($return, "Error") !== FALSE){
-                                  //  echo "    ".json_encode($return);
+                                   //echo "    ".json_encode($return);
                                    echo "error_creo_alfresco";
                                }else{
 
@@ -1602,6 +1605,12 @@ $app->get('/search_experiencia_laboral', function () use ($app, $config) {
                         $array["tipo_entidad"]=array();
                         foreach ( explode(",", $tipos->valor) as $nombre) {
                           array_push($array["tipo_entidad"], ["id"=> $nombre, "nombre"=> $nombre ] );
+                        }
+
+                        $lineas =Lineasestrategicas::find("active=true");
+                        $array["linea"]=array();
+                        foreach ( $lineas as $linea) {
+                          array_push($array["linea"], ["id"=> $linea->id, "nombre"=> $linea->nombre ] );
                         }
 
                          $array["experiencialaboral"] = $experiencialaboral;
@@ -3828,7 +3837,9 @@ $app->post('/download_file', function () use ($app, $config) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo "error_metodo";
+      //  echo "error_metodo";
+
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
@@ -3940,6 +3951,7 @@ $app->get('/propuesta', function () use ($app, $config) {
       //Instancio los objetos que se van a manejar
       $request = new Request();
       $tokens = new Tokens();
+      $array =  array();
 
 
       //Consulto si al menos hay un token
@@ -3971,8 +3983,6 @@ $app->get('/propuesta', function () use ($app, $config) {
                     ]
                   );
 
-
-
                    if( $usuario_perfil->id != null ){
 
                      $participante = Participantes::query()
@@ -3985,7 +3995,19 @@ $app->get('/propuesta', function () use ($app, $config) {
                        ->execute()
                        ->getFirst();
 
-                       echo json_encode($participante->propuestas);
+                       $array["propuesta"] = $participante->propuestas;
+
+                       $documento = Convocatoriasanexos::findFirst(
+                         [
+                           "tipo_documento = 'Anexo' AND nombre = 'Condiciones de participación'"
+                           ."AND convocatoria = ".$request->get('idc')
+                         ]
+                       );
+
+                       $array["documento"] = $documento;
+
+                       //echo json_encode($participante->propuestas);
+                      echo json_encode( $array );
 
                    } else {
                          return "error";
@@ -4601,6 +4623,9 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         $tokens = new Tokens();
         $id_convocatorias_postuladas = array(0);
 
+        //  $fecha_actual = date("d-m-Y");
+         $fecha_actual =  date("Y-m-d H:i:s");
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -4619,11 +4644,8 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                        ]
                      );
 
-
-
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
-
 
                       $participante = Participantes::query()
                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
@@ -4642,6 +4664,9 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                            array_push($id_convocatorias_postuladas,$postulacion->convocatorias->id);
                       }
 
+
+
+
                        $convocatorias = Convocatorias::find(
                          [
                            "id NOT IN ({idConvocatoria:array}) "
@@ -4649,6 +4674,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                            ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR descripcion LIKE '%".$request->get("search")['value']."%') "
                            ." AND estado = 5 " //estado publicada
+                           ." AND active = true " //activa
                            ." AND modalidad != 2 ", //jurados
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
@@ -4663,36 +4689,47 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
 
                        foreach ($convocatorias as $convocatoria) {
 
-                         $area =  Areas::findFirst(
-                           ["id=".$convocatoria->area]
-                         );
-                         $convocatoria->area = $area->nombre;
+                         $cronograma = Convocatoriascronogramas::findFirst(
+                           [
+                             "convocatoria = ".$convocatoria->id
+                             ." AND descripcion = 'CIERRE'"
+                             ." AND active = true"
+                           ]);
 
-                         $lineaestrategica =  Lineasestrategicas::findFirst(
-                           ["id=".$convocatoria->linea_estrategica]
-                         );
-                         $convocatoria->linea_estrategica = $lineaestrategica->nombre;
+                           //Agrega la convocatoria si la fecha de cierre tiene mas de 48 horas (2 dias)
+                         if ( strtotime($cronograma->fecha_fin) >= strtotime(date("Y-m-d H:i:s",strtotime($fecha_actual."+ 2 days") ) ) ){
 
-                         $programa =  Programas::findFirst(
-                           ["id=".$convocatoria->programa]
-                         );
-                         $convocatoria->programa = $programa->nombre;
+                             $area =  Areas::findFirst(
+                               ["id=".$convocatoria->area]
+                             );
+                             $convocatoria->area = $area->nombre;
 
-                         $entidad =  Entidades::findFirst(
-                           ["id=".$convocatoria->entidad]
-                         );
-                         $convocatoria->entidad = $entidad->nombre;
+                             $lineaestrategica =  Lineasestrategicas::findFirst(
+                               ["id=".$convocatoria->linea_estrategica]
+                             );
+                             $convocatoria->linea_estrategica = $lineaestrategica->nombre;
 
-                         $enfoque =  Enfoques::findFirst(
-                           ["id=".$convocatoria->enfoque]
-                         );
-                         $convocatoria->enfoque = $enfoque->nombre;
+                             $programa =  Programas::findFirst(
+                               ["id=".$convocatoria->programa]
+                             );
+                             $convocatoria->programa = $programa->nombre;
+
+                             $entidad =  Entidades::findFirst(
+                               ["id=".$convocatoria->entidad]
+                             );
+                             $convocatoria->entidad = $entidad->nombre;
+
+                             $enfoque =  Enfoques::findFirst(
+                               ["id=".$convocatoria->enfoque]
+                             );
+                             $convocatoria->enfoque = $enfoque->nombre;
 
 
-                         $convocatoria->creado_por = null;
-                         $convocatoria->actualizado_por = null;
+                             $convocatoria->creado_por = null;
+                             $convocatoria->actualizado_por = null;
 
-                         array_push($response,$convocatoria);
+                             array_push($response,$convocatoria);
+                           }
                        }
 
                        //resultado sin filtro
@@ -4701,6 +4738,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                            "id NOT IN ({idConvocatoria:array}) " //las postuladas
                            ." AND area = ".$request->get('area')
                            ." AND estado = 5 " //estado publicada
+                           ." AND active = true " //activa
                            ." AND modalidad != 2 ", //jurados
                            "bind" => [
                              "idConvocatoria" => $id_convocatorias_postuladas
@@ -4861,19 +4899,27 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
-
                        $postulaciones = $participante->propuestas->juradospostulados;
 
-                      // echo "cantidad-->".$postulaciones->count();
-
+                       //echo "cantidad-->".$postulaciones->count();
                        foreach ($postulaciones as $postulacion) {
-                          if($postulacion->convocatorias->active){
+
+                         //si la convocatoria esta activa y esta publicada
+                          if($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5){
                             $contador++;
                           }
+
                         }
 
+                        $nummax = Tablasmaestras::findFirst(
+                          [
+                          " nombre = 'numero_maximo_postulaciones_jurado'"
+                          ]
+                        );
+
+                        //echo "sssss--->>>".(int)$nummax->valor."  contador-->".$contador;
                       //limite tabla maestra
-                       if( $contador < 3){
+                       if( $contador < (int)$nummax->valor){
                          //guardar registro
 
                          $juradopostulado = new Juradospostulados();
@@ -4896,7 +4942,6 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                          }
 
                         // return "registro guardado";
-
                          return $juradopostulado->id;
 
                        }else{
