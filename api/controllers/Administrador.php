@@ -566,15 +566,15 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Básica</a></li>
-                                <li><a href="../propuestasjurados/postulaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Mis postulaciones</a></li>
                                 <li><a href="../propuestasjurados/educacion_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación formal</a></li>
                                 <li><a href="../propuestasjurados/educacion_no_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación no formal</a></li>
-                                <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia profesional</a></li>
+                                <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia disciplinar</a></li>
                                 <li><a href="../propuestasjurados/experiencia_jurado.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia como jurado de convocatorias</a></li>
                                 <li><a href="../propuestasjurados/reconocimiento.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Reconocimientos (Distinciones o Premios)</a></li>
                                 <li><a href="../propuestasjurados/publicaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Publicaciones</a></li>
                                 <li><a href="../propuestasjurados/documentos_administrativos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentos administrativos</a></li>
-                                <li><a href="../propuestasjurados/postular_hoja_vida.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Postular hoja de vida</a></li>
+                                <li><a href="../propuestasjurados/postular_hoja_vida.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Inscribir hoja de vida</a></li>
+                                <li><a href="../propuestasjurados/postulaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Mis postulaciones</a></li>
                                 <?php
                                 }
                                 ?>

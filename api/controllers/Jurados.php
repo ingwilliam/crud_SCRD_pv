@@ -107,7 +107,7 @@ $app->post('/new', function () use ($app, $config) {
                 // en caso contrario crea nuevos registros
                 if( $participantes->count() >= 1 ){
 
-                  return "error";
+                  return "error_duplicado";
 
                 }else{
 
@@ -174,7 +174,7 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));

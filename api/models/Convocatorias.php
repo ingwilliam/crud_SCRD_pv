@@ -57,7 +57,7 @@ class Convocatorias extends Model {
         );
 
         //Cesar Britto
-        //hasMany	Defines a 1-n relationship
+        //belongsTo	Defines a n-1 relationship
         $this->belongsTo(
                 'id',
                 'Propuestas',
@@ -71,6 +71,17 @@ class Convocatorias extends Model {
             'Juradospostulados',
             'convocatoria'
         );
+
+        //Cesar Britto
+        //hasMany	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Convocatoriascronogramas',
+            'convocatoria'
+        );
+
+
+
 
     }
 
