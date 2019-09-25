@@ -304,6 +304,8 @@ $app->post('/edit_participante', function () use ($app, $config) {
 }
 );
 
+
+// Funcionalidad CRUD Educacion formal
 //Busca el registro educación formal
 $app->get('/search_educacion_formal', function () use ($app, $config) {
     try {
@@ -435,10 +437,9 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                        $educacionformales = Educacionformal::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta = ".$participante->propuestas->id
                            ." AND titulo LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -458,9 +459,11 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                        }
 
                        //resultado sin filtro
-                       $teducacionformal = Educacionformal::find([
-                         "usuario_perfil = ".$usuario_perfil->id
-                       ]);
+                       $teducacionformal = Educacionformal::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                         ]
+                        );
 
                      }
 
@@ -538,7 +541,7 @@ $app->get('/select_nucleobasico', function () use ($app) {
 }
 );
 
-// Crea el registro
+// Crea el registro de educacion formal
 $app->post('/new_educacion_formal', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -597,7 +600,6 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                          $educacionformal->active = true;
                          //al asignarle un objeto genera error, por tal motivo se envia solo el id
                          $educacionformal->propuesta = $participante->propuestas->id;
-                         $educacionformal->usuario_perfil = $participante->usuario_perfil;
 
                          $post["id"]= null;
 
@@ -704,7 +706,7 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
 }
 );
 
-// Edita el registro
+// Edita el registro de educacion formal
 $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
@@ -870,7 +872,7 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
 }
 );
 
-// Eliminar registro de los perfiles de las convocatorias
+//Desactiva el registro de educacion formal
 $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -965,7 +967,8 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
 
 
 
-//Busca el registro educación formal
+// Funcionalidad CRUD Educacion no formal
+//Busca el registro Educacion no formal
 $app->get('/search_educacion_no_formal', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1057,7 +1060,7 @@ $app->get('/search_educacion_no_formal', function () use ($app, $config) {
 }
 );
 
-//Busca los registros de educacion formal
+//Busca los registros de Educacion no formal
 $app->get('/all_educacion_no_formal', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1098,10 +1101,9 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
 
                        $educacionnoformales = Educacionnoformal::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta = ".$participante->propuestas->id
                            ." AND nombre LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -1121,9 +1123,11 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                        }
 
                        //resultado sin filtro
-                       $teducacionnoformal = Educacionformal::find([
-                         "usuario_perfil = ".$usuario_perfil->id
-                       ]);
+                       $teducacionnoformal = Educacionnoformal::find(
+                         [
+                          " propuesta = ".$participante->propuestas->id
+                         ]
+                       );
 
                      }
 
@@ -1153,7 +1157,7 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
 }
 );
 
-// Crea el registro
+// Crea el registro de Educacion no formal
 $app->post('/new_educacion_no_formal', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1210,7 +1214,6 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                          $educacionnoformal->active = true;
                          //al asignarle un objeto genera error, por tal motivo se envia solo el id
                          $educacionnoformal->propuesta = $participante->propuestas->id;
-                         $educacionnoformal->usuario_perfil = $participante->usuario_perfil;
 
                          $post["id"]= null;
 
@@ -1316,7 +1319,7 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
 }
 );
 
-// Edita el registro
+// Edita el registro de Educacion no formal
 $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
@@ -1453,7 +1456,7 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
 }
 );
 
-// Eliminar registro de los perfiles de las convocatorias
+// Eliminar registro de Educacion no formal
 $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1547,7 +1550,7 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
 });
 
 
-
+// Funcionalidad CRUD Experiencia_laboral
 //Busca el registro experiencia_laboral
 $app->get('/search_experiencia_laboral', function () use ($app, $config) {
     try {
@@ -1640,7 +1643,7 @@ $app->get('/search_experiencia_laboral', function () use ($app, $config) {
 }
 );
 
-//Busca los registros de educacion formal
+//Busca los registros de experiencia_laboral
 $app->get('/all_experiencia_laboral', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1683,10 +1686,9 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
 
                        $experiencialaborales = Experiencialaboral::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta= ".$participante->propuestas->id
                            ." AND entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR cargo LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR cargo LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -1696,10 +1698,15 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                        foreach ($experiencialaborales as $experiencialaboral) {
 
                          $ciudad =  Ciudades::findFirst(
-                           ["active=true AND id=".$experiencialaboral->ciudad]
+                           ["id=".$experiencialaboral->ciudad]
                          );
-
                          $experiencialaboral->ciudad = $ciudad->nombre;
+
+                         $linea =Lineasestrategicas::findFirst(
+                           ["id = ".$experiencialaboral->linea]
+                         );
+                         $experiencialaboral->linea = $linea->nombre;
+
                          $experiencialaboral->creado_por = null;
                          $experiencialaboral->actualizado_por = null;
                          array_push($response,$experiencialaboral);
@@ -1707,7 +1714,9 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
 
                        //resultado sin filtro
                        $texperiencialaboral = Experiencialaboral::find([
-                         "usuario_perfil = ".$usuario_perfil->id
+                          " propuesta= ".$participante->propuestas->id
+                          ." AND entidad LIKE '%".$request->get("search")['value']."%'"
+                          ." OR cargo LIKE '%".$request->get("search")['value']."%'"
                        ]);
 
                      }
@@ -1723,22 +1732,22 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                 "data" => $response   // total data array
             );
             //retorno el array en json
-           echo json_encode($json_data);
+           return json_encode($json_data);
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
 
       //Para auditoria en versión de pruebas
-      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
 
-// Crea el registro
+// Crea el registro de experiencia_laboral
 $app->post('/new_experiencia_laboral', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -1879,7 +1888,7 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
 }
 );
 
-// Edita el registro
+// Edita el registro de experiencia_laboral
 $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
@@ -2017,7 +2026,7 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
 }
 );
 
-// Eliminar registro de los perfiles de las convocatorias
+// Eliminar registro de experiencia_laboral
 $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2112,8 +2121,8 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
 });
 
 
-
-//Busca el registro experiencia_laboral
+//Funcionalidad CRUD Experiencia jurado
+//Busca el registro experiencia jurado
 $app->get('/search_experiencia_jurado', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2187,11 +2196,11 @@ $app->get('/search_experiencia_jurado', function () use ($app, $config) {
 
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
-        echo "error_metodo";
+        return "error_metodo";
 
       //Para auditoria en versión de pruebas
       //echo "error_metodo" . $ex->getMessage();
@@ -2208,7 +2217,6 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -2227,8 +2235,6 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
 
-
-
                       $participante = Participantes::query()
                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
@@ -2239,14 +2245,12 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
-
                        $experienciajurados = Experienciajurado::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta = ".$participante->propuestas->id
                            ." AND nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2271,14 +2275,18 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                        }
 
                        //resultado sin filtro
-                       $texperienciajurado = Experienciajurado::find([
-                         "usuario_perfil = ".$usuario_perfil->id
-                       ]);
+                       $texperienciajurado = Experienciajurado::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." OR entidad LIKE '%".$request->get("search")['value']."%'"
+                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                        ]
+                      );
 
                      }
 
             }
-
 
             //creo el array
             $json_data = array(
@@ -2288,22 +2296,21 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                 "data" => $response   // total data array
             );
             //retorno el array en json
-           echo json_encode($json_data);
+           return json_encode($json_data);
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
-
       //Para auditoria en versión de pruebas
-      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
 
-// Crea el registro
+// Crea el registro de experiencia jurado
 $app->post('/new_experiencia_jurado', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2363,7 +2370,6 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                          $experienciajurado->active = true;
                          //al asignarle un objeto genera error, por tal motivo se envia solo el id
                          $experienciajurado->propuesta = $participante->propuestas->id;
-                         $experienciajurado->usuario_perfil = $participante->usuario_perfil;
 
                          $post["id"]= null;
 
@@ -2419,7 +2425,7 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
 
                            }
 
-                             echo $experienciajurado->id;
+                             return $experienciajurado->id;
                          }
 
                        }else{
@@ -2439,12 +2445,12 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
 
-// Edita el registro
+// Edita el registro de experiencia jurado
 $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
@@ -2583,7 +2589,7 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
 }
 );
 
-// Eliminar registro
+// Eliminar registro de experiencia jurado
 $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2679,8 +2685,8 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
 });
 
 
-
-//Busca el registro experiencia_laboral
+//Funcionalidad CRUD Reconocimiento
+//Busca el registro reconocimiento
 $app->get('/search_reconocimiento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2762,7 +2768,7 @@ $app->get('/search_reconocimiento', function () use ($app, $config) {
 }
 );
 
-//Busca los registros de educacion formal
+//Busca los registros de reconocimiento
 $app->get('/all_reconocimiento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2803,11 +2809,10 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
 
                        $reconocimientos = Propuestajuradoreconocimiento::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta= ".$participante->propuestas->id
                            ." AND nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2832,9 +2837,14 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                        }
 
                        //resultado sin filtro
-                       $treconocimiento = Propuestajuradoreconocimiento::find([
-                         "usuario_perfil = ".$usuario_perfil->id
-                       ]);
+                       $treconocimiento = Propuestajuradoreconocimiento::find(
+                         [
+                           " propuesta= ".$participante->propuestas->id
+                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%'"
+                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                        ]
+                      );
 
                      }
 
@@ -2864,7 +2874,7 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
 }
 );
 
-// Crea el registro
+// Crea el registro de reconocimiento
 $app->post('/new_reconocimiento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -2924,7 +2934,6 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
                          $reconocimiento->active = true;
                          //al asignarle un objeto genera error, por tal motivo se envia solo el id
                          $reconocimiento->propuesta = $participante->propuestas->id;
-                         $reconocimiento->usuario_perfil = $participante->usuario_perfil;
 
                          $post["id"]= null;
 
@@ -2981,7 +2990,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
 
                            }
 
-                             echo $reconocimiento->id;
+                             return $reconocimiento->id;
                          }
 
                        }else{
@@ -3001,17 +3010,15 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
 
-// Edita el registro
+// Edita el registro de reconocimiento
 $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
-
-
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
@@ -3146,7 +3153,7 @@ $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config
 }
 );
 
-// Eliminar registro
+// Eliminar registro de reconocimiento
 $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -3184,14 +3191,13 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
 
                   if( $usuario_perfil->id != null ){
 
-
                     $participante = Participantes::query()
                       ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                       ->join("Propuestas"," Participantes.id = Propuestas.participante")
                        //perfil = 17  perfil de jurado
                       ->where("Usuariosperfiles.perfil = 17 ")
                       ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
-                      ->andWhere("Propuestas.convocatoria = ".$$request->getPut('idc'))
+                      ->andWhere("Propuestas.convocatoria = ".$request->getPut('idc'))
                       ->execute()
                       ->getFirst();
 
@@ -3222,7 +3228,7 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
                       }
 
                   }else{
-                        echo "deshabilitado";
+                        return "deshabilitado";
                   }
 
                 }else {
@@ -3230,10 +3236,10 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
                 }
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
@@ -3243,8 +3249,8 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
 });
 
 
-
-//Busca el registro experiencia_laboral
+//Funcionalidad CRUD Publicaciones
+//Busca el registro publicacion
 $app->get('/search_publicacion', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -3259,8 +3265,6 @@ $app->get('/search_publicacion', function () use ($app, $config) {
         if ($token_actual > 0) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
-
-
 
            if( $user_current["id"]){
 
@@ -3279,7 +3283,6 @@ $app->get('/search_publicacion', function () use ($app, $config) {
                        if( $request->get('idregistro') ){
                              $publicacion=Propuestajuradopublicacion::findFirst( $request->get('idregistro') );
                        }
-
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
@@ -3373,11 +3376,10 @@ $app->get('/all_publicacion', function () use ($app, $config) {
 
                        $publicaciones = Propuestajuradopublicacion::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
+                           " propuesta= ".$participante->propuestas->id
                            ." AND titulo LIKE '%".$request->get("search")['value']."%'"
                            ." OR tema LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -3407,9 +3409,14 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                        }
 
                        //resultado sin filtro
-                       $tpublicacion = Propuestajuradopublicacion::find([
-                         "usuario_perfil = ".$usuario_perfil->id
-                       ]);
+                       $tpublicacion = Propuestajuradopublicacion::find(
+                         [
+                         " propuesta= ".$participante->propuestas->id
+                         ." AND titulo LIKE '%".$request->get("search")['value']."%'"
+                         ." OR tema LIKE '%".$request->get("search")['value']."%'"
+                         ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                          ]
+                        );
 
                      }
 
@@ -3424,17 +3431,17 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                 "data" => $response   // total data array
             );
             //retorno el array en json
-           echo json_encode($json_data);
+           return json_encode($json_data);
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
 
       //Para auditoria en versión de pruebas
-      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
@@ -3818,6 +3825,8 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
     }
 });
 
+
+//Funcionalidad Descargar archivos
 //descargar archivos
 $app->post('/download_file', function () use ($app, $config) {
     try {
@@ -3844,8 +3853,7 @@ $app->post('/download_file', function () use ($app, $config) {
 }
 );
 
-
-
+//Funcionalidad Postular hoja de vida
 // Accion de postular la hoja de vida del perfil jurado
 $app->get('/postular', function () use ($app, $config) {
 
@@ -4030,7 +4038,8 @@ $app->get('/propuesta', function () use ($app, $config) {
 );
 
 
-//Busca el registro experiencia_laboral
+//Funcionalidad CRUD Documentos
+//Busca el registro documento
 $app->get('/search_documento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4089,19 +4098,18 @@ $app->get('/search_documento', function () use ($app, $config) {
 
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
         //echo "error_metodo";
-
       //Para auditoria en versión de pruebas
-      echo "error_metodo" . $ex->getMessage();
+      return "error_metodo" . $ex->getMessage();
     }
 }
 );
 
-//Busca los registros de educacion formal
+//Busca los registros de documento
 $app->get('/all_documento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4142,8 +4150,7 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                        $documentos = Propuestajuradodocumento::find(
                          [
-                           "usuario_perfil= ".$usuario_perfil->id
-                           ." AND propuesta = ".$participante->propuestas->id,
+                           " propuesta = ".$participante->propuestas->id,
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -4164,7 +4171,7 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                        //resultado sin filtro
                        $tdocumento = Propuestajuradodocumento::find([
-                         "usuario_perfil = ".$usuario_perfil->id
+                         " propuesta = ".$participante->propuestas->id,
                        ]);
 
                      }
@@ -4180,22 +4187,21 @@ $app->get('/all_documento', function () use ($app, $config) {
                 "data" => $response   // total data array
             );
             //retorno el array en json
-           echo json_encode($json_data);
+           return json_encode($json_data);
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
-
       //Para auditoria en versión de pruebas
-      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
 
-// Crea el registro
+// Crea el registro de documento
 $app->post('/new_documento', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4255,7 +4261,6 @@ $app->post('/new_documento', function () use ($app, $config) {
                          $documento->active = true;
                          //al asignarle un objeto genera error, por tal motivo se envia solo el id
                          $documento->propuesta = $participante->propuestas->id;
-                         $documento->usuario_perfil = $participante->usuario_perfil;
 
                          $post["id"]= null;
 
@@ -4338,7 +4343,7 @@ $app->post('/new_documento', function () use ($app, $config) {
 }
 );
 
-// Edita el registro
+// Edita el registro de documento
 $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
   try {
@@ -4479,7 +4484,7 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Eliminar registro
+// Eliminar registro de documento
 $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4575,11 +4580,8 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
 });
 
 
-
-
-
-
-/*Retorna información de id y nombre del area */
+//Funcionalidad Postular
+//Retorna información de id y nombre del area
 $app->get('/postulacion_select_area', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4615,7 +4617,7 @@ $app->get('/postulacion_select_area', function () use ($app) {
 }
 );
 
-//Busca los registros de educacion formal
+//Busca los registros de postulaciones
 $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4669,7 +4671,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
 
                        $convocatorias = Convocatorias::find(
                          [
-                           "id NOT IN ({idConvocatoria:array}) "
+                           " id NOT IN ({idConvocatoria:array}) "
                            ." AND area = ".$request->get('area')
                            ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR descripcion LIKE '%".$request->get("search")['value']."%') "
@@ -4692,7 +4694,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                          $cronograma = Convocatoriascronogramas::findFirst(
                            [
                              "convocatoria = ".$convocatoria->id
-                             ." AND descripcion = 'CIERRE'"
+                             ." AND tipo_evento = 12 " //12	Fecha de cierre
                              ." AND active = true"
                            ]);
 
@@ -4774,7 +4776,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
 }
 );
 
-//Busca los registros de convocatorias
+//Busca los registros de postulaciones
 $app->get('/postulacion_perfiles_convocatoria', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -4847,7 +4849,7 @@ $app->get('/postulacion_perfiles_convocatoria', function () use ($app, $config) 
 }
 );
 
-// Crea el registro
+// Crea el registro de postulacion
 $app->post('/new_postulacion', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -5077,7 +5079,7 @@ $app->get('/search_postulacion', function () use ($app, $config) {
 }
 );
 
-// Eliminar registro
+// Eliminar registro de postulacion
 $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
