@@ -9,6 +9,8 @@ class Participantes extends Model
     public function initialize()
    {
 
+       $this->useDynamicUpdate(true);
+        
       //hasOne	Defines a 1-1 relationship
        $this->hasOne(
            'usuario_perfil',

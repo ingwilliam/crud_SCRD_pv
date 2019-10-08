@@ -517,7 +517,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
-                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Publicar</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/parametros_convocatorias.html?id=<?php echo $request->getPost('id');?>">Formulario de la propuesta</a>
+                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

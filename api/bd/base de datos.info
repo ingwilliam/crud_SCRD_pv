@@ -5,3 +5,49 @@ sudo nano pg_hba.conf
 
 #Ajustar las secuencias
 ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
+
+
+# Convocatorias Septiembre 19 del 2019
+ALTER TABLE convocatorias ADD palabras_claves TEXT;
+ALTER TABLE convocatorias ADD cerrada boolean DEFAULT false;
+ALTER TABLE convocatorias ADD cronograma boolean DEFAULT false;
+ALTER TABLE convocatorias ADD presupuesto boolean DEFAULT false;
+ALTER TABLE convocatorias ADD propuestas_permitidas boolean DEFAULT false;
+
+CREATE TABLE public.convocatoriaspropuestasparametros
+(
+  id serial NOT NULL,
+  label TEXT,
+  valores TEXT,
+  tipo_parametro TEXT,
+  campo TEXT,
+  orden integer,
+  obligatorio boolean DEFAULT false,
+  mensaje TEXT,
+  convocatoria integer NOT NULL,
+  active boolean DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT convocatoriaspropuestasparametros_pkey PRIMARY KEY (id),
+  CONSTRAINT convocatoriaspropuestasparametros_convocatoria_fkey FOREIGN KEY (convocatoria)
+      REFERENCES public.convocatorias (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT convocatoriaspropuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+#Texto,Parrafo,Lista desplegable,Opción múltiple,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea
+UPDATE public.tablasmaestras SET valor='Texto,Parrafo,Lista desplegable,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea' WHERE id=2;
+
+comment on column participantes.tipo is 'Este campo permite diferenciar el participante dado que debe ser categorizado por Inicial,Participante,Integrante,RepresentanteLegal';
+comment on column participantes.participante_padre is 'Este campo referencia quien es el padre de los diferentes tipos Participante,Integrante,RepresentanteLegal';
+
+ALTER TABLE participantes ADD dv Integer;
+ALTER TABLE participantes ADD objeto_social TEXT;
+ALTER TABLE participantes ADD cuenta_sede boolean DEFAULT false;
+ALTER TABLE participantes ADD tipo_sede TEXT;
+
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tipo_sede', 'Propia,Alquiler', true);

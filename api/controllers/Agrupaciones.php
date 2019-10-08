@@ -99,29 +99,21 @@ $app->post('/new', function () use ($app, $config) {
                 $post = $app->request->getPost();
                 
                 //Consulto si existe el usuario perfil
-                $usuario_perfil = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil=6");
+                $usuario_perfil = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil=8");
                 
                 //Verifico si existe, con el fin de crearlo
                 if(!isset($usuario_perfil->id))
                 {
                     $usuario_perfil = new Usuariosperfiles();
                     $usuario_perfil->usuario = $user_current["id"];
-                    $usuario_perfil->perfil = 6;                    
+                    $usuario_perfil->perfil = 8;                    
                     if ($usuario_perfil->save($usuario_perfil) === false) {
                         echo "error_usuario_perfil";
                     }                     
                 }
                 
-                //Consulto los usuarios perfil del jurado y persona natural
-                $array_usuario_perfil = Usuariosperfiles::find("usuario=".$user_current["id"]." AND perfil IN (6,17)");
-                $id_usuarios_perfiles="";
-                foreach ($array_usuario_perfil as $aup) {
-                    $id_usuarios_perfiles=$id_usuarios_perfiles.$aup->id.",";
-                }
-                $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
-                
-                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (".$id_usuarios_perfiles.") AND numero_documento='".$post["numero_documento"]."' AND tipo_documento =".$post["tipo_documento"]);
+                //Consulto si existe partipantes que tengan el mismo nombre que sean diferentes a su perfil de agrupacion
+                $participante_verificado = Participantes::find("usuario_perfil NOT IN (".$usuario_perfil->id.") AND primer_nombre='".$post["primer_nombre"]."' ");
                 
                 if(count($participante_verificado)>0)
                 {
@@ -135,18 +127,18 @@ $app->post('/new', function () use ($app, $config) {
                     {
                         $participante = Participantes::findFirst($post["id"]);
                         $post["actualizado_por"] = $user_current["id"];
-                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                        
                     }
                     else
                     {
-                        //Creo el objeto del particpante de persona natural
+                        //Creo el objeto del particpante de agrupaciones
                         $participante = new Participantes();
                         $participante->creado_por = $user_current["id"];
                         $participante->fecha_creacion = date("Y-m-d H:i:s");
                         $participante->fecha_creacion = date("Y-m-d H:i:s");
                         $participante->usuario_perfil = $usuario_perfil->id;
                         $participante->tipo = "Inicial";
-                        $participante->active = TRUE;
+                        $participante->active = TRUE;                     
                     }
                     
                     if ($participante->save($post) === false) {
@@ -248,55 +240,30 @@ $app->get('/search', function () use ($app, $config) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             
-            //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
+            //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
             
-            //Busco si tiene el perfil de persona natural
-            $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 6");
-            if(!isset($usuario_perfil_pn->id))
+            //Busco si tiene el perfil de agrupaciones
+            $usuario_perfil_pj = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 8");
+            if(!isset($usuario_perfil_pj->id))
             {
-                //Busco si tiene el perfil de jurado
-                $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 17");
-                if(!isset($usuario_perfil_pn->id))
-                {
-                    $usuario_perfil_pn=new Usuariosperfiles();
-                }                                
+                $usuario_perfil_pj=new Usuariosperfiles();                
             }
             
             //Si existe el usuario perfil como pn o jurado
             $participante = new Participantes();
-            if (isset($usuario_perfil_pn->id)) {
-                $participante = Participantes::findFirst("usuario_perfil=".$usuario_perfil_pn->id." AND tipo='Inicial' AND active=TRUE");
+            if (isset($usuario_perfil_pj->id)) {
+                $participante = Participantes::findFirst("usuario_perfil=".$usuario_perfil_pj->id." AND tipo='Inicial' AND active=TRUE");
             }
             
             //Asigno siempre el correo electronico del usuario al participante
-            if(!isset($participante->correo_electronico)){
+            if(!isset($participante->correo_electronico))
+            {
                 $participante->correo_electronico=$user_current["username"];           
             }
             
             //Creo todos los array del registro
             $array["participante"] = $participante;
-
-            //Creo los array de los select del formulario
-            $array["tipo_documento"]= Tiposdocumentos::find("active=true");
-            $array["sexo"]= Sexos::find("active=true");
-            $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
-            $array["identidad_genero"]= Identidadesgeneros::find("active=true");
-            $array["grupo_etnico"]= Gruposetnicos::find("active=true");            
-            $array_ciudades=array();
-            foreach( Ciudades::find("active=true") as $value )
-            {
-                $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);                
-            }            
-            $array["ciudad"]=$array_ciudades; 
-            $array_barrios=array();
-            foreach( Barrios::find("active=true") as $value )
-            {
-                $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);                
-            }
-            $array["barrio"]= $array_barrios;
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
-            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
             
             //Retorno el array
             echo json_encode($array);
