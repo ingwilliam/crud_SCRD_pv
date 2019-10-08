@@ -30,7 +30,7 @@ CREATE TABLE public.convocatoriaspropuestasparametros
   fecha_creacion timestamp without time zone,
   creado_por integer NOT NULL,
   actualizado_por integer,
-  CONSTRAINT convocatoriaspropuestasparametros PRIMARY KEY (id),
+  CONSTRAINT convocatoriaspropuestasparametros_pkey PRIMARY KEY (id),
   CONSTRAINT convocatoriaspropuestasparametros_convocatoria_fkey FOREIGN KEY (convocatoria)
       REFERENCES public.convocatorias (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -39,11 +39,15 @@ CREATE TABLE public.convocatoriaspropuestasparametros
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
 
-INSERT INTO public.tablasmaestras (nombre, valor, active, fecha_creacion, creado_por) VALUES('tipo_parametro', 'TextoLargo,Fecha,Check,Numero,Lista,Texto,Salto,Radio', true, '2019-09-20 23:51:50', 7);
+#Texto,Parrafo,Lista desplegable,Opción múltiple,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea
+UPDATE public.tablasmaestras SET valor='Texto,Parrafo,Lista desplegable,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea' WHERE id=2;
 
+comment on column participantes.tipo is 'Este campo permite diferenciar el participante dado que debe ser categorizado por Inicial,Participante,Integrante,RepresentanteLegal';
+comment on column participantes.participante_padre is 'Este campo referencia quien es el padre de los diferentes tipos Participante,Integrante,RepresentanteLegal';
 
+ALTER TABLE participantes ADD dv Integer;
+ALTER TABLE participantes ADD objeto_social TEXT;
+ALTER TABLE participantes ADD cuenta_sede boolean DEFAULT false;
+ALTER TABLE participantes ADD tipo_sede TEXT;
 
-
-
-
-
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tipo_sede', 'Propia,Alquiler', true);

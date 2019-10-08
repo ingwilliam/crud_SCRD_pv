@@ -318,7 +318,7 @@ $app->get('/search', function () use ($app, $config) {
             $array["convocatoriaspropuestasparametros"]=$convocatoriaspropuestasparametros;
             
             //Creo los tipos de documentos para anexar
-            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='tipo_parametro'");                        
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");                        
             $array["tipo_parametro"]=explode(",", $tabla_maestra->valor);            
             
             //Retorno el array
