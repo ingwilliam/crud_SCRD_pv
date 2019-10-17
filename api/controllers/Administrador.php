@@ -562,6 +562,8 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
                                 <?php
                                 }
+                                ?>
+                                <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
                                 if($request->getPost('m')==2)
                                 {
@@ -576,6 +578,15 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li><a href="../propuestasjurados/documentos_administrativos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentos administrativos</a></li>
                                 <li><a href="../propuestasjurados/postular_hoja_vida.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Inscribir hoja de vida</a></li>
                                 <li><a href="../propuestasjurados/postulaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Mis postulaciones</a></li>
+                                <?php
+                                }
+                                ?>
+                                <?php
+                                //El sub menu de jurados, debido a la modalidad de la convocatoria
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5)
+                                {
+                                ?>
+                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Perfiles</a></li>                                
                                 <?php
                                 }
                                 ?>

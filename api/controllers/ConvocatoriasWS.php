@@ -443,10 +443,10 @@ $app->post('/download_file', function () use ($app, $config) {
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
-        
+
         //Instancio los objetos que se van a manejar
         $request = new Request();
-        
+
         //Defino columnas para el orden desde la tabla html
         $columns = array(
             0 => 'c.anio',
@@ -468,11 +468,12 @@ $app->get('/all', function () use ($app) {
         $where_convocatorias .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
         $where_convocatorias .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
         $where_convocatorias .= " INNER JOIN Estados AS es ON es.id=c.estado";
-        $where_convocatorias .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";        
+        $where_convocatorias .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";
         $where_convocatorias .= " WHERE es.id IN (5, 6) AND c.active IN (true) ";
-        
+
 
         //Condiciones para la consulta del select del buscador principal
+        $estado_actual="";
         if (!empty($request->get("params"))) {
             foreach (json_decode($request->get("params")) AS $clave => $valor) {
                 if ($clave == "nombre" && $valor != "") {
@@ -480,31 +481,36 @@ $app->get('/all', function () use ($app) {
                     $where_convocatorias .= " OR UPPER(cpad.nombre) LIKE '%" . strtoupper($valor) . "%' )";
                 }
 
-                if ($valor != "" && $clave != "nombre") {
+                if ($valor != "" && $clave != "nombre" && $clave != "estado") {
                     $where_convocatorias = $where_convocatorias . " AND c." . $clave . " = " . $valor;
                 }
+                
+                if ($clave == "estado") {
+                    $estado_actual=$valor;                        
+                }
+                    
             }
         }
-        
+
         //Duplico el where de convocatorias para categorias
-        $where_categorias=$where_convocatorias;
-        
+        $where_categorias = $where_convocatorias;
+
         //Creo los WHERE especificios
         $where_convocatorias .= " AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE";
         $where_categorias .= " AND c.convocatoria_padre_categoria IS NOT NULL AND c.tiene_categorias=TRUE ";
 
         //Defino el sql del total y el array de datos
         $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";
-        
+
         $sqlTotEstado = "SELECT c.estado,count(c.id) as total FROM Convocatorias AS c";
-        
+
         $sqlConvocatorias = "SELECT "
                 . "" . $columns[0] . " ,"
                 . "" . $columns[1] . " AS entidad,"
                 . "" . $columns[2] . " AS area,"
                 . "" . $columns[3] . " AS linea_estrategica,"
                 . "" . $columns[4] . " AS enfoque,"
-                . "" . $columns[5] . " AS convocatoria , "                
+                . "" . $columns[5] . " AS convocatoria , "
                 . "" . $columns[6] . ","
                 . "" . $columns[7] . " AS programa ,"
                 . "" . $columns[8] . " AS estado ,"
@@ -514,15 +520,17 @@ $app->get('/all', function () use ($app) {
                 . "c.diferentes_categorias ,"
                 . "cpad.id AS idd ,"
                 . "c.id ,"
+                . "c.estado AS id_estado ,"
+                . "concat('<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"',c.id,'\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as ver_cronograma,"
                 . "concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro  FROM Convocatorias AS c";
-        
+
         $sqlCategorias = "SELECT "
                 . "" . $columns[0] . " ,"
                 . "" . $columns[1] . " AS entidad,"
                 . "" . $columns[2] . " AS area,"
                 . "" . $columns[3] . " AS linea_estrategica,"
                 . "" . $columns[4] . " AS enfoque,"
-                . "" . $columns[5] . " AS categoria , "                
+                . "" . $columns[5] . " AS categoria , "
                 . "" . $columns[6] . ","
                 . "" . $columns[7] . " AS programa ,"
                 . "" . $columns[8] . " AS estado ,"
@@ -532,9 +540,11 @@ $app->get('/all', function () use ($app) {
                 . "c.diferentes_categorias ,"
                 . "cpad.id AS idd ,"
                 . "c.id ,"
+                . "c.estado AS id_estado ,"
+                . "concat('<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"',c.id,'\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as ver_cronograma,"
                 . "concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(2,',cpad.id,')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>') as ver_convocatoria,concat('<input title=\"',cpad.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro  FROM Convocatorias AS c";
-        
-        
+
+
         //concatenate search sql if value exist
         if (isset($where_convocatorias) && $where_convocatorias != '') {
 
@@ -546,49 +556,93 @@ $app->get('/all', function () use ($app) {
 
         //Concateno el orden y el limit para el paginador
         $sqlConvocatorias .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-        $sqlCategorias .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";        
-        
+        $sqlCategorias .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
         //Concateno el group by de estados
         $sqlTotEstado .= " GROUP BY 1";
-        
+
         //Ejecutamos los sql de convocatorias y de categorias
-        $array_convocatorias=$app->modelsManager->executeQuery($sqlConvocatorias);       
-        $array_categorias=$app->modelsManager->executeQuery($sqlCategorias);
-        
+        $array_convocatorias = $app->modelsManager->executeQuery($sqlConvocatorias);
+        $array_categorias = $app->modelsManager->executeQuery($sqlCategorias);
+
         //ejecuto el total de registros actual
         $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
-        
-        $json_convocatorias=array();
-        foreach ($array_convocatorias AS $clave=>$valor)
-        {            
-            $valor->estado_convocatoria="<span class=\"span_".$valor->estado."\">".$valor->estado."</span>";            
-            if($valor->tiene_categorias ==true && $valor->diferentes_categorias ==true)
-            {                                
-                $valor->estado_convocatoria="w";
-            }            
-            $json_convocatorias[]=$valor;
+
+        $json_convocatorias = array();
+        foreach ($array_convocatorias AS $clave => $valor) {
             
-            
-        }
-        
-        foreach ($array_categorias AS $clave=>$valor)
-        {
-            $valor->estado_convocatoria="<span class=\"span_',$valor->estado,'\">',$valor->estado,'</span>";            
-            if($valor->tiene_categorias ==true && $valor->diferentes_categorias ==true)
-            {
-                $fecha_cierre = Convocatoriascronogramas::findFirst("convocatoria=".$valor->id." AND tipo_evento = 12");
-                
-                $valor->estado_convocatoria=$fecha_cierre->fecha_fin;
+            $valor->estado_convocatoria = "<span class=\"span_" . $valor->estado . "\">" . $valor->estado . "</span>";
+            if ($valor->tiene_categorias == false) {
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12");
+                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                if ($fecha_actual > $fecha_cierre) {
+                    $valor->id_estado = 52;
+                    $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Cerrada</span>";
+                } else {
+                    $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11");
+                    $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                    if ($fecha_actual < $fecha_apertura) {
+                        $valor->estado_convocatoria = "<span class=\"span_Publicada\">Publicada</span>";
+                    } else {
+                        $valor->id_estado = 51;
+                        $valor->estado_convocatoria = "<span class=\"span_Abierta\">Abierta</span>";
+                    }
+                }
             }
-            $json_convocatorias[]=$valor;
-        }        
-        
+            //Realizo el filtro de estados
+            if ($estado_actual=="") {                    
+                $json_convocatorias[] = $valor;                    
+            }
+            else
+            {
+                if($estado_actual==$valor->id_estado)
+                {                        
+                    $json_convocatorias[] = $valor;
+                }                    
+            }
+        }
+
+        foreach ($array_categorias AS $clave => $valor) {
+            $valor->estado_convocatoria = "<span class=\"span_" . $valor->estado . "\">" . $valor->estado . "</span>";
+            if ($valor->tiene_categorias == true && $valor->diferentes_categorias == true) {
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12");
+                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                if ($fecha_actual > $fecha_cierre) {
+                    $valor->id_estado = 52;
+                    $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Cerrada</span>";
+                } else {
+                    $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11");
+                    $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                    if ($fecha_actual < $fecha_apertura) {
+                        $valor->estado_convocatoria = "<span class=\"span_Publicada\">Publicada</span>";
+                    } else {
+                        $valor->id_estado = 51;
+                        $valor->estado_convocatoria = "<span class=\"span_Abierta\">Abierta</span>";
+                    }
+                }
+            }
+            
+            //Realizo el filtro de estados
+            if ($estado_actual=="") {                    
+                $json_convocatorias[] = $valor;                    
+            }
+            else
+            {
+                if($estado_actual==$valor->id_estado)
+                {                        
+                    $json_convocatorias[] = $valor;
+                }                    
+            }
+        }
+
         //creo el array
         $json_data = array(
             "draw" => intval($request->get("draw")),
             "recordsTotal" => intval($totalRecords["total"]),
             "recordsFiltered" => intval($totalRecords["total"]),
-            "dataEstados" => $app->modelsManager->executeQuery($sqlTotEstado),            
+            "dataEstados" => $app->modelsManager->executeQuery($sqlTotEstado),
             "data" => $json_convocatorias   // total data array            
         );
         //retorno el array en json
@@ -602,8 +656,7 @@ $app->get('/all', function () use ($app) {
 
 $app->get('/search_convocatorias', function () use ($app) {
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
+        //Instancio los objetos que se van a manejar        
         $array = array();
         for ($i = date("Y"); $i >= 2016; $i--) {
             $array["anios"][] = $i;
@@ -618,9 +671,44 @@ $app->get('/search_convocatorias', function () use ($app) {
                             "tipo_estado = 'convocatorias' AND active = true AND id IN (5,6)",
                             "order" => "orden"
                         )
-        );                
-        
+        );
+
         echo json_encode($array);
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Consulto el cronograma de la convocatoria
+        $conditions = ['convocatoria' => $id, 'active' => true];
+        $consulta_cronogramas = Convocatoriascronogramas::find(([
+                    'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                    'bind' => $conditions,
+                    'order' => 'fecha_inicio',
+        ]));
+
+        //Creo el cronograma        
+        foreach ($consulta_cronogramas as $evento) {
+            //Solo cargo los eventos publicos
+            if($evento->getTiposeventos()->publico)
+            {
+                $array_evento=array();
+                $array_evento["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                if ($evento->getTiposeventos()->periodo) {
+                    $array_evento["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');                
+                } else {
+                    $array_evento["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');                
+                }
+                $array_evento["descripcion"] = $evento->descripcion;            
+                $cronogramas[]=$array_evento;
+            }
+        }
+
+        echo json_encode($cronogramas);
     } catch (Exception $ex) {
         //retorno el array en json null
         echo "error_metodo";

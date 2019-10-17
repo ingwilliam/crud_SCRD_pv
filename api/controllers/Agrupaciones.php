@@ -8,11 +8,14 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH);
 
+//Defino las variables principales de conexion
 $config = new ConfigIni('../config/config.ini');
 
 // Registramos un autoloader
@@ -41,6 +44,15 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log."convocatorias.".date("Y-m-d").".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -228,15 +240,20 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 );
 
 //Busca el registro
-$app->get('/search', function () use ($app, $config) {
+$app->get('/search', function () use ($app, $config,$logger) {
+    
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+        
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa buscar perfil agrupación"',['user' => '','token'=>$request->get('token')]);
+        
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
+        $token_actual = $tokens->verificar_token($request->get('token'));        
+        
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             
@@ -265,14 +282,23 @@ $app->get('/search', function () use ($app, $config) {
             //Creo todos los array del registro
             $array["participante"] = $participante;
             
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Retorna perfil agrupación"',['user' => $user_current["username"],'token'=>$request->get('token')]);
+            $logger->close();
+            
             //Retorno el array
             echo json_encode($array);
-        } else {
+        } else {            
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"',['user' => "",'token'=>$request->get('token')]);
+            $logger->close();
             echo "error_token";
-        }
+        }                        
     } catch (Exception $ex) {
-        //retorno el array en json null
-        echo $ex->getMessage();
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo'.$ex->getMessage().'"',['user' => "",'token'=>$request->get('token')]);
+        $logger->close();
+        echo "error_metodo";        
     }
 }
 );
