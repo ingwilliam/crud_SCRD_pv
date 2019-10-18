@@ -82,20 +82,42 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                         'bind' => $conditions,
             ]));
             
-            //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Retorna tipos de participantes"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-            $logger->close();
-            
             //Creo el array para retornar
             $array_tipos_participantes=array(); 
             $i=0;
             foreach ($tipos_participantes as $participante) {
-                $array_tipos_participantes[$i]["id"] = $participante->id;                
+                $array_tipos_participantes[$i]["id"] = $participante->tipo_participante;                
                 $array_tipos_participantes[$i]["tipo_participante"] = $participante->getTiposparticipantes()->nombre;                
                 $array_tipos_participantes[$i]["descripcion_perfil"] = $participante->descripcion_perfil;                
+                $array_tipos_participantes[$i]["terminos_condiciones"] = "";                
+                //consulto tabla maestra para los terminos y condiciones pn
+                if($participante->tipo_participante==1)
+                {
+                    $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pn_".date("Y")."'");   
+                    $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                }
+                //consulto tabla maestra para los terminos y condiciones pj
+                if($participante->tipo_participante==2)
+                {
+                    $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_".date("Y")."'");   
+                    $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                }
+                //consulto tabla maestra para los terminos y condiciones agr
+                if($participante->tipo_participante==3)
+                {
+                    $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_agr_".date("Y")."'");   
+                    $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                }                
+                
+                $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   
+                $array_tipos_participantes[$i]["condiciones_participacion"] = str_replace("/view?usp=sharing", "/preview", $condiciones_participancion->valor);                
+                
                 $i++;
             }
             
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Retorna tipos de participantes"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();
             
             //retorno el array en json
             echo json_encode($array_tipos_participantes);
