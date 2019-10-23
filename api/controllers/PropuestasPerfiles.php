@@ -89,24 +89,111 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                 $array_tipos_participantes[$i]["id"] = $participante->tipo_participante;                
                 $array_tipos_participantes[$i]["tipo_participante"] = $participante->getTiposparticipantes()->nombre;                
                 $array_tipos_participantes[$i]["descripcion_perfil"] = $participante->descripcion_perfil;                
-                $array_tipos_participantes[$i]["terminos_condiciones"] = "";                
+                $array_tipos_participantes[$i]["terminos_condiciones"] = "";
+                $array_tipos_participantes[$i]["acepto_terminos_condiciones"] = false;                
+                
                 //consulto tabla maestra para los terminos y condiciones pn
                 if($participante->tipo_participante==1)
                 {
                     $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pn_".date("Y")."'");   
                     $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                                                            
+                    //Busco si tiene el perfil de persona natural
+                    $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 6");
+
+                    //Si existe el usuario perfil como pn
+                    $participante = new Participantes();
+                    if (isset($usuario_perfil_pn->id)) {
+                        $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pn->id . " AND tipo='Inicial' AND active=TRUE");
+
+                        //Si existe el participante inicial con el perfil de pn 
+                        if (isset($participante->id)) {
+                            //Consulto participante pn hijo este relacionado con una propuesta
+                            $sql_participante_hijo_propuesta = "SELECT 
+                                                            pn.* 
+                                                    FROM Propuestas AS p
+                                                        INNER JOIN Participantes AS pn ON pn.id=p.participante
+                                                    WHERE
+                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pn->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+
+                            $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
+                            //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
+                            if (isset($participante_hijo_propuesta->id)) {
+                                //Retorno el array hijo que tiene relacionado la propuesta
+                                $array_tipos_participantes[$i]["acepto_terminos_condiciones"] = $participante_hijo_propuesta->terminos_condiciones;                
+                            }                            
+                        }
+                    }
+                    
                 }
                 //consulto tabla maestra para los terminos y condiciones pj
                 if($participante->tipo_participante==2)
                 {
                     $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_".date("Y")."'");   
                     $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                    
+                    //Busco si tiene el perfil de persona juridica
+                    $usuario_perfil_pj = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 7");
+
+                    //Si existe el usuario perfil como pn
+                    $participante = new Participantes();
+                    if (isset($usuario_perfil_pj->id)) {
+                        $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pj->id . " AND tipo='Inicial' AND active=TRUE");
+
+                        //Si existe el participante inicial con el perfil de pn 
+                        if (isset($participante->id)) {
+                            //Consulto participante pn hijo este relacionado con una propuesta
+                            $sql_participante_hijo_propuesta = "SELECT 
+                                                            pn.* 
+                                                    FROM Propuestas AS p
+                                                        INNER JOIN Participantes AS pn ON pn.id=p.participante
+                                                    WHERE
+                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pj->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+
+                            $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
+                            //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
+                            if (isset($participante_hijo_propuesta->id)) {
+                                //Retorno el array hijo que tiene relacionado la propuesta
+                                $array_tipos_participantes[$i]["acepto_terminos_condiciones"] = $participante_hijo_propuesta->terminos_condiciones;                
+                            }                            
+                        }
+                    }
+                    
                 }
                 //consulto tabla maestra para los terminos y condiciones agr
                 if($participante->tipo_participante==3)
                 {
                     $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_agr_".date("Y")."'");   
                     $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
+                    
+                    //Busco si tiene el perfil de agrupacion
+                    $usuario_perfil_agr = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 8");
+
+                    //Si existe el usuario perfil como pn
+                    $participante = new Participantes();
+                    if (isset($usuario_perfil_agr->id)) {
+                        $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_agr->id . " AND tipo='Inicial' AND active=TRUE");
+
+                        //Si existe el participante inicial con el perfil de pn 
+                        if (isset($participante->id)) {
+                            //Consulto participante pn hijo este relacionado con una propuesta
+                            $sql_participante_hijo_propuesta = "SELECT 
+                                                            pn.* 
+                                                    FROM Propuestas AS p
+                                                        INNER JOIN Participantes AS pn ON pn.id=p.participante
+                                                    WHERE
+                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_agr->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+
+                            $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
+                            //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
+                            if (isset($participante_hijo_propuesta->id)) {
+                                //Retorno el array hijo que tiene relacionado la propuesta
+                                $array_tipos_participantes[$i]["acepto_terminos_condiciones"] = $participante_hijo_propuesta->terminos_condiciones;                
+                            }                            
+                        }
+                    }
+                    
+                    
                 }                
                 
                 $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   

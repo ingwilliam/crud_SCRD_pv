@@ -56,3 +56,6 @@ INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pn_2
 INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pj_2019', 'https://drive.google.com/file/d/1uB7NDC58BV2icUEcx_ccx49wAllXrIrh/view?usp=sharing', true);
 INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_agr_2019', 'https://drive.google.com/file/d/18KsE_YbS8aTZMFZJkSCD47Wjt7ORtBWk/view?usp=sharing', true);
 
+ALTER TABLE participantes ADD terminos_condiciones boolean DEFAULT false;
+
+

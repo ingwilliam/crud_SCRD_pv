@@ -583,14 +583,20 @@ $app->post('/menu', function () use ($app,$config) {
                                 ?>
                                 <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
-                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5||$request->getPost('m')=="pn"||$request->getPost('m')=="pj"||$request->getPost('m')=="agr")
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5)
                                 {
                                 ?>
-                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <?php
+                                }
+                                ?>
                                 <?php
                                 if( $request->getPost('m')=="pn" )
                                 {
-                                ?>                                
+                                ?>     
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
                                 <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>                                
                                 <?php
                                 }
@@ -599,6 +605,8 @@ $app->post('/menu', function () use ($app,$config) {
                                 if( $request->getPost('m')=="pj" )
                                 {
                                 ?>                                
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
                                 <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona jurídica</a></li>                                
                                 <?php
                                 }
@@ -607,13 +615,13 @@ $app->post('/menu', function () use ($app,$config) {
                                 if( $request->getPost('m')=="agr" )
                                 {
                                 ?>                                
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
                                 <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Agrupación</a></li>                                
                                 <?php
                                 }
                                 ?>
-                                <?php
-                                }
-                                ?>
+                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
