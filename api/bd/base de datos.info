@@ -58,4 +58,9 @@ INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_agr_
 
 ALTER TABLE participantes ADD terminos_condiciones boolean DEFAULT false;
 
+ALTER TABLE propuestas ADD localidad Integer;
+ALTER TABLE propuestas ADD upz Integer;
+ALTER TABLE propuestas ADD barrio Integer;
+
+
 
