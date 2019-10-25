@@ -148,9 +148,11 @@ $app->get('/search', function () use ($app, $config) {
                           }
 
                       }else{
-
+                        //echo $participante->propuestas->resumen;
                         //Asigno el participante al array
                         $array["participante"] = $participante;
+                        //array_push($array["participante"], ["resumen" => $participante->propuestas->resumen] );
+                          $array["perfil"] = $participante->propuestas->resumen;
                       }
 
 
@@ -217,7 +219,7 @@ $app->get('/search', function () use ($app, $config) {
       //  echo "error_metodo";
 
       //Para auditoria en versión de pruebas
-      echo "error_metodo: ". $ex->getMessage().json_encode($ex->getTrace());
+      echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
     }
 });
 
@@ -267,7 +269,8 @@ $app->post('/edit_participante', function () use ($app, $config) {
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
-                      $participante->propuestas = $propuesta;
+                      //$participante->propuestas = $propuesta;
+                      $participante->propuestas->resumen =$request->getPost('resumen') ;
 
                     if ($participante->save($post) === false) {
                         echo "error";

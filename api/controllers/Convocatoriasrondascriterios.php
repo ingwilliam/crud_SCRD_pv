@@ -87,28 +87,62 @@ $app->post('/new', function () use ($app, $config) {
                 $criterio->active = true;
 
 
-                  //Verificar que la suma de los puntajes no sea mayor a puntaje_maximo_criterios
-                  $criterios = Convocatoriasrondascriterios::find(
-                      [
-                          "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
-                          ]
-                    );
+                //Verificar que la suma de los puntajes no sea mayor a puntaje_maximo_criterios
+                $criterios = Convocatoriasrondascriterios::find(
+                    [
+                        "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
+                         "order" => 'orden ASC'
+                    ]
+                  );
 
                       //echo json_encode($criterios);
 
-                    $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
+                $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
 
-                    foreach ($criterios as $c) {
 
-                      $total = $total + $c->puntaje_maximo;
+                $array_grupo_puntaje = array();
 
-                      }
+                //echo "Criterios--->>";
+              //  echo json_encode($criterios);
 
-                      $total = $total + $post["puntaje_maximo"];
+                foreach ($criterios as $c) {
 
-                      if( $total > $tabla_maestra->valor ){
-                          return "error_puntaje";
-                      }
+                  //$total = $total + $c->puntaje_maximo;
+
+                   //echo  $c->grupo_criterio."->".( ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo)." ".($c->exclusivo).",";
+
+                  $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo;
+
+                }
+
+                  $array_grupo_puntaje[ $post["grupo_criterio"] ] = ( $post["exclusivo"] ) ? $post["puntaje_maximo"] :   $array_grupo_puntaje[ $post["grupo_criterio"] ]+ $post["puntaje_maximo"];
+
+              //  echo "grupo--->>";
+
+                //echo json_encode($array_grupo_puntaje);
+
+              /*  foreach ($criterios as $c) {
+
+                  $total = $total + $c->puntaje_maximo;
+
+                }*/
+
+                foreach ($array_grupo_puntaje as $key => $value) {
+
+                  $total = $total + $value;
+
+                }
+
+                  //echo " puntaje_maximo-->".$post["puntaje_maximo"];
+                  //echo " total1-->".$total;
+                //puntaje maximo del criterio a crear $post["puntaje_maximo"]
+              //  $total = $total + $post["puntaje_maximo"];
+
+
+
+                if( $total > $tabla_maestra->valor ){
+                    return "error_puntaje";
+                }
 
 
                 if ($criterio->save($post) === false) {
@@ -179,7 +213,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $criterios = Convocatoriasrondascriterios::find(
                     [
                         "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
-                        ]
+                        "order" => 'orden ASC'
+                    ]
                   );
 
                     //echo json_encode($criterios);
@@ -188,11 +223,41 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                   foreach ($criterios as $c) {
 
+                    //$total = $total + $c->puntaje_maximo;
+                    if( $c->id != $put["id_registro_criterio"] ){
+
+                       echo "[id->".$c->id.",".$c->grupo_criterio."->".( ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo).",".($c->exclusivo)."]";
+
+                      $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo;
+                    }
+
+
+                  }
+
+                    $array_grupo_puntaje[ $put["grupo_criterio"] ] = ( $put["exclusivo"] ) ? $put["puntaje_maximo"] :   $array_grupo_puntaje[ $put["grupo_criterio"] ]+ $put["puntaje_maximo"];
+
+
+                    echo "grupo--->>";
+
+                    echo json_encode($array_grupo_puntaje);
+
+                  /*foreach ($criterios as $c) {
+
                     $total = $total + $c->puntaje_maximo;
 
                     }
+                    */
 
-                    $total = $total + $post["puntaje_maximo"];
+
+                    foreach ($array_grupo_puntaje as $key => $value) {
+
+                      $total = $total + $value;
+
+                    }
+
+                    echo " puntaje_maximo-->".$put["puntaje_maximo"];
+                    echo " total1-->".$total;
+                    //$total = $total + $post["puntaje_maximo"];
 
                     if( $total > $tabla_maestra->valor ){
                         return "error_puntaje";
@@ -208,18 +273,18 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                       echo $message;
                     }
                     */
-                    echo "error";
+                    return "error";
                 } else {
-                    echo $id;
+                    return $id;
                 }
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+              return "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        return "error_metodo";
     }
 }
 );
@@ -261,16 +326,35 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
                   $criterios = Convocatoriasrondascriterios::find(
                       [
                           "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
-                          ]
+                          "order" => 'orden ASC'
+                      ]
                     );
 
                   $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
 
+
                   foreach ($criterios as $c) {
-                      $total = $total + $c->puntaje_maximo;
+
+                      $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo;
                   }
 
-                  $total = $total + $criterio->puntaje_maximo;
+                  $array_grupo_puntaje[$criterio->grupo_criterio] = ($criterio->exclusivo) ? $criterio->puntaje_maximo : $array_grupo_puntaje[$criterio->grupo_criterio] + $criterio->puntaje_maximo;
+
+
+
+
+                /*  foreach ($criterios as $c) {
+                      $total = $total + $c->puntaje_maximo;
+                  }
+                  */
+
+                  foreach ($array_grupo_puntaje as $key => $value) {
+
+                    $total = $total + $value;
+
+                  }
+
+                //  $total = $total + $criterio->puntaje_maximo;
 
                   if( $total > $tabla_maestra->valor ){
                       return "error_puntaje";
@@ -279,6 +363,8 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $criterio->active=true;
                     $retorna="Si";
                 }
+
+
 
                 if ($criterio->save() === false) {
                   //Para auditoria en versión de pruebas

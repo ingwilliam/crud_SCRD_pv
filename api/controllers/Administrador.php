@@ -86,6 +86,14 @@ $app->post('/menu', function () use ($app,$config) {
 
             $permisos_menu_participante = $app->modelsManager->executeQuery($phql);
 
+            //Cesar Britto
+            //Consultar todos los permiso del menu jurados
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Jurados' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_jurados = $app->modelsManager->executeQuery($phql);
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -584,6 +592,36 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
+                        <!--Cesar britto-->
+                        <?php
+                        if( count($permisos_jurados) > 0 )
+                        {
+
+                        $style_update="display: none";
+                        $style_new="";
+                        if($request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-users fa-fw"></i> Jurados<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../jurados/preseleccion.html">Preselección</a>
+
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+
+
+
+
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

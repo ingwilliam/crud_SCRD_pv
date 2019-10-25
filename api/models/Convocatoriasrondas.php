@@ -17,6 +17,14 @@ class Convocatoriasrondas extends Model
             ]
         );
 
+        //hasMany 	Defines a 1-n relationship
+
+        $this->hasMany(
+            'id',
+            'Convocatoriasrondascriterios',
+            'convocatoria_ronda'
+        );
+
 
 
     }
