@@ -119,15 +119,20 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                         
                         //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                         $nombre_convocatoria=$convocatoria->nombre;
-                        $nombre_categoria="";                        
+                        $nombre_categoria="";    
+                        $modalidad=$convocatoria->modalidad;    
                         if($convocatoria->convocatoria_padre_categoria>0)
                         {
                             $nombre_convocatoria=$convocatoria->getConvocatorias()->nombre;
                             $nombre_categoria=$convocatoria->nombre;
+                            $modalidad=$convocatoria->getConvocatorias()->modalidad;                            
                             
                         }
-                       
                         
+                        //Consulto los parametros adicionales para el formulario de la propuesta
+                        $parametros = Convocatoriaspropuestasparametros::find("active=true AND convocatoria=".$convocatoria->id);                            
+                        
+                                               
                         //Consulto la propuesta que esta relacionada con el participante
                         $sql_propuesta = "SELECT 
                                                 par.*, 
@@ -145,6 +150,7 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                         $array["propuesta"]["tipo_participante"] = $tipo_participante;
                         $array["propuesta"]["nombre_convocatoria"] = $nombre_convocatoria;
                         $array["propuesta"]["nombre_categoria"] = $nombre_categoria;
+                        $array["propuesta"]["modalidad"] = $modalidad;
                         $array["propuesta"]["estado"] = $propuesta->p->getEstados()->nombre;
                         $array["propuesta"]["nombre"] = $propuesta->p->nombre;
                         $array["propuesta"]["resumen"] = $propuesta->p->resumen;
@@ -154,6 +160,44 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                         $array["propuesta"]["barrio"] = $propuesta->p->barrio;
                         $array["propuesta"]["id"] = $propuesta->p->id;
                         $array["localidades"]= Localidades::find("active=true");
+                        $array["parametros"]= $parametros;
+                        
+                        
+                        $options = array(
+                                        "fields"=> array(
+                                             "nombre" => array(
+                                                 "validators" => array(
+                                                     "notEmpty" => array("message"=>"El nombre de la propuesta es requerido.")
+                                                 )
+                                             )
+                                        )
+                        );         
+                        
+                        if($modalidad!=4)
+                        {
+                             $options = array(
+                                        "fields"=> array(
+                                                "nombre" => array(
+                                                 "validators" => array(
+                                                     "notEmpty" => array("message"=>"El nombre de la propuesta es requerido.")
+                                                 )
+                                             ),
+                                             "resumen" => array(
+                                                 "validators" => array(
+                                                     "notEmpty" => array("message"=>"El resumen de la propuesta es requerido.")
+                                                 )
+                                             ),                                        
+                                             "objetivo" => array(
+                                                 "validators" => array(
+                                                     "notEmpty" => array("message"=>"El objetivo de la propuesta es requerido.")
+                                                 )
+                                             )
+                                        )
+                              );                                                                                                                               
+                        }                        
+                        
+                        $array["validator"]= $options;
+                        
                         $array["upzs"]=array();
                         $array["barrios"]=array();
                         if(isset($propuesta->p->localidad))

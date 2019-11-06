@@ -24,6 +24,37 @@ class Participantes extends Model
            'Propuestas',
            'participante'
        );
+       
+       //Se define relacion de N a 1 con Barrios
+        $this->belongsTo(
+            'barrio_residencia',
+            'Barrios',
+            'id',
+            [
+                'alias' => "Barriosresidencia"
+            ]
+        );
+        
+        //Se define relacion de N a 1 con Ciudades
+        $this->belongsTo(
+            'ciudad_nacimiento',
+            'Ciudades',
+            'id',
+            [
+                'alias' => "Ciudadesnacimiento"
+            ]
+        );
+        
+        //Se define relacion de N a 1 con Ciudades
+        $this->belongsTo(
+            'ciudad_residencia',
+            'Ciudades',
+            'id',
+            [
+                'alias' => "Ciudadesresidencia"
+            ]
+        );
+       
    }
 
    public function validation(){

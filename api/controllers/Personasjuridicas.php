@@ -214,18 +214,10 @@ $app->get('/search', function () use ($app, $config) {
 
             //Creo los array de los select del formulario
             $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
-            $array_ciudades=array();
-            foreach( Ciudades::find("active=true") as $value )
-            {
-                $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);                
-            }            
-            $array["ciudad"]=$array_ciudades; 
-            $array_barrios=array();
-            foreach( Barrios::find("active=true") as $value )
-            {
-                $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);                
-            }
-            $array["barrio"]= $array_barrios;
+            
+            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
+            $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
             
@@ -349,18 +341,9 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
 
                         //Creo los array de los select del formulario
                         $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
-                        $array_ciudades=array();
-                        foreach( Ciudades::find("active=true") as $value )
-                        {
-                            $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);                
-                        }            
-                        $array["ciudad"]=$array_ciudades; 
-                        $array_barrios=array();
-                        foreach( Barrios::find("active=true") as $value )
-                        {
-                            $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);                
-                        }
-                        $array["barrio"]= $array_barrios;
+                        $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;            
+                        $array["ciudad_residencia_name"] = $participante_hijo_propuesta->getCiudadesresidencia()->nombre;
+            
                         $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
                         $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 

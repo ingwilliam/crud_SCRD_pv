@@ -28,6 +28,13 @@ class Barrios extends Model
             ]
         );
         
+        //Se define la relación con 1 a N con Participantes
+        $this->hasMany(
+            'id',
+            'Participantes',
+            'barrio_residencia'
+        );
+        
         
     }
     
