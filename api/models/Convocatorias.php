@@ -7,6 +7,11 @@ class Convocatorias extends Model {
     public $id;
 
     public function initialize() {
+        //Se define la relación con 1 a N con Convocatoriaspropuestasparametros
+        $this->hasMany(
+                'id', 'Convocatoriaspropuestasparametros', 'convocatoria'
+        );
+        
         //Se define la relación con 1 a N con Convocatoriasrecursos
         $this->hasMany(
                 'id', 'Convocatoriasrecursos', 'convocatoria'
@@ -81,7 +86,13 @@ class Convocatorias extends Model {
         );
 
 
-
+        //23 oct 2019->William Barbosa        
+        //Se define relacion de N a 1 con convocatoria padre
+        $this->belongsTo(
+            'convocatoria_padre_categoria',
+            'Convocatorias',
+            'id'
+        );
 
     }
 

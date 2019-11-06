@@ -525,7 +525,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
-                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Publicar</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/parametros_convocatorias.html?id=<?php echo $request->getPost('id');?>">Formulario de la propuesta</a>
+                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -569,6 +570,8 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
                                 <?php
                                 }
+                                ?>
+                                <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
                                 if($request->getPost('m')==2)
                                 {
@@ -586,6 +589,48 @@ $app->post('/menu', function () use ($app,$config) {
                                 <?php
                                 }
                                 ?>
+                                <?php
+                                //El sub menu de jurados, debido a la modalidad de la convocatoria
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5)
+                                {
+                                ?>
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <?php
+                                }
+                                ?>
+                                <?php
+                                if( $request->getPost('m')=="pn" )
+                                {
+                                ?>     
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>                                
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>                                
+                                <?php
+                                }
+                                ?>
+                                <?php
+                                if( $request->getPost('m')=="pj" )
+                                {
+                                ?>                                
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona jurídica</a></li>                                
+                                <?php
+                                }
+                                ?>
+                                <?php
+                                if( $request->getPost('m')=="agr" )
+                                {
+                                ?>                                
+                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Agrupación</a></li>                                
+                                <?php
+                                }
+                                ?>
+                                
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
