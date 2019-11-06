@@ -23,5 +23,18 @@ class Ciudades extends Model
                 'foreignKey' => true
             ]
         );
+        
+        //Se define la relación con 1 a N con Participantes
+        $this->hasMany(
+            'id',
+            'Participantes',
+            'ciudad_nacimiento'            
+        );
+        
+        $this->hasMany(
+            'id',
+            'Participantes',
+            'ciudad_residencia'  
+        );
     }
 }

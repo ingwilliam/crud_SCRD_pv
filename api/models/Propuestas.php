@@ -77,6 +77,14 @@ class Propuestas extends Model
             'Juradospostulados',
             'propuesta'
         );
+        
+        //23 oct 2019->William Barbosa
+        //Se define relacion de N a 1 con estado
+        $this->belongsTo(
+            'estado',
+            'Estados',
+            'id'
+        );
 
     }
 

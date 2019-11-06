@@ -51,3 +51,16 @@ ALTER TABLE participantes ADD cuenta_sede boolean DEFAULT false;
 ALTER TABLE participantes ADD tipo_sede TEXT;
 
 INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tipo_sede', 'Propia,Alquiler', true);
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('condiciones_participacion_2019', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true);
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pn_2019', 'https://drive.google.com/file/d/10Op9QaU9FcK4uYIpjLboR-w4AC3OPfg-/view?usp=sharing', true);
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pj_2019', 'https://drive.google.com/file/d/1uB7NDC58BV2icUEcx_ccx49wAllXrIrh/view?usp=sharing', true);
+INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_agr_2019', 'https://drive.google.com/file/d/18KsE_YbS8aTZMFZJkSCD47Wjt7ORtBWk/view?usp=sharing', true);
+
+ALTER TABLE participantes ADD terminos_condiciones boolean DEFAULT false;
+
+ALTER TABLE propuestas ADD localidad Integer;
+ALTER TABLE propuestas ADD upz Integer;
+ALTER TABLE propuestas ADD barrio Integer;
+
+
+

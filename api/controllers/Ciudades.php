@@ -314,6 +314,40 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+//Busca el registro
+$app->get('/autocompletar', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            $array_ciudades = array();
+            
+            if($request->get('q')!="")
+            {            
+                foreach (Ciudades::find("active=true AND UPPER(nombre) LIKE '%".strtoupper($request->get('q'))."%'") as $value) {
+                    $array_ciudades[] = array("id" => $value->id, "label" => $value->nombre . " - " . $value->getDepartamentos()->nombre . " - " . $value->getDepartamentos()->getPaises()->nombre, "value" => $value->nombre);
+                }
+            }                        
+                                    
+            //Retorno el array
+            echo $request->get('callback')."(".json_encode($array_ciudades).")";
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo $ex->getMessage();
+    }
+}
+);
+
 
 try {
     // Gestionar la consulta
