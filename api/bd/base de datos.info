@@ -30,3 +30,9 @@ CREATE TABLE public.propuestasparametros
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
+
+# Convocatorias Noviembre 7 del 2019
+ALTER TABLE propuestas ADD ejecucion_menores_edad boolean DEFAULT FALSE;
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('medio_se_entero','Alguien le contó,Correo electrónico,Equipos locales de cultura,Equipos locales de recreación y deporte,Portal web de la entidad,Portal Web de la Secretaría de Cultura, Recreación y Deporte,Prensa escrita,Radio,Redes sociales,Televisión',TRUE,NOW(),7);
+
+

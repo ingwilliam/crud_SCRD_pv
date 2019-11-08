@@ -599,6 +599,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
                                 <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>                                
                                 <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>                                
+                                <li><a href="../propuestas/integrantes.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Integrantes</a></li>                                
                                 <?php
                                 }
                                 ?>

@@ -124,10 +124,6 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                             $modalidad = $convocatoria->getConvocatorias()->modalidad;
                         }
 
-                        //Consulto los parametros adicionales para el formulario de la propuesta
-                        $parametros = Convocatoriaspropuestasparametros::find("active=true AND convocatoria=" . $convocatoria->id);
-
-
                         //Consulto la propuesta que esta relacionada con el participante
                         $sql_propuesta = "SELECT 
                                                 par.*, 
@@ -139,6 +135,11 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
 
                         $propuesta = $app->modelsManager->executeQuery($sql_propuesta)->getFirst();
 
+                        //Consulto los parametros adicionales para el formulario de la propuesta
+                        $parametros = Convocatoriaspropuestasparametros::find("active=true AND convocatoria=" . $convocatoria->id);                        
+                        $propuestaparametros = Propuestasparametros::find("propuesta=" . $propuesta->p->id);
+
+                        
                         //Creo el array de la propuesta
                         $array = array();
                         $array["propuesta"]["nombre_participante"] = $propuesta->par->primer_nombre . " " . $propuesta->par->segundo_nombre . " " . $propuesta->par->primer_apellido . " " . $propuesta->par->segundo_apellido;
@@ -149,13 +150,22 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                         $array["propuesta"]["estado"] = $propuesta->p->getEstados()->nombre;
                         $array["propuesta"]["nombre"] = $propuesta->p->nombre;
                         $array["propuesta"]["resumen"] = $propuesta->p->resumen;
+                        $array["propuesta"]["objetivo"] = $propuesta->p->objetivo;
                         $array["propuesta"]["bogota"] = $propuesta->p->bogota;
                         $array["propuesta"]["localidad"] = $propuesta->p->localidad;
                         $array["propuesta"]["upz"] = $propuesta->p->upz;
                         $array["propuesta"]["barrio"] = $propuesta->p->barrio;
-                        $array["propuesta"]["id"] = $propuesta->p->id;
+                        $array["propuesta"]["ejecucion_menores_edad"] = $propuesta->p->ejecucion_menores_edad;                        
+                        $array["propuesta"]["porque_medio"] = $propuesta->p->porque_medio;                        
+                        $array["propuesta"]["id"] = $propuesta->p->id;                        
+                        //Recorro los valores de los parametros con el fin de ingresarlos al formulario
+                        foreach ($propuestaparametros as $pp) {
+                            $array["propuesta"]["parametro[".$pp->convocatoriapropuestaparametro."]"] = $pp->valor;                            
+                        }                        
                         $array["localidades"] = Localidades::find("active=true");
                         $array["parametros"] = $parametros;
+                        $tabla_maestra= Tablasmaestras::find("active=true AND nombre='medio_se_entero'");
+                        $array["medio_se_entero"] = explode(",", $tabla_maestra[0]->valor);                        
 
                         //Creo los parametros obligatorios del formulario
                         $options = array(
@@ -163,6 +173,11 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 "nombre" => array(
                                     "validators" => array(
                                         "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
+                                    )
+                                ),
+                                "medio_se_entero[]" => array(
+                                    "validators" => array(
+                                        "notEmpty" => array("message" => "El medio por el cual se enteró de esta convocatoria es requerido.")
                                     )
                                 )
                             )
@@ -281,6 +296,7 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                 //parametros de la peticion
                 $post = $app->request->getPost();                
                 $propuesta = Propuestas::findFirst($post["id"]);
+                $post["porque_medio"] = json_encode($post["porque_medio"]);
                 $post["actualizado_por"] = $user_current["id"];
                 $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                 
@@ -290,34 +306,48 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                     echo "error";
                 } else {
                     
-                    //Recorrmos los parametros dinamicos
-                    /*
+                    //Recorrmos los parametros dinamicos                    
                     foreach ($post["parametro"] as $k =>$v )
                     {
-                        $parametro_valor=new Propuestasparametros();
-                        $parametro = Propuestasparametros::findFirst("convocatoriapropuestaparametro=" . $k . " AND propuesta = ".$propuesta->id);
-                        $parametro_valor->valor = $v;
-                        if($parametro->id)
-                        {                                                       
-                            $parametro_valor->actualizado_por = $user_current["id"];
-                            $parametro_valor->fecha_actualizacion = date("Y-m-d H:i:s");
+                        //Consulto si exite el parametro a la propuestas
+                        $parametro_actual = Propuestasparametros::findFirst("convocatoriapropuestaparametro=" . $k . " AND propuesta = ".$propuesta->id);
+                        if(isset($parametro_actual->id))
+                        {
+                           $parametro = $parametro_actual; 
                         }
                         else
                         {
-                            $parametro_valor->creado_por = $user_current["id"];
-                            $parametro_valor->fecha_creacion = date("Y-m-d H:i:s");                            
+                            $parametro = new Propuestasparametros();
                         }
                         
-                        if ($parametro_valor->save($parametro) === false) {
-                            foreach ($parametro->getMessages() as $message) {
-                            $logger->error($message);                                                          
-                            }                                                                                    
-                        } else {
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito el parametro en la propuesta ('.$post["id"].') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')".', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
-                        }                        
+                        //Cargo lo valores actuales
+                        $array_save=array();
+                        $array_save["convocatoriapropuestaparametro"]=$k;
+                        $array_save["propuesta"]=$propuesta->id;
+                        $array_save["valor"]=$v;
+                                        
+                        //Valido si existe para relacionar los campos de usuario
+                        if(isset($parametro->id))
+                        {
+                            $parametro->actualizado_por = $user_current["id"];
+                            $parametro->fecha_actualizacion = date("Y-m-d H:i:s");
+                        }
+                        else
+                        {
+                            $parametro->creado_por = $user_current["id"];
+                            $parametro->fecha_creacion = date("Y-m-d H:i:s");                            
+                        }
                         
+                        //Guardo los parametros de la convocatoria
+                        if ($parametro->save($array_save) == false) {                            
+                            foreach ($parametro->getMessages() as $message) {
+                                $logger->info('"token":"{token}","user":"{user}","message":"Se genero un error al editar el parametro ('.$parametro->id.') en la propuesta ('.$post["id"].') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')" ('.$message.').', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                
+                            }
+                        } else {
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito el parametro ('.$parametro->id.') en la propuesta ('.$post["id"].') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')".', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        }                       
                     }
-                    */                    
+                                     
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta ('.$post["id"].') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')".', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
