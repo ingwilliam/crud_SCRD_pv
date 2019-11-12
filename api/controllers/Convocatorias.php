@@ -498,6 +498,13 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
+                    
+                    //Modifico el estado para todas las categorias
+                    $phql = "UPDATE Convocatorias SET estado=:estado: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
+                    $app->modelsManager->executeQuery($phql, array(
+                        'convocatoria_padre_categoria' => $id,
+                        'estado' => $put["estado"]
+                    ));                    
                     echo $id;
                 }
             } else {

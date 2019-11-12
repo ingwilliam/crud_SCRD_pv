@@ -55,9 +55,12 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $phql = 'SELECT * FROM Upzs WHERE active = true AND localidad='.$request->get('localidad').' ORDER BY nombre';
+            if($request->get('localidad')!="")
+            {
+                $phql = 'SELECT * FROM Upzs WHERE active = true AND localidad='.$request->get('localidad').' ORDER BY nombre';
 
-            $robots = $app->modelsManager->executeQuery($phql);
+                $robots = $app->modelsManager->executeQuery($phql);
+            }
 
             echo json_encode($robots);
         } else {

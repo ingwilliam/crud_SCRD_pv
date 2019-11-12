@@ -84,14 +84,14 @@ $app->post('/new', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-
-
+        
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
-
+        
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-
+            
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
@@ -105,59 +105,63 @@ $app->post('/new', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-
+                                
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
-
+                
                 //Consulto si existe el usuario perfil
-                $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=6");
-
+                $usuario_perfil = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil=7");
+                
                 //Verifico si existe, con el fin de crearlo
-                if (!isset($usuario_perfil->id)) {
+                if(!isset($usuario_perfil->id))
+                {
                     $usuario_perfil = new Usuariosperfiles();
                     $usuario_perfil->usuario = $user_current["id"];
-                    $usuario_perfil->perfil = 6;
+                    $usuario_perfil->perfil = 7;                    
                     if ($usuario_perfil->save($usuario_perfil) === false) {
                         echo "error_usuario_perfil";
-                    }
+                    }                     
                 }
-
-                //Consulto los usuarios perfil del jurado y persona natural
-                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17)");
-                $id_usuarios_perfiles = "";
-                foreach ($array_usuario_perfil as $aup) {
-                    $id_usuarios_perfiles = $id_usuarios_perfiles . $aup->id . ",";
-                }
-                $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
-
-                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
-
-                if (count($participante_verificado) > 0) {
+                
+                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona juridica
+                $participante_verificado = Participantes::find("usuario_perfil NOT IN (".$usuario_perfil->id.") AND numero_documento='".$post["numero_documento"]."' AND tipo_documento =".$post["tipo_documento"]);
+                
+                if(count($participante_verificado)>0)
+                {
                     echo "participante_existente";
-                } else {
-
+                }
+                else
+                {
+                    
                     //Valido si existe para editar o crear
-                    if (is_numeric($post["id"])) {
+                    if(is_numeric($post["id"]))
+                    {
                         $participante = Participantes::findFirst($post["id"]);
                         $post["actualizado_por"] = $user_current["id"];
-                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                    } else {
-                        //Creo el objeto del particpante de persona natural
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                        
+                    }
+                    else
+                    {
+                        //Creo el objeto del particpante de Persona juridica
                         $participante = new Participantes();
                         $participante->creado_por = $user_current["id"];
                         $participante->fecha_creacion = date("Y-m-d H:i:s");
+                        $participante->fecha_creacion = date("Y-m-d H:i:s");
                         $participante->usuario_perfil = $usuario_perfil->id;
                         $participante->tipo = "Inicial";
-                        $participante->active = TRUE;
+                        $participante->active = TRUE;                     
                     }
-
+                    
                     if ($participante->save($post) === false) {
                         echo "error";
-                    } else {
+                    }
+                    else 
+                    {
                         echo $participante->id;
                     }
+                    
                 }
+                
             } else {
                 echo "acceso_denegado";
             }
@@ -165,7 +169,7 @@ $app->post('/new', function () use ($app, $config) {
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo" . $ex->getMessage();
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
@@ -182,46 +186,44 @@ $app->get('/search', function () use ($app, $config) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-
-            //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
+            
+            //Validar si existe un participante como Persona juridica, con id usuario innner usuario_perfil
             $user_current = json_decode($token_actual->user_current, true);
-
-            //Busco si tiene el perfil de persona natural
-            $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 6");
-            if (!isset($usuario_perfil_pn->id)) {
-                //Busco si tiene el perfil de jurado
-                $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 17");
-                if (!isset($usuario_perfil_pn->id)) {
-                    $usuario_perfil_pn = new Usuariosperfiles();
-                }
+            
+            //Busco si tiene el perfil de Persona juridica
+            $usuario_perfil_pj = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 7");
+            if(!isset($usuario_perfil_pj->id))
+            {
+                $usuario_perfil_pj=new Usuariosperfiles();                
             }
-
-            //Si existe el usuario perfil como pn o jurado
+            
+            //Si existe el usuario perfil como pj o jurado
             $participante = new Participantes();
-            if (isset($usuario_perfil_pn->id)) {
-                $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pn->id . " AND tipo='Inicial' AND active=TRUE");
+            if (isset($usuario_perfil_pj->id)) {
+                $participante = Participantes::findFirst("usuario_perfil=".$usuario_perfil_pj->id." AND tipo='Inicial' AND active=TRUE");
             }
-
+            
             //Asigno siempre el correo electronico del usuario al participante
-            if (!isset($participante->correo_electronico)) {
-                $participante->correo_electronico = $user_current["username"];
+            if(!isset($participante->correo_electronico))
+            {
+                $participante->correo_electronico=$user_current["username"];           
             }
-
+            
             //Creo todos los array del registro
             $array["participante"] = $participante;
 
             //Creo los array de los select del formulario
-            $array["tipo_documento"] = Tiposdocumentos::find("active=true");
-            $array["sexo"] = Sexos::find("active=true");
-            $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
-            $array["identidad_genero"] = Identidadesgeneros::find("active=true");
-            $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
-            $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
+            $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
+            
+            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
             $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
-            $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
+            
+            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
-
+            
+            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
+            $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
+            
             //Retorno el array
             echo json_encode($array);
         } else {
@@ -246,7 +248,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
     try {
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante pj en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
@@ -265,18 +267,18 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
+                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //Busco si tiene el perfil de persona natural
-                $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 6");
+                //Busco si tiene el perfil de persona jurídica
+                $usuario_perfil_pj = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 7");
 
-                //Si existe el usuario perfil como pn
+                //Si existe el usuario perfil como pj
                 $participante = new Participantes();
-                if (isset($usuario_perfil_pn->id)) {
-                    $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pn->id . " AND tipo='Inicial' AND active=TRUE");
+                if (isset($usuario_perfil_pj->id)) {
+                    $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pj->id . " AND tipo='Inicial' AND active=TRUE");
 
-                    //Si existe el participante inicial con el perfil de pn 
+                    //Si existe el participante inicial con el perfil de pj 
                     if (isset($participante->id)) {
 
                         //Consulto participante hijo este relacionado con una propuesta
@@ -285,7 +287,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                                                 FROM Propuestas AS p
                                                     INNER JOIN Participantes AS pn ON pn.id=p.participante
                                                 WHERE
-                                                p.convocatoria=" . $request->get('conv') . " AND pn.usuario_perfil=" . $usuario_perfil_pn->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+                                                p.convocatoria=" . $request->get('conv') . " AND pn.usuario_perfil=" . $usuario_perfil_pj->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
 
                         $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();
 
@@ -307,13 +309,13 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $participante_hijo_propuesta->terminos_condiciones = TRUE;
                             if ($participante_hijo_propuesta->save() === false) {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante pj asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "error_participante_propuesta";
                                 exit;
                             } else {
                                 //Registro la accion en el log de convocatorias
-                                $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante pn para la propuesta que se registro a la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante pj para la propuesta que se registro a la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
 
                                 //Creo la propuesta asociada al participante hijo
                                 $propuesta = new Propuestas();
@@ -325,7 +327,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                                 $propuesta->active = TRUE;
                                 if ($propuesta->save() === false) {
                                     //Registro la accion en el log de convocatorias           
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como pj."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     $logger->close();
                                     echo "error_participante_propuesta";
                                     exit;
@@ -338,33 +340,32 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                         }
 
                         //Creo los array de los select del formulario
-                        $array["tipo_documento"] = Tiposdocumentos::find("active=true");
-                        $array["sexo"] = Sexos::find("active=true");
-                        $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
-                        $array["identidad_genero"] = Identidadesgeneros::find("active=true");
-                        $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-                        $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;
-                        $array["ciudad_nacimiento_name"] = $participante_hijo_propuesta->getCiudadesnacimiento()->nombre;
+                        $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
+                        $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;            
                         $array["ciudad_residencia_name"] = $participante_hijo_propuesta->getCiudadesresidencia()->nombre;
-                        $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
+            
+                        $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
                         $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
+                        $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
+                        $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
+
                         //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno el participante pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno el participante pj en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
 
                         //Retorno el array
                         echo json_encode($array);
                     } else {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona natural."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona jurídica."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil";
                         exit;
                     }
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona natural."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona jurídica."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "crear_perfil";
                     exit;
@@ -403,7 +404,7 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante hijo pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante pj hijo pj en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
         
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -425,28 +426,28 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
 
-                //Consulto si existe el usuario perfil
-                $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=6");
+                //Consulto si existe el usuario perfil como persona juridica
+                $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=7");
 
                 //Verifico si existe, con el fin de crearlo
                 if (!isset($usuario_perfil->id)) {
                     $usuario_perfil = new Usuariosperfiles();
                     $usuario_perfil->usuario = $user_current["id"];
-                    $usuario_perfil->perfil = 6;
+                    $usuario_perfil->perfil = 7;
                     if ($usuario_perfil->save($usuario_perfil) === false) {
                         echo "error_usuario_perfil";
                     }
                 }
 
-                //Consulto los usuarios perfil del jurado y persona natural
-                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17)");
+                //Consulto los usuarios perfil del persona juridica
+                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (7)");
                 $id_usuarios_perfiles = "";
                 foreach ($array_usuario_perfil as $aup) {
                     $id_usuarios_perfiles = $id_usuarios_perfiles . $aup->id . ",";
                 }
                 $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
 
-                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
+                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona juridica
                 $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
 
                 if (count($participante_verificado) > 0) {
@@ -462,12 +463,12 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
 
                         if ($participante->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pn hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pj hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error";
                         } else {
                             //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pn hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pj hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo $participante->id;
                         }

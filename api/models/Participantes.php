@@ -9,6 +9,8 @@ class Participantes extends Model
     public function initialize()
    {
 
+       $this->useDynamicUpdate(true);
+
       //hasOne	Defines a 1-1 relationship
        $this->hasOne(
            'usuario_perfil',
@@ -29,6 +31,37 @@ class Participantes extends Model
            'Tiposdocumentos',
            'id'
        );
+
+       //Se define relacion de N a 1 con Barrios
+        $this->belongsTo(
+            'barrio_residencia',
+            'Barrios',
+            'id',
+            [
+                'alias' => "Barriosresidencia"
+            ]
+        );
+
+        //Se define relacion de N a 1 con Ciudades
+        $this->belongsTo(
+            'ciudad_nacimiento',
+            'Ciudades',
+            'id',
+            [
+                'alias' => "Ciudadesnacimiento"
+            ]
+        );
+
+        //Se define relacion de N a 1 con Ciudades
+        $this->belongsTo(
+            'ciudad_residencia',
+            'Ciudades',
+            'id',
+            [
+                'alias' => "Ciudadesresidencia"
+            ]
+        );
+
    }
 
    public function validation(){

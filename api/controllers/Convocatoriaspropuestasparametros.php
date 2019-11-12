@@ -21,6 +21,7 @@ $loader = new Loader();
 $loader->registerDirs(
         [
             APP_PATH . '/models/',
+            APP_PATH . '/library/class/',
         ]
 );
 
@@ -44,33 +45,6 @@ $di->set('db', function () use ($config) {
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->get('/select', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $departamento = $request->get('departamento');
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            $phql = "SELECT * FROM Ciudades AS ciu WHERE ciu.active = true AND ciu.departamento = $departamento  ORDER BY nombre";
-
-            $robots = $app->modelsManager->executeQuery($phql);
-
-            echo json_encode($robots);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-}
-);
-
-// Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
         //Instancio los objetos que se van a manejar
@@ -85,30 +59,46 @@ $app->get('/all', function () use ($app) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
-                0 => 'p.nombre',
-                1 => 'd.nombre',
-                2 => 'ciu.nombre'
+                0 => 'ca.label',
+                1 => 'ca.tipo_parametro',
+                2 => 'ca.orden',
+                3 => 'c.nombre',                
+                4 => 'cpad.nombre',
+                5 => 'ca.valores',
             );
 
-            $where .= " WHERE ciu.active=true";
+            //consulto los tipos anexos
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
+            $tipo_documento = str_replace(",", "','", "'".$tabla_maestra->valor."'");
+            
+            //Array para consultar las posibles categorias de la convocatoria
+            $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
+            $categorias = Convocatorias::find([
+                        'conditions' => 'convocatoria_padre_categoria=:convocatoria_padre_categoria: AND active=:active:',
+                        'bind' => $conditions,
+                        "order" => 'orden',
+            ]);
+            $array_categorias="";
+            foreach ($categorias as $categoria) {
+                $array_categorias= $array_categorias.$categoria->id.",";
+            }            
+            $array_categorias=$array_categorias.$request->get("convocatoria");
+                        
+            //Condiciones basicas
+            $where .= " LEFT JOIN Convocatorias AS c ON c.id=ca.convocatoria";
+            $where .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";            
+            $where .= " WHERE ca.active IN (true,false) AND ca.convocatoria IN (".$array_categorias.") ";
+            
             //Condiciones para la consulta
-
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
-            }
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+            }   
 
             //Defino el sql del total y el array de datos
-            $sqlTot = "SELECT count(*) as total FROM Ciudades AS ciu "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
-                    
-            $sqlRec = "SELECT " . $columns[0] . " AS  pais," . $columns[1] . " AS departamento ," . $columns[2] . " AS ciudad, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',ciu.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',ciu.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') AS acciones FROM Ciudades AS ciu "
-                    . "INNER JOIN Departamentos AS d ON ciu.departamento=d.id "
-                    . "INNER JOIN Paises AS p ON p.id=d.pais "
-                    . "";
+            $sqlTot = "SELECT count(*) as total FROM Convocatoriaspropuestasparametros AS ca";
+            $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[5] . ",c.nombre AS categoria, cpad.nombre AS convocatoria,concat('<input title=\"',ca.id,'\" type=\"checkbox\" class=\"check_activar_',ca.active,' activar_registro\" />') as activar_registro , concat('<button title=\"',ca.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatoriaspropuestasparametros AS ca";
 
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
@@ -119,7 +109,7 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+            
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -138,7 +128,7 @@ $app->get('/all', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo json_encode(null);
+        echo json_encode($ex->getMessage());
     }
 }
 );
@@ -148,11 +138,11 @@ $app->post('/new', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
-        $tokens = new Tokens();
-
+        $tokens = new Tokens();        
+        
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
-
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -160,7 +150,7 @@ $app->post('/new', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -170,36 +160,42 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                $ciudad = new Ciudades();
-                $ciudad->creado_por = $user_current["id"];
-                $ciudad->fecha_creacion = date("Y-m-d H:i:s");
-                $ciudad->active = true;
-                if ($ciudad->save($post) === false) {
+                
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
+                $convocatoriaspropuestasparametros = new Convocatoriaspropuestasparametros();                
+                $convocatoriaspropuestasparametros->creado_por = $user_current["id"];
+                $convocatoriaspropuestasparametros->fecha_creacion = date("Y-m-d H:i:s");
+                $convocatoriaspropuestasparametros->active = true;
+                if ($convocatoriaspropuestasparametros->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $ciudad->id;
+                    echo $convocatoriaspropuestasparametros->id;                                                                                
                 }
             } else {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 }
 );
 
 // Editar registro
-$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
-        $tokens = new Tokens();
+        $tokens = new Tokens();        
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -208,7 +204,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -217,21 +213,28 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-                $put = $app->request->getPut();
+                $post = $app->request->getPost();
+                //Valido si el usuario selecciono una categoria, con el fin de asignarle la convocatoria principal
+                if( $post["convocatoria"] == "" ){
+                    $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
+                }
+                
                 // Consultar el usuario que se esta editando
-                $ciudad = Ciudades::findFirst(json_decode($id));
-                $ciudad->actualizado_por = $user_current["id"];
-                $ciudad->fecha_actualizacion = date("Y-m-d H:i:s");
-                if ($ciudad->save($put) === false) {
+                $convocatoriaspropuestasparametros = Convocatoriaspropuestasparametros::findFirst(json_decode($id));                
+                $convocatoriaspropuestasparametros->actualizado_por = $user_current["id"];
+                $convocatoriaspropuestasparametros->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                if ($convocatoriaspropuestasparametros->save($post) === false) {
                     echo "error";
                 } else {
                     echo $id;
                 }
+                
             } else {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";
@@ -239,7 +242,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 }
 );
 
-// Eliminar registro
+// Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
@@ -247,7 +250,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
@@ -259,32 +261,40 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
+        
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $user = Ciudades::findFirst(json_decode($id));
-                $user->active = false;
-                if ($user->save($user) === false) {
+                // Consultar el registro
+                $convocatoriaspropuestasparametros = Convocatoriaspropuestasparametros::findFirst(json_decode($id));                
+                if($convocatoriaspropuestasparametros->active==true)
+                {
+                    $convocatoriaspropuestasparametros->active=false;
+                    $retorna="No";
+                }
+                else
+                {
+                    $convocatoriaspropuestasparametros->active=true;
+                    $retorna="Si";
+                }
+                
+                if ($convocatoriaspropuestasparametros->save($convocatoriaspropuestasparametros) === false) {
                     echo "error";
                 } else {
-                    echo "ok";
+                    echo $retorna;
                 }
             } else {
                 echo "acceso_denegado";
-            }
-
-            exit;
+            }           
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        echo "error_metodo".$ex->getMessage();
     }
 });
 
 //Busca el registro
-$app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
+$app->get('/search', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -295,59 +305,33 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            $ciudad = Ciudades::findFirst($id);
-            if (isset($ciudad->id)) {
-                $array["ciudad"]=$ciudad;
-                $array["departamento"]=$ciudad->departamentos;
-                $array["departamentos"]= Departamentos::find("active=true");
-                echo json_encode($array);
-            } else {
-                echo json_encode(new Ciudades());
+            //Si existe consulto la convocatoria
+            if($request->get('id'))
+            {    
+                $convocatoriaspropuestasparametros = Convocatoriaspropuestasparametros::findFirst($request->get('id'));                                
             }
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        echo "error_metodo";
-    }
-}
-);
-
-//Busca el registro
-$app->get('/autocompletar', function () use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-
-            $array_ciudades = array();
+            else 
+            {
+                $convocatoriaspropuestasparametros = new Convocatoriaspropuestasparametros();
+            }
+            //Creo todos los array del registro
+            $array["convocatoriaspropuestasparametros"]=$convocatoriaspropuestasparametros;
             
-            if($request->get('q')!="")
-            {            
-                foreach (Ciudades::find("active=true AND UPPER(nombre) LIKE '%".strtoupper($request->get('q'))."%'") as $value) {
-                    $array_ciudades[] = array("id" => $value->id, "label" => $value->nombre . " - " . $value->getDepartamentos()->nombre . " - " . $value->getDepartamentos()->getPaises()->nombre, "value" => $value->nombre);
-                }
-            }                        
-                                    
+            //Creo los tipos de documentos para anexar
+            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");                        
+            $array["tipo_parametro"]=explode(",", $tabla_maestra->valor);            
+            
             //Retorno el array
-            echo $request->get('callback')."(".json_encode($array_ciudades).")";
+            echo json_encode($array);       
         } else {
             echo "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        echo $ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
-
 
 try {
     // Gestionar la consulta
