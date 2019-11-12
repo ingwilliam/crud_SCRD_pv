@@ -128,7 +128,7 @@ $app->get('/search', function () use ($app, $config) {
 
                            //Para auditoria en versión de pruebas
 
-                           foreach ($participante->getMessages() as $message) {
+                           foreach ($new_participante->getMessages() as $message) {
                                    echo $message;
                                  }
 
@@ -437,17 +437,20 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
+                      //  echo json_encode($participante->propuestas);
 
                        $educacionformales = Educacionformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND titulo LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
                          ]
                        );
+
+                        // echo json_encode($educacionformales);
 
                        foreach ($educacionformales as $educacionformal) {
 

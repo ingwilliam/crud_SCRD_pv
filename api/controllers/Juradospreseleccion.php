@@ -224,11 +224,12 @@ $app->get('/all_preseleccionados', function () use ($app) {
                     array_push( $response, [
                       "postulado" => true,
                       "id" =>  $juradopostulado->propuestas->participantes->id,
-                      "tipo_documento" =>  $juradopostulado->propuestas->participantes->tipo_documento,
+                      "tipo_documento" =>  $juradopostulado->propuestas->participantes->tiposdocumentos->nombre,
                       "numero_documento" =>  $juradopostulado->propuestas->participantes->numero_documento,
                       "nombres" =>  $juradopostulado->propuestas->participantes->primer_nombre." ".$juradopostulado->propuestas->participantes->segundo_nombre,
                       "apellidos" =>  $juradopostulado->propuestas->participantes->primer_apellido." ".$juradopostulado->propuestas->participantes->segundo_apellido,
-                      "puntaje" =>  $juradopostulado->total_evaluacion
+                      "puntaje" =>  $juradopostulado->total_evaluacion,
+                      "aplica_perfil" =>  $juradopostulado->aplica_perfil
                       ] );
                  }
 
@@ -289,6 +290,104 @@ $app->get('/all_preseleccionados', function () use ($app) {
 );
 
 //Busca el registro información básica del participante
+$app->get('/search_convocatoria_propuesta', function () use ($app, $config) {
+
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $a = array();
+        $delimiter = array("[","]","\"");
+
+      //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+           if( $user_current["id"]){
+
+             /*
+
+                       $participante = Participantes::query()
+                         ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                         ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                          //perfil = 17  perfil de jurado
+                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->andWhere("Usuariosperfiles.usuario = ".$participante->usuariosperfiles->usuario )
+                         ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                         ->execute()
+                         ->getFirst();
+
+                         */
+            $participante = Participantes::findFirst($request->get('participante'));
+
+            if( $participante->id != null ){
+
+            //  $new_participante = clone $old_participante;
+
+              /*$participante->tipo_documento = Tiposdocumentos::findFirst($participante->tipo_documento)->descripcion;
+              $participante->sexo = Sexos::findFirst($participante->sexo)->nombre;
+              $participante->ciudad_residencia = Ciudades::findFirst($participante->ciudad_residencia)->nombre;
+              $participante->fecha_creacion = null;
+              $participante->participante_padre = null;
+
+              //Asigno el participante al array
+              $array["participante"] = $participante;
+              $array["perfil"] = $participante->propuestas->resumen;*/
+
+
+
+              $array["convocatoria"] = Convocatorias::findFirst($request->get('idc'));
+
+              $array["participantes"] =  Convocatoriasparticipantes::find([
+                " convocatoria = ".$request->get('idc')
+                ." AND tipo_participante = 4 "
+                ." AND active = true ",
+                "order" => 'orden ASC',
+              ]);
+
+              //se modifican los valores de algunas propiedades de cada registro
+              foreach ($array["participantes"] as $key => $value) {
+                $value->area_perfil = str_replace($delimiter, "",  $value->area_perfil );
+                $value->area_conocimiento = str_replace($delimiter, "",  $value->area_conocimiento );
+                $value->nivel_educativo = str_replace($delimiter, "",  $value->nivel_educativo );
+                $value->formacion_profesional = ($value->formacion_profesional)? "Si": "No";
+                $value->formacion_postgrado= ($value->formacion_postgrado)? "Si": "No";
+                $value->reside_bogota= ($value->reside_bogota)? "Si": "No";
+                $a[$key] = $value;
+              }
+
+               $array["participantes"] = $a;
+            }else{
+                $array["convocatoria"] =  new Convocatorias();
+            }
+
+        return json_encode( $array );
+
+        }
+
+
+        } else {
+            echo "error_token";
+        }
+
+
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
+    }
+});
+
+
+//Busca el registro información básica del participante
 $app->get('/search_info_basica_jurado', function () use ($app, $config) {
 
     try {
@@ -336,6 +435,7 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
               //Asigno el participante al array
               $array["participante"] = $participante;
               $array["perfil"] = $participante->propuestas->resumen;
+            //  $array["perfiles_covocatoria"] = Convocatoriasparticipantes::find("convocatoria = " $participante->propuestas->convocatorias->id
 
 
             }else{
@@ -360,6 +460,94 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
       echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
     }
 });
+
+//Busca los registros de documento
+$app->get('/all_documento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
+            $tdocumento = array();
+
+           if( $user_current["id"]){
+
+                    /*  $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+                        */
+
+                       $participante = Participantes::findFirst($request->get('participante'));
+
+                       $documentos = Propuestajuradodocumento::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id,
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($documentos as $documento) {
+
+                         $tipo = Categoriajurado::findFirst(
+                           ["active=true AND id=".$documento->categoria_jurado]
+                         );
+                         $documento->categoria_jurado = $tipo->nombre;
+
+                         $documento->creado_por = null;
+                         $documento->actualizado_por = null;
+                         array_push($response,$documento);
+                       }
+
+                       //resultado sin filtro
+                       $tdocumento = Propuestajuradodocumento::find([
+                         " propuesta = ".$participante->propuestas->id,
+                       ]);
+
+
+
+            }
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tdocumento->count()),
+                "recordsFiltered" => intval($documentos->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+
+
 
 //Busca los registros de educacion formal
 $app->get('/all_educacion_formal', function () use ($app, $config) {
@@ -414,6 +602,7 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                          $educacionformal->ciudad = $ciudad->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
+                         $educacionformal->numero_semestres = ( $educacionformal->numero_semestres == null)? "N/D":$educacionformal->numero_semestres;
                          array_push($response,$educacionformal);
                        }
 
@@ -996,10 +1185,17 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                       foreach ($ronda->Convocatoriasrondascriterios as $criterio) {
 
                         if( $criterio->active && $criterio->grupo_criterio === $categoria ){
-
-                         $obj[$categoria][$criterio->orden]=  $criterio;
-
-                         //$obj[$categoria] = $criterio;
+                          // $obj[$categoria][$criterio->orden]=  $criterio;
+                          $obj[$categoria][$criterio->orden]= [
+                                                                "id"=>$criterio->id,
+                                                                "descripcion_criterio"=>$criterio->descripcion_criterio,
+                                                                "puntaje_minimo"=>$criterio->puntaje_minimo,
+                                                                "puntaje_maximo"=>$criterio->puntaje_maximo,
+                                                                "orden"=>$criterio->orden,
+                                                                "grupo_criterio"=>$criterio->grupo_criterio,
+                                                                "exclusivo"=>$criterio->exclusivo,
+                                                                "evaluacion"=> Evaluacion::findFirst("criterio = ".$criterio->id)
+                                                              ];
 
                         }
 
@@ -1009,7 +1205,7 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                     }
 
 
-                    $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"criterios"=>$criterios];
+                    $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"postulacion"=>Juradospostulados::findFirst( "convocatoria = ".$request->get("idc") ),"criterios"=>$criterios];
 
                   }
 
@@ -1033,7 +1229,196 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
 }
 );
 
+// Actualiza a evaluación del perfil
+$app->put('/evaluar_perfil', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                $propuesta = Propuestas::findFirst(
+                  [
+                    "participante = ".$request->getPut('participante')
+                  ]
+                );
+
+                $postulacion = Juradospostulados::findFirst(
+                  [
+                    " propuesta = ".$propuesta->id
+                    ." AND convocatoria = ".$request->getPut('idc')
+                  ]
+                );
+
+                $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion');
+                $postulacion->aplica_perfil = $request->getPut('option_aplica_perfil');
+                $postulacion->estado = 10; //10	jurados	Verificado
+                $postulacion->actualizado_por = $user_current["id"];
+                $postulacion->fecha_actualizacion =  date("Y-m-d H:i:s");
+
+
+                if( $postulacion->save() === false ){
+                  //return "error";
+
+                  //Para auditoria en versión de pruebas
+                  foreach ($postulacion->getMessages() as $message) {
+                       echo $message;
+                     }
+
+                  return json_encode($postulacion);
+                }
+
+                echo $postulacion->id;
+
+
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+    }
+}
+);
+
+// Crear registro
+$app->post('/evaluar_criterios', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        $total_evaluacion=0;
+        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                $propuesta = Propuestas::findFirst(
+                  [
+                    "participante=".$request->getPost('participante')
+                  ]
+                );
+
+                $juradospostulado = Juradospostulados::findFirst(
+                  [
+                    " propuesta = ".$propuesta->id
+                    ." AND convocatoria = ".$request->getPost('idc')
+                  ]
+                );
+
+                if ( $juradospostulado->estado != 11 &&  $juradospostulado->estado != 12){
+                  $criterios = Convocatoriasrondascriterios::find(
+                    [
+                      "convocatoria_ronda=".$request->getPost('ronda')
+                      ." AND active = true"
+                    ]
+                  );
+
+                  // Start a transaction
+                  $this->db->begin();
+
+                  foreach ($criterios as $key => $criterio) {
+
+                    $evaluacion_criterio = new Evaluacion();
+                    $evaluacion_criterio->propuesta = $propuesta->id;
+                    $evaluacion_criterio->criterio = $criterio->id;
+                    $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
+                    $evaluacion_criterio->creado_por = $user_current["id"];
+                    $evaluacion_criterio->fecha_creacion =  date("Y-m-d H:i:s");
+                    $evaluacion_criterio->postulado = $juradospostulado->id;
+
+                    // The model failed to save, so rollback the transaction
+                    if ($evaluacion_criterio->save() === false) {
+                      $this->db->rollback();
+                      return "error";
+                    }
+
+                    array_push($response,$evaluacion_criterio->id);
+                    $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+
+
+                  }
+
+
+                  $juradospostulado->total_evaluacion = $total_evaluacion;
+                  $juradospostulado->estado = 11; //11	jurados	Evaluado
+                  $juradospostulado->actualizado_por = $user_current["id"];
+                  $juradospostulado->fecha_actualizacion =  date("Y-m-d H:i:s");
+
+                  // The model failed to save, so rollback the transaction
+                  if ($juradospostulado->save() === false) {
+                    $this->db->rollback();
+                    return "error";
+                  }
+
+                  // Commit the transaction
+                  $this->db->commit();
+                  return json_encode($response);
+                }else{
+                  return "error";
+                }
+
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+    }
+}
+);
 
 try {
     // Gestionar la consulta

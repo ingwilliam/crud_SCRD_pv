@@ -22,6 +22,13 @@ class Participantes extends Model
            'Propuestas',
            'participante'
        );
+
+        //hasOne	Defines a 1-1 relationship
+       $this->hasOne(
+           'tipo_documento',
+           'Tiposdocumentos',
+           'id'
+       );
    }
 
    public function validation(){
@@ -45,7 +52,7 @@ class Participantes extends Model
      if ($this->barrio_residencia == "") {
        $this->barrio_residencia = null;
      }
-     
+
      return true;
    }
 }
