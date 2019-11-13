@@ -36,4 +36,28 @@ ALTER TABLE propuestas ADD ejecucion_menores_edad boolean DEFAULT FALSE;
 INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('medio_se_entero','Alguien le contó,Correo electrónico,Equipos locales de cultura,Equipos locales de recreación y deporte,Portal web de la entidad,Portal Web de la Secretaría de Cultura, Recreación y Deporte,Prensa escrita,Radio,Redes sociales,Televisión',TRUE,NOW(),7);
 ALTER TABLE participantes ADD rol TEXT;
 
+CREATE TABLE public.propuestasdocumentos
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  id_alfresco TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasdocumentos_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasdocumentos_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+
 
