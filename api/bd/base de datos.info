@@ -59,5 +59,28 @@ CREATE TABLE public.propuestasdocumentos
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
 
+CREATE TABLE public.propuestaslink
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  link TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestaslink_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestaslink_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
 
 

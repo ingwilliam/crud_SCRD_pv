@@ -244,7 +244,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-
+    
     try {
 
         //Registro la accion en el log de convocatorias
@@ -332,6 +332,14 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                                     echo "error_participante_propuesta";
                                     exit;
                                 } else {
+                                    $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+                                    //Se crea la carpeta principal de la propuesta en la convocatoria                                    
+                                    if($chemistry_alfresco->newFolder("/Sites/convocatorias/".$request->get('conv')."/propuestas/", $propuesta->id) != "ok" )
+                                    {
+                                        //Registro la accion en el log de convocatorias           
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    }
+                                    
                                     $logger->info('"token":"{token}","user":"{user}","message":"Se creo la propuesta para la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     //Retorno el array hijo que tiene relacionado la propuesta
                                     $array["participante"] = $participante_hijo_propuesta;
