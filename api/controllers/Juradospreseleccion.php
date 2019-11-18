@@ -228,6 +228,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                       "numero_documento" =>  $juradopostulado->propuestas->participantes->numero_documento,
                       "nombres" =>  $juradopostulado->propuestas->participantes->primer_nombre." ".$juradopostulado->propuestas->participantes->segundo_nombre,
                       "apellidos" =>  $juradopostulado->propuestas->participantes->primer_apellido." ".$juradopostulado->propuestas->participantes->segundo_apellido,
+                      "id_postulacion"=>$juradopostulado->id,
                       "puntaje" =>  $juradopostulado->total_evaluacion,
                       "aplica_perfil" =>  $juradopostulado->aplica_perfil
                       ] );
@@ -250,14 +251,14 @@ $app->get('/all_preseleccionados', function () use ($app) {
                   $where = $where.( ( $value["name"] === 'palabra_clave' && $value["value"] != null && $value["value"] != '' ) ?
                                         " AND p.resumen like '%".$request->get('filtros')[0]["value"]."%' " :
                                         '');
-                  /*
+
                   $where = $where.( ( $value["name"] === 'experto_con' && $value["value"] != null && $value["value"] != '' ) ?
                                         " AND ef.propuesta is not null" :
                                         '');
                   $where = $where.( ( $value["name"] === 'exp_menor_3' && $value["value"] != null && $value["value"] != '' ) ?
                                         " AND ef.propuesta is not null" :
                                         '');
-                    */
+
 
                     }
 
@@ -324,7 +325,10 @@ $app->get('/search_convocatoria_propuesta', function () use ($app, $config) {
                          ->getFirst();
 
                          */
-            $participante = Participantes::findFirst($request->get('participante'));
+            //$participante = Participantes::findFirst($request->get('participante'));
+
+            $postulacion = Juradospostulados::findFirst($request->get('participante'));
+            $participante = $postulacion->propuestas->participantes;
 
             if( $participante->id != null ){
 
@@ -420,7 +424,10 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
                          ->getFirst();
 
                          */
-            $participante = Participantes::findFirst($request->get('participante'));
+          //  $participante = Participantes::findFirst($request->get('participante'));
+
+            $postulacion = Juradospostulados::findFirst($request->get('participante'));
+            $participante = $postulacion->propuestas->participantes;
 
             if( $participante->id != null ){
 
@@ -492,7 +499,9 @@ $app->get('/all_documento', function () use ($app, $config) {
                         ->getFirst();
                         */
 
-                       $participante = Participantes::findFirst($request->get('participante'));
+                      // $participante = Participantes::findFirst($request->get('participante'));
+                       $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                       $participante = $postulacion->propuestas->participantes;
 
                        $documentos = Propuestajuradodocumento::find(
                          [
@@ -546,9 +555,6 @@ $app->get('/all_documento', function () use ($app, $config) {
 }
 );
 
-
-
-
 //Busca los registros de educacion formal
 $app->get('/all_educacion_formal', function () use ($app, $config) {
     try {
@@ -580,7 +586,9 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                         */
 
-                       $participante = Participantes::findFirst($request->get('participante'));
+                       //$participante = Participantes::findFirst($request->get('participante'));
+                       $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                       $participante = $postulacion->propuestas->participantes;
 
                        $educacionformales = Educacionformal::find(
                          [
@@ -671,7 +679,9 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                         ->getFirst();
                         */
 
-                       $participante = Participantes::findFirst($request->get('participante'));
+                       //$participante = Participantes::findFirst($request->get('participante'));
+                       $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                       $participante = $postulacion->propuestas->participantes;
 
                        $educacionnoformales = Educacionnoformal::find(
                          [
@@ -761,7 +771,9 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();*/
 
-                        $participante = Participantes::findFirst($request->get('participante'));
+                        //$participante = Participantes::findFirst($request->get('participante'));
+                        $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                        $participante = $postulacion->propuestas->participantes;
 
                        $experiencialaborales = Experiencialaboral::find(
                          [
@@ -854,7 +866,10 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();*/
 
-                       $participante = Participantes::findFirst($request->get('participante'));
+                       //$participante = Participantes::findFirst($request->get('participante'));
+
+                       $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                       $participante = $postulacion->propuestas->participantes;
 
                        $experienciajurados = Experienciajurado::find(
                          [
@@ -950,7 +965,10 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();*/
 
-                        $participante = Participantes::findFirst($request->get('participante'));
+                        //$participante = Participantes::findFirst($request->get('participante'));
+
+                        $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                        $participante = $postulacion->propuestas->participantes;
 
                        $reconocimientos = Propuestajuradoreconocimiento::find(
                          [
@@ -1047,7 +1065,10 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
                         */
-                      $participante = Participantes::findFirst($request->get('participante'));
+                      //$participante = Participantes::findFirst($request->get('participante'));
+
+                      $postulacion = Juradospostulados::findFirst($request->get('participante'));
+                      $participante = $postulacion->propuestas->participantes;
 
                        $publicaciones = Propuestajuradopublicacion::find(
                          [
@@ -1151,9 +1172,12 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                 ->execute()
                 ->getFirst();
                 */
-              $participante = Participantes::findFirst($request->get('participante'));
+            //  $participante = Participantes::findFirst($request->get('participante'));
+            // $rondas = $participante->propuestas->convocatorias->convocatoriasrondas;
 
-              $rondas = $participante->propuestas->convocatorias->convocatoriasrondas;
+              $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
+
+              $rondas = $postulacion->propuestas->convocatorias->convocatoriasrondas;
 
                 //echo  json_encode($rondas);
               foreach ($rondas as $ronda) {
@@ -1174,6 +1198,7 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
 
 
                     }
+
 
                     //de acuerdo con el orden, se crea al array de criterios
                     foreach ($grupo_criterios as $categoria => $orden) {
@@ -1201,11 +1226,12 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
 
                       }
 
+
                       $criterios[$orden]= $obj ;
-                    }
+                  }
 
 
-                    $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"postulacion"=>Juradospostulados::findFirst( "convocatoria = ".$request->get("idc") ),"criterios"=>$criterios];
+                    $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"postulacion"=>$postulacion,"criterios"=>$criterios];
 
                   }
 
@@ -1257,7 +1283,12 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
-                $propuesta = Propuestas::findFirst(
+                $postulacion = Juradospostulados::findFirst($request->getPut('postulacion'));
+
+                echo json_encode($postulacion);
+            //    $participante = $postulacion->propuestas->participantes;
+
+              /*  $propuesta = Propuestas::findFirst(
                   [
                     "participante = ".$request->getPut('participante')
                   ]
@@ -1268,7 +1299,7 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
                     " propuesta = ".$propuesta->id
                     ." AND convocatoria = ".$request->getPut('idc')
                   ]
-                );
+                );*/
 
                 $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion');
                 $postulacion->aplica_perfil = $request->getPut('option_aplica_perfil');
@@ -1338,6 +1369,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
+                /*
                 $propuesta = Propuestas::findFirst(
                   [
                     "participante=".$request->getPost('participante')
@@ -1350,8 +1382,13 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                     ." AND convocatoria = ".$request->getPost('idc')
                   ]
                 );
+                */
+
+                  $juradospostulado = Juradospostulados::findFirst($request->get('participante'));
 
                 if ( $juradospostulado->estado != 11 &&  $juradospostulado->estado != 12){
+
+
                   $criterios = Convocatoriasrondascriterios::find(
                     [
                       "convocatoria_ronda=".$request->getPost('ronda')
@@ -1374,6 +1411,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                     // The model failed to save, so rollback the transaction
                     if ($evaluacion_criterio->save() === false) {
+                      //Para auditoria en versión de pruebas
+                      foreach ($postulacion->getMessages() as $message) {
+                           echo $message;
+                         }
+
+
                       $this->db->rollback();
                       return "error";
                     }

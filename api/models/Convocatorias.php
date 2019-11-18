@@ -11,7 +11,7 @@ class Convocatorias extends Model {
         $this->hasMany(
                 'id', 'Convocatoriaspropuestasparametros', 'convocatoria'
         );
-        
+
         //Se define la relación con 1 a N con Convocatoriasrecursos
         $this->hasMany(
                 'id', 'Convocatoriasrecursos', 'convocatoria'
@@ -62,7 +62,8 @@ class Convocatorias extends Model {
         );
 
         //Cesar Britto
-        //belongsTo	Defines a n-1 relationship
+        /* Se define la relación con N a 1 con Propuestas, con el fin
+          de obtener la propuesta */
         $this->belongsTo(
                 'id',
                 'Propuestas',
@@ -86,12 +87,20 @@ class Convocatorias extends Model {
         );
 
 
-        //23 oct 2019->William Barbosa        
+        //23 oct 2019->William Barbosa
         //Se define relacion de N a 1 con convocatoria padre
         $this->belongsTo(
             'convocatoria_padre_categoria',
             'Convocatorias',
             'id'
+        );
+
+        //14 oct 2019->Cesar Britto
+        //hasMany	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Convocatoriasparticipantes',
+            'convocatoria'
         );
 
     }
