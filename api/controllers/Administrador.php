@@ -72,12 +72,19 @@ $app->post('/menu', function () use ($app,$config) {
 
             $permisos_administracion = $app->modelsManager->executeQuery($phql);
 
-            //Consultar todos los permiso de la administración
+            //Consultar todos los permiso de la convocatorias
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                     . "WHERE m.nombre='Convocatorias' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
+            
+            //Consultar todos los permiso de la propuestas
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_propuestas = $app->modelsManager->executeQuery($phql);
 
             //Consultar todos los permiso del menu participante
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
@@ -526,6 +533,24 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
+                        
+                        <?php
+                        if(count($permisos_propuestas)>0)
+                        {
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>                                    
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        
                         <?php
                         if(count($permisos_menu_participante)>0)
                         {
