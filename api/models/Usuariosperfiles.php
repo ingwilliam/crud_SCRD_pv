@@ -22,6 +22,13 @@ class Usuariosperfiles extends Model
          'Educacionformal',
          'usuario_perfil'
      );
+     
+    //Se define relacion de N a 1 con Perfiles
+    $this->belongsTo(
+        'perfil',
+        'Perfiles',
+        'id'
+    );
 
    }
 

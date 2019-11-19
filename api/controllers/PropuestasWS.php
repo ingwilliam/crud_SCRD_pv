@@ -60,6 +60,78 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 
 $propuesta = Propuestas::findFirst(10);    
     
+$array_administrativos=array();
+$array_tecnicos=array();
+foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
+    if($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito=="Administrativos"){
+        $array_administrativos[$propuestadocumento->id]["requisito"]=$propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+        $array_administrativos[$propuestadocumento->id]["nombre"]=$propuestadocumento->nombre;
+    }
+    
+    if($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito=="Tecnicos"){
+        $array_tecnicos[$propuestadocumento->id]["requisito"]=$propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+        $array_tecnicos[$propuestadocumento->id]["nombre"]=$propuestadocumento->nombre;
+    }    
+}
+
+$array_administrativos_link=array();
+$array_tecnicos_link=array();
+foreach ($propuesta->Propuestaslinks as $propuestalink) {
+    if($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito=="Administrativos"){
+        $array_administrativos_link[$propuestalink->id]["requisito"]=$propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+        $array_administrativos_link[$propuestalink->id]["link"]=$propuestalink->link;
+    }
+    
+    if($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito=="Tecnicos"){
+        $array_tecnicos_link[$propuestalink->id]["requisito"]=$propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+        $array_tecnicos_link[$propuestalink->id]["link"]=$propuestalink->link;
+    }    
+}
+
+$html_administrativos="";
+$i=1;
+foreach ($array_administrativos as $key => $val) {
+    $html_administrativos=$html_administrativos."<tr>";
+    $html_administrativos=$html_administrativos."<td>".$i."</td>";
+    $html_administrativos=$html_administrativos."<td>".$val["requisito"]."</td>";
+    $html_administrativos=$html_administrativos."<td>".$val["nombre"]."</td>";
+    $html_administrativos=$html_administrativos."</tr>";
+    $i++;
+}
+
+$html_administrativos_link="";
+$i=1;
+foreach ($array_administrativos_link as $key => $val) {
+    $html_administrativos_link=$html_administrativos_link."<tr>";
+    $html_administrativos_link=$html_administrativos_link."<td>".$i."</td>";
+    $html_administrativos_link=$html_administrativos_link."<td>".$val["requisito"]."</td>";
+    $html_administrativos_link=$html_administrativos_link."<td>".$val["link"]."</td>";
+    $html_administrativos_link=$html_administrativos_link."</tr>";
+    $i++;
+}
+
+$html_tecnicos="";
+$i=1;
+foreach ($array_tecnicos as $key => $val) {
+    $html_tecnicos=$html_tecnicos."<tr>";
+    $html_tecnicos=$html_tecnicos."<td>".$i."</td>";
+    $html_tecnicos=$html_tecnicos."<td>".$val["requisito"]."</td>";
+    $html_tecnicos=$html_tecnicos."<td>".$val["nombre"]."</td>";
+    $html_tecnicos=$html_tecnicos."</tr>";
+    $i++;
+}
+
+$html_tecnicos_link="";
+$i=1;
+foreach ($array_tecnicos_link as $key => $val) {
+    $html_tecnicos_link=$html_tecnicos_link."<tr>";
+    $html_tecnicos_link=$html_tecnicos_link."<td>".$i."</td>";
+    $html_tecnicos_link=$html_tecnicos_link."<td>".$val["requisito"]."</td>";
+    $html_tecnicos_link=$html_tecnicos_link."<td>".$val["link"]."</td>";
+    $html_tecnicos_link=$html_tecnicos_link."</tr>";
+    $i++;
+}
+
 $bogota=($propuesta->bogota) ? "Si":"No";
 
 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
@@ -84,12 +156,13 @@ $html =
                 background-color: #ffffee;
 	}
 </style>
-<br/>
+<h2  style="text-align:center;">CERTIFICADO DE INSCRIPCIÓN</h2>
 <h3>Información de la propuesta</h3>        
+<p>Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.</p>
 <table>
     <tr>
-        <td colspan="2">Código</td>
-        <td colspan="2">64-10</td>            
+        <td colspan="2"><b>Código</b></td>
+        <td colspan="2"><b>'.$propuesta->codigo.'</b></td>            
     </tr>    
     <tr>
         <td>Nombre de la convocatoria</td>
@@ -101,11 +174,11 @@ $html =
         <td>Nombre del participante</td>
         <td>'.$participante.'</td>
         <td>Tipo de participante</td>
-        <td>'.$propuesta->getParticipantes()->usuario_perfil.'</td>
+        <td>'.$propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre.'</td>
     </tr>    
     <tr>
-        <td>Estado</td>
-        <td>'.$propuesta->getEstados()->nombre.'</td>
+        <td><b>Estado</b></td>
+        <td><b>'.$propuesta->getEstados()->nombre.'</b></td>
         <td>Nombre de la propuesta</td>
         <td>'.$propuesta->nombre.'</td>
     </tr>    
@@ -119,20 +192,20 @@ $html =
         <td>¿Su propuesta se desarrolla en Bogotá D.C.?</td>
         <td>'.$bogota.'</td>
         <td>Localidad</td>
-        <td>'.$propuesta->localidad.'</td>
+        <td>'.$propuesta->getLocalidades()->nombre.'</td>
     </tr>    
     <tr>
         <td>Upz</td>
-        <td>'.$propuesta->upz.'</td>
+        <td>'.$propuesta->getUpzs()->nombre.'</td>
         <td>Barrio</td>
-        <td>'.$propuesta->barrio.'</td>
+        <td>'.$propuesta->getBarrios()->nombre.'</td>
     </tr>    
 </table>
 <h3>Información del participante</h3>
 <table>
     <tr>
         <td>Tipo de documento de identificación</td>
-        <td>'.$propuesta->getParticipantes()->tipo_documento.'</td>    
+        <td>'.$propuesta->getParticipantes()->getTiposdocumentos()->descripcion.'</td>    
         <td>Número de documento de identificación</td>
         <td>'.$propuesta->getParticipantes()->numero_documento.'</td>
     </tr>    
@@ -150,15 +223,15 @@ $html =
     </tr>    
     <tr>
         <td>Sexo</td>
-        <td>'.$propuesta->getParticipantes()->segundo_sexo.'</td>
+        <td>'.$propuesta->getParticipantes()->getSexos()->nombre.'</td>
         <td>Orientación Sexual</td>
-        <td>'.$propuesta->getParticipantes()->orientacion_sexual.'</td>
+        <td>'.$propuesta->getParticipantes()->getOrientacionessexuales()->nombre.'</td>
     </tr>    
     <tr>
         <td>Identidad de género</td>
-        <td>'.$propuesta->getParticipantes()->identidad_genero.'</td>
+        <td>'.$propuesta->getParticipantes()->getIdentidadesgeneros()->nombre.'</td>
         <td>Grupo étnico</td>
-        <td>'.$propuesta->getParticipantes()->grupo_etnico.'</td>
+        <td>'.$propuesta->getParticipantes()->getGruposetnicos()->nombre.'</td>
     </tr>    
     <tr>
         <td>Fecha de nacimiento</td>
@@ -200,32 +273,38 @@ $html =
 <h3>Documentación administrativa</h3>
 <table>    
     <tr>
-        <td>N°</td>
-        <td>Requisito</td>    
-        <td>Archivo</td>        
-    </tr>                   
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Requisito</td>    
+        <td align="center" bgcolor="#BDBDBD">Nombre del archivo</td>        
+    </tr> 
+    '.$html_administrativos.'
 </table>
+<br/><br/>
 <table>    
     <tr>
-        <td>N°</td>
-        <td>Requisito</td>    
-        <td>Link</td>        
-    </tr>                   
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Requisito</td>    
+        <td align="center" bgcolor="#BDBDBD">Link</td>        
+    </tr>       
+    '.$html_administrativos_link.'
 </table>
 <h3>Documentación técnica</h3>
 <table>    
     <tr>
-        <td>N°</td>
-        <td>Requisito</td>    
-        <td>Archivo</td>        
-    </tr>                   
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Requisito</td>    
+        <td align="center" bgcolor="#BDBDBD">Nombre del archivo</td>        
+    </tr>     
+    '.$html_tecnicos.'
 </table>
+<br/><br/>
 <table>    
     <tr>
-        <td>N°</td>
-        <td>Requisito</td>    
-        <td>Link</td>        
-    </tr>                   
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Requisito</td>    
+        <td align="center" bgcolor="#BDBDBD">Link</td>        
+    </tr> 
+    '.$html_tecnicos_link.'
 </table>
 ';
  echo $html;   
