@@ -82,7 +82,7 @@ $app->post('/menu', function () use ($app,$config) {
             //Consultar todos los permiso de la propuestas
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                    . "WHERE m.nombre='Propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+                    . "WHERE m.nombre='Búsqueda de propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_propuestas = $app->modelsManager->executeQuery($phql);
 
@@ -655,6 +655,15 @@ $app->post('/menu', function () use ($app,$config) {
                                 }
                                 ?>
                                 
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <li>
+                            <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>                                    
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

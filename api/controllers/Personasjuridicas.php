@@ -448,6 +448,9 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                 }
 
                 //Consulto los usuarios perfil del persona juridica
+                //SE QUITA LA VALIDACION 21 DE NOVIEMBRE DEL 2019
+                //DEBIDO QUE SIEMPRE DEBE LLEGAR EL PARTICIPANTE CON TIPO PARTICIPANTE
+                /*
                 $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (7)");
                 $id_usuarios_perfiles = "";
                 foreach ($array_usuario_perfil as $aup) {
@@ -457,32 +460,29 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
 
                 //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona juridica
                 $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
-
-                if (count($participante_verificado) > 0) {
+                */
+                
+                $participante = Participantes::findFirst($post["id"]);
+                
+                //if (count($participante_verificado) > 0) {
+                if ($participante->tipo!="Participante") {
                     $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado editar_participante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "participante_existente";
                 } else {
+                    $post["actualizado_por"] = $user_current["id"];
+                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
 
-                    //Valido si existe para editar o crear
-                    if (is_numeric($post["id"])) {
-                        $participante = Participantes::findFirst($post["id"]);
-                        $post["actualizado_por"] = $user_current["id"];
-                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-
-                        if ($participante->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pj hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                            $logger->close();
-                            echo "error";
-                        } else {
-                            //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pj hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                            $logger->close();
-                            echo $participante->id;
-                        }
+                    if ($participante->save($post) === false) {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pj hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
                     } else {
-                        
-                    }
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pj hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo $participante->id;
+                    }                    
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
