@@ -6,61 +6,81 @@ sudo nano pg_hba.conf
 #Ajustar las secuencias
 ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
 
+# Convocatorias Noviembre 6 del 2019
+ALTER TABLE propuestas ADD porque_medio TEXT;
 
-# Convocatorias Septiembre 19 del 2019
-ALTER TABLE convocatorias ADD palabras_claves TEXT;
-ALTER TABLE convocatorias ADD cerrada boolean DEFAULT false;
-ALTER TABLE convocatorias ADD cronograma boolean DEFAULT false;
-ALTER TABLE convocatorias ADD presupuesto boolean DEFAULT false;
-ALTER TABLE convocatorias ADD propuestas_permitidas boolean DEFAULT false;
-
-CREATE TABLE public.convocatoriaspropuestasparametros
+CREATE TABLE public.propuestasparametros
 (
   id serial NOT NULL,
-  label TEXT,
-  valores TEXT,
-  tipo_parametro TEXT,
-  campo TEXT,
-  orden integer,
-  obligatorio boolean DEFAULT false,
-  mensaje TEXT,
-  convocatoria integer NOT NULL,
-  active boolean DEFAULT true,
+  propuesta integer NOT NULL,
+  convocatoriapropuestaparametro integer NOT NULL,
+  valor TEXT,
   fecha_actualizacion timestamp without time zone,
   fecha_creacion timestamp without time zone,
   creado_por integer NOT NULL,
   actualizado_por integer,
-  CONSTRAINT convocatoriaspropuestasparametros_pkey PRIMARY KEY (id),
-  CONSTRAINT convocatoriaspropuestasparametros_convocatoria_fkey FOREIGN KEY (convocatoria)
-      REFERENCES public.convocatorias (id) MATCH SIMPLE
+  CONSTRAINT propuestasparametros_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasparametros_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT convocatoriaspropuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+  CONSTRAINT propuestasparametros_convocatoriapropuestaparametro_fkey FOREIGN KEY (convocatoriapropuestaparametro)
+      REFERENCES public.convocatoriaspropuestasparametros (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
 
-#Texto,Parrafo,Lista desplegable,Opción múltiple,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea
-UPDATE public.tablasmaestras SET valor='Texto,Parrafo,Lista desplegable,Casilla de verficación,Fecha,Titulo,Mensaje,Salto de línea' WHERE id=2;
+# Convocatorias Noviembre 7 del 2019
+ALTER TABLE propuestas ADD ejecucion_menores_edad boolean DEFAULT FALSE;
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('medio_se_entero','Alguien le contó,Correo electrónico,Equipos locales de cultura,Equipos locales de recreación y deporte,Portal web de la entidad,Portal Web de la Secretaría de Cultura, Recreación y Deporte,Prensa escrita,Radio,Redes sociales,Televisión',TRUE,NOW(),7);
+ALTER TABLE participantes ADD rol TEXT;
 
-comment on column participantes.tipo is 'Este campo permite diferenciar el participante dado que debe ser categorizado por Inicial,Participante,Integrante,RepresentanteLegal';
-comment on column participantes.participante_padre is 'Este campo referencia quien es el padre de los diferentes tipos Participante,Integrante,RepresentanteLegal';
+CREATE TABLE public.propuestasdocumentos
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  id_alfresco TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasdocumentos_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasdocumentos_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
 
-ALTER TABLE participantes ADD dv Integer;
-ALTER TABLE participantes ADD objeto_social TEXT;
-ALTER TABLE participantes ADD cuenta_sede boolean DEFAULT false;
-ALTER TABLE participantes ADD tipo_sede TEXT;
-
-INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tipo_sede', 'Propia,Alquiler', true);
-INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('condiciones_participacion_2019', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true);
-INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pn_2019', 'https://drive.google.com/file/d/10Op9QaU9FcK4uYIpjLboR-w4AC3OPfg-/view?usp=sharing', true);
-INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_pj_2019', 'https://drive.google.com/file/d/1uB7NDC58BV2icUEcx_ccx49wAllXrIrh/view?usp=sharing', true);
-INSERT INTO public.tablasmaestras (nombre, valor, active) VALUES ('tc_td_au_agr_2019', 'https://drive.google.com/file/d/18KsE_YbS8aTZMFZJkSCD47Wjt7ORtBWk/view?usp=sharing', true);
-
-ALTER TABLE participantes ADD terminos_condiciones boolean DEFAULT false;
-
-ALTER TABLE propuestas ADD localidad Integer;
-ALTER TABLE propuestas ADD upz Integer;
-ALTER TABLE propuestas ADD barrio Integer;
+CREATE TABLE public.propuestaslink
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  link TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestaslink_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestaslink_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
 
 
 

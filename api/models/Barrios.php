@@ -35,6 +35,13 @@ class Barrios extends Model
             'barrio_residencia'
         );
         
+        //Se define la relación con 1 a N con propuestas
+        $this->hasMany(
+            'id',
+            'Propuestas',
+            'barrio'
+        );  
+        
         
     }
     

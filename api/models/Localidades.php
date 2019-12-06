@@ -30,5 +30,12 @@ class Localidades extends Model
                 'foreignKey' => true
             ]
         );
+        
+        //Se define la relación con 1 a N con propuestas
+        $this->hasMany(
+            'id',
+            'Propuestas',
+            'localidad'
+        ); 
     }
 }
