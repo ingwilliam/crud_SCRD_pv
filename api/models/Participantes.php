@@ -10,7 +10,7 @@ class Participantes extends Model
    {
 
        $this->useDynamicUpdate(true);
-        
+
       //hasOne	Defines a 1-1 relationship
        $this->hasOne(
            'usuario_perfil',
@@ -24,7 +24,7 @@ class Participantes extends Model
            'Propuestas',
            'participante'
        );
-       
+
        //Se define relacion de N a 1 con Barrios
         $this->belongsTo(
             'barrio_residencia',
@@ -34,7 +34,7 @@ class Participantes extends Model
                 'alias' => "Barriosresidencia"
             ]
         );
-        
+
         //Se define relacion de N a 1 con Ciudades
         $this->belongsTo(
             'ciudad_nacimiento',
@@ -44,7 +44,7 @@ class Participantes extends Model
                 'alias' => "Ciudadesnacimiento"
             ]
         );
-        
+
         //Se define relacion de N a 1 con Ciudades
         $this->belongsTo(
             'ciudad_residencia',
@@ -54,42 +54,42 @@ class Participantes extends Model
                 'alias' => "Ciudadesresidencia"
             ]
         );
-       
+
         //Se define relacion de N a 1 con Tiposdocumentos
         $this->belongsTo(
             'tipo_documento',
             'Tiposdocumentos',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Sexos
         $this->belongsTo(
             'sexo',
             'Sexos',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Orientacionessexuales
         $this->belongsTo(
             'orientacion_sexual',
             'Orientacionessexuales',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Identidadesgeneros
         $this->belongsTo(
             'identidad_genero',
             'Identidadesgeneros',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Gruposetnicos
         $this->belongsTo(
             'grupo_etnico',
             'Gruposetnicos',
             'id'
         );
-        
+
    }
 
    public function validation(){
@@ -113,7 +113,7 @@ class Participantes extends Model
      if ($this->barrio_residencia == "") {
        $this->barrio_residencia = null;
      }
-     
+
      return true;
    }
 }
