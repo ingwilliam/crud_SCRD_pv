@@ -5,3 +5,85 @@ sudo nano pg_hba.conf
 
 #Ajustar las secuencias
 ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
+<<<<<<< HEAD
+
+# Convocatorias Noviembre 6 del 2019
+ALTER TABLE propuestas ADD porque_medio TEXT;
+
+CREATE TABLE public.propuestasparametros
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriapropuestaparametro integer NOT NULL,
+  valor TEXT,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasparametros_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasparametros_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasparametros_convocatoriapropuestaparametro_fkey FOREIGN KEY (convocatoriapropuestaparametro)
+      REFERENCES public.convocatoriaspropuestasparametros (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+# Convocatorias Noviembre 7 del 2019
+ALTER TABLE propuestas ADD ejecucion_menores_edad boolean DEFAULT FALSE;
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('medio_se_entero','Alguien le contó,Correo electrónico,Equipos locales de cultura,Equipos locales de recreación y deporte,Portal web de la entidad,Portal Web de la Secretaría de Cultura, Recreación y Deporte,Prensa escrita,Radio,Redes sociales,Televisión',TRUE,NOW(),7);
+ALTER TABLE participantes ADD rol TEXT;
+
+CREATE TABLE public.propuestasdocumentos
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  id_alfresco TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasdocumentos_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasdocumentos_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasdocumentos_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+CREATE TABLE public.propuestaslink
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  link TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestaslink_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestaslink_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestaslink_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+
+
+=======
+>>>>>>> desarrollo_cesar

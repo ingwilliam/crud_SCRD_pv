@@ -15,7 +15,15 @@ class Convocatoriaspropuestasparametros extends Model
             [
                 'foreignKey' => true
             ]
-        );                
+        );    
+        
+        //Se define la relación con 1 a N con Propuestasparametros
+        $this->hasMany(
+            'id',
+            'Propuestasparametros',
+            'convocatoriapropuestaparametro'
+        ); 
+        
         
     } 
     

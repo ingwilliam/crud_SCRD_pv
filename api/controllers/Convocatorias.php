@@ -8,6 +8,8 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -41,6 +43,15 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -345,7 +356,8 @@ $app->post('/new_categoria', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -376,7 +388,20 @@ $app->post('/new_categoria', function () use ($app, $config) {
                 if ($convocatoria->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $convocatoria->id;
+                    //Se crea la carpeta principal de la convocatoria
+                    if( $chemistry_alfresco->newFolder("/Sites/convocatorias", $convocatoria->id) == "ok" )
+                    {
+                        //Se crea las carpetas necesarias para los posibles archivos
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "documentacion");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "listados");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "avisos");
+                        $chemistry_alfresco->newFolder("/Sites/convocatorias/".$convocatoria->id, "propuestas");
+                        echo $convocatoria->id;
+                    }
+                    else
+                    {
+                        echo "error_alfresco";
+                    }                    
                 }
             } else {
                 echo "acceso_denegado";
@@ -755,6 +780,79 @@ $app->get('/load_search', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+//Modulo buscador
+$app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger){
+    
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+        
+    try {        
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+            
+            
+            $array=array();
+            for($i = date("Y"); $i >= 2016; $i--){
+                $array["anios"][] = $i;
+            }
+            $array["entidades"]= Entidades::find("active = true");
+            $array["areas"]= Areas::find("active = true");
+            $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
+            $array["programas"]= Programas::find("active = true");
+            $array["enfoques"]=Enfoques::find("active = true");
+            $array["estados_propuestas"] = Estados::find(
+                                                            array(
+                                                                "tipo_estado = 'propuestas' AND active = true",
+                                                                "order" => "orden"
+                                                            )
+                                                            );            
+            
+            $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información en el metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
+            
+            echo json_encode($array);
+                        
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+            
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo modulo_buscador_propuestas para cargar el formulario de busqueda' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
         echo "error_metodo";
     }
 }

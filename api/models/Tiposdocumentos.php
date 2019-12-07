@@ -6,15 +6,15 @@ class Tiposdocumentos extends Model
 {
     public $id;
 
-    //Cesar Britto
     public function initialize()
-   {
+    {
+        //Se define la relación con 1 a N con participantes
+        $this->hasMany(
+            'id',
+            'Participantes',
+            'tipo_documento'
+        );
 
-     //hasOne	Defines a 1-1 relationship
-    $this->hasOne(
-        'id',
-        'Participantes',
-        'tipo_documento'
-    );
-   }
+
+    }
 }

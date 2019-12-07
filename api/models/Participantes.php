@@ -25,13 +25,6 @@ class Participantes extends Model
            'participante'
        );
 
-        //hasOne	Defines a 1-1 relationship
-       $this->hasOne(
-           'tipo_documento',
-           'Tiposdocumentos',
-           'id'
-       );
-
        //Se define relacion de N a 1 con Barrios
         $this->belongsTo(
             'barrio_residencia',
@@ -60,6 +53,41 @@ class Participantes extends Model
             [
                 'alias' => "Ciudadesresidencia"
             ]
+        );
+
+        //Se define relacion de N a 1 con Tiposdocumentos
+        $this->belongsTo(
+            'tipo_documento',
+            'Tiposdocumentos',
+            'id'
+        );
+
+        //Se define relacion de N a 1 con Sexos
+        $this->belongsTo(
+            'sexo',
+            'Sexos',
+            'id'
+        );
+
+        //Se define relacion de N a 1 con Orientacionessexuales
+        $this->belongsTo(
+            'orientacion_sexual',
+            'Orientacionessexuales',
+            'id'
+        );
+
+        //Se define relacion de N a 1 con Identidadesgeneros
+        $this->belongsTo(
+            'identidad_genero',
+            'Identidadesgeneros',
+            'id'
+        );
+
+        //Se define relacion de N a 1 con Gruposetnicos
+        $this->belongsTo(
+            'grupo_etnico',
+            'Gruposetnicos',
+            'id'
         );
 
    }
