@@ -101,9 +101,6 @@ $app->get('/search', function () use ($app, $config) {
                            ]
                           );
 
-
-
-
                          $new_participante = clone $old_participante;
                          $new_participante->id = null;
                          $new_participante->actualizado_por = null;
@@ -117,17 +114,72 @@ $app->get('/search', function () use ($app, $config) {
                          $propuesta->convocatoria = $request->get('idc');
                          $propuesta->creado_por = $user_current["id"];
                          $propuesta->fecha_creacion = date("Y-m-d H:i:s");
+                         $propuesta->resumen = $old_participante->Propuestas->resumen;
                          //Estado	Registrada
                          $propuesta->estado = 7;
+
+                         //Educacionformal
+                         $educacionformales = array();
+                         foreach ($old_participante->Propuestas->Educacionformal as $key => $value) {
+                           $value->id = null;
+                           array_push($educacionformales, $value);
+                         }
+                         $propuesta->Educacionformal = $educacionformales;
+
+                         //Educacionnoformal
+                         $educacionnoformales = array();
+                         foreach ($old_participante->Propuestas->Educacionnoformal as $key => $value) {
+                           $value->id = null;
+                           array_push($educacionnoformales, $value);
+                         }
+                         $propuesta->Educacionnoformal = $educacionnoformales;
+
+                         //Experiencialaboral
+                         $experiencialaborales = array();
+                         foreach ($old_participante->Propuestas->Experiencialaboral as $key => $value) {
+                           $value->id = null;
+                           array_push($experiencialaborales, $value);
+                         }
+                         $propuesta->Experiencialaboral = $experiencialaborales;
+
+                         //Experienciajurado
+                         $experienciajurados = array();
+                         foreach ($old_participante->Propuestas->Experienciajurado as $key => $value) {
+                           $value->id = null;
+                           array_push($experienciajurados, $value);
+                         }
+                         $propuesta->Experienciajurado = $experienciajurados;
+
+                         //Propuestajuradoreconocimiento
+                         $propuestajuradoreconocimientos = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradoreconocimiento as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradoreconocimientos, $value);
+                         }
+                         $propuesta->Propuestajuradoreconocimiento = $propuestajuradoreconocimientos;
+
+                         //Propuestajuradopublicacion
+                         $propuestajuradopublicaciones = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradopublicacion as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradopublicaciones, $value);
+                         }
+                         $propuesta->Propuestajuradopublicacion = $propuestajuradopublicaciones;
+
+                         //Propuestajuradodocumento
+                         $propuestajuradodocumentos = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradodocumento as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradodocumentos, $value);
+                         }
+                         $propuesta->Propuestajuradodocumento = $propuestajuradodocumentos;
 
                          $new_participante->propuestas = $propuesta;
 
                          if ($new_participante->save() === false) {
 
                            //echo "error";
-
                            //Para auditoria en versión de pruebas
-
                            foreach ($new_participante->getMessages() as $message) {
                                    echo $message;
                                  }
@@ -145,6 +197,8 @@ $app->get('/search', function () use ($app, $config) {
 
                             //Asigno el nuevo participante al array
                             $array["participante"] = $new_participante;
+                            $array["perfil"] = $new_participante->propuestas->resumen;
+                            $participante = $new_participante;
                           }
 
                       }else{
@@ -152,7 +206,7 @@ $app->get('/search', function () use ($app, $config) {
                         //Asigno el participante al array
                         $array["participante"] = $participante;
                         //array_push($array["participante"], ["resumen" => $participante->propuestas->resumen] );
-                          $array["perfil"] = $participante->propuestas->resumen;
+                        $array["perfil"] = $participante->propuestas->resumen;
                       }
 
 
@@ -1104,12 +1158,13 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
+                      //  echo json_encode($participante->propuestas);
 
                        $educacionnoformales = Educacionnoformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -1693,8 +1748,8 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                        $experiencialaborales = Experiencialaboral::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR cargo LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( entidad LIKE '%".$request->get("search")['value']."%'"
+                           ." OR cargo LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2254,9 +2309,9 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                        $experienciajurados = Experienciajurado::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2816,9 +2871,9 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                        $reconocimientos = Propuestajuradoreconocimiento::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -3383,9 +3438,9 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                        $publicaciones = Propuestajuradopublicacion::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
                            ." OR tema LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -3920,7 +3975,7 @@ $app->get('/postular', function () use ($app, $config) {
                            $participante->propuestas->actualizado_por = $user_current["id"];
                            $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
 
-                        //  echo "educacionformal---->>".json_encode($educacionformal);
+                         //  echo "educacionformal---->>".json_encode($educacionformal);
                             //echo "post---->>".json_encode($post);
                            if ($participante->propuestas->save() === false) {
                                     //  return json_encode($user_current);
@@ -5055,7 +5110,8 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                          //caso 3,la convocatoria tiene categoria y las categorias tienen diferente cronograma
                          if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias){
 
-                           $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
+                          // $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
+                           $juradopostulado->convocatoria = $convocatoria->id;
 
                          }//caso 2,la convocatoria tiene categoria y las categorias tienen igual cronograma
                          elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias) {
@@ -5130,14 +5186,10 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                        ]
                      );
 
-
-
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
 
                        $convocatoria=array();
-
-
 
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
@@ -5157,16 +5209,15 @@ $app->get('/search_postulacion', function () use ($app, $config) {
 
                          $convocatoria['id']= $postulacion->convocatorias->id;
 
-                         if( $postulacion->Convocatorias &&  $postulacion->Convocatorias->diferentes_categorias ){
+                         if( $postulacion->Convocatorias &&  $postulacion->Convocatorias->Convocatorias->diferentes_categorias ){
 
                             $perfil = Convocatoriasparticipantes::findFirst($postulacion->perfil);
 
-                            $convocatoria['nombre'] = $postulacion->convocatorias->nombre." - ".$perfil->Convocatorias->nombre;
+                            $convocatoria['nombre'] = $postulacion->convocatorias->convocatorias->nombre." - ".$perfil->Convocatorias->nombre;
 
                          }else{
                            $convocatoria['nombre']= $postulacion->convocatorias->nombre;
                          }
-
 
 
                          $area =  Areas::findFirst(

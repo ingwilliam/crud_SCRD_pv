@@ -22,7 +22,15 @@ class Convocatorias extends Model {
          * obtener las categorias (Convocatorias)
          */
         $this->hasMany(
-                'id', 'Convocatorias', 'convocatoria_padre_categoria'
+                'id',
+                'Convocatorias',
+                'convocatoria_padre_categoria',
+                //Cesar Britto
+                /* Se define el alias para obtener las categorias (Convocatorias)
+                 */
+                [
+                  'alias' => 'Categorias',
+                ]
         );
 
         //Cesar Britto
