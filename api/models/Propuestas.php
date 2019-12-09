@@ -77,7 +77,7 @@ class Propuestas extends Model
             'Juradospostulados',
             'propuesta'
         );
-        
+
         //23 oct 2019->William Barbosa
         //Se define relacion de N a 1 con estado
         $this->belongsTo(
@@ -85,43 +85,51 @@ class Propuestas extends Model
             'Estados',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Barrios
         $this->belongsTo(
             'barrio',
             'Barrios',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Barrios
         $this->belongsTo(
             'upz',
             'Upzs',
             'id'
         );
-        
+
         //Se define relacion de N a 1 con Barrios
         $this->belongsTo(
             'localidad',
             'Localidades',
             'id'
-        );   
-        
+        );
+
         //Se define la relación con 1 a N con Propuestasdocumentos
         $this->hasMany(
             'id',
             'Propuestasdocumentos',
             'propuesta'
-        ); 
-        
+        );
+
         //Se define la relación con 1 a N con Propuestaslinks
         $this->hasMany(
             'id',
             'Propuestaslinks',
             'propuesta'
-        ); 
-        
-        
+        );
+
+
+
+        //hasMany	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Evaluacion',
+            'propuesta'
+        );
+
     }
 
 

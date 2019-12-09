@@ -110,11 +110,11 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                     if ($valor != "" && $clave != "nombre" && $clave != "estado") {
                         $where_convocatorias = $where_convocatorias . " AND c." . $clave . " = " . $valor;
                     }
-                    
+
                     if ($clave == "estado") {
-                        $estado_actual=$valor;                        
+                        $estado_actual=$valor;
                     }
-                    
+
                 }
             }
 
@@ -219,19 +219,19 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                         }
                     }
                 }
-                
+
                 //Realizo el filtro de estados
-                if ($estado_actual=="") {                    
-                    $json_convocatorias[] = $valor;                    
+                if ($estado_actual=="") {
+                    $json_convocatorias[] = $valor;
                 }
                 else
                 {
                     if($estado_actual==$valor->id_estado)
-                    {                        
+                    {
                         $json_convocatorias[] = $valor;
-                    }                    
+                    }
                 }
-                
+
             }
 
             foreach ($array_categorias AS $clave => $valor) {
@@ -255,19 +255,19 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                     }
                 }
 
-                
+
                 //Realizo el filtro de estados
-                if ($estado_actual=="") {                    
-                    $json_convocatorias[] = $valor;                    
+                if ($estado_actual=="") {
+                    $json_convocatorias[] = $valor;
                 }
                 else
                 {
                     if($estado_actual==$valor->id_estado)
-                    {                        
+                    {
                         $json_convocatorias[] = $valor;
-                    }                    
+                    }
                 }
-                
+
             }
 
             //creo el array
@@ -276,7 +276,7 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                 "recordsTotal" => intval($totalRecords["total"]),
                 "recordsFiltered" => intval($totalRecords["total"]),
                 "dataEstados" => $app->modelsManager->executeQuery($sqlTotEstado),
-                "data" => $json_convocatorias   // total data array            
+                "data" => $json_convocatorias   // total data array
             );
 
             //Registro la accion en el log de convocatorias
@@ -286,14 +286,14 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
             //retorno el array en json
             echo json_encode($json_data);
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
 
             echo json_encode("error_token");
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo busqueda_convocatorias ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -343,13 +343,13 @@ $app->get('/formulario_convocatorias', function () use ($app, $logger) {
 
             echo json_encode($array);
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo formulario_convocatorias ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -373,10 +373,10 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config, 
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
+
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consulto el cronograma de la convocatoria
             $conditions = ['convocatoria' => $id, 'active' => true];
             $consulta_cronogramas = Convocatoriascronogramas::find(([
@@ -386,7 +386,7 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config, 
             ]));
 
             //Creo el cronograma
-            foreach ($consulta_cronogramas as $evento) {     
+            foreach ($consulta_cronogramas as $evento) {
                 //Solo cargo los eventos publicos
                 if($evento->getTiposeventos()->publico)
                 {
@@ -399,7 +399,7 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config, 
                     }
                     $array_evento["descripcion"] = $evento->descripcion;
                     $cronogramas[] = $array_evento;
-                }                    
+                }
             }
 
             //Registro la accion en el log de convocatorias
@@ -407,13 +407,13 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config, 
             $logger->close();
             echo json_encode($cronogramas);
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_cronograma ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -440,20 +440,20 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
+
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             //Consulto la fecha de cierre del cronograma de la convocatoria
             $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
             $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                         'bind' => $conditions,
             ]));
-            $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());            
+            $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
             $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
             if ($fecha_actual > $fecha_cierre) {
-                //Registro la accion en el log de convocatorias           
+                //Registro la accion en el log de convocatorias
                 $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria('.$id.') no esta activa, la fecha de cierre es ('.$fecha_cierre_real->fecha_fin.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "error_fecha_cierre";
@@ -465,30 +465,30 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 $fecha_apertura_real = Convocatoriascronogramas::findFirst(([
                             'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                             'bind' => $conditions,
-                ]));                                
+                ]));
                 $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
                 if ($fecha_actual < $fecha_apertura) {
-                    //Registro la accion en el log de convocatorias           
+                    //Registro la accion en el log de convocatorias
                     $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria('.$id.') no esta activa, la fecha de apertura es ('.$fecha_apertura_real->fecha_fin.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error_fecha_apertura";
-                } 
-                else 
+                }
+                else
                 {
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la convocatoria('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
-                    echo "ingresar";  
-                }                                                
-            }            
+                    echo "ingresar";
+                }
+            }
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_acceso ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";

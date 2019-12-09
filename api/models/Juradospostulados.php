@@ -13,7 +13,7 @@ class Juradospostulados extends Model
         'convocatoria',
         'Convocatorias',
         'id',
-        ['alias' => 'Convocatorias']
+      //  ['alias' => 'Convocatorias']
       );
 
       //hasOne	Defines a 1-1 relationship

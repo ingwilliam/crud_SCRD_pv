@@ -101,9 +101,6 @@ $app->get('/search', function () use ($app, $config) {
                            ]
                           );
 
-
-
-
                          $new_participante = clone $old_participante;
                          $new_participante->id = null;
                          $new_participante->actualizado_por = null;
@@ -113,22 +110,91 @@ $app->get('/search', function () use ($app, $config) {
                          $new_participante->participante_padre = $old_participante->id;
                          $new_participante->tipo = "Participante";
 
+
+                         //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
+                         $sql_total_propuestas = "SELECT
+                                                         COUNT(p.id) as total_propuestas
+                                                 FROM Propuestas AS p
+                                                 WHERE
+                                                 p.convocatoria=" . $request->get('idc') ;
+
+                         $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
+                         $codigo_propuesta = $request->get('idc')."-".(str_pad($total_propuesta->total_propuestas+1, 3, "0", STR_PAD_LEFT));
+
+
                          $propuesta = new Propuestas();
                          $propuesta->convocatoria = $request->get('idc');
                          $propuesta->creado_por = $user_current["id"];
                          $propuesta->fecha_creacion = date("Y-m-d H:i:s");
-                         //Estado	Registrada
-                         $propuesta->estado = 7;
+                         $propuesta->resumen = $old_participante->Propuestas->resumen;
+                         $propuesta->nombre = $new_participante->primer_nombre.' '.$new_participante->segundo_nombre.' '.$new_participante->primer_apellido.' '.$new_participante->segundo_apellido;
+                         $propuesta->codigo= $codigo_propuesta;
+                         //Estado	9	jurados	Registrado
+                         $propuesta->estado = 9;
+
+                         //Educacionformal
+                         $educacionformales = array();
+                         foreach ($old_participante->Propuestas->Educacionformal as $key => $value) {
+                           $value->id = null;
+                           array_push($educacionformales, $value);
+                         }
+                         $propuesta->Educacionformal = $educacionformales;
+
+                         //Educacionnoformal
+                         $educacionnoformales = array();
+                         foreach ($old_participante->Propuestas->Educacionnoformal as $key => $value) {
+                           $value->id = null;
+                           array_push($educacionnoformales, $value);
+                         }
+                         $propuesta->Educacionnoformal = $educacionnoformales;
+
+                         //Experiencialaboral
+                         $experiencialaborales = array();
+                         foreach ($old_participante->Propuestas->Experiencialaboral as $key => $value) {
+                           $value->id = null;
+                           array_push($experiencialaborales, $value);
+                         }
+                         $propuesta->Experiencialaboral = $experiencialaborales;
+
+                         //Experienciajurado
+                         $experienciajurados = array();
+                         foreach ($old_participante->Propuestas->Experienciajurado as $key => $value) {
+                           $value->id = null;
+                           array_push($experienciajurados, $value);
+                         }
+                         $propuesta->Experienciajurado = $experienciajurados;
+
+                         //Propuestajuradoreconocimiento
+                         $propuestajuradoreconocimientos = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradoreconocimiento as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradoreconocimientos, $value);
+                         }
+                         $propuesta->Propuestajuradoreconocimiento = $propuestajuradoreconocimientos;
+
+                         //Propuestajuradopublicacion
+                         $propuestajuradopublicaciones = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradopublicacion as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradopublicaciones, $value);
+                         }
+                         $propuesta->Propuestajuradopublicacion = $propuestajuradopublicaciones;
+
+                         //Propuestajuradodocumento
+                         $propuestajuradodocumentos = array();
+                         foreach ($old_participante->Propuestas->Propuestajuradodocumento as $key => $value) {
+                           $value->id = null;
+                           array_push($propuestajuradodocumentos, $value);
+                         }
+                         $propuesta->Propuestajuradodocumento = $propuestajuradodocumentos;
 
                          $new_participante->propuestas = $propuesta;
 
                          if ($new_participante->save() === false) {
 
                            //echo "error";
-
                            //Para auditoria en versión de pruebas
-
-                           foreach ($participante->getMessages() as $message) {
+                           foreach ($new_participante->getMessages() as $message) {
                                    echo $message;
                                  }
 
@@ -145,12 +211,16 @@ $app->get('/search', function () use ($app, $config) {
 
                             //Asigno el nuevo participante al array
                             $array["participante"] = $new_participante;
+                            $array["perfil"] = $new_participante->propuestas->resumen;
+                            $participante = $new_participante;
                           }
 
                       }else{
-
+                        //echo $participante->propuestas->resumen;
                         //Asigno el participante al array
                         $array["participante"] = $participante;
+                        //array_push($array["participante"], ["resumen" => $participante->propuestas->resumen] );
+                        $array["perfil"] = $participante->propuestas->resumen;
                       }
 
 
@@ -217,7 +287,7 @@ $app->get('/search', function () use ($app, $config) {
       //  echo "error_metodo";
 
       //Para auditoria en versión de pruebas
-      echo "error_metodo: ". $ex->getMessage().json_encode($ex->getTrace());
+      echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
     }
 });
 
@@ -267,7 +337,8 @@ $app->post('/edit_participante', function () use ($app, $config) {
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
-                      $participante->propuestas = $propuesta;
+                      //$participante->propuestas = $propuesta;
+                      $participante->propuestas->resumen =$request->getPost('resumen') ;
 
                     if ($participante->save($post) === false) {
                         echo "error";
@@ -434,17 +505,20 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
+                      //  echo json_encode($participante->propuestas);
 
                        $educacionformales = Educacionformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND titulo LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
                          ]
                        );
+
+                        // echo json_encode($educacionformales);
 
                        foreach ($educacionformales as $educacionformal) {
 
@@ -591,8 +665,8 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                           ->getFirst();
 
                         //valido si la propuesta tiene el estado registrada
-                      //if( $propuesta != null and $propuesta->estado == 7 ){
-                        if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $educacionformal = new Educacionformal();
                          $educacionformal->creado_por = $user_current["id"];
@@ -764,7 +838,8 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $educacionformal = Educacionformal::findFirst($id);
                            $educacionformal->actualizado_por = $user_current["id"];
@@ -921,7 +996,8 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                      //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $educacionformal = Educacionformal::findFirst($id);
 
@@ -1098,12 +1174,13 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
+                      //  echo json_encode($participante->propuestas);
 
                        $educacionnoformales = Educacionnoformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
-                           ." OR institucion LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -1205,8 +1282,10 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                          ->andWhere("Propuestas.convocatoria = ".$request->getPost('idc'))
                          ->execute()
                          ->getFirst();
+
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $educacionnoformal = new Educacionnoformal();
                          $educacionnoformal->creado_por = $user_current["id"];
@@ -1374,7 +1453,8 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
                            $educacionnoformal = Educacionnoformal::findFirst($id);
                            $educacionnoformal->actualizado_por = $user_current["id"];
@@ -1505,7 +1585,8 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $educacionnoformal = Educacionnoformal::findFirst($id);
 
@@ -1687,8 +1768,8 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                        $experiencialaborales = Experiencialaboral::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR cargo LIKE '%".$request->get("search")['value']."%'",
+                           ." AND ( entidad LIKE '%".$request->get("search")['value']."%'"
+                           ." OR cargo LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -1798,7 +1879,8 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                          ->getFirst();
 
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $experiencialaboral = new Experiencialaboral();
                          $experiencialaboral->creado_por = $user_current["id"];
@@ -1942,7 +2024,8 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $experiencialaboral = Experiencialaboral::findFirst($id);
                            $experiencialaboral->actualizado_por = $user_current["id"];
@@ -2074,7 +2157,8 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
                       $experiencialaboral = Experiencialaboral::findFirst($id);
 
@@ -2248,9 +2332,9 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                        $experienciajurados = Experienciajurado::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2362,7 +2446,8 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                          ->getFirst();
 
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $experienciajurado = new Experienciajurado();
                          $experienciajurado->creado_por = $user_current["id"];
@@ -2505,7 +2590,8 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $experienciajurado = Experienciajurado::findFirst($id);
                            $experienciajurado->actualizado_por = $user_current["id"];
@@ -2638,7 +2724,8 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $experienciajurado = Experienciajurado::findFirst($id);
 
@@ -2810,9 +2897,9 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                        $reconocimientos = Propuestajuradoreconocimiento::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -2926,7 +3013,8 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
                          ->getFirst();
 
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $reconocimiento = new Propuestajuradoreconocimiento();
                          $reconocimiento->creado_por = $user_current["id"];
@@ -3069,7 +3157,8 @@ $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $reconocimiento= Propuestajuradoreconocimiento::findFirst($id);
                            $reconocimiento->actualizado_por = $user_current["id"];
@@ -3202,7 +3291,8 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $reconocimiento = Propuestajuradoreconocimiento::findFirst($id);
 
@@ -3377,9 +3467,9 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                        $publicaciones = Propuestajuradopublicacion::find(
                          [
                            " propuesta= ".$participante->propuestas->id
-                           ." AND titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
                            ." OR tema LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%' )",
                            "order" => 'id ASC',
                            "limit" =>  $request->get('length'),
                            "offset" =>  $request->get('start'),
@@ -3498,7 +3588,8 @@ $app->post('/new_publicacion', function () use ($app, $config) {
                          ->getFirst();
 
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $publicacion = new Propuestajuradopublicacion();
                          $publicacion->creado_por = $user_current["id"];
@@ -3645,7 +3736,8 @@ $app->post('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $publicacion= Propuestajuradopublicacion::findFirst($id);
                            $publicacion->actualizado_por = $user_current["id"];
@@ -3779,7 +3871,8 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $publicacion = Propuestajuradopublicacion::findFirst($id);
 
@@ -3908,13 +4001,15 @@ $app->get('/postular', function () use ($app, $config) {
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
-                           $participante->propuestas->estado = 8; //inscrita
+                          //10	jurados	Inscrito
+                           $participante->propuestas->estado = 10; //inscrita
                            $participante->propuestas->actualizado_por = $user_current["id"];
                            $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
 
-                        //  echo "educacionformal---->>".json_encode($educacionformal);
+                         //  echo "educacionformal---->>".json_encode($educacionformal);
                             //echo "post---->>".json_encode($post);
                            if ($participante->propuestas->save() === false) {
                                     //  return json_encode($user_current);
@@ -4253,7 +4348,8 @@ $app->post('/new_documento', function () use ($app, $config) {
                          ->getFirst();
 
                        //valido si la propuesta tiene el estado registrada
-                     if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                         //9	jurados	Registrado
+                     if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          $documento = new Propuestajuradodocumento();
                          $documento->creado_por = $user_current["id"];
@@ -4399,7 +4495,8 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                       if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                           //9	jurados	Registrado
+                       if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $documento= Propuestajuradodocumento::findFirst($id);
                            $documento->actualizado_por = $user_current["id"];
@@ -4533,7 +4630,8 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
                       ->getFirst();
 
                       //valido si la propuesta tiene el estado registrada
-                    if( $participante->propuestas != null and $participante->propuestas->estado == 7 ){
+                        //9	jurados	Registrado
+                    if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                       $documento = Propuestajuradodocumento::findFirst($id);
 
@@ -4659,80 +4757,90 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
+
                       $postulaciones = $participante->propuestas->juradospostulados;
 
+                      //se crea el array con los id de las convocatorias a las cuales aplicó el jurado
                       foreach ($postulaciones as $postulacion) {
 
-                           array_push($id_convocatorias_postuladas,$postulacion->convocatorias->id);
+                          if( $postulacion->convocatorias->tiene_categorias && $postulacion->convocatorias->diferentes_categorias ){
+
+                            $perfil = Convocatoriasparticipantes::findFirst($postulacion->perfil);
+
+                            array_push($id_convocatorias_postuladas,$perfil->convocatorias->id);
+
+                          }else{
+
+                             array_push($id_convocatorias_postuladas,$postulacion->convocatorias->id);
+
+                          }
+
+
                       }
 
 
+                      $convocatorias = Convocatorias::query()
+                            ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
+                            ->andWhere(" Convocatorias.area = ".$request->get('area') )
+                            //palabra clave
+                            ->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                            //5	convocatorias	Publicada
+                            ->andWhere(" Convocatorias.estado = 5 ")
+                            ->andWhere(" Convocatorias.active = true  ")
+                            ->andWhere(" Convocatorias.modalidad != 2  ")
+                          //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                            ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                            ->andWhere(" Convocatoriascronogramas.active = true  ")
+                            //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                            ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                            ->order(' Convocatorias.id ASC ')
+                            ->limit(  "".$request->get('length'), "".$request->get('start') )
+                            ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
+                            ->execute();
 
 
-                       $convocatorias = Convocatorias::find(
-                         [
-                           " id NOT IN ({idConvocatoria:array}) "
-                           ." AND area = ".$request->get('area')
-                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
-                           ." OR descripcion LIKE '%".$request->get("search")['value']."%') "
-                           ." AND estado = 5 " //estado publicada
-                           ." AND active = true " //activa
-                           ." AND modalidad != 2 ", //jurados
-                           "order" => 'id ASC',
-                           "limit" =>  $request->get('length'),
-                           "offset" =>  $request->get('start'),
-                           "bind" => [
-                             "idConvocatoria" => $id_convocatorias_postuladas
-                           ],
-                         ]
-                       );
+                          //  echo json_encode($convocatorias);
 
-                      //  echo json_encode($convocatorias);
+                            foreach ($convocatorias as $convocatoria) {
 
-                       foreach ($convocatorias as $convocatoria) {
+                              //echo json_encode($convocatoria->Convocatorias);
 
-                         $cronograma = Convocatoriascronogramas::findFirst(
-                           [
-                             "convocatoria = ".$convocatoria->id
-                             ." AND tipo_evento = 12 " //12	Fecha de cierre
-                             ." AND active = true"
-                           ]);
+                                  if( $convocatoria->Convocatorias &&  $convocatoria->Convocatorias->diferentes_categorias ){
+                                    $convocatoria->nombre = $convocatoria->Convocatorias->nombre." - ".$convocatoria->nombre;
+                                  }
 
-                           //Agrega la convocatoria si la fecha de cierre tiene mas de 48 horas (2 dias)
-                         if ( strtotime($cronograma->fecha_fin) >= strtotime(date("Y-m-d H:i:s",strtotime($fecha_actual."+ 2 days") ) ) ){
+                                  $area =  Areas::findFirst(
+                                    ["id=".$convocatoria->area]
+                                  );
+                                  $convocatoria->area = $area->nombre;
 
-                             $area =  Areas::findFirst(
-                               ["id=".$convocatoria->area]
-                             );
-                             $convocatoria->area = $area->nombre;
+                                  $lineaestrategica =  Lineasestrategicas::findFirst(
+                                    ["id=".$convocatoria->linea_estrategica]
+                                  );
+                                  $convocatoria->linea_estrategica = $lineaestrategica->nombre;
 
-                             $lineaestrategica =  Lineasestrategicas::findFirst(
-                               ["id=".$convocatoria->linea_estrategica]
-                             );
-                             $convocatoria->linea_estrategica = $lineaestrategica->nombre;
+                                  $programa =  Programas::findFirst(
+                                    ["id=".$convocatoria->programa]
+                                  );
+                                  $convocatoria->programa = $programa->nombre;
 
-                             $programa =  Programas::findFirst(
-                               ["id=".$convocatoria->programa]
-                             );
-                             $convocatoria->programa = $programa->nombre;
+                                  $entidad =  Entidades::findFirst(
+                                    ["id=".$convocatoria->entidad]
+                                  );
+                                  $convocatoria->entidad = $entidad->nombre;
 
-                             $entidad =  Entidades::findFirst(
-                               ["id=".$convocatoria->entidad]
-                             );
-                             $convocatoria->entidad = $entidad->nombre;
-
-                             $enfoque =  Enfoques::findFirst(
-                               ["id=".$convocatoria->enfoque]
-                             );
-                             $convocatoria->enfoque = $enfoque->nombre;
+                                  $enfoque =  Enfoques::findFirst(
+                                    ["id=".$convocatoria->enfoque]
+                                  );
+                                  $convocatoria->enfoque = $enfoque->nombre;
 
 
-                             $convocatoria->creado_por = null;
-                             $convocatoria->actualizado_por = null;
+                                  $convocatoria->creado_por = null;
+                                  $convocatoria->actualizado_por = null;
 
-                             array_push($response,$convocatoria);
-                           }
-                       }
+                                  array_push($response,$convocatoria);
+                                }
 
                        //resultado sin filtro
                        $tconvocatorias = Convocatorias::find(
@@ -4747,6 +4855,26 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                            ],
                          ]
                        );
+
+                       $tconvocatorias = Convocatorias::query()
+                             ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
+                             ->andWhere(" Convocatorias.area = ".$request->get('area') )
+                             //palabra clave
+                             //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                             ->andWhere(" Convocatorias.estado = 5 ")
+                             ->andWhere(" Convocatorias.active = true  ")
+                             ->andWhere(" Convocatorias.modalidad != 2  ")
+                           //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                             ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                             ->andWhere(" Convocatoriascronogramas.active = true  ")
+                             //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                             ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                             ->order(' Convocatorias.id ASC ')
+                             ->limit(  "".$request->get('length'), "".$request->get('start') )
+                             ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
+                             ->execute();
+
 
                      }
 
@@ -4826,8 +4954,6 @@ $app->get('/postulacion_perfiles_convocatoria', function () use ($app, $config) 
                          array_push($response,$perfil);
                        }
 
-
-
                      }
 
             }
@@ -4901,13 +5027,19 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
+                      //9	jurados	Registrado
+                       if($participante->propuestas->estado == 9){
+                          return "error";
+                       }
+
                        $postulaciones = $participante->propuestas->juradospostulados;
 
+                       //Calcula el numero de postulaciones del jurado
                        //echo "cantidad-->".$postulaciones->count();
                        foreach ($postulaciones as $postulacion) {
 
-                         //si la convocatoria esta activa y esta publicada
-                          if($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5){
+                         //la convocatoria está activa y está publicada
+                          if( $postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active){
                             $contador++;
                           }
 
@@ -4919,32 +5051,53 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                           ]
                         );
 
-                        //echo "sssss--->>>".(int)$nummax->valor."  contador-->".$contador;
-                      //limite tabla maestra
+
+                       //Controla el límite de postulaciones
+                       //limite tabla maestra
                        if( $contador < (int)$nummax->valor){
-                         //guardar registro
+
 
                          $juradopostulado = new Juradospostulados();
                          $juradopostulado->propuesta = $participante->propuestas->id;
-                         $juradopostulado->convocatoria = $request->getPut('idregistro');
-                         $juradopostulado->estado =  9;
+                         $juradopostulado->estado =  9; //estado de la propuesta del jurado, 9 jurados	Registrado
                          $juradopostulado->creado_por = $user_current["id"];
                          $juradopostulado->fecha_creacion = date("Y-m-d H:i:s");
                          $juradopostulado->tipo_postulacion = 'Inscrita';
+                         $juradopostulado->perfil = $request->getPut('perfil');
                          $juradopostulado->active =  true;
 
+                         $convocatoria = Convocatorias::findFirst($request->getPut('idregistro'));
 
-                         if ($juradopostulado->save() === false) {
-                           //  return json_encode($user_current);
+                         //caso 3,la convocatoria tiene categoria y las categorias tienen diferente cronograma
+                         if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias){
 
-                            //Para auditoria en versión de pruebas
-                            foreach ($juradopostulado->getMessages() as $message) {
-                                 echo $message;
-                               }
-                         }
+                          // $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
+                           $juradopostulado->convocatoria = $convocatoria->id;
 
-                        // return "registro guardado";
-                         return $juradopostulado->id;
+                         }//caso 2,la convocatoria tiene categoria y las categorias tienen igual cronograma
+                         elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias) {
+
+                            $juradopostulado->convocatoria = $convocatoria->id;
+
+                         }//caso 1, la convocatoria  no tiene categoria
+                         elseif (!$convocatoria->tiene_categorias) {
+
+                           $juradopostulado->convocatoria = $request->getPut('idregistro');
+
+                         }//end elseif (!$convocatoria->tiene_categorias)
+
+                         //guardar registro
+                        if ($juradopostulado->save() === false) {
+
+                          //return "error";
+                          //Para auditoria en versión de pruebas
+                          foreach ($juradopostulado->getMessages() as $message) {
+                            echo $message;
+                          }
+
+                        }
+
+                        return $juradopostulado->id;
 
                        }else{
                          return "error_limite";
@@ -4961,7 +5114,7 @@ $app->post('/new_postulacion', function () use ($app, $config) {
             return "error_token";
         }
     } catch (Exception $ex) {
-        //echo "error_metodo".$ex->getMessage();
+        //echo "error_metodo"
         //Para auditoria en versión de pruebas
         echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
     }
@@ -4994,11 +5147,10 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                        ]
                      );
 
-
-
                     // return json_encode($usuario_perfil);
                      if( $usuario_perfil->id != null ){
 
+                       $convocatoria=array();
 
                        $participante = Participantes::query()
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
@@ -5016,37 +5168,56 @@ $app->get('/search_postulacion', function () use ($app, $config) {
 
                        foreach ($postulaciones as $postulacion) {
 
+                         $convocatoria['id']= $postulacion->convocatorias->id;
+
+                         if( $postulacion->Convocatorias &&  $postulacion->Convocatorias->Convocatorias->diferentes_categorias ){
+
+                            $perfil = Convocatoriasparticipantes::findFirst($postulacion->perfil);
+
+                            $convocatoria['nombre'] = $postulacion->convocatorias->convocatorias->nombre." - ".$perfil->Convocatorias->nombre;
+
+                         }else{
+                           $convocatoria['nombre']= $postulacion->convocatorias->nombre;
+                         }
+
+
                          $area =  Areas::findFirst(
                            ["id=".$postulacion->convocatorias->area]
                          );
                          $postulacion->convocatorias->area = $area->nombre;
+                         $convocatoria['area']= $area->nombre;
 
                          $lineaestrategica =  Lineasestrategicas::findFirst(
                            ["id=".$postulacion->convocatorias->linea_estrategica]
                          );
                         $postulacion->convocatorias->linea_estrategica = $lineaestrategica->nombre;
+                        $convocatoria['linea_estrategica']= $lineaestrategica->nombre;
 
                          $programa =  Programas::findFirst(
                            ["id=".$postulacion->convocatorias->programa]
                          );
                         $postulacion->convocatorias->programa = $programa->nombre;
+                        $convocatoria['programa']=  $programa->nombre;
 
                          $entidad =  Entidades::findFirst(
                            ["id=".$postulacion->convocatorias->entidad]
                          );
                          $postulacion->convocatorias->entidad = $entidad->nombre;
+                         $convocatoria['entidad']=  $entidad->nombre;
 
                          $enfoque =  Enfoques::findFirst(
                            ["id=".$postulacion->convocatorias->enfoque]
                          );
                          $postulacion->convocatorias->enfoque = $enfoque->nombre;
-
+                         $convocatoria['enfoque']=   $enfoque->nombre;
 
                          $postulacion->convocatorias->creado_por = null;
                          $postulacion->convocatorias->actualizado_por = null;
 
+
                         // array_push($response,$postulacion->convocatorias);
-                         array_push($response,["postulacion"=>$postulacion, "convocatoria"=>$postulacion->convocatorias]);
+                      //   array_push($response,["postulacion"=>$postulacion, "convocatoria"=>$postulacion->convocatorias]);
+                          array_push($response,["postulacion"=>$postulacion, "convocatoria"=>$convocatoria]);
                        }
 
 
@@ -5129,14 +5300,49 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
 
                       $juradospostulado = Juradospostulados::findFirst($id);
 
+                      //9	jurados	Registrado
+                      if($participante->propuestas->estado == 9){
+                         return "error";
+                      }
+
+                      $postulaciones = $participante->propuestas->juradospostulados;
+
+                      //Calcula el numero de postulaciones del jurado
+                      //echo "cantidad-->".$postulaciones->count();
+                      foreach ($postulaciones as $postulacion) {
+
+                        //la convocatoria está activa y está publicada
+                         if( $postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active){
+                           $contador++;
+                         }
+
+                       }
+
+                       $nummax = Tablasmaestras::findFirst(
+                         [
+                         " nombre = 'numero_maximo_postulaciones_jurado'"
+                         ]
+                       );
+
+                       //9	jurados	Registrado
                     if( $juradospostulado != null and $juradospostulado->estado == 9 ){
 
                       if($juradospostulado->active==true){
                           $juradospostulado->active=false;
                           $retorna="No";
                       }else{
+
+                        //Controla el límite de postulaciones
+                        //limite tabla maestra
+                        if( $contador < (int)$nummax->valor){
                           $juradospostulado->active=true;
                           $retorna="Si";
+
+                        }else {
+                         return "error_limite";
+                        }
+
+
                       }
 
                       $juradospostulado->actualizado_por = $user_current["id"];

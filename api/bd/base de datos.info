@@ -5,6 +5,7 @@ sudo nano pg_hba.conf
 
 #Ajustar las secuencias
 ALTER SEQUENCE [nombre_secuencia] RESTART WITH [valor];
+<<<<<<< HEAD
 
 # Convocatorias Noviembre 6 del 2019
 ALTER TABLE propuestas ADD porque_medio TEXT;
@@ -84,3 +85,5 @@ CREATE TABLE public.propuestaslink
 
 
 
+=======
+>>>>>>> desarrollo_cesar
