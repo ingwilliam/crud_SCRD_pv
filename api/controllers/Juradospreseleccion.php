@@ -127,6 +127,7 @@ $app->get('/select_convocatorias', function () use ($app) {
                       " entidad = ".$request->get('entidad')
                       ." AND anio = ".$request->get('anio')
                       ." AND estado = 5 "
+                      ." AND modalidad != 2 " //2	Jurados
                       ." AND active = true "
                       ." AND convocatoria_padre_categoria is NULL"
                   ]
@@ -1639,7 +1640,7 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
 
                 $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion');
                 $postulacion->aplica_perfil = $request->getPut('option_aplica_perfil');
-                $postulacion->estado = 10; //10	jurados	Verificado
+                $postulacion->estado = 11; //11	jurados	Verificado
                 $postulacion->active =  true;
 
 
@@ -1770,7 +1771,9 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                 $juradospostulado = Juradospostulados::findFirst($request->get('postulacion'));
 
-                if ( $juradospostulado->estado != 11 &&  $juradospostulado->estado != 12){
+                //12	jurados	Evaluado
+                //13	jurados	Seleccionado
+                if ( $juradospostulado->estado != 12 &&  $juradospostulado->estado != 13){
 
                   $criterios = Convocatoriasrondascriterios::find(
                     [
@@ -1841,7 +1844,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
 
                     $juradospostulado->total_evaluacion = $total_evaluacion;
-                    $juradospostulado->estado = 11; //11	jurados	Evaluado
+                    $juradospostulado->estado = 12; //12	jurados	Evaluado
                     $juradospostulado->actualizado_por = $user_current["id"];
                     $juradospostulado->fecha_actualizacion =  date("Y-m-d H:i:s");
 
@@ -1919,7 +1922,8 @@ $app->put('/seleccionar_perfil', function () use ($app, $config) {
                 //caso 2
                 if($postulacion->convocatorias->tiene_categorias && !$postulacion->convocatorias->diferentes_categorias && $request->getPut('idcat')){
 
-                    $phql = 'UPDATE Juradospostulados SET estado = 12 , actualizado_por = ?0, fecha_actualizacion = ?1, convocatoria = ?2 WHERE id = ?3';
+                    //13	jurados	Seleccionado
+                    $phql = 'UPDATE Juradospostulados SET estado = 13 , actualizado_por = ?0, fecha_actualizacion = ?1, convocatoria = ?2 WHERE id = ?3';
 
                     $result =  $app->modelsManager->executeQuery(
                           $phql,
