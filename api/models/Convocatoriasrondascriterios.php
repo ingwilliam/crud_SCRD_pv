@@ -17,7 +17,12 @@ class Convocatoriasrondascriterios extends Model
             ]
         );
 
-
+        //hasMany 	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Evaluacion',
+            'criterio'
+        );
 
     }
 
