@@ -87,3 +87,9 @@ CREATE TABLE public.propuestaslink
 
 =======
 >>>>>>> desarrollo_cesar
+
+# Convocatorias Enero 2 del 2020
+UPDATE public.tiposparticipantes SET active=FALSE WHERE id=4;
+
+
+

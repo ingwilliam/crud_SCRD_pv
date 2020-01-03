@@ -410,7 +410,7 @@ $app->post('/new_categoria', function () use ($app, $config) {
             echo "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo".$ex->getMessage();
+        echo "error_metodo";
     }
 }
 );
@@ -733,7 +733,7 @@ $app->get('/search', function () use ($app) {
 
 
             $array["recursos_no_pecunarios"]= Recursosnopecuniarios::find("active=true");
-            for($i = date("Y"); $i >= 2016; $i--){
+            for($i = date("Y")+1; $i >= 2016; $i--){
                 $array["anios"][] = $i;
             }
             echo json_encode($array);
@@ -760,7 +760,7 @@ $app->get('/load_search', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             $array=array();
-            for($i = date("Y"); $i >= 2016; $i--){
+            for($i = date("Y")+1; $i >= 2016; $i--){
                 $array["anios"][] = $i;
             }
             $array["entidades"]= Entidades::find("active = true");

@@ -392,6 +392,23 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         'order' => 'orden ASC',
             ]));
+            
+            $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                        'bind' => $conditions,
+            ]));
+
+            foreach ($consulta_rondas_evaluacion as $ronda) {
+                $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
+                $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
+                $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
+                $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
+                                [
+                                    "convocatoria_ronda = " . $ronda->id . "",
+                                    "order" => 'orden'
+                                ]
+                );
+            }
         }
 
         //consulto los tipos anexos documentacion, aplica para las convocatorias sencillas, categorias generales y especiales
