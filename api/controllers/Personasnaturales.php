@@ -123,7 +123,7 @@ $app->post('/new', function () use ($app, $config) {
                 }
 
                 //Consulto los usuarios perfil del jurado y persona natural
-                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17)");
+                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17,8)");
                 $id_usuarios_perfiles = "";
                 foreach ($array_usuario_perfil as $aup) {
                     $id_usuarios_perfiles = $id_usuarios_perfiles . $aup->id . ",";
