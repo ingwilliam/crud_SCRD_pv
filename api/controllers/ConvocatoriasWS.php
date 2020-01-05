@@ -66,6 +66,9 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["no_pueden_participar"] = $convocatoria->no_pueden_participar;
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
         $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
+        
+        $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   
+        $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
 
         $tipo_convocatoria = "";
 
