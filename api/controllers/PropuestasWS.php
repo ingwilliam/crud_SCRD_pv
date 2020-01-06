@@ -160,64 +160,11 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
 
-                $html = '<!-- EXAMPLE OF CSS STYLE -->
-<style>
-        table {
-		font-size: 10pt;	
-	}
-        
-	td {
-		border: 1px solid #E3E3E3;	
-                background-color: #ffffee;
-	}
-</style>
-<h2  style="text-align:center;">CERTIFICADO DE INSCRIPCIÓN</h2>
-<h3>Información de la propuesta</h3>        
-<p>Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.</p>
-<table>
-    <tr>
-        <td colspan="2"><b>Código</b></td>
-        <td colspan="2"><b>' . $propuesta->codigo . '</b></td>            
-    </tr>    
-    <tr>
-        <td>Nombre de la convocatoria</td>
-        <td>' . $nombre_convocatoria . '</td>    
-        <td>Categoría de la convocatoria</td>
-        <td>' . $nombre_categoria . '</td>
-    </tr>    
-    <tr>
-        <td>Nombre del participante</td>
-        <td>' . $participante . '</td>
-        <td>Tipo de participante</td>
-        <td>' . $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre . '</td>
-    </tr>    
-    <tr>
-        <td><b>Estado</b></td>
-        <td><b>' . $propuesta->getEstados()->nombre . '</b></td>
-        <td>Nombre de la propuesta</td>
-        <td>' . $propuesta->nombre . '</td>
-    </tr>    
-    <tr>
-        <td>Resumen de la propuesta</td>
-        <td>' . $propuesta->resumen . '</td>
-        <td>Objetivo de la propuesta</td>
-        <td>' . $propuesta->objetivo . '</td>
-    </tr>    
-    <tr>
-        <td>¿Su propuesta se desarrolla en Bogotá D.C.?</td>
-        <td>' . $bogota . '</td>
-        <td>Localidad</td>
-        <td>' . $propuesta->getLocalidades()->nombre . '</td>
-    </tr>    
-    <tr>
-        <td>Upz</td>
-        <td>' . $propuesta->getUpzs()->nombre . '</td>
-        <td>Barrio</td>
-        <td>' . $propuesta->getBarrios()->nombre . '</td>
-    </tr>    
-</table>
-<h3>Información del participante</h3>
-<table>
+                //Creo la tabla deacuerdo al tipo de participante
+                //Participante natural
+                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==6)
+                {
+$tabla_participante = '<table>
     <tr>
         <td>Tipo de documento de identificación</td>
         <td>' . $propuesta->getParticipantes()->getTiposdocumentos()->descripcion . '</td>    
@@ -284,7 +231,220 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
+</table>';                    
+                }
+                //Participante juridico
+                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==7)
+                {
+$conditions = ['id' => $propuesta->getParticipantes()->participante_padre, 'participante_padre' => $propuesta->getParticipantes()->participante_padre, 'tipo' => 'Junta', 'active' => true];
+
+//Se crea todo el array de las rondas de evaluacion
+$consulta_integrantes = Participantes::find(([
+            'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+            'bind' => $conditions,
+            "order" => 'id'
+]));                    
+
+$i = 1;    
+$html_integrantes = "";
+foreach ($consulta_integrantes as $integrante) {                
+        $html_integrantes = $html_integrantes . "<tr>";
+        $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";        
+        $html_integrantes = $html_integrantes . "</tr>";
+        $i++;                
+}                    
+                    
+                    
+                   $cuenta_sede= ($propuesta->getParticipantes()->cuenta_sede) ? 'Sí':'No';
+$tabla_participante = '<table>
+    <tr>
+        <td>Tipo de documento de identificación</td>
+        <td>' . $propuesta->getParticipantes()->getTiposdocumentos()->descripcion . '</td>    
+        <td>Número de Nit</td>
+        <td>' . $propuesta->getParticipantes()->numero_documento . '</td>
+    </tr>    
+    <tr>
+        <td>DV</td>
+        <td>' . $propuesta->getParticipantes()->dv . '</td>
+        <td>Razón Social</td>
+        <td>' . $propuesta->getParticipantes()->primer_nombre . '</td>
+    </tr>       
+    <tr>
+        <td>Municipio</td>
+        <td>' . $propuesta->getParticipantes()->getCiudadesresidencia()->nombre . '</td>
+        <td>Barrio</td>
+        <td>' . $propuesta->getParticipantes()->getBarriosresidencia()->nombre . '</td>
+    </tr>    
+    <tr>
+        <td>Estrato</td>
+        <td>' . $propuesta->getParticipantes()->estrato . '</td>
+        <td>Dirección</td>
+        <td>' . $propuesta->getParticipantes()->direccion_residencia . '</td>        
+    </tr>    
+    <tr>
+        <td>Teléfono fijo</td>
+        <td>' . $propuesta->getParticipantes()->numero_telefono . '</td>
+        <td>Número de celular</td>
+        <td>' . $propuesta->getParticipantes()->numero_celular . '</td>
+    </tr>    
+    <tr>
+        <td>Objeto Social</td>
+        <td>' . $propuesta->getParticipantes()->objeto_social . '</td>
+        <td>Fecha de Constitución</td>
+        <td>' . $propuesta->getParticipantes()->fecha_nacimiento . '</td>
+    </tr>    
+    <tr>
+        <td>Correo electrónico</td>
+        <td>' . $propuesta->getParticipantes()->correo_electronico . '</td>
+        <td>¿Cuenta con sede?</td>
+        <td>' . $cuenta_sede . '</td>
+    </tr>    
+    <tr>
+        <td>Tipo de sede</td>
+        <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
+        <td>Redes sociales</td>
+        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+    </tr> 
+    <tr>
+        <td>Página web, vínculo o blog</td>
+        <td>' . $propuesta->getParticipantes()->links . '</td>
+    </tr> 
 </table>
+<h3>Junta directiva</h3>
+<table>    
+    <tr>
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Tipo de documento</td>    
+        <td align="center" bgcolor="#BDBDBD">Número de documento de identificación</td>    
+        <td align="center" bgcolor="#BDBDBD">Nombres</td>        
+        <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
+        <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
+    </tr> 
+    ' . $html_integrantes. '
+</table>
+';                    
+                }
+                //Participante agrupacion
+                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==8)
+                {
+                    
+$conditions = ['id' => $propuesta->getParticipantes()->participante_padre, 'participante_padre' => $propuesta->getParticipantes()->participante_padre, 'tipo' => 'Integrante', 'active' => true];
+
+//Se crea todo el array de las rondas de evaluacion
+$consulta_integrantes = Participantes::find(([
+            'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+            'bind' => $conditions,
+            "order" => 'id'
+]));                    
+
+$i = 1;    
+$html_integrantes = "";
+foreach ($consulta_integrantes as $integrante) {                
+        $html_integrantes = $html_integrantes . "<tr>";
+        $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";        
+        $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";        
+        $html_integrantes = $html_integrantes . "</tr>";
+        $i++;                
+}
+
+                    
+$tabla_participante = '<table>
+    <tr>
+        <td>Nombre de la agrupación</td>
+        <td>' . $propuesta->getParticipantes()->primer_nombre . '</td>
+        <td>Correo electrónico de la entidad</td>
+        <td>' . $propuesta->getParticipantes()->correo_electronico . '</td>
+    </tr>    
+    <tr>        
+        <td>Redes sociales</td>
+        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>Página web, vínculo o blog</td>
+        <td>' . $propuesta->getParticipantes()->links . '</td>
+    </tr> 
+</table>
+<h3>Integrantes</h3>
+<table>    
+    <tr>
+        <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">Tipo de documento</td>    
+        <td align="center" bgcolor="#BDBDBD">Número de documento de identificación</td>    
+        <td align="center" bgcolor="#BDBDBD">Nombres</td>        
+        <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
+        <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
+    </tr> 
+    ' . $html_integrantes. '
+</table>
+';                     
+                }
+                
+                
+                $html = '<!-- EXAMPLE OF CSS STYLE -->
+<style>
+        table {
+		font-size: 10pt;	
+	}
+        
+	td {
+		border: 1px solid #E3E3E3;	
+                background-color: #ffffee;
+	}
+</style>
+<h2  style="text-align:center;">CERTIFICADO DE INSCRIPCIÓN</h2>
+<h3>Información de la propuesta</h3>        
+<p>Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.</p>
+<table>
+    <tr>
+        <td colspan="2"><b>Código</b></td>
+        <td colspan="2"><b>' . $propuesta->codigo . '</b></td>            
+    </tr>    
+    <tr>
+        <td>Nombre de la convocatoria</td>
+        <td>' . $nombre_convocatoria . '</td>    
+        <td>Categoría de la convocatoria</td>
+        <td>' . $nombre_categoria . '</td>
+    </tr>    
+    <tr>
+        <td>Nombre del participante</td>
+        <td>' . $participante . '</td>
+        <td>Tipo de participante</td>
+        <td>' . $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre . '</td>
+    </tr>    
+    <tr>
+        <td><b>Estado</b></td>
+        <td><b>' . $propuesta->getEstados()->nombre . '</b></td>
+        <td>Nombre de la propuesta</td>
+        <td>' . $propuesta->nombre . '</td>
+    </tr>    
+    <tr>
+        <td>Resumen de la propuesta</td>
+        <td>' . $propuesta->resumen . '</td>
+        <td>Objetivo de la propuesta</td>
+        <td>' . $propuesta->objetivo . '</td>
+    </tr>    
+    <tr>
+        <td>¿Su propuesta se desarrolla en Bogotá D.C.?</td>
+        <td>' . $bogota . '</td>
+        <td>Localidad</td>
+        <td>' . $propuesta->getLocalidades()->nombre . '</td>
+    </tr>    
+    <tr>
+        <td>Upz</td>
+        <td>' . $propuesta->getUpzs()->nombre . '</td>
+        <td>Barrio</td>
+        <td>' . $propuesta->getBarrios()->nombre . '</td>
+    </tr>    
+</table>
+<h3>Información del participante</h3>
+'.$tabla_participante.'
 <h3>Documentación administrativa</h3>
 <table>    
     <tr>

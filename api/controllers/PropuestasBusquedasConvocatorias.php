@@ -254,6 +254,29 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                         }
                     }
                 }
+                
+                if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
+                    $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
+                    $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+                    
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $valor->id_estado = 52;
+                        $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
+                    } else {
+                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 11 AND active=true");
+                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                        if ($fecha_actual < $fecha_apertura) {
+                            $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                        } else {
+                            $valor->id_estado = 51;
+                            $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                        }
+                    }
+                    
+                }
 
 
                 //Realizo el filtro de estados
