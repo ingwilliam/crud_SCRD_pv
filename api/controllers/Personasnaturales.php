@@ -79,13 +79,16 @@ $app->get('/select', function () use ($app) {
 );
 
 // Crear registro
-$app->post('/new', function () use ($app, $config) {
+$app->post('/new', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
 
-
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear perfil persona natural"',['user' => '','token'=>$request->get('token')]);
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
@@ -118,6 +121,9 @@ $app->post('/new', function () use ($app, $config) {
                     $usuario_perfil->usuario = $user_current["id"];
                     $usuario_perfil->perfil = 6;
                     if ($usuario_perfil->save($usuario_perfil) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->close();
                         echo "error_usuario_perfil";
                     }
                 }
@@ -134,6 +140,9 @@ $app->post('/new', function () use ($app, $config) {
                 $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
 
                 if (count($participante_verificado) > 0) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos '.$post["tipo_documento"].' '.$post["numero_documento"].'"',['user' => "",'token'=>$request->get('token')]);
+                    $logger->close();
                     echo "participante_existente";
                 } else {
 
@@ -153,19 +162,34 @@ $app->post('/new', function () use ($app, $config) {
                     }
 
                     if ($participante->save($post) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->close();
                         echo "error";
                     } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se crea la persona natural con éxito"',['user' => $user_current["username"],'token'=>$request->get('token')]);
+                        $logger->close();
                         echo $participante->id;
                     }
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',['user' => "",'token'=>$request->get('token')]);
+                $logger->close();
                 echo "acceso_denegado";
             }
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"',['user' => "",'token'=>$request->get('token')]);
+            $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo" . $ex->getMessage();
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo'.$ex->getMessage().'"',['user' => "",'token'=>$request->get('token')]);
+        $logger->close();        
+        echo "error_metodo";
     }
 }
 );
@@ -211,7 +235,7 @@ $app->get('/search', function () use ($app, $config) {
             $array["participante"] = $participante;
 
             //Creo los array de los select del formulario
-            $array["tipo_documento"] = Tiposdocumentos::find("active=true");
+            $array["tipo_documento"] = Tiposdocumentos::find("active=true AND id<>7");
             $array["sexo"] = Sexos::find("active=true");
             $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
@@ -422,7 +446,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante hijo pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a editar el participante hijo pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -453,26 +477,14 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                     $usuario_perfil->usuario = $user_current["id"];
                     $usuario_perfil->perfil = 6;
                     if ($usuario_perfil->save($usuario_perfil) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->close();
                         echo "error_usuario_perfil";
                     }
                 }
 
-                //Consulto los usuarios perfil del jurado y persona natural
-                //SE QUITA LA VALIDACION 21 DE NOVIEMBRE DEL 2019
-                //DEBIDO QUE SIEMPRE DEBE LLEGAR EL PARTICIPANTE CON TIPO PARTICIPANTE
-                
-                /*
-                $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17)");
-                $id_usuarios_perfiles = "";
-                foreach ($array_usuario_perfil as $aup) {
-                    $id_usuarios_perfiles = $id_usuarios_perfiles . $aup->id . ",";
-                }
-                $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
-
-                //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
-                */
-                
+                //Consulto el participante actual
                 $participante = Participantes::findFirst($post["id"]);
                 
                 //if (count($participante_verificado) > 0) {
@@ -480,7 +492,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                 if ($participante->tipo!="Participante") {
                     $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado editar_participante debido a que no esta creado el participante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
-                    echo "participante_existente";
+                    echo "no_existente_participante";
                 } else {
 
                     $post["actualizado_por"] = $user_current["id"];
@@ -495,8 +507,8 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                         $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pn hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo $participante->id;
-                    }
-                    
+                    }                    
+                                        
                 }
             } else {
                 //Registro la accion en el log de convocatorias           

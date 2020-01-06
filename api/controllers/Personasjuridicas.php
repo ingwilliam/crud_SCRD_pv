@@ -79,12 +79,16 @@ $app->get('/select', function () use ($app) {
 );
 
 // Crear registro
-$app->post('/new', function () use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->post('/new', function () use ($app, $config, $logger) {
+    
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
         
+    try {        
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear perfil persona jurídica"',['user' => '','token'=>$request->get('token')]);
         
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -119,6 +123,9 @@ $app->post('/new', function () use ($app, $config) {
                     $usuario_perfil->usuario = $user_current["id"];
                     $usuario_perfil->perfil = 7;                    
                     if ($usuario_perfil->save($usuario_perfil) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona jurídica"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->close();
                         echo "error_usuario_perfil";
                     }                     
                 }
@@ -128,6 +135,9 @@ $app->post('/new', function () use ($app, $config) {
                 
                 if(count($participante_verificado)>0)
                 {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos '.$post["tipo_documento"].' '.$post["numero_documento"].'"',['user' => "",'token'=>$request->get('token')]);
+                    $logger->close();
                     echo "participante_existente";
                 }
                 else
@@ -153,23 +163,38 @@ $app->post('/new', function () use ($app, $config) {
                     }
                     
                     if ($participante->save($post) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona jurídica"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->close();
                         echo "error";
                     }
                     else 
                     {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se crea la persona jurídica con éxito"',['user' => $user_current["username"],'token'=>$request->get('token')]);
+                        $logger->close();
                         echo $participante->id;
                     }
                     
                 }
                 
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',['user' => "",'token'=>$request->get('token')]);
+                $logger->close();
                 echo "acceso_denegado";
             }
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"',['user' => "",'token'=>$request->get('token')]);
+            $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo".$ex->getMessage();
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo'.$ex->getMessage().'"',['user' => "",'token'=>$request->get('token')]);
+        $logger->close();        
+        echo "error_metodo";
     }
 }
 );
