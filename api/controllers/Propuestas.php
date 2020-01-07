@@ -445,7 +445,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"La propuesta ('.$request->getPut('id').') no esta en estado Registrada en el metodo inscribir_propuesta', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
-                        echo "error";
+                        echo "error_estado";
                     }
                 }                                                                                                              
             } else {

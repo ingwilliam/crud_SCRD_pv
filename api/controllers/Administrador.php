@@ -116,7 +116,8 @@ $app->post('/menu', function () use ($app,$config) {
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="index.html">Sistemas de Convocatorias</a>
+                <a href="index.html"><img style="height: 50px; float: left" src="../../dist/img/logo-secretaria-cultura.png" alt="Sistemas de Convocatorias" title="Sistemas de Convocatorias" /></a>
+                <a class="navbar-brand" style="padding-left: 0px !important; padding-right: 0px !important;" href="index.html">Sistemas de Convocatorias</a>
             </div>
             <!-- /.navbar-header -->
 

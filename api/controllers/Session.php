@@ -123,6 +123,59 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
 );
 
 // Recupera todos los registros
+$app->post('/consultar_usuario', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    try {
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario ', ['user' => $this->request->getPost('username'), 'token' => '']);        
+        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+                
+            if (isset($user_current["id"])) {
+                
+                //Registro la accion en el log de convocatorias
+                $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo consultar_usuario"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                
+                echo json_encode($user_current);
+                exit;
+            }
+            else {
+                   //Registro la accion en el log de convocatorias           
+                   $logger->error('"token":"{token}","user":"{user}","message":"Error el usuario no existe en la base de datos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                   $logger->close();
+                   echo "error";
+                   exit;
+               }
+        }
+        else 
+        {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+// Recupera todos los registros
 $app->post('/recordar_usuario', function () use ($app, $config) {
 
     try {
