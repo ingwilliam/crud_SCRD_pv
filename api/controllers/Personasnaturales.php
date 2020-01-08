@@ -83,12 +83,12 @@ $app->post('/new', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-    
+
     try {
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear perfil persona natural"',['user' => '','token'=>$request->get('token')]);
-        
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear perfil persona natural"', ['user' => '', 'token' => $request->get('token')]);
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
@@ -122,7 +122,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
                     $usuario_perfil->perfil = 6;
                     if ($usuario_perfil->save($usuario_perfil) === false) {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error_usuario_perfil";
                     }
@@ -141,7 +141,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
 
                 if (count($participante_verificado) > 0) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos '.$post["tipo_documento"].' '.$post["numero_documento"].'"',['user' => "",'token'=>$request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos ' . $post["tipo_documento"] . ' ' . $post["numero_documento"] . '"', ['user' => "", 'token' => $request->get('token')]);
                     $logger->close();
                     echo "participante_existente";
                 } else {
@@ -163,32 +163,32 @@ $app->post('/new', function () use ($app, $config, $logger) {
 
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona natural"', ['user' => "", 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error";
                     } else {
                         //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se crea la persona natural con éxito"',['user' => $user_current["username"],'token'=>$request->get('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se crea la persona natural con éxito"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo $participante->id;
                     }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',['user' => "",'token'=>$request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"', ['user' => "", 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"',['user' => "",'token'=>$request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo'.$ex->getMessage().'"',['user' => "",'token'=>$request->get('token')]);
-        $logger->close();        
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
         echo "error_metodo";
     }
 }
@@ -302,80 +302,105 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                     //Si existe el participante inicial con el perfil de pn 
                     if (isset($participante->id)) {
 
-                        //Consulto participante hijo este relacionado con una propuesta
-                        $sql_participante_hijo_propuesta = "SELECT 
+                        //Valido si existe el codigo de la propuesta
+                        //De lo contratio creo el participante del cual depende del inicial
+                        //Creo la propuesta asociando el participante creado
+                        if (is_numeric($request->get('p')) AND $request->get('p')!=0) {
+                            //Consulto la propuesta solicitada
+                            $conditions = ['id' => $request->get('p'), 'active' => true];
+                            $propuesta = Propuestas::findFirst(([
+                                        'conditions' => 'id=:id: AND active=:active:',
+                                        'bind' => $conditions,
+                            ]));
+
+                            if (isset($propuesta->id)) {
+                                $array["participante"] = $propuesta->getParticipantes();
+                                $participante_hijo_propuesta= $propuesta->getParticipantes();
+                            }
+                            else
+                            {
+                                //Registro la accion en el log de convocatorias           
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "error_participante_propuesta";
+                                exit;
+                            }
+                        } else {
+
+                            //Consulto participante hijo este relacionado con una propuesta
+                            $sql_participante_hijo_propuesta = "SELECT 
                                                         pn.* 
                                                 FROM Propuestas AS p
                                                     INNER JOIN Participantes AS pn ON pn.id=p.participante
                                                 WHERE
                                                 p.convocatoria=" . $request->get('conv') . " AND pn.usuario_perfil=" . $usuario_perfil_pn->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
 
-                        $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();
+                            $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();
 
-                        $array = array();
-                        //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
-                        if (isset($participante_hijo_propuesta->id)) {
-                            //Retorno el array hijo que tiene relacionado la propuesta
-                            $array["participante"] = $participante_hijo_propuesta;
-                        } else {
-                            $id_participante_padre = $participante->id;
-                            //Creo el participante hijo
-                            $participante_hijo_propuesta = $participante;
-                            $participante_hijo_propuesta->id = null;
-                            $participante_hijo_propuesta->creado_por = $user_current["id"];
-                            $participante_hijo_propuesta->fecha_creacion = date("Y-m-d H:i:s");
-                            $participante_hijo_propuesta->participante_padre = $id_participante_padre;
-                            $participante_hijo_propuesta->tipo = "Participante";
-                            $participante_hijo_propuesta->active = TRUE;
-                            $participante_hijo_propuesta->terminos_condiciones = TRUE;
-                            if ($participante_hijo_propuesta->save() === false) {
-                                //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                                $logger->close();
-                                echo "error_participante_propuesta";
-                                exit;
+                            $array = array();
+                            //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
+                            if (isset($participante_hijo_propuesta->id)) {
+                                //Retorno el array hijo que tiene relacionado la propuesta
+                                $array["participante"] = $participante_hijo_propuesta;
                             } else {
-                                //Registro la accion en el log de convocatorias
-                                $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante pn para la propuesta que se registro a la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-
-                                //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
-                                $sql_total_propuestas = "SELECT 
-                                                                COUNT(p.id) as total_propuestas
-                                                        FROM Propuestas AS p                                
-                                                        WHERE
-                                                        p.convocatoria=" . $request->get('conv') ;
-
-                                $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
-                                $codigo_propuesta = $request->get('conv')."-".(str_pad($total_propuesta->total_propuestas+1, 3, "0", STR_PAD_LEFT));
-                                
-                                //Creo la propuesta asociada al participante hijo
-                                $propuesta = new Propuestas();
-                                $propuesta->creado_por = $user_current["id"];
-                                $propuesta->fecha_creacion = date("Y-m-d H:i:s");
-                                $propuesta->participante = $participante_hijo_propuesta->id;
-                                $propuesta->convocatoria = $request->get('conv');
-                                $propuesta->estado = 7;
-                                $propuesta->active = TRUE;
-                                $propuesta->codigo = $codigo_propuesta;
-                                if ($propuesta->save() === false) {
+                                $id_participante_padre = $participante->id;
+                                //Creo el participante hijo
+                                $participante_hijo_propuesta = $participante;
+                                $participante_hijo_propuesta->id = null;
+                                $participante_hijo_propuesta->creado_por = $user_current["id"];
+                                $participante_hijo_propuesta->fecha_creacion = date("Y-m-d H:i:s");
+                                $participante_hijo_propuesta->participante_padre = $id_participante_padre;
+                                $participante_hijo_propuesta->tipo = "Participante";
+                                $participante_hijo_propuesta->active = TRUE;
+                                $participante_hijo_propuesta->terminos_condiciones = TRUE;
+                                if ($participante_hijo_propuesta->save() === false) {
                                     //Registro la accion en el log de convocatorias           
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     $logger->close();
                                     echo "error_participante_propuesta";
                                     exit;
                                 } else {
-                                    $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-                                    
-                                    //Se crea la carpeta principal de la propuesta en la convocatoria                                    
-                                    if($chemistry_alfresco->newFolder("/Sites/convocatorias/".$request->get('conv')."/propuestas/", $propuesta->id) != "ok" )
-                                    {
+                                    //Registro la accion en el log de convocatorias
+                                    $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante pn para la propuesta que se registro a la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+
+                                    //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
+                                    $sql_total_propuestas = "SELECT 
+                                                                COUNT(p.id) as total_propuestas
+                                                        FROM Propuestas AS p                                
+                                                        WHERE
+                                                        p.convocatoria=" . $request->get('conv');
+
+                                    $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
+                                    $codigo_propuesta = $request->get('conv') . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
+
+                                    //Creo la propuesta asociada al participante hijo
+                                    $propuesta = new Propuestas();
+                                    $propuesta->creado_por = $user_current["id"];
+                                    $propuesta->fecha_creacion = date("Y-m-d H:i:s");
+                                    $propuesta->participante = $participante_hijo_propuesta->id;
+                                    $propuesta->convocatoria = $request->get('conv');
+                                    $propuesta->estado = 7;
+                                    $propuesta->active = TRUE;
+                                    $propuesta->codigo = $codigo_propuesta;
+                                    if ($propuesta->save() === false) {
                                         //Registro la accion en el log de convocatorias           
-                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->close();
+                                        echo "error_participante_propuesta";
+                                        exit;
+                                    } else {
+                                        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+                                        //Se crea la carpeta principal de la propuesta en la convocatoria                                    
+                                        if ($chemistry_alfresco->newFolder("/Sites/convocatorias/" . $request->get('conv') . "/propuestas/", $propuesta->id) != "ok") {
+                                            //Registro la accion en el log de convocatorias           
+                                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        }
+
+                                        $logger->info('"token":"{token}","user":"{user}","message":"Se creo la propuesta para la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        //Retorno el array hijo que tiene relacionado la propuesta
+                                        $array["participante"] = $participante_hijo_propuesta;
                                     }
-                                    
-                                    $logger->info('"token":"{token}","user":"{user}","message":"Se creo la propuesta para la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                                    //Retorno el array hijo que tiene relacionado la propuesta
-                                    $array["participante"] = $participante_hijo_propuesta;
                                 }
                             }
                         }
@@ -478,7 +503,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                     $usuario_perfil->perfil = 6;
                     if ($usuario_perfil->save($usuario_perfil) === false) {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"',['user' => "",'token'=>$request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error_usuario_perfil";
                     }
@@ -486,10 +511,10 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
 
                 //Consulto el participante actual
                 $participante = Participantes::findFirst($post["id"]);
-                
+
                 //if (count($participante_verificado) > 0) {
-                
-                if ($participante->tipo!="Participante") {
+
+                if ($participante->tipo != "Participante") {
                     $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado editar_participante debido a que no esta creado el participante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "no_existente_participante";
@@ -507,8 +532,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                         $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pn hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo $participante->id;
-                    }                    
-                                        
+                    }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
@@ -614,7 +638,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                             //Registro la accion en el log de convocatorias
                             $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
-                            
+
                             //Retorno el array
                             echo json_encode($array);
                         } else {
@@ -809,9 +833,9 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
-                
+
                 //Consulto el participante
-                $participante= Participantes::findFirst($request->get('participante'));
+                $participante = Participantes::findFirst($request->get('participante'));
                 //Defino columnas para el orden desde la tabla html
                 $columns = array(
                     0 => 'p.tipo_documento',
@@ -824,11 +848,11 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     7 => 'p.id',
                 );
 
-                $where .= " WHERE p.id <> '" . $request->get('participante') . "' AND p.participante_padre = '" . $participante->participante_padre . "' AND tipo='".$request->get('tipo')."'";
+                $where .= " WHERE p.id <> '" . $request->get('participante') . "' AND p.participante_padre = '" . $participante->participante_padre . "' AND tipo='" . $request->get('tipo') . "'";
                 //Condiciones para la consulta
 
                 if (!empty($request->get("search")['value'])) {
-                    $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                    
+                    $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
@@ -896,20 +920,17 @@ $app->get('/editar_integrante', function () use ($app, $config) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
             //Si existe consulto la convocatoria
-            if($request->get('id'))
-            {    
-                $participante = Participantes::findFirst($request->get('id'));                                
-            }
-            else 
-            {
+            if ($request->get('id')) {
+                $participante = Participantes::findFirst($request->get('id'));
+            } else {
                 $participante = new Participantes();
             }
             //Creo el array de la propuesta
             $array = array();
-            
+
             //Creo todos los array del registro
-            $array["participante"]=$participante;
-                        
+            $array["participante"] = $participante;
+
             //Creo los array de los select del formulario
             $array["tipo_documento"] = Tiposdocumentos::find("active=true");
             $array["sexo"] = Sexos::find("active=true");
@@ -921,13 +942,13 @@ $app->get('/editar_integrante', function () use ($app, $config) {
             $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
             $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
             $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
-            
+
             //Creo los tipos de documentos para anexar
-            $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");                        
-            $array["tipo_parametro"]=explode(",", $tabla_maestra->valor);            
-            
+            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");
+            $array["tipo_parametro"] = explode(",", $tabla_maestra->valor);
+
             //Retorno el array
-            echo json_encode($array);       
+            echo json_encode($array);
         } else {
             echo "error_token";
         }
