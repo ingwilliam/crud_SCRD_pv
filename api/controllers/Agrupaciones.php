@@ -426,7 +426,7 @@ $app->get('/crear_propuesta_agr', function () use ($app, $config, $logger) {
                 $user_current = json_decode($token_actual->user_current, true);
 
                 //Busco si tiene el perfil de agrupación
-                $usuario_perfil_agr = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = ");
+                $usuario_perfil_agr = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 8");
 
                 //Si existe el usuario perfil como agr
                 $participante = new Participantes();
@@ -484,16 +484,6 @@ $app->get('/crear_propuesta_agr', function () use ($app, $config, $logger) {
                                 //Registro la accion en el log de convocatorias
                                 $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante agr para la propuesta que se registro a la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
 
-                                //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
-                                $sql_total_propuestas = "SELECT 
-                                                            COUNT(p.id) as total_propuestas
-                                                    FROM Propuestas AS p                                
-                                                    WHERE
-                                                    p.convocatoria=" . $request->get('conv');
-
-                                $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
-                                $codigo_propuesta = $request->get('conv') . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
-                                
                                 //Creo la propuesta asociada al participante hijo
                                 $propuesta = new Propuestas();
                                 $propuesta->creado_por = $user_current["id"];
@@ -502,7 +492,7 @@ $app->get('/crear_propuesta_agr', function () use ($app, $config, $logger) {
                                 $propuesta->convocatoria = $request->get('conv');
                                 $propuesta->estado = 7;
                                 $propuesta->active = TRUE;
-                                $propuesta->codigo = $codigo_propuesta;
+                                
                                 if ($propuesta->save() === false) {
                                     //Registro la accion en el log de convocatorias           
                                     $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como AGR."', ['user' => $user_current["username"], 'token' => $request->get('token')]);

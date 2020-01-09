@@ -436,10 +436,22 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                     //parametros de la peticion
                     $propuesta = Propuestas::findFirst($request->getPut('id'));
                     if ($propuesta->estado == 7) {
+                        
+                        //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
+                        $sql_total_propuestas = "SELECT 
+                                                    COUNT(p.id) as total_propuestas
+                                            FROM Propuestas AS p                                
+                                            WHERE
+                                            p.estado = 8 AND p.convocatoria=" . $request->getPut('conv');
+
+                        $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
+                        $codigo_propuesta = $request->getPut('conv') . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
+                        
                         $post["estado"] = 8;
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-
+                        $propuesta->codigo = $codigo_propuesta;
+                        
                         if ($propuesta->save($post) === false) {
                             $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')".', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
