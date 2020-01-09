@@ -878,7 +878,7 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                     $participante = new Participantes();
                     $participante->creado_por = $user_current["id"];
                     $participante->fecha_creacion = date("Y-m-d H:i:s");
-                    $participante->participante_padre = $participante_padre->participante_padre;
+                    $participante->participante_padre = $post["participante"];
                     $participante->usuario_perfil = $participante_padre->usuario_perfil;
                     //$participante->tipo = "Integrante";
                     $participante->active = TRUE;
@@ -967,7 +967,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     7 => 'p.id',
                 );
 
-                $where .= " WHERE p.id <> '" . $request->get('participante') . "' AND p.participante_padre = '" . $propuesta->participante . "' AND tipo='" . $request->get('tipo') . "'";
+                $where .= " WHERE p.id <> " . $propuesta->participante . " AND p.participante_padre = " . $propuesta->participante . " AND tipo='" . $request->get('tipo') . "'";
                 //Condiciones para la consulta
 
                 if (!empty($request->get("search")['value'])) {
@@ -992,7 +992,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Concarno el orden y el limit para el paginador
                 $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+                
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 

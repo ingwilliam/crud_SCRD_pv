@@ -323,7 +323,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             else
                             {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "error_participante_propuesta";
                                 exit;
@@ -351,7 +351,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                         
                         } else {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error_participante_propuesta";
                             exit;                            
@@ -456,7 +456,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                             else
                             {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "error_participante_propuesta";
                                 exit;
@@ -475,7 +475,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                             $participante_hijo_propuesta->terminos_condiciones = TRUE;
                             if ($participante_hijo_propuesta->save() === false) {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "error_participante_propuesta";
                                 exit;
@@ -504,7 +504,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                 $propuesta->codigo = $codigo_propuesta;
                                 if ($propuesta->save() === false) {
                                     //Registro la accion en el log de convocatorias           
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante como PJ."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     $logger->close();
                                     echo "error_participante_propuesta";
                                     exit;
@@ -515,7 +515,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                     //Se crea la carpeta principal de la propuesta en la convocatoria                                    
                                     if ($chemistry_alfresco->newFolder("/Sites/convocatorias/" . $request->get('conv') . "/propuestas/", $propuesta->id) != "ok") {
                                         //Registro la accion en el log de convocatorias           
-                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PN."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PJ."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     }
                                     
                                     //Registro la accion en el log de convocatorias

@@ -236,7 +236,7 @@ $tabla_participante = '<table>
                 //Participante juridico
                 if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==7)
                 {
-$conditions = ['id' => $propuesta->getParticipantes()->participante_padre, 'participante_padre' => $propuesta->getParticipantes()->participante_padre, 'tipo' => 'Junta', 'active' => true];
+$conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
 
 //Se crea todo el array de las rondas de evaluacion
 $consulta_integrantes = Participantes::find(([
@@ -333,7 +333,7 @@ $tabla_participante = '<table>
                 if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==8)
                 {
                     
-$conditions = ['id' => $propuesta->getParticipantes()->participante_padre, 'participante_padre' => $propuesta->getParticipantes()->participante_padre, 'tipo' => 'Integrante', 'active' => true];
+$conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
 
 //Se crea todo el array de las rondas de evaluacion
 $consulta_integrantes = Participantes::find(([
