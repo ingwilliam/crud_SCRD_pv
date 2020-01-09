@@ -93,5 +93,6 @@ UPDATE public.tiposparticipantes SET active=FALSE WHERE id=4;
 UPDATE public.tiposestimulos SET nombre='Dinero' WHERE id=1;
 UPDATE public.tiposestimulos SET nombre='Especie' WHERE id=2;
 
-
+ALTER TABLE convocatorias DROP COLUMN propuestas_permitidas;
+ALTER TABLE convocatorias ADD COLUMN propuestas_permitidas Integer DEFAULT NULL;
 
