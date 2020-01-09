@@ -96,3 +96,5 @@ UPDATE public.tiposestimulos SET nombre='Especie' WHERE id=2;
 ALTER TABLE convocatorias DROP COLUMN propuestas_permitidas;
 ALTER TABLE convocatorias ADD COLUMN propuestas_permitidas Integer DEFAULT NULL;
 
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Anulada', true, 7, 3);
+

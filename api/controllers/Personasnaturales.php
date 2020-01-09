@@ -712,44 +712,56 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                     //Si existe el participante inicial con el perfil de acuerdo al parametro
                     if (isset($participante->id)) {
 
-                        //Consulto la propuesta que esta relacionada con el participante
-                        $sql_propuesta = "SELECT 
-                                                par.*, 
-                                                p.*
-                                        FROM Propuestas AS p
-                                            INNER JOIN Participantes AS par ON par.id=p.participante                                            
-                                        WHERE
-                                        p.convocatoria=" . $request->get('conv') . " AND par.usuario_perfil=" . $usuario_perfil->id . " AND par.tipo='Participante' AND par.participante_padre=" . $participante->id . "";
+                        //Valido si existe el codigo de la propuesta
+                        //De lo contratio creo el participante del cual depende del inicial
+                        //Creo la propuesta asociando el participante creado
+                        if (is_numeric($request->get('p')) AND $request->get('p')!=0) {
+                            //Consulto la propuesta solicitada
+                            $conditions = ['id' => $request->get('p'), 'active' => true];
+                            $propuesta = Propuestas::findFirst(([
+                                        'conditions' => 'id=:id: AND active=:active:',
+                                        'bind' => $conditions,
+                            ]));
 
-                        $propuesta = $app->modelsManager->executeQuery($sql_propuesta)->getFirst();
+                            if (isset($propuesta->id)) {
+                                
+                                //Creo el array de la propuesta
+                                $array = array();
+                                $array["estado"] = $propuesta->estado;
+                                $array["formulario"]["propuesta"] = $propuesta->id;
+                                $array["formulario"]["participante"] = $propuesta->participante;
+                                //Creo los array de los select del formulario
+                                $array["tipo_documento"] = Tiposdocumentos::find("active=true");
+                                $array["sexo"] = Sexos::find("active=true");
+                                $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
+                                $array["identidad_genero"] = Identidadesgeneros::find("active=true");
+                                $array["grupo_etnico"] = Gruposetnicos::find("active=true");
+                                $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
+                                $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
-                        if (isset($propuesta->p->id)) {
-                            //Creo el array de la propuesta
-                            $array = array();
-                            $array["formulario"]["propuesta"] = $propuesta->p->id;
-                            $array["formulario"]["participante"] = $propuesta->par->id;
-                            //Creo los array de los select del formulario
-                            $array["tipo_documento"] = Tiposdocumentos::find("active=true");
-                            $array["sexo"] = Sexos::find("active=true");
-                            $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
-                            $array["identidad_genero"] = Identidadesgeneros::find("active=true");
-                            $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-                            $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
-                            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
+                                //Registro la accion en el log de convocatorias
+                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
 
-                            //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                            $logger->close();
-
-                            //Retorno el array
-                            echo json_encode($array);
+                                //Retorno el array
+                                echo json_encode($array);                                
+                            }
+                            else
+                            {
+                                //Registro la accion en el log de convocatorias           
+                                $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "crear_propuesta";
+                                exit;
+                            }
+                            
                         } else {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error cod de la propuesta no es valido."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
-                            echo "crear_propuesta";
-                            exit;
-                        }
+                            echo "error_cod_propuesta";
+                            exit;                            
+                        }                                                 
                     } else {
                         //Busco si tiene el perfil asociado de acuerdo al parametro
                         if ($request->get('m') == "pn") {
@@ -936,8 +948,13 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //Consulto el participante
-                $participante = Participantes::findFirst($request->get('participante'));
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+                                
                 //Defino columnas para el orden desde la tabla html
                 $columns = array(
                     0 => 'p.tipo_documento',
@@ -950,7 +967,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     7 => 'p.id',
                 );
 
-                $where .= " WHERE p.id <> '" . $request->get('participante') . "' AND p.participante_padre = '" . $participante->participante_padre . "' AND tipo='" . $request->get('tipo') . "'";
+                $where .= " WHERE p.id <> '" . $request->get('participante') . "' AND p.participante_padre = '" . $propuesta->participante . "' AND tipo='" . $request->get('tipo') . "'";
                 //Condiciones para la consulta
 
                 if (!empty($request->get("search")['value'])) {
