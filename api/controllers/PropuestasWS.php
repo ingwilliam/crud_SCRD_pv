@@ -76,95 +76,95 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
             if (isset($propuesta->id)) {
-                $array_administrativos = array();
-                $array_tecnicos = array();
-                foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
-                    if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
-                        $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
-                        $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
+                if ($propuesta->estado == 8) {
+                    $array_administrativos = array();
+                    $array_tecnicos = array();
+                    foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
+                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
+                            $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+                            $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
+                        }
+
+                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
+                            $array_tecnicos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+                            $array_tecnicos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
+                        }
                     }
 
-                    if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
-                        $array_tecnicos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
-                        $array_tecnicos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
+                    $array_administrativos_link = array();
+                    $array_tecnicos_link = array();
+                    foreach ($propuesta->Propuestaslinks as $propuestalink) {
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
+                            $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+                            $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
+                        }
+
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
+                            $array_tecnicos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+                            $array_tecnicos_link[$propuestalink->id]["link"] = $propuestalink->link;
+                        }
                     }
-                }
 
-                $array_administrativos_link = array();
-                $array_tecnicos_link = array();
-                foreach ($propuesta->Propuestaslinks as $propuestalink) {
-                    if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
-                        $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
-                        $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
+                    $html_administrativos = "";
+                    $i = 1;
+                    foreach ($array_administrativos as $key => $val) {
+                        $html_administrativos = $html_administrativos . "<tr>";
+                        $html_administrativos = $html_administrativos . "<td>" . $i . "</td>";
+                        $html_administrativos = $html_administrativos . "<td>" . $val["requisito"] . "</td>";
+                        $html_administrativos = $html_administrativos . "<td>" . $val["nombre"] . "</td>";
+                        $html_administrativos = $html_administrativos . "</tr>";
+                        $i++;
                     }
 
-                    if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
-                        $array_tecnicos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
-                        $array_tecnicos_link[$propuestalink->id]["link"] = $propuestalink->link;
+                    $html_administrativos_link = "";
+                    $i = 1;
+                    foreach ($array_administrativos_link as $key => $val) {
+                        $html_administrativos_link = $html_administrativos_link . "<tr>";
+                        $html_administrativos_link = $html_administrativos_link . "<td>" . $i . "</td>";
+                        $html_administrativos_link = $html_administrativos_link . "<td>" . $val["requisito"] . "</td>";
+                        $html_administrativos_link = $html_administrativos_link . "<td>" . $val["link"] . "</td>";
+                        $html_administrativos_link = $html_administrativos_link . "</tr>";
+                        $i++;
                     }
-                }
 
-                $html_administrativos = "";
-                $i = 1;
-                foreach ($array_administrativos as $key => $val) {
-                    $html_administrativos = $html_administrativos . "<tr>";
-                    $html_administrativos = $html_administrativos . "<td>" . $i . "</td>";
-                    $html_administrativos = $html_administrativos . "<td>" . $val["requisito"] . "</td>";
-                    $html_administrativos = $html_administrativos . "<td>" . $val["nombre"] . "</td>";
-                    $html_administrativos = $html_administrativos . "</tr>";
-                    $i++;
-                }
+                    $html_tecnicos = "";
+                    $i = 1;
+                    foreach ($array_tecnicos as $key => $val) {
+                        $html_tecnicos = $html_tecnicos . "<tr>";
+                        $html_tecnicos = $html_tecnicos . "<td>" . $i . "</td>";
+                        $html_tecnicos = $html_tecnicos . "<td>" . $val["requisito"] . "</td>";
+                        $html_tecnicos = $html_tecnicos . "<td>" . $val["nombre"] . "</td>";
+                        $html_tecnicos = $html_tecnicos . "</tr>";
+                        $i++;
+                    }
 
-                $html_administrativos_link = "";
-                $i = 1;
-                foreach ($array_administrativos_link as $key => $val) {
-                    $html_administrativos_link = $html_administrativos_link . "<tr>";
-                    $html_administrativos_link = $html_administrativos_link . "<td>" . $i . "</td>";
-                    $html_administrativos_link = $html_administrativos_link . "<td>" . $val["requisito"] . "</td>";
-                    $html_administrativos_link = $html_administrativos_link . "<td>" . $val["link"] . "</td>";
-                    $html_administrativos_link = $html_administrativos_link . "</tr>";
-                    $i++;
-                }
+                    $html_tecnicos_link = "";
+                    $i = 1;
+                    foreach ($array_tecnicos_link as $key => $val) {
+                        $html_tecnicos_link = $html_tecnicos_link . "<tr>";
+                        $html_tecnicos_link = $html_tecnicos_link . "<td>" . $i . "</td>";
+                        $html_tecnicos_link = $html_tecnicos_link . "<td>" . $val["requisito"] . "</td>";
+                        $html_tecnicos_link = $html_tecnicos_link . "<td>" . $val["link"] . "</td>";
+                        $html_tecnicos_link = $html_tecnicos_link . "</tr>";
+                        $i++;
+                    }
 
-                $html_tecnicos = "";
-                $i = 1;
-                foreach ($array_tecnicos as $key => $val) {
-                    $html_tecnicos = $html_tecnicos . "<tr>";
-                    $html_tecnicos = $html_tecnicos . "<td>" . $i . "</td>";
-                    $html_tecnicos = $html_tecnicos . "<td>" . $val["requisito"] . "</td>";
-                    $html_tecnicos = $html_tecnicos . "<td>" . $val["nombre"] . "</td>";
-                    $html_tecnicos = $html_tecnicos . "</tr>";
-                    $i++;
-                }
+                    $bogota = ($propuesta->bogota) ? "Si" : "No";
 
-                $html_tecnicos_link = "";
-                $i = 1;
-                foreach ($array_tecnicos_link as $key => $val) {
-                    $html_tecnicos_link = $html_tecnicos_link . "<tr>";
-                    $html_tecnicos_link = $html_tecnicos_link . "<td>" . $i . "</td>";
-                    $html_tecnicos_link = $html_tecnicos_link . "<td>" . $val["requisito"] . "</td>";
-                    $html_tecnicos_link = $html_tecnicos_link . "<td>" . $val["link"] . "</td>";
-                    $html_tecnicos_link = $html_tecnicos_link . "</tr>";
-                    $i++;
-                }
+                    //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                    $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
+                    $nombre_categoria = "";
+                    if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
+                        $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;
+                        $nombre_categoria = $propuesta->getConvocatorias()->nombre;
+                    }
 
-                $bogota = ($propuesta->bogota) ? "Si" : "No";
+                    $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
 
-                //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
-                $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
-                $nombre_categoria = "";
-                if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
-                    $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;
-                    $nombre_categoria = $propuesta->getConvocatorias()->nombre;
-                }
-
-                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
-
-                //Creo la tabla deacuerdo al tipo de participante
-                //Participante natural
-                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==6)
-                {
-$tabla_participante = '<table>
+                    //Creo la tabla deacuerdo al tipo de participante
+                    //Participante natural
+                    if ($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id == 6) {
+                        $tabla_participante = '<table>
     <tr>
         <td>Tipo de documento de identificación</td>
         <td>' . $propuesta->getParticipantes()->getTiposdocumentos()->descripcion . '</td>    
@@ -231,37 +231,36 @@ $tabla_participante = '<table>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
-</table>';                    
-                }
-                //Participante juridico
-                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==7)
-                {
-$conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
+</table>';
+                    }
+                    //Participante juridico
+                    if ($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id == 7) {
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
 
 //Se crea todo el array de las rondas de evaluacion
-$consulta_integrantes = Participantes::find(([
-            'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
-            'bind' => $conditions,
-            "order" => 'id'
-]));                    
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'id'
+                        ]));
 
-$i = 1;    
-$html_integrantes = "";
-foreach ($consulta_integrantes as $integrante) {                
-        $html_integrantes = $html_integrantes . "<tr>";
-        $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";        
-        $html_integrantes = $html_integrantes . "</tr>";
-        $i++;                
-}                    
-                    
-                    
-                   $cuenta_sede= ($propuesta->getParticipantes()->cuenta_sede) ? 'Sí':'No';
-$tabla_participante = '<table>
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";
+                            $i++;
+                        }
+
+
+                        $cuenta_sede = ($propuesta->getParticipantes()->cuenta_sede) ? 'Sí' : 'No';
+                        $tabla_participante = '<table>
     <tr>
         <td>Tipo de documento de identificación</td>
         <td>' . $propuesta->getParticipantes()->getTiposdocumentos()->descripcion . '</td>    
@@ -325,39 +324,38 @@ $tabla_participante = '<table>
         <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
         <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
     </tr> 
-    ' . $html_integrantes. '
+    ' . $html_integrantes . '
 </table>
-';                    
-                }
-                //Participante agrupacion
-                if($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id==8)
-                {
-                    
-$conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
+';
+                    }
+                    //Participante agrupacion
+                    if ($propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id == 8) {
+
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
 
 //Se crea todo el array de las rondas de evaluacion
-$consulta_integrantes = Participantes::find(([
-            'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
-            'bind' => $conditions,
-            "order" => 'id'
-]));                    
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'id'
+                        ]));
 
-$i = 1;    
-$html_integrantes = "";
-foreach ($consulta_integrantes as $integrante) {                
-        $html_integrantes = $html_integrantes . "<tr>";
-        $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";        
-        $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";        
-        $html_integrantes = $html_integrantes . "</tr>";
-        $i++;                
-}
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";
+                            $i++;
+                        }
 
-                    
-$tabla_participante = '<table>
+
+                        $tabla_participante = '<table>
     <tr>
         <td>Nombre de la agrupación</td>
         <td>' . $propuesta->getParticipantes()->primer_nombre . '</td>
@@ -381,13 +379,13 @@ $tabla_participante = '<table>
         <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
         <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
     </tr> 
-    ' . $html_integrantes. '
+    ' . $html_integrantes . '
 </table>
-';                     
-                }
-                
-                
-                $html = '<!-- EXAMPLE OF CSS STYLE -->
+';
+                    }
+
+
+                    $html = '<!-- EXAMPLE OF CSS STYLE -->
 <style>
         table {
 		font-size: 10pt;	
@@ -444,7 +442,7 @@ $tabla_participante = '<table>
     </tr>    
 </table>
 <h3>Información del participante</h3>
-'.$tabla_participante.'
+' . $tabla_participante . '
 <h3>Documentación administrativa</h3>
 <table>    
     <tr>
@@ -482,10 +480,17 @@ $tabla_participante = '<table>
     ' . $html_tecnicos_link . '
 </table>
 ';
-                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
-                $logger->close();
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->close();
 
-                echo $html;
+                    echo $html;
+                } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->close();
+
+                    echo "<b>No es posible generar el reporte, debido a que su propuesta no esta en estado inscrita.</br>";
+                    exit;
+                }
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo reporte_propuesta_inscrita', ['user' => "", 'token' => $request->getPut('token')]);
