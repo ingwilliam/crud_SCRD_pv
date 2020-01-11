@@ -113,68 +113,81 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                     //Si existe el participante inicial con el perfil de acuerdo al parametro
                     if (isset($participante->id)) {
 
-                        //Consulto la propuesta que esta relacionada con el participante
-                        $sql_propuesta = "SELECT 
-                                                par.*, 
-                                                p.*
-                                        FROM Propuestas AS p
-                                            INNER JOIN Participantes AS par ON par.id=p.participante                                            
-                                        WHERE
-                                        p.convocatoria=" . $request->get('conv') . " AND par.usuario_perfil=" . $usuario_perfil->id . " AND par.tipo='Participante' AND par.participante_padre=" . $participante->id . "";
 
-                        $propuesta = $app->modelsManager->executeQuery($sql_propuesta)->getFirst();
-
-                        if (isset($propuesta->p->id)) {
-                            //Creo el array de la propuesta
-                            $array = array();
-                            $array["propuesta"] = $propuesta->p->id;
-                            $array["participante"] = $propuesta->par->id;
-
-                            $conditions = ['convocatoria' => $request->get('conv'), 'active' => true];
-
-                            //Se crea todo el array de documentos administrativos y tecnicos
-                            $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
-                                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                        //Valido si existe el codigo de la propuesta
+                        //De lo contratio creo el participante del cual depende del inicial
+                        //Creo la propuesta asociando el participante creado
+                        if (is_numeric($request->get('p')) AND $request->get('p') != 0) {
+                            //Consulto la propuesta solicitada
+                            $conditions = ['id' => $request->get('p'), 'active' => true];
+                            $propuesta = Propuestas::findFirst(([
+                                        'conditions' => 'id=:id: AND active=:active:',
                                         'bind' => $conditions,
-                                        'order' => 'orden ASC',
                             ]));
-                            foreach ($consulta_documentos_administrativos as $documento) {
-                                if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
-                                    if ($documento->etapa == "Registro") {
-                                        $documentos_administrativos[$documento->id]["id"] = $documento->id;
-                                        $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                        $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
-                                        $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                        $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                        $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+
+                            if (isset($propuesta->id)) {
+
+                                //Creo el array de la propuesta
+                                $array = array();
+                                $array["propuesta"] = $propuesta->id;
+                                $array["estado"] = $propuesta->estado;
+                                $array["participante"] = $propuesta->participante;
+
+                                $conditions = ['convocatoria' => $request->get('conv'), 'active' => true];
+
+                                //Se crea todo el array de documentos administrativos y tecnicos
+                                $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
+                                            'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                                            'bind' => $conditions,
+                                            'order' => 'orden ASC',
+                                ]));
+                                $documentos_administrativos=array();
+                                $documentos_tecnicos=array();
+                                foreach ($consulta_documentos_administrativos as $documento) {
+                                    if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
+                                        if ($documento->etapa == "Registro") {
+                                            $documentos_administrativos[$documento->id]["id"] = $documento->id;
+                                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
+                                            $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
+                                            $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                            $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
+                                            $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+                                        }
+                                    }
+
+                                    if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
+                                        $documentos_tecnicos[$documento->id]["id"] = $documento->id;
+                                        $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
+                                        $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
+                                        $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                        $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
+                                        $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
                                     }
                                 }
 
-                                if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                                    $documentos_tecnicos[$documento->id]["id"] = $documento->id;
-                                    $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                    $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
-                                    $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                    $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                    $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
-                                }
+                                $array["administrativos"] = $documentos_administrativos;
+
+                                $array["tecnicos"] = $documentos_tecnicos;
+
+                                //Registro la accion en el log de convocatorias
+                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+
+                                //Retorno el array
+                                echo json_encode($array);
+                                
+                            } else {
+                                //Registro la accion en el log de convocatorias           
+                                $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "crear_propuesta";
+                                exit;
                             }
-
-                            $array["administrativos"] = $documentos_administrativos;
-
-                            $array["tecnicos"] = $documentos_tecnicos;
-
-                            //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                            $logger->close();
-
-                            //Retorno el array
-                            echo json_encode($array);
                         } else {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
-                            echo "crear_propuesta";
+                            echo "error_cod_propuesta";
                             exit;
                         }
                     } else {
@@ -279,20 +292,20 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                 $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
 
                 if (isset($propuesta->id)) {
-                    
+
                     //Consulto los requisitos no guardados
                     $sql_requisitos = "SELECT 
                                                 cd.id,
                                                 r.nombre	
                                         FROM Convocatoriasdocumentos AS cd
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
-                                        LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=".$propuesta->id." AND pd.active = TRUE 
-                                        LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=".$propuesta->id." AND pl.active = TRUE
+                                        LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE 
+                                        LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE
                                         WHERE cd.obligatorio=TRUE AND cd.convocatoria=" . $request->get('conv') . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
-                    
+
                     $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
-                    
-                    
+
+
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();

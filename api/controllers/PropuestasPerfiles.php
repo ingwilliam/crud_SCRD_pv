@@ -67,7 +67,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a consultar los tipos participantes de la convocatoria"', ['user' => '', 'token' => $request->get('token')]);
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -75,7 +75,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
             
-            //Consulto la fecha de cierre del cronograma de la convocatoria
+            //Consulto los tipos de partticipantes permitidos de la convocatoria
             $conditions = ['convocatoria' => $id, 'active' => true];
             $tipos_participantes = Convocatoriasparticipantes::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_participante IN (1,2,3)',
@@ -114,7 +114,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                                                     FROM Propuestas AS p
                                                         INNER JOIN Participantes AS pn ON pn.id=p.participante
                                                     WHERE
-                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pn->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+                                                    p.id = ".$request->getPost('p')." AND p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pn->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
 
                             $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
                             //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
@@ -148,7 +148,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                                                     FROM Propuestas AS p
                                                         INNER JOIN Participantes AS pn ON pn.id=p.participante
                                                     WHERE
-                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pj->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+                                                    p.id = ".$request->getPost('p')." AND p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_pj->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
 
                             $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
                             //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
@@ -182,7 +182,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                                                     FROM Propuestas AS p
                                                         INNER JOIN Participantes AS pn ON pn.id=p.participante
                                                     WHERE
-                                                    p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_agr->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
+                                                    p.id = ".$request->getPost('p')." AND p.convocatoria=" . $id . " AND pn.usuario_perfil=" . $usuario_perfil_agr->id . " AND pn.tipo='Participante' AND pn.participante_padre=" . $participante->id . "";
 
                             $participante_hijo_propuesta = $app->modelsManager->executeQuery($sql_participante_hijo_propuesta)->getFirst();                                                
                             //Valido si existe el participante hijo relacionado con una propuesta de la convocatoria actual
