@@ -66,6 +66,9 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["no_pueden_participar"] = $convocatoria->no_pueden_participar;
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
         $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
+        
+        $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   
+        $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
 
         $tipo_convocatoria = "";
 
@@ -111,6 +114,26 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         'order' => 'orden ASC',
             ]));
+            
+            //Se crea todo el array de las rondas de evaluacion
+            $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                        'bind' => $conditions,
+            ]));
+
+            foreach ($consulta_rondas_evaluacion as $ronda) {
+                $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
+                $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Ronda:</b> " . $ronda->nombre_ronda;
+                $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
+                $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
+                                [
+                                    "convocatoria_ronda = " . $ronda->id . "",
+                                    "order" => 'orden'
+                                ]
+                );
+            }
+            
+            
         } else {
             //Array para consultar las convocatorias generales
             $conditions = ['convocatoria_padre_categoria' => $id, 'active' => true];
@@ -142,7 +165,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     foreach ($consulta_rondas_evaluacion as $ronda) {
                         $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
-                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
+                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Ronda:</b> " . $ronda->nombre_ronda;
                         $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
                         $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
                                         [
@@ -302,11 +325,12 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                                 }
                             }
 
+                            //Se crea todo el array de las rondas de evaluacion
                             $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
                                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                                         'bind' => $conditions,
                             ]));
-
+                            
                             foreach ($consulta_rondas_evaluacion as $ronda) {
                                 $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
                                 $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
@@ -391,7 +415,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
                         'bind' => $conditions,
                         'order' => 'orden ASC',
-            ]));
+            ]));                        
         }
 
         //consulto los tipos anexos documentacion, aplica para las convocatorias sencillas, categorias generales y especiales
@@ -624,6 +648,29 @@ $app->get('/all', function () use ($app) {
                 }
             }
             
+            if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
+                $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
+                $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page('2','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
+                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                if ($fecha_actual > $fecha_cierre) {
+                    $valor->id_estado = 52;
+                    $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Cerrada</span>";
+                } else {
+                    $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 11 AND active=true");
+                    $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                    if ($fecha_actual < $fecha_apertura) {
+                        $valor->estado_convocatoria = "<span class=\"span_Publicada\">Publicada</span>";
+                    } else {
+                        $valor->id_estado = 51;
+                        $valor->estado_convocatoria = "<span class=\"span_Abierta\">Abierta</span>";
+                    }
+                }
+
+            }
+
             //Realizo el filtro de estados
             if ($estado_actual=="") {                    
                 $json_convocatorias[] = $valor;                    
