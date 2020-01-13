@@ -365,7 +365,7 @@ $app->get('/search_nombre', function () use ($app) {
         }
         else
         {
-            echo "error";
+            echo "error_token";
         }
     } catch (Exception $ex) {
         echo "error_metodo";

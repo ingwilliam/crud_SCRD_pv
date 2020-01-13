@@ -167,7 +167,9 @@ $app->post('/new', function () use ($app, $config) {
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+        // echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+        echo "error_metodo";
     }
 }
 );

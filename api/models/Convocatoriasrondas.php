@@ -28,10 +28,7 @@ class Convocatoriasrondas extends Model
         $this->belongsTo(
             'grupoevaluador',
             'Gruposevaluadores',
-            'id',
-            [
-                'foreignKey' => true
-            ]
+            'id'
         );
 
 
