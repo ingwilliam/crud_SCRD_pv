@@ -116,11 +116,13 @@ $app->post('/menu', function () use ($app,$config) {
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="index.html">SB Admin v2.0</a>
+                <a href="index.html"><img style="height: 50px; float: left" src="../../dist/img/logo-secretaria-cultura.png" alt="Sistemas de Convocatorias" title="Sistemas de Convocatorias" /></a>
+                <a class="navbar-brand" style="padding-left: 0px !important; padding-right: 0px !important;" href="index.html">Sistemas de Convocatorias</a>
             </div>
             <!-- /.navbar-header -->
 
             <ul class="nav navbar-top-links navbar-right">
+                <!--
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                         <i class="fa fa-envelope fa-fw"></i> <i class="fa fa-caret-down"></i>
@@ -169,9 +171,8 @@ $app->post('/menu', function () use ($app,$config) {
                             </a>
                         </li>
                     </ul>
-                    <!-- /.dropdown-messages -->
                 </li>
-                <!-- /.dropdown -->
+
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                         <i class="fa fa-tasks fa-fw"></i> <i class="fa fa-caret-down"></i>
@@ -248,9 +249,9 @@ $app->post('/menu', function () use ($app,$config) {
                             </a>
                         </li>
                     </ul>
-                    <!-- /.dropdown-tasks -->
+
                 </li>
-                <!-- /.dropdown -->
+
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                         <i class="fa fa-bell fa-fw"></i> <i class="fa fa-caret-down"></i>
@@ -308,8 +309,8 @@ $app->post('/menu', function () use ($app,$config) {
                             </a>
                         </li>
                     </ul>
-                    <!-- /.dropdown-alerts -->
                 </li>
+                -->
                 <!-- /.dropdown -->
                 <li class="dropdown">
                     <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -318,8 +319,7 @@ $app->post('/menu', function () use ($app,$config) {
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="../perfil/form.html"><i class="fa fa-user fa-fw"></i> Mi perfil</a>
                         </li>
-                        <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>
-                        </li>
+                        <!--<li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a></li>-->
                         <li class="divider"></li>
                         <li><a href="javascript:void(0)" onclick="logout()"><i class="fa fa-sign-out fa-fw"></i> Cerrar sesión</a>
                         </li>
@@ -334,6 +334,7 @@ $app->post('/menu', function () use ($app,$config) {
                 <div class="sidebar-nav navbar-collapse">
 
                     <ul class="nav" id="side-menu">
+                        <!--
                         <li class="sidebar-search">
                             <div class="input-group custom-search-form">
                                 <input type="text" class="form-control" placeholder="Search...">
@@ -343,10 +344,10 @@ $app->post('/menu', function () use ($app,$config) {
                                     </button>
                                 </span>
                             </div>
-                            <!-- /input-group -->
                         </li>
+                        -->
                         <li>
-                            <a href="../index/index.html"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                            <a href="../index/index.html"><i class="fa fa-dashboard fa-fw"></i> Inicio</a>
                         </li>
                         <?php
                         if(count($permisos_panel_de_seguridad)>0)
@@ -564,9 +565,6 @@ $app->post('/menu', function () use ($app,$config) {
                         {
                         ?>
                         <li>
-                            <a href="../datosaccesos/form.html"><i class="fa fa-lock fa-fw"></i> Cambiar contraseña</a>
-                        </li>
-                        <li>
                             <a href="#"><i class="fa fa-users fa-fw"></i> Perfiles del participante<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
@@ -620,7 +618,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
                                 <?php
                                 }
                                 ?>
@@ -629,10 +627,10 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
-                                <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Persona natural</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>
@@ -641,11 +639,11 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
-                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona jurídica</a></li>
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
-                                <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Junta directiva</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Persona jurídica</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
+                                <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Junta directiva</a></li>
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>
@@ -654,11 +652,11 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
-                                <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Agrupación</a></li>
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
-                                <li><a href="../propuestas/integrantes.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Integrantes</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Agrupación</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
+                                <li><a href="../propuestas/integrantes.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Integrantes</a></li>
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>

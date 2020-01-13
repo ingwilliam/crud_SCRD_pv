@@ -8,6 +8,8 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -42,48 +44,132 @@ $di->set('db', function () use ($config) {
     );
 });
 
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
+
 $app = new Micro($di);
 
 // Recupera todos los registros
-$app->post('/iniciar_session', function () use ($app, $config) {
+$app->post('/iniciar_session', function () use ($app, $config, $logger) {
 
-    //Consulto el usuario por username del parametro get
-    $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
 
-    //Valido si existe
-    if (isset($usuario_validar->id)) {
-        //Valido si la clave es igual al token del usuario
-        if ($this->security->checkHash($this->request->getPost('password'), $usuario_validar->password)) {
-            //Fecha actual
-            $fecha_actual = date("Y-m-d H:i:s");
-            //Fecha limite de videgncia del token de de acceso
-            $fecha_limit = date("Y-m-d H:i:s", strtotime('+' . $config->database->time_session . ' minute', strtotime($fecha_actual)));
+    try {
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión ', ['user' => $this->request->getPost('username'), 'token' => '']);
 
-            //Consulto y elimino todos los tokens que ya no se encuentren vigentes
-            $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
-            $tokens_eliminar->delete();
+        //Consulto el usuario por username del parametro get
+        $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
 
-            //Elimino el token del usuario
-            unset($usuario_validar->password);
-            //Creo el token de acceso para el usuario solicitado, con vigencia del valor configurado en el $config time_session
-            $tokens = new Tokens();
-            $tokens->token = $this->security->hash($usuario_validar->id . "-" . $usuario_validar->tipo_documento . "-" . $usuario_validar->numero_documento);
-            $tokens->user_current = json_encode($usuario_validar);
-            $tokens->date_create = $fecha_actual;
-            $tokens->date_limit = $fecha_limit;
-            $tokens->save();
+        //Valido si existe
+        if (isset($usuario_validar->id)) {
+            //Valido si la clave es igual al token del usuario
+            if ($this->security->checkHash($this->request->getPost('password'), $usuario_validar->password)) {
+                //Fecha actual
+                $fecha_actual = date("Y-m-d H:i:s");
+                //Fecha limite de videgncia del token de de acceso
+                $fecha_limit = date("Y-m-d H:i:s", strtotime('+' . $config->database->time_session . ' minute', strtotime($fecha_actual)));
 
-            //Genero el array que retornare como json, para el manejo del localStorage en el cliente
-            $token_actual = array("token" => $tokens->token, "usuario" => $usuario_validar->primer_nombre . " " . $usuario_validar->segundo_nombre . " " . $usuario_validar->primer_apellido . " " . $usuario_validar->segundo_apellido);
-            echo json_encode($token_actual);
+                //Consulto y elimino todos los tokens que ya no se encuentren vigentes
+                $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
+                $tokens_eliminar->delete();
+
+                //Elimino el token del usuario
+                unset($usuario_validar->password);
+                //Creo el token de acceso para el usuario solicitado, con vigencia del valor configurado en el $config time_session
+                $tokens = new Tokens();
+                $tokens->token = $this->security->hash($usuario_validar->id . "-" . $usuario_validar->tipo_documento . "-" . $usuario_validar->numero_documento);
+                $tokens->user_current = json_encode($usuario_validar);
+                $tokens->date_create = $fecha_actual;
+                $tokens->date_limit = $fecha_limit;
+                $tokens->save();
+
+                //Genero el array que retornare como json, para el manejo del localStorage en el cliente
+                $token_actual = array("token" => $tokens->token, "usuario" => $usuario_validar->primer_nombre . " " . $usuario_validar->segundo_nombre . " " . $usuario_validar->primer_apellido . " " . $usuario_validar->segundo_apellido);
+
+                //Registro la accion en el log de convocatorias
+                $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al sistema, los datos de acceso son los correctos.', ['user' => $this->request->getPost('username'), 'token' => $tokens->token]);
+                $logger->close();
+
+                echo json_encode($token_actual);
+            } else {
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto', ['user' => $this->request->getPost('username'), 'token' => '']);
+                $logger->close();
+                echo "error_clave";
+            }
         } else {
-            echo "error";
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado', ['user' => $this->request->getPost('username'), 'token' => '']);
+            $logger->close();
+            echo "error_usuario";
+
         }
-    } else {
-        // To protect against timing attacks. Regardless of whether a user
-        // exists or not, the script will take roughly the same amount as
-        // it will always be computing a hash.
-        //echo $this->security->hash(rand());
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_participante ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+// Recupera todos los registros
+$app->post('/consultar_usuario', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario ', ['user' => $this->request->getPost('username'), 'token' => '']);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if (isset($user_current["id"])) {
+
+                //Registro la accion en el log de convocatorias
+                $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo consultar_usuario"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+
+                echo json_encode($user_current);
+                exit;
+            }
+            else {
+                   //Registro la accion en el log de convocatorias
+                   $logger->error('"token":"{token}","user":"{user}","message":"Error el usuario no existe en la base de datos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                   $logger->close();
+                   echo "error";
+                   exit;
+               }
+        }
+        else
+        {
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
         echo "error_metodo";
     }
 }
@@ -103,8 +189,8 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
                 echo "error_editar";
             } else {
                 //Creo el cuerpo del messaje html del email
-                $html_recordar_usuario= Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
-                $html_recordar_usuario= str_replace("**password**", date("Ymd"), $html_recordar_usuario);
+                $html_recordar_usuario = Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
+                $html_recordar_usuario = str_replace("**password**", date("Ymd"), $html_recordar_usuario);
 
                 $mail = new PHPMailer();
                 $mail->IsSMTP();
@@ -143,33 +229,31 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
 $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Valido si existe el correo electronico
-            $usuario_validar = Usuarios::findFirst("id = '".$id."'");
-            if (isset($usuario_validar->id)) {
-                if ($usuario_validar->active) {
+        $usuario_validar = Usuarios::findFirst("id = '" . $id . "'");
+        if (isset($usuario_validar->id)) {
+            if ($usuario_validar->active) {
+                //Redireccionar
+                header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
+                exit();
+            } else {
+                $usuario_validar->active = true;
+                $usuario_validar->actualizado_por = "7";
+                $usuario_validar->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($usuario_validar->save() === false) {
                     //Redireccionar
-                    header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
+                    header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se registro un error en el método, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
+                    exit();
+                } else {
+                    //Redireccionar
+                    header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
                     exit();
                 }
-                else
-                {
-                    $usuario_validar->active = true;
-                    $usuario_validar->actualizado_por = "7";
-                    $usuario_validar->fecha_actualizacion = date("Y-m-d H:i:s");
-                    if ($usuario_validar->save() === false) {
-                        //Redireccionar
-                        header('Location: '.$config->sistema->url_admin.'index.html?msg=Se registro un error en el método, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
-                        exit();
-                    } else {
-                        //Redireccionar
-                        header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
-                        exit();
-                    }
-                }
-            } else {
-                //Redireccionar
-                header('Location: '.$config->sistema->url_admin.'index.html?msg=No es un usuario valido, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
-                exit();
             }
+        } else {
+            //Redireccionar
+            header('Location: ' . $config->sistema->url_admin . 'index.html?msg=No es un usuario valido, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
+            exit();
+        }
     } catch (Exception $ex) {
         echo "error_metodo";
     }
@@ -219,9 +303,9 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                     } else {
 
                         //Creo el cuerpo del messaje html del email
-                        $html_solicitud_usuario= Tablasmaestras::find("active=true AND nombre='html_solicitud_usuario'")[0]->valor;
-                        $html_solicitud_usuario= str_replace("**usuario**", $post["correo_electronico"], $html_solicitud_usuario);
-                        $html_solicitud_usuario= str_replace("**srcverificacion**", $config->sistema->url_curl."Session/verificar_usuario/".$usuario->id, $html_solicitud_usuario);
+                        $html_solicitud_usuario = Tablasmaestras::find("active=true AND nombre='html_solicitud_usuario'")[0]->valor;
+                        $html_solicitud_usuario = str_replace("**usuario**", $post["correo_electronico"], $html_solicitud_usuario);
+                        $html_solicitud_usuario = str_replace("**srcverificacion**", $config->sistema->url_curl . "Session/verificar_usuario/" . $usuario->id, $html_solicitud_usuario);
 
 
                         $mail = new PHPMailer();

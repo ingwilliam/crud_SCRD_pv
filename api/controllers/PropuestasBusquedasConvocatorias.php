@@ -254,6 +254,29 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                         }
                     }
                 }
+                
+                if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
+                    $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
+                    $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+                    
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $valor->id_estado = 52;
+                        $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
+                    } else {
+                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 11 AND active=true");
+                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                        if ($fecha_actual < $fecha_apertura) {
+                            $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                        } else {
+                            $valor->id_estado = 51;
+                            $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                        }
+                    }
+                    
+                }
 
 
                 //Realizo el filtro de estados
@@ -436,7 +459,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a validar acceso a la convocatoria"', ['user' => '', 'token' => $request->get('token')]);
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -475,10 +498,145 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 }
                 else
                 {
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la convocatoria('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "ingresar";
+                    //Valido si existe el codigo de la propuesta
+                    if(is_numeric($request->getPost('p'))) 
+                    {
+                        if($request->getPost('p')==0)
+                        {
+                            //Consulto la convocatoria solicitada
+                            $conditions = ['id' => $id, 'active' => true];
+                            $convocatoria = Convocatorias::findFirst(([
+                                        'conditions' => 'id=:id: AND active=:active:',
+                                        'bind' => $conditions,
+                            ]));
+
+                            //Valido cuantas propuestas estan permitidas por convocatoria
+                            //Valido que sea la convocatoria principal                    
+                            $propuestas_permitidas=$convocatoria->propuestas_permitidas;
+                            if($convocatoria->convocatoria_padre_categoria!=null)
+                            {
+
+                                $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
+                            }                    
+                            if($propuestas_permitidas==null)
+                            {
+                                $propuestas_permitidas = 1;
+                            }
+
+                            //Consulto los perfiles del usuario
+                            $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
+                            $array_usuarios_perfiles="";
+                            foreach ($usuario_perfiles as $perfil) {
+                                $array_usuarios_perfiles=$array_usuarios_perfiles.$perfil->id.",";
+                            }
+                            $array_usuarios_perfiles = substr($array_usuarios_perfiles, 0, -1);
+
+                            //Consulto los participantes del usuario
+                            $participantes = Participantes::find("usuario_perfil IN (".$array_usuarios_perfiles .") AND tipo='Participante'");
+                            $array_participantes="";
+                            foreach ($participantes as $participante) {
+                                $array_participantes=$array_participantes.$participante->id.",";
+                            }
+                            $array_participantes = substr($array_participantes, 0, -1);
+
+                            //Consulto las propuestas de los participantes
+                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");
+                            if(count($propuestas)<$propuestas_permitidas)
+                            {
+                                //Registro la accion en el log de convocatorias
+                                $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la propuesta ('.$request->getPost('p').')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "ingresar";
+                            }
+                            else
+                            {
+                                //Registro la accion en el log de convocatorias
+                                $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "error_maximo";
+                            }
+                                                        
+                        }
+                        else
+                        {
+                            //Consulto la propuesta solicitada
+                            $conditions = ['id' => $request->getPost('p'), 'active' => true];
+                            $propuesta = Propuestas::findFirst(([
+                                        'conditions' => 'id=:id: AND active=:active:',
+                                        'bind' => $conditions,
+                            ]));
+
+                            if(isset($propuesta->id))
+                            {
+                                //Registro la accion en el log de convocatorias
+                                $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la propuesta ('.$request->getPost('p').')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "ingresar";
+                            }
+                            else
+                            {
+                                //Registro la accion en el log de convocatorias
+                                $logger->error('"token":"{token}","user":"{user}","message":"El código de la propuesta no es el correcto"', ['user' => "", 'token' => $request->get('token')]);
+                                $logger->close();
+                                echo "error_propuesta";
+                            }
+                        }                                                
+                    }
+                    else
+                    {
+                        //Consulto la convocatoria solicitada
+                        $conditions = ['id' => $id, 'active' => true];
+                        $convocatoria = Convocatorias::findFirst(([
+                                    'conditions' => 'id=:id: AND active=:active:',
+                                    'bind' => $conditions,
+                        ]));
+
+                        //Valido cuantas propuestas estan permitidas por convocatoria
+                        //Valido que sea la convocatoria principal                    
+                        $propuestas_permitidas=$convocatoria->propuestas_permitidas;
+                        if($convocatoria->convocatoria_padre_categoria!=null)
+                        {
+
+                            $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
+                        }                    
+                        if($propuestas_permitidas==null)
+                        {
+                            $propuestas_permitidas = 1;
+                        }
+
+                        //Consulto los perfiles del usuario
+                        $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
+                        $array_usuarios_perfiles="";
+                        foreach ($usuario_perfiles as $perfil) {
+                            $array_usuarios_perfiles=$array_usuarios_perfiles.$perfil->id.",";
+                        }
+                        $array_usuarios_perfiles = substr($array_usuarios_perfiles, 0, -1);
+
+                        //Consulto los participantes del usuario
+                        $participantes = Participantes::find("usuario_perfil IN (".$array_usuarios_perfiles .") AND tipo='Participante'");
+                        $array_participantes="";
+                        foreach ($participantes as $participante) {
+                            $array_participantes=$array_participantes.$participante->id.",";
+                        }
+                        $array_participantes = substr($array_participantes, 0, -1);
+
+                        //Consulto las propuestas de los participantes
+                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");
+                        if(count($propuestas)<$propuestas_permitidas)
+                        {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la convocatoria('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "ingresar";
+                        }
+                        else
+                        {
+                            //Registro la accion en el log de convocatorias
+                            $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error_maximo";
+                        }
+                    }                    
                 }
             }
         } else {
