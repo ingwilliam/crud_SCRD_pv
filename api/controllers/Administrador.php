@@ -78,7 +78,7 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Convocatorias' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso de la propuestas
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
@@ -541,7 +541,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-                        
+
                         <?php
                         if(count($permisos_propuestas)>0)
                         {
@@ -550,7 +550,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>                                    
+                                    <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -558,7 +558,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-                        
+
                         <?php
                         if(count($permisos_menu_participante)>0)
                         {
@@ -620,49 +620,49 @@ $app->post('/menu', function () use ($app,$config) {
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
+                                <li><a href="../propuestas/perfiles.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
                                 <?php
                                 }
                                 ?>
                                 <?php
                                 if( $request->getPost('m')=="pn" )
                                 {
-                                ?>     
+                                ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
-                                <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>                                
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>                                                                                                
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>                                
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_persona_natural.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona natural</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>
                                 <?php
                                 if( $request->getPost('m')=="pj" )
                                 {
-                                ?>                                
+                                ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
-                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona jurídica</a></li>                                
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>                                                                                                                                
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Persona jurídica</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
                                 <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Junta directiva</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>                                
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>
                                 <?php
                                 if( $request->getPost('m')=="agr" )
                                 {
-                                ?>                                
+                                ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>                                                                
-                                <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Agrupación</a></li>                                
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>                                                                                                
+                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>">Términos y condiciones de participación</a></li>
+                                <li><a href="../propuestas/perfil_agrupacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Agrupación</a></li>
+                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Propuesta</a></li>
                                 <li><a href="../propuestas/integrantes.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Integrantes</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>                                
+                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Documentación</a></li>
                                 <?php
                                 }
                                 ?>
-                                
+
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -670,7 +670,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>                                    
+                                    <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -696,6 +696,14 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a style="<?php echo $style_new;?>" href="../jurados/preseleccion.html">Preselección</a>
+
+                                </li>
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../jurados/seleccion.html">Selección de jurados</a>
+
+                                </li>
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../jurados/gruposevaluacion.html">Grupos de evaluación</a>
 
                                 </li>
                             </ul>

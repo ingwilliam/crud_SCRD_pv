@@ -331,7 +331,7 @@ $app->post('/edit_participante', function () use ($app, $config) {
                   //valido si existe una propuesta del participante y convocatoria con el estado 9 (registrada)
                   //valido si la propuesta tiene el estado registrada
 
-                  if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
+                  if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
                       $participante->propuestas->modalidad_participa = $request->get('categoria');
                       //return json_encode($post);

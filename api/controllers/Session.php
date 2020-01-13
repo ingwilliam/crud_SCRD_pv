@@ -82,7 +82,7 @@ $app->post('/iniciar_session', function () use ($app, $config) {
     } else {
         // To protect against timing attacks. Regardless of whether a user
         // exists or not, the script will take roughly the same amount as
-        // it will always be computing a hash.        
+        // it will always be computing a hash.
         //echo $this->security->hash(rand());
         echo "error_metodo";
     }
@@ -104,7 +104,7 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
             } else {
                 //Creo el cuerpo del messaje html del email
                 $html_recordar_usuario= Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
-                $html_recordar_usuario= str_replace("**password**", date("Ymd"), $html_recordar_usuario);                
+                $html_recordar_usuario= str_replace("**password**", date("Ymd"), $html_recordar_usuario);
 
                 $mail = new PHPMailer();
                 $mail->IsSMTP();
@@ -117,7 +117,7 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
                 $mail->CharSet = "UTF-8";
                 $mail->IsHTML(true); // El correo se env  a como HTML
                 $mail->From = "convocatorias@scrd.gov.co";
-                $mail->FromName = "Sistema de Convocatorias";        
+                $mail->FromName = "Sistema de Convocatorias";
                 $mail->AddAddress($this->request->getPost('username'));
                 $mail->Subject = "Sistema de Convocatorias - Recordar Contraseña";
                 $mail->Body = $html_recordar_usuario;
@@ -128,7 +128,7 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
                     echo "exito";
                 } else {
                     echo "error_email";
-                }                                                 
+                }
             }
         } else {
             echo "error_usuario";
@@ -141,12 +141,12 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
 
 // Verifica el usuario
 $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {        
+    try {
         //Valido si existe el correo electronico
             $usuario_validar = Usuarios::findFirst("id = '".$id."'");
-            if (isset($usuario_validar->id)) {  
-                if ($usuario_validar->active) {  
-                    //Redireccionar                    
+            if (isset($usuario_validar->id)) {
+                if ($usuario_validar->active) {
+                    //Redireccionar
                     header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
                     exit();
                 }
@@ -156,23 +156,23 @@ $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $usuario_validar->actualizado_por = "7";
                     $usuario_validar->fecha_actualizacion = date("Y-m-d H:i:s");
                     if ($usuario_validar->save() === false) {
-                        //Redireccionar                    
+                        //Redireccionar
                         header('Location: '.$config->sistema->url_admin.'index.html?msg=Se registro un error en el método, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
                         exit();
                     } else {
-                        //Redireccionar                    
+                        //Redireccionar
                         header('Location: '.$config->sistema->url_admin.'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
                         exit();
                     }
-                }                                
+                }
             } else {
-                //Redireccionar                
+                //Redireccionar
                 header('Location: '.$config->sistema->url_admin.'index.html?msg=No es un usuario valido, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
                 exit();
-            }                
+            }
     } catch (Exception $ex) {
         echo "error_metodo";
-    }    
+    }
 });
 
 // Crea el usuario
@@ -217,7 +217,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                     if ($usuario_perfile->save($array_new) === false) {
                         echo "error_perfil";
                     } else {
-                        
+
                         //Creo el cuerpo del messaje html del email
                         $html_solicitud_usuario= Tablasmaestras::find("active=true AND nombre='html_solicitud_usuario'")[0]->valor;
                         $html_solicitud_usuario= str_replace("**usuario**", $post["correo_electronico"], $html_solicitud_usuario);
@@ -235,7 +235,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                         $mail->CharSet = "UTF-8";
                         $mail->IsHTML(true); // El correo se env  a como HTML
                         $mail->From = "convocatorias@scrd.gov.co";
-                        $mail->FromName = "Sistema de Convocatorias";        
+                        $mail->FromName = "Sistema de Convocatorias";
                         $mail->AddAddress($post["username"]);
                         $mail->Subject = "Sistema de Convocatorias - Verifición correo electrónico";
                         $mail->Body = $html_solicitud_usuario;
@@ -246,7 +246,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                             echo "exito";
                         } else {
                             echo "error_email";
-                        }                                                
+                        }
                     }
                 }
             }
@@ -254,7 +254,8 @@ $app->post('/crear_usuario', function () use ($app, $config) {
             echo "robot";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        //echo "error_metodo";
+          return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
@@ -320,7 +321,7 @@ $app->get('/login_actions', function () use ($app, $config) {
     } else {
         // To protect against timing attacks. Regardless of whether a user
         // exists or not, the script will take roughly the same amount as
-        // it will always be computing a hash.        
+        // it will always be computing a hash.
         //echo $this->security->hash(rand());
         echo "error";
     }
