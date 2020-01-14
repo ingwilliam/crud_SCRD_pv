@@ -96,7 +96,7 @@ $app->post('/new', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //cunsulta si el usuario tiene datos de participante, validando el numero de documento
+                //cunsulta si el usuario tiene datos de participante, validando el número de documento
                 //el tipo de documento y el rol de jurado.
                 $participantes = Participantes::query()
                   ->join("Usuariosperfiles")
@@ -108,7 +108,7 @@ $app->post('/new', function () use ($app, $config) {
                           )
                   ->execute();
 
-                // Valida si hay mas de dos perfiles con roles 16 o 17 y tipo Inicial
+                // Valida si hay más de dos perfiles con roles 16 o 17 y tipo Inicial
                 if( $participantes->count() >= 1 ){
 
                   return "error_duplicado";
@@ -123,7 +123,7 @@ $app->post('/new', function () use ($app, $config) {
                     if ($usuario_perfil->save() === false) {
                         echo "error";
 
-                        foreach ($participante->getMessages() as $message) {
+                        foreach ( $usuario_perfil->getMessages() as $message) {
                              echo $message;
                            }
 
@@ -202,12 +202,12 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //cunsulta si el usuario tiene datos de participante, validando el numero de documento
+                //cunsulta si el usuario tiene datos de participante, validando el número de documento
                 //el tipo de documento y el rol de jurado.
                 $participantes = Participantes::query()
-                  ->join("Usuariosperfiles")
-                  ->where(" tipo_documento = ".$request->getPost('tipo_documento')." AND numero_documento = '".$request->getPost('numero_documento')."' AND  Usuariosperfiles.perfil = 17  ")
-                  ->execute();
+                                      ->join("Usuariosperfiles")
+                                      ->where(" tipo_documento = ".$request->getPost('tipo_documento')." AND numero_documento = '".$request->getPost('numero_documento')."' AND  Usuariosperfiles.perfil = 17  ")
+                                      ->execute();
 
                 // Si hay mayor o igual a 1 registro, procede a validar
                 // en caso contrario crea nuevos registros
@@ -228,16 +228,13 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                    $participante = Participantes::findFirst(
                       [
                         " usuario_perfil = ".$usuario_perfil->id
-
+                        ." AND active =  true"   
                       ]
                     );
 
                     $participante->actualizado_por = $user_current["id"];
-                    $participante->fecha_actualizacion = date("Y-m-d H:i:s");
-                    $participante->active = true;
-
-                    //$participante->usuariosperfiles->usuarios->nombre =   $participante->
-
+                    $participante->fecha_actualizacion = date("Y-m-d H:i:s");                    
+                    
                     if ($participante->save($post) === false) {
 
                         //echo "error";
@@ -252,12 +249,9 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     return "error";
                   }
 
-
                 }else{
-
                         return "error";
-
-                    }
+                }
 
 
             } else {
@@ -267,7 +261,9 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             echo "error_token";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+       // echo "error_metodo";
+        //Para auditoria en versión de pruebas
+        echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
     }
 }
 );
@@ -287,10 +283,15 @@ $app->get('/search', function () use ($app, $config) {
         if ($token_actual > 0) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
+            $array = Array();
 
             //Si existe esta definida la variable id del Request, consulto el registro
+            
+           // echo $user_current["id"];
+            
             if ($request->get('id')) {
                 $participante = Participantes::findFirst($request->get('id'));
+                
             } else if( $user_current["id"]){
                   //Si existe esta definida la variable id en el token_actual, consulto el registro
 
@@ -301,14 +302,16 @@ $app->get('/search', function () use ($app, $config) {
                     ]
                   );
 
+                 
+                  
                   if( $usuario_perfil->id ){
-
 
                    $participante = Participantes::findFirst(
                       [
                         " usuario_perfil = ".$usuario_perfil->id." AND active = true "
                       ]
-                    );
+                    );       
+                   
                   }else{
 
                     //consulto si el usuario que ya tiene el perfil de persona natural
@@ -338,10 +341,7 @@ $app->get('/search', function () use ($app, $config) {
 
                       }
 
-
-                    }else{
-
-                        //Si el usuario no tiene perfil de jurado ni perfil de persona natural, carga los datos del usuario
+                    }else{//Si el usuario no tiene perfil de jurado ni perfil de persona natural, carga los datos del usuario                        
                       $usuario = Usuarios::findFirst($user_current["id"]);
                       $participante = new Participantes();
                       $participante->primer_nombre = $usuario->primer_nombre;
@@ -353,59 +353,38 @@ $app->get('/search', function () use ($app, $config) {
                     }
 
                   }
+                  
+                  if($participante->ciudad_residencia){
+                      //$participante->ciudad_residencia = Ciudades::findFirst( [' id = '.$participante->ciudad_residencia ] )->nombre;
+                      
+                     $array["ciudad_residencia_name"] = Ciudades::findFirst( [' id = '.$participante->ciudad_residencia ] )->nombre  ;
+                  }
 
+                  
+                  if($participante->ciudad_nacimiento){
+                      $array["ciudad_nacimiento_name"] = Ciudades::findFirst( [' id = '.$participante->ciudad_nacimiento ] )->nombre;
+                      
+                  }
+                  
+                  if($participante->barrio_residencia){
+                      $array["barrio_residencia_name"] = Barrios::findFirst( [ 'id = '.$participante->barrio_residencia] )->nombre;                      
+                  }
+                  
+                  
 
             }else{
-
 
                 //Se crea un objeto inicial
                 $participante = new Participantes();
             }
-
-
-
-            //Creo los array de los select del formulario
-            $array["tipo_documento"]= Tiposdocumentos::find("active=true");
-            $array["sexo"]= Sexos::find("active=true");
-            $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
-            $array["identidad_genero"]= Identidadesgeneros::find("active=true");
-            $array["grupo_etnico"]= Gruposetnicos::find("active=true");
-
-            $array_ciudades=array();
-            foreach( Ciudades::find("active=true") as $value )
-            {
-                $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                if($participante->ciudad_nacimiento == $value->id ){
-                  $participante->ciudad_nacimiento = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-                }
-
-                if($participante->ciudad_residencia == $value->id ){
-                  $participante->ciudad_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-                //  $participante->ciudad_residencia =$value->nombre;
-
-                }
-            }
-            $array["ciudad"]=$array_ciudades;
-            $array_barrios=array();
-            foreach( Barrios::find("active=true") as $value )
-            {
-                $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
-
-                if($participante->barrio_residencia == $value->id ){
-                  $participante->barrio_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
-                }
-
-            }
-            $array["barrio"]= $array_barrios;
-            $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");
-            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
+     
 
             //Creo todos los array del registro
             $array["participante"] = $participante;
 
             //Retorno el array
             echo json_encode($array);
+            
         } else {
             echo "error_token";
         }

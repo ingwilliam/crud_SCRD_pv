@@ -274,6 +274,32 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 );
 
 
+// Recupera todos los registros
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual>0) {
+            
+            $robots =  Identidadesgeneros::find("active=true");
+            echo json_encode($robots);
+        }
+        else
+        {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
+    
+
 try {
     // Gestionar la consulta
     $app->handle();
