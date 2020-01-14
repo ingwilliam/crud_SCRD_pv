@@ -258,7 +258,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
                         . "INNER JOIN Entidades AS e ON e.id=c.entidad "
                         . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
-                        . "INNER JOIN UsuariosPerfiles AS up ON up.id=par.usuario_perfil "
+                        . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                         . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
                 $token = $request->get('token');
                 $sqlRec = "SELECT "
@@ -282,7 +282,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
                         . "INNER JOIN Entidades AS e ON e.id=c.entidad "
                         . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
-                        . "INNER JOIN UsuariosPerfiles AS up ON up.id=par.usuario_perfil "
+                        . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                         . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
 
                 //concatenate search sql if value exist

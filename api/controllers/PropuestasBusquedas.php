@@ -56,6 +56,64 @@ $logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
+
+//Valida el acceso a la convocatoria
+//Que este antes de la fecha de cierre
+//Confirmar el total de posibles numero de propuesta inscritas por la convocatoria
+//Verificar que no tenga mas de 2 estimulos ganados
+$app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a validar acceso a la convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Validar array del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Consulto la fecha de cierre del cronograma de la convocatoria
+            $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
+            $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                        'bind' => $conditions,
+            ]));
+            $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+            $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+            if ($fecha_actual > $fecha_cierre) {
+                echo "ingresar";
+            }
+            else
+            {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria('.$id.') no ha cerrado, la fecha de cierre es ('.$fecha_cierre_real->fecha_fin.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                echo "error_fecha_cierre";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_acceso ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+
 $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
@@ -91,6 +149,7 @@ $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
                     $array_interno[$convocatoria->id]["id"]=$convocatoria->id;
                     $array_interno[$convocatoria->id]["nombre"]=$convocatoria->nombre;
                     $array_interno[$convocatoria->id]["tiene_categorias"]=$convocatoria->tiene_categorias;
+                    $array_interno[$convocatoria->id]["diferentes_categorias"]=$convocatoria->diferentes_categorias;
                     
                 }
                 
@@ -214,65 +273,106 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
-                $params= json_decode($request->get('params'),true);
                 
-                $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+                $params= json_decode($request->get('params'),true);                
+                $consultar=true;
                 
-                //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
-                $nombre_convocatoria= str_replace("'", '"', $convocatoria->nombre);
-                $anio_convocatoria=$convocatoria->anio;
-                $entidad_convocatoria=$convocatoria->getEntidades()->nombre;
-                $nombre_categoria="";
-                $id_convocatoria=$convocatoria->id;                
-                $seudonimo=$convocatoria->seudonimo;                
-                if( $convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == true )
+                //Valido la fecha de cierre de la propuesta buscada por el codigo
+                if($params["codigo"]!="")
                 {
-                    $categoria= Convocatorias::findFirst("id=".$params["categoria"]." AND active=TRUE");                                        
-                    $nombre_categoria=str_replace("'", '"', $categoria->nombre);
-                    $id_convocatoria=$params["categoria"];
-                    $seudonimo=$categoria->seudonimo;                
-                }                                   
+                    
+                    //Consulto la propuesta por codigo
+                    $conditions = ['codigo' => $params["codigo"], 'active' => true];
+                    $propuesta = Propuestas::findFirst(([
+                                'conditions' => 'codigo=:codigo: AND active=:active:',
+                                'bind' => $conditions,
+                    ]));
+
+                    //Consulto la fecha de cierre del cronograma de la convocatoria
+                    $conditions = ['convocatoria' => $propuesta->convocatoria, 'active' => true,'tipo_evento'=>12];
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                                'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                                'bind' => $conditions,
+                    ]));
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $consultar=true;
+                    }
+                    else
+                    {
+                        $consultar=false;
+                    }
+                    
+                }
                 
-                //Consulto la fecha de cierre del cronograma de la convocatoria
-                $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
-                $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
-                            'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
-                            'bind' => $conditions,
-                ]));
-                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());            
-                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                if ($fecha_actual > $fecha_cierre) {
-                                        
-                    $where .= " WHERE p.active=true AND p.convocatoria=$id_convocatoria ";
+                if($consultar==true)
+                {
+                    
+                    $where .= " WHERE p.active=true ";
+                    
+                    
+                    if($params["convocatoria"]!="")
+                    {
+                        $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+                        
+                        //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+                        $id_convocatoria=$convocatoria->id;                
+                        $seudonimo=$convocatoria->seudonimo;
+                        $where .= " AND p.convocatoria=$id_convocatoria ";
+                    }
+                    
                     
                     if($params["estado"]!="")
                     {
                         $where .= " AND p.estado=".$params["estado"];
                     }
-                    
+
                     if($params["codigo"]!="")
                     {
                         $where .= " AND p.codigo='".$params["codigo"]."'";
                     }
-                    
+
                     $participante="CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido)";                    
                     if($seudonimo)
                     {
                         $participante="p.codigo";    
                     }
-                    
+
                     //Defino el sql del total y el array de datos
                     $sqlTot = "SELECT count(*) as total FROM Propuestas AS p "
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
-                            . "INNER JOIN Participantes AS par ON par.id=p.participante ";
-                    $token=$request->get('token');
-                    $sqlRec = "SELECT est.nombre AS estado,'$anio_convocatoria' AS anio ,'$entidad_convocatoria' AS entidad ,'$nombre_convocatoria' AS convocatoria ,'$nombre_categoria' AS categoria ,p.nombre AS propuesta,p.codigo,$participante AS participante,concat('<button type=\"button\" class=\"btn btn-warning cargar_propuesta\" data-toggle=\"modal\" data-target=\"#ver_propuesta\" title=\"',p.id,'\"><span class=\"glyphicon glyphicon-search\"></span></button>') as ver_propuesta, concat('<a href=\"".$config->sistema->url_report."reporte_propuesta_inscrita.php?id=',p.id,'&token=".$request->get('token')."\" target=\"_blank\"><button type=\"button\" class=\"btn btn-danger\"><span class=\"glyphicon glyphicon-edit\"></span></button></a>') as ver_reporte  FROM Propuestas AS p "                                                
+                            . "INNER JOIN Participantes AS par ON par.id=p.participante "
+                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
+                            . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
+
+                    $sqlRec = "SELECT "
+                            . "est.nombre AS estado,"
+                            . "c.anio ,"
+                            . "e.nombre AS entidad ,"
+                            . "c.nombre AS convocatoria,"
+                            . "cat.nombre AS categoria,"
+                            . "p.id AS id_propuesta,"
+                            . "p.convocatoria AS id_convocatoria,"
+                            . "p.nombre AS propuesta,"
+                            . "p.codigo,"
+                            . "per.id AS perfil ,"
+                            . "per.nombre AS tipo_participante ,"
+                            . "$participante AS participante,"                        
+                            . "concat('<button type=\"button\" class=\"btn btn-warning cargar_propuesta\" data-toggle=\"modal\" data-target=\"#ver_propuesta\" title=\"',p.id,'\"><span class=\"glyphicon glyphicon-search\"></span></button>') as ver_propuesta,"
+                            . "concat('<a href=\"" . $config->sistema->url_report . "reporte_propuesta_inscrita.php?id=',p.id,'&token=" . $request->get('token') . "\" target=\"_blank\"><button type=\"button\" class=\"btn btn-danger\"><span class=\"fa fa-bar-chart-o\"></span></button></a>') as ver_reporte  "
+                            . "FROM Propuestas AS p "
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
-                            . "INNER JOIN Participantes AS par ON par.id=p.participante ";
-                    
+                            . "INNER JOIN Participantes AS par ON par.id=p.participante "
+                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
+                            . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
+
                     //concatenate search sql if value exist
                     if (isset($where) && $where != '') {
 
@@ -282,7 +382,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
 
                     //Concateno el orden y el limit para el paginador
                     $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-
+                    
                     //ejecuto el total de registros actual
                     $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -295,15 +395,21 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     );
                     //retorno el array en json
                     echo json_encode($json_data);
-                    
                 }
                 else
                 {
-                    //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria('.$id_convocatoria.') no ha cerrado, la fecha de cierre es ('.$fecha_cierre_real->fecha_fin.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "error_fecha_cierre";
-                }                                                
+                    //creo el array
+                    $json_data = array(
+                        "draw" => intval($request->get("draw")),
+                        "recordsTotal" => 0,
+                        "recordsFiltered" => 0,
+                        "data" => array()   // total data array
+                    );
+                    //retorno el array en json
+                    echo json_encode($json_data);
+                }
+                
+                
                         
             } else {
                 //Registro la accion en el log de convocatorias           
@@ -321,7 +427,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_propuesta con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);        
         $logger->close();
-        echo "error_metodo";
+        echo "error_metodo ".$ex->getMessage();
     }
 }
 );
@@ -362,6 +468,12 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 }
 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
+                
+                //Cambio del nombre del participante
+                if($propuesta->getConvocatorias()->seudonimo)
+                {
+                    $participante=$propuesta->codigo;    
+                }
                 
                 
                 $array=array();
@@ -431,7 +543,11 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     }
                 }
 
-                $array["administrativos"] = $documentos_administrativos;
+                //Solo muestro los archivos administrativos cuando es una convocatoria sin seudonimos
+                if($propuesta->getConvocatorias()->seudonimo == false)
+                {
+                    $array["administrativos"] = $documentos_administrativos;
+                }
 
                 $array["tecnicos"] = $documentos_tecnicos;                
                 
