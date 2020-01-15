@@ -630,10 +630,8 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                             $array_participantes = substr($array_participantes, 0, -1);
                             
                             //Consulto las propuestas de los participantes
-                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");
-                            
-                            return json_encode($propuestas);
-                            
+                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");                            
+                                                        
                             if(count($propuestas)<$propuestas_permitidas)
                             {
                                 //Registro la accion en el log de convocatorias
