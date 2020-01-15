@@ -56,7 +56,7 @@ $app->post('/new', function () use ($app, $config) {
         $total=0;
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -65,7 +65,7 @@ $app->post('/new', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl."Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -76,10 +76,6 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                //$area = new Entidades();
-                //$area->creado_por = $user_current["id"];
-                //$area->fecha_creacion = date("Y-m-d H:i:s");
-                //$area->active = true;
 
                 $criterio = new Convocatoriasrondascriterios();
                 $criterio->creado_por = $user_current["id"];
@@ -88,62 +84,41 @@ $app->post('/new', function () use ($app, $config) {
 
 
                 //Verificar que la suma de los puntajes no sea mayor a puntaje_maximo_criterios
+                //se buscan los criterios activos relacionadso con la ronda
                 $criterios = Convocatoriasrondascriterios::find(
                     [
-                        "convocatoria_ronda = ".$request->getPut('convocatoria_ronda')." AND active = true",
+                        "convocatoria_ronda = ".$request->getPost('convocatoria_ronda')." AND active = true",
                          "order" => 'orden ASC'
                     ]
                   );
 
-                      //echo json_encode($criterios);
-
+                  //se busca el valor maximo que debe de tener la suma de los criterios
                 $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='puntaje_maximo_criterios'");
-
 
                 $array_grupo_puntaje = array();
 
-                //echo "Criterios--->>";
-              //  echo json_encode($criterios);
-
+                //se hace la suma por grupo de criterios, encaso de que un criterio sea exclusivo,
+                // solo se tienen en cuenta el valor del exclusivo. Se almacena el valor
                 foreach ($criterios as $c) {
-
-                  //$total = $total + $c->puntaje_maximo;
-
-                   //echo  $c->grupo_criterio."->".( ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo)." ".($c->exclusivo).",";
-
-                  $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo;
+                    $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo ? $c->puntaje_maximo: ( $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo) );
 
                 }
 
-                  $array_grupo_puntaje[ $post["grupo_criterio"] ] = ( $post["exclusivo"] ) ? $post["puntaje_maximo"] :   $array_grupo_puntaje[ $post["grupo_criterio"] ]+ $post["puntaje_maximo"];
+                // a la suma de los valores del grupo se le suma el valor del nuevo criterio,
+                // se tienen en cue nta si es exclusivo
+                $array_grupo_puntaje[ $post["grupo_criterio"] ] = ( ( $post["exclusivo"] == 'true' ) ? $post["puntaje_maximo"] :  ( $array_grupo_puntaje[$post["grupo_criterio"]] + $post["puntaje_maximo"] ) ) ;
 
-              //  echo "grupo--->>";
-
-                //echo json_encode($array_grupo_puntaje);
-
-              /*  foreach ($criterios as $c) {
-
-                  $total = $total + $c->puntaje_maximo;
-
-                }*/
-
+                //Se suman los subtotales de los grupos, para calcuar el total
                 foreach ($array_grupo_puntaje as $key => $value) {
 
                   $total = $total + $value;
 
                 }
 
-                  //echo " puntaje_maximo-->".$post["puntaje_maximo"];
-                  //echo " total1-->".$total;
-                //puntaje maximo del criterio a crear $post["puntaje_maximo"]
-              //  $total = $total + $post["puntaje_maximo"];
-
-
-
+                //si el total es mayor que el puntaje_maximo_criterios se retorna error
                 if( $total > $tabla_maestra->valor ){
                     return "error_puntaje";
                 }
-
 
                 if ($criterio->save($post) === false) {
 
@@ -154,7 +129,7 @@ $app->post('/new', function () use ($app, $config) {
                     }
                     */
 
-                    echo "error";
+                    return "error";
                 } else {
                     echo $criterio->id;
                 }
@@ -164,7 +139,7 @@ $app->post('/new', function () use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
 
     } catch (Exception $ex) {
@@ -226,7 +201,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     //$total = $total + $c->puntaje_maximo;
                     if( $c->id != $put["id_registro_criterio"] ){
 
-                       echo "[id->".$c->id.",".$c->grupo_criterio."->".( ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo).",".($c->exclusivo)."]";
+                       //echo "[id->".$c->id.",".$c->grupo_criterio."->".( ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo).",".($c->exclusivo)."]";
 
                       $array_grupo_puntaje[$c->grupo_criterio] = ($c->exclusivo) ? $c->puntaje_maximo: $array_grupo_puntaje[$c->grupo_criterio]+$c->puntaje_maximo;
                     }
@@ -234,12 +209,12 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                   }
 
-                    $array_grupo_puntaje[ $put["grupo_criterio"] ] = ( $put["exclusivo"] ) ? $put["puntaje_maximo"] :   $array_grupo_puntaje[ $put["grupo_criterio"] ]+ $put["puntaje_maximo"];
+                    $array_grupo_puntaje[ $put["grupo_criterio"] ] = ( $put["exclusivo"]== 'true' ) ? $put["puntaje_maximo"] :   $array_grupo_puntaje[ $put["grupo_criterio"] ]+ $put["puntaje_maximo"];
 
 
-                    echo "grupo--->>";
+                    //echo "grupo--->>";
 
-                    echo json_encode($array_grupo_puntaje);
+                  //  echo json_encode($array_grupo_puntaje);
 
                   /*foreach ($criterios as $c) {
 
@@ -255,8 +230,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     }
 
-                    echo " puntaje_maximo-->".$put["puntaje_maximo"];
-                    echo " total1-->".$total;
+                    //echo " puntaje_maximo-->".$put["puntaje_maximo"];
+                    //echo " total1-->".$total;
                     //$total = $total + $post["puntaje_maximo"];
 
                     if( $total > $tabla_maestra->valor ){
