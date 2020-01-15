@@ -302,6 +302,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+
 try {
     // Gestionar la consulta
     $app->handle();

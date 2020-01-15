@@ -84,31 +84,70 @@ $app->get('/search', function () use ($app, $config) {
                          ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
                          ->join("Propuestas"," Participantes.id = Propuestas.participante")
                           //perfil = 17  perfil de jurado
-                         ->where("Usuariosperfiles.perfil = 17 ")
+                         ->where("Usuariosperfiles.perfil IN (17) ")
                          ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
                          ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
                          ->execute()
                          ->getFirst();
-
-
+                        
                        if( $participante->id == null ){
 
-                         //busca la información del ultimo perfil creado
+                         //busca la información del ultimo perfil creado con el perfil de jurado
+                         //17	Jurados
                          $old_participante = Participantes::findFirst(
                            [
                              "usuario_perfil = ".$usuario_perfil->id,
                              "order" => "id DESC" //trae el último
                            ]
                           );
-
-                         $new_participante = clone $old_participante;
-                         $new_participante->id = null;
-                         $new_participante->actualizado_por = null;
-                         $new_participante->fecha_actualizacion = null;
-                         $new_participante->creado_por = $user_current["id"];
-                         $new_participante->fecha_creacion = date("Y-m-d H:i:s");
-                         $new_participante->participante_padre = $old_participante->id;
-                         $new_participante->tipo = "Participante";
+                            
+                         if( $old_participante ){                            
+                             
+                             $new_participante = clone $old_participante;
+                             $new_participante->id = null;
+                             $new_participante->actualizado_por = null;
+                             $new_participante->fecha_actualizacion = null;
+                             $new_participante->creado_por = $user_current["id"];
+                             $new_participante->fecha_creacion = date("Y-m-d H:i:s");
+                             $new_participante->participante_padre = $old_participante->id;
+                             $new_participante->tipo = "Participante";
+                             
+                         }else{
+                             
+                             $usuario_perfil_pn  = Usuariosperfiles::findFirst(
+                                 [
+                                     " usuario = ".$user_current["id"]." AND perfil = 6"
+                                 ]
+                                 );
+                             
+                             if( $usuario_perfil_pn->id != null ){
+                                 //busca la información del ultimo perfil creado con el perfil de jurado
+                                 //6	Persona Natural
+                                 $old_participante = Participantes::findFirst(
+                                     [
+                                         "usuario_perfil = ".$usuario_perfil_pn->id,
+                                         "order" => "id DESC" //trae el último
+                                     ]
+                                     );
+                                 
+                                 if( $old_participante ){
+                                     
+                                     $new_participante = clone $old_participante;
+                                     $new_participante->id = null;
+                                     $new_participante->actualizado_por = null;
+                                     $new_participante->fecha_actualizacion = null;
+                                     $new_participante->creado_por = $user_current["id"];
+                                     $new_participante->fecha_creacion = date("Y-m-d H:i:s");
+                                     $new_participante->participante_padre = $old_participante->id;
+                                     $new_participante->tipo = "Participante";
+                                     $new_participante->usuario_perfil = $usuario_perfil->id ;
+                                     
+                                 }
+                                 
+                             }
+                             
+                         }
+                         
 
 
                          //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
@@ -222,8 +261,6 @@ $app->get('/search', function () use ($app, $config) {
                         //array_push($array["participante"], ["resumen" => $participante->propuestas->resumen] );
                         $array["perfil"] = $participante->propuestas->resumen;
                       }
-
-
                          //Creo los array de los select del formulario
                          $array["categoria"]= $participante->propuestas->modalidad_participa;
                          $array["tipo_documento"]= Tiposdocumentos::find("active=true");
@@ -231,35 +268,10 @@ $app->get('/search', function () use ($app, $config) {
                          $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
                          $array["identidad_genero"]= Identidadesgeneros::find("active=true");
                          $array["grupo_etnico"]= Gruposetnicos::find("active=true");
-                         $array_ciudades=array();
-
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($participante->ciudad_nacimiento == $value->id ){
-                               $participante->ciudad_nacimiento = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-                             }
-
-                             if($participante->ciudad_residencia == $value->id ){
-                               $participante->ciudad_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-                             }
-                         }
-                         $array["ciudad"]=$array_ciudades;
-
-                         //Barrios
-                         $array_barrios=array();
-                         foreach( Barrios::find("active=true") as $value )
-                         {
-                             $array_barrios[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
-
-                             if($participante->barrio_residencia == $value->id ){
-                               $participante->barrio_residencia = array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getLocalidades()->nombre." - ".$value->getLocalidades()->getCiudades()->nombre,"value"=>$value->nombre);
-                             }
-
-                         }
-                         $array["barrio"]= $array_barrios;
+                                               
+                         $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
+                         $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
+                         $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;                        
 
                          $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");
                          $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
@@ -331,7 +343,7 @@ $app->post('/edit_participante', function () use ($app, $config) {
                   //valido si existe una propuesta del participante y convocatoria con el estado 9 (registrada)
                   //valido si la propuesta tiene el estado registrada
 
-                  if( $participante->propuestas  != null and $participante->propuestas->estado == 7 ){
+                  if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
                       $participante->propuestas->modalidad_participa = $request->get('categoria');
                       //return json_encode($post);
@@ -416,19 +428,10 @@ $app->get('/search_educacion_formal', function () use ($app, $config) {
                        }
 
 
-                        $array["usuario_perfil"]=$usuario_perfil->id;
-
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($educacionformal->ciudad != null && $educacionformal->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                        $array["usuario_perfil"]=$usuario_perfil->id; 
+                        
+                        
+                        $array["ciudad_name"] = $educacionformal->Ciudad->nombre;
 
                         $array["nivel_educacion"] = Niveleseducativos::find("active=true");
 
@@ -1085,17 +1088,8 @@ $app->get('/search_educacion_no_formal', function () use ($app, $config) {
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($educacionnoformal->ciudad != null && $educacionnoformal->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                       
+                        $array["ciudad_name"] = $educacionnoformal->Ciudad->nombre;
 
                         $tipos =Tablasmaestras::findFirst("active=true AND nombre='tipo_educacion_no_formal'");
                         $array["tipo"]=array();
@@ -1673,17 +1667,9 @@ $app->get('/search_experiencia_laboral', function () use ($app, $config) {
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($experiencialaboral->ciudad != null && $experiencialaboral->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                                               
+                        $array["ciudad_name"] = $experiencialaboral->Ciudad->nombre;
+                        
 
                         $tipos =Tablasmaestras::findFirst("active=true AND nombre='tipo_entidad'");
                         $array["tipo_entidad"]=array();
@@ -2245,19 +2231,9 @@ $app->get('/search_experiencia_jurado', function () use ($app, $config) {
                        }
 
 
-                        $array["usuario_perfil"]=$usuario_perfil->id;
-
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($experienciajurado->ciudad != null && $experienciajurado->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                        $array["usuario_perfil"]=$usuario_perfil->id;                        
+                         
+                        $array["ciudad_name"] = $experienciajurado->Ciudad->nombre;
 
                         $ambitos =Categoriajurado::find("active=true AND tipo='jurado_ambito'");
                         $array["ambito"]=array();
@@ -2811,18 +2787,8 @@ $app->get('/search_reconocimiento', function () use ($app, $config) {
 
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
-
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($reconocimiento->ciudad != null && $reconocimiento->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                         
+                         $array["ciudad_name"] = $reconocimiento->Ciudad->nombre;
 
                         $tipos =Categoriajurado::find("active=true AND tipo='reconocimiento_tipo'");
                         $array["tipo"]=array();
@@ -3374,19 +3340,8 @@ $app->get('/search_publicacion', function () use ($app, $config) {
                              $publicacion=Propuestajuradopublicacion::findFirst( $request->get('idregistro') );
                        }
 
-                        $array["usuario_perfil"]=$usuario_perfil->id;
-
-                         //Ciudades
-                         foreach( Ciudades::find("active=true") as $value )
-                         {
-                             $array_ciudades[]=array("id"=>$value->id,"label"=>$value->nombre." - ".$value->getDepartamentos()->nombre." - ".$value->getDepartamentos()->getPaises()->nombre,"value"=>$value->nombre);
-
-                             if($publicacion->ciudad != null && $publicacion->ciudad == $value->id ){
-                                $array["ciudad_name"]=$value->nombre;
-                             }
-
-                         }
-                         $array["ciudad"]=$array_ciudades;
+                        $array["usuario_perfil"]=$usuario_perfil->id;                        
+                        $array["ciudad_name"] = $publicacion->Ciudad->nombre;
 
                         $tipos =Categoriajurado::find("active=true AND tipo='publicaciones_tipo'");
                         $array["tipo"]=array();
