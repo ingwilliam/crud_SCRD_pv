@@ -102,6 +102,7 @@ INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALU
 INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Rechazada', true, 7, 6);
 INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Habilitada', true, 7, 7);
 
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Mi perfil', true, 7);
 INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación de propuestas', true, 7);
 INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación documentos administrativos', true, 7);
 INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación documentos técnicos', true, 7);
