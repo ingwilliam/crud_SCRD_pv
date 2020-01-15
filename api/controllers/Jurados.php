@@ -96,14 +96,16 @@ $app->post('/new', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //cunsulta si el usuario tiene datos de participante, validando el número de documento
-                //el tipo de documento y el rol de jurado.
+                //Consulta si el usuario tiene datos de participante, validando el número de documento
+                //el tipo de documento y el rol de jurado.                
                 $participantes = Participantes::query()
                   ->join("Usuariosperfiles")
                   ->where(
                           " tipo_documento = ".$request->getPost('tipo_documento')
                           ." AND numero_documento = '".$request->getPost('numero_documento')."'"
-                          ." AND ( Usuariosperfiles.perfil = 17 or Usuariosperfiles.perfil = 16 )"
+                          //6	Persona Natural
+                          //17	Jurados
+                          ." AND ( Usuariosperfiles.perfil IN (17,6) )"
                           ." AND tipo = 'Inicial'"
                           )
                   ->execute();
@@ -121,11 +123,14 @@ $app->post('/new', function () use ($app, $config) {
                     $usuario_perfil->perfil = 17;
 
                     if ($usuario_perfil->save() === false) {
-                        echo "error";
+                       
 
-                        foreach ( $usuario_perfil->getMessages() as $message) {
-                             echo $message;
-                           }
+                        //Para auditoria en versión de pruebas
+                        /*foreach ($usuario_perfil->getMessages() as $message) {
+                         echo $message;
+                         }*/
+                           
+                           echo "error";
 
                     } else {
 
@@ -142,11 +147,13 @@ $app->post('/new', function () use ($app, $config) {
 
 
                             if ($participante->save($post) === false) {
-                                echo "error";
-
-                                foreach ($participante->getMessages() as $message) {
+                                
+                                //Para auditoria en versión de pruebas
+                                /*foreach ($participante->getMessages() as $message) {
                                      echo $message;
-                                   }
+                                   }*/
+                                   
+                                 echo "error";
 
                             } else {
 
@@ -175,7 +182,7 @@ $app->post('/new', function () use ($app, $config) {
 );
 
 // Editar registro
-$app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -183,7 +190,7 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -192,7 +199,7 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -201,58 +208,74 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             if ($permiso_escritura == "ok") {
 
                 $user_current = json_decode($token_actual->user_current, true);
-
+               
+                //Buscar los usuarios_perfiles del usuario 
+                $usuariosperfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17,8)");
+                $usuper = array();
+                
+                foreach ($usuariosperfiles as $key => $value){
+                    array_push($usuper, $value->id);
+                }
+                
                 //cunsulta si el usuario tiene datos de participante, validando el número de documento
                 //el tipo de documento y el rol de jurado.
-                $participantes = Participantes::query()
-                                      ->join("Usuariosperfiles")
-                                      ->where(" tipo_documento = ".$request->getPost('tipo_documento')." AND numero_documento = '".$request->getPost('numero_documento')."' AND  Usuariosperfiles.perfil = 17  ")
-                                      ->execute();
-
-                // Si hay mayor o igual a 1 registro, procede a validar
-                // en caso contrario crea nuevos registros
-                if( $participantes->count() >= 1 ){
-
-                  //consulta si el usuario que ya tiene el perfil de jurado
-                  $usuario_perfil  = Usuariosperfiles::findFirst(
-                    [
-                      " usuario = ".$user_current["id"]." AND perfil =17"
-                    ]
-                  );
-
-                  //si el usuario actual tiene rol de jurado y tiene datos de participante, los actualiza.
-                  //en caso contrario retorna error
-                  if( $usuario_perfil->id ){
-                      $post = $app->request->getPost();
-
-                   $participante = Participantes::findFirst(
+                $participantes = Participantes::find(
                       [
-                        " usuario_perfil = ".$usuario_perfil->id
-                        ." AND active =  true"   
+                          " tipo_documento = ".$request->getPut('tipo_documento')
+                          ." AND numero_documento = '".$request->getPut('numero_documento')."'"
+                          .' AND usuario_perfil NOT IN ({usuariosperfiles:array})',
+                          'bind' => [
+                              'usuariosperfiles' => $usuper
+                          ]
                       ]
-                    );
-
-                    $participante->actualizado_por = $user_current["id"];
-                    $participante->fecha_actualizacion = date("Y-m-d H:i:s");                    
+                );
+                
+                
+                if($participantes->count() > 0){
                     
+                    return "error_duplicado";
+                    
+                }else{
+                    
+                    //Consulto si existe el usuario perfil con rol de jurado
+                    //17	Jurados
+                    $usuarioperfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=17");
+                    
+                    //si no existe creo el usuario perfil con rol de jurado
+                    if( !$usuarioperfil ){
+                        
+                        $usuarioperfil = new Usuariosperfiles();
+                        $usuarioperfil->usuario = $user_current["id"];
+                        $usuarioperfil->perfil = 17;
+                        
+                        if ($usuarioperfil->save() === false) {                            
+                            //Para auditoria en versión de pruebas
+                            /*foreach ($usuarioperfil->getMessages() as $message) {
+                             echo $message;
+                             }*/
+                            return "error";
+                        }                        
+                    }
+                    
+                    $post = $app->request->getPut();                   
+                   
+                    $participante = Participantes::findFirst($id);
+                    $participante->actualizado_por = $user_current["id"];
+                    $participante->fecha_actualizacion = date("Y-m-d H:i:s");    
+                   
                     if ($participante->save($post) === false) {
-
+                        
                         //echo "error";
                         //Para auditoria en versión de pruebas
                         foreach ($participante->getMessages() as $message) {
-                             echo $message;
-                           }
-
-                    }
-
-                  }else{
-                    return "error";
-                  }
-
-                }else{
-                        return "error";
+                            echo $message;
+                        }
+                        
+                    }else{
+                        echo $participante->id;
+                    }                  
+                    
                 }
-
 
             } else {
                 echo "acceso_denegado";
@@ -261,9 +284,10 @@ $app->post('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             echo "error_token";
         }
     } catch (Exception $ex) {
-       // echo "error_metodo";
-        //Para auditoria en versión de pruebas
-        echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
+      
+       //Para auditoria en versión de pruebas
+       // echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
+       echo "error_metodo";
     }
 }
 );
@@ -274,6 +298,7 @@ $app->get('/search', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+        $participante = new Participantes();
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
@@ -289,95 +314,69 @@ $app->get('/search', function () use ($app, $config) {
             
            // echo $user_current["id"];
             
-            if ($request->get('id')) {
+            if ( $request->get('id') ) {
+                
                 $participante = Participantes::findFirst($request->get('id'));
                 
-            } else if( $user_current["id"]){
-                  //Si existe esta definida la variable id en el token_actual, consulto el registro
-
-                  //consulto si el usuario que ya tiene el perfil de jurado
-                  $usuario_perfil  = Usuariosperfiles::findFirst(
-                    [
-                      " usuario = ".$user_current["id"]." AND perfil =17"
-                    ]
-                  );
-
-                 
-                  
-                  if( $usuario_perfil->id ){
-
-                   $participante = Participantes::findFirst(
+            } else if( $user_current["id"] ){
+                
+                
+                $usuariosperfil  = Usuariosperfiles::findFirst(
                       [
-                        " usuario_perfil = ".$usuario_perfil->id." AND active = true "
+                          " usuario = ".$user_current["id"]
+                          ." AND perfil = 17 "
                       ]
-                    );       
-                   
-                  }else{
-
-                    //consulto si el usuario que ya tiene el perfil de persona natural
-                    $usuario_perfil  = Usuariosperfiles::findFirst(
+                   );                
+                
+                if( $usuariosperfil ){                    
+                    
+                    $participante = Participantes::findFirst(
                       [
-                        " usuario = ".$user_current["id"]." AND perfil =16"
+                          " usuario_perfil = ".$usuariosperfil->id
+                          ." AND active = true "
                       ]
-                    );
-
-                    if( $usuario_perfil->id ){
-
-                     $participante = Participantes::findFirst(
+                    ); 
+                    
+                    
+                }    
+                
+                if(!$participante){
+                    
+                    $usuariosperfil  = Usuariosperfiles::findFirst(
                         [
-                          " usuario_perfil = ".$usuario_perfil->id." AND active = true "
+                            " usuario = ".$user_current["id"]
+                            ." AND perfil = 6"
                         ]
-                      );
-
-                      if(!$participante->id){
-                        //Si el usuario no tiene registros en la tabla participante, carga los datos del usuario
-                        $usuario = Usuarios::findFirst($user_current["id"]);
-                        $participante = new Participantes();
-                        $participante->primer_nombre = $usuario->primer_nombre;
-                        $participante->segundo_nombre = $usuario->segundo_nombre;
-                        $participante->primer_apellido = $usuario->primer_apellido;
-                        $participante->segundo_apellido = $usuario->segundo_apellido;
-                        $participante->correo_electronico = $usuario->username;
-
-                      }
-
-                    }else{//Si el usuario no tiene perfil de jurado ni perfil de persona natural, carga los datos del usuario                        
-                      $usuario = Usuarios::findFirst($user_current["id"]);
-                      $participante = new Participantes();
-                      $participante->primer_nombre = $usuario->primer_nombre;
-                      $participante->segundo_nombre = $usuario->segundo_nombre;
-                      $participante->primer_apellido = $usuario->primer_apellido;
-                      $participante->segundo_apellido = $usuario->segundo_apellido;
-                      $participante->correo_electronico = $usuario->username;
-
+                        );
+                    
+                    if($usuariosperfil){
+                        
+                        $participante = Participantes::findFirst(
+                            [
+                                " usuario_perfil = ".$usuariosperfil->id
+                                ." AND active = true "
+                            ]
+                            );
                     }
-
-                  }
-                  
-                  if($participante->ciudad_residencia){
-                      //$participante->ciudad_residencia = Ciudades::findFirst( [' id = '.$participante->ciudad_residencia ] )->nombre;
-                      
-                     $array["ciudad_residencia_name"] = Ciudades::findFirst( [' id = '.$participante->ciudad_residencia ] )->nombre  ;
-                  }
-
-                  
-                  if($participante->ciudad_nacimiento){
-                      $array["ciudad_nacimiento_name"] = Ciudades::findFirst( [' id = '.$participante->ciudad_nacimiento ] )->nombre;
-                      
-                  }
-                  
-                  if($participante->barrio_residencia){
-                      $array["barrio_residencia_name"] = Barrios::findFirst( [ 'id = '.$participante->barrio_residencia] )->nombre;                      
-                  }
-                  
-                  
-
-            }else{
-
-                //Se crea un objeto inicial
-                $participante = new Participantes();
+                    
+                }
             }
-     
+                
+            if(!$participante){
+                //Si el usuario no tiene registros en la tabla participante, carga los datos del usuario
+                $usuario = Usuarios::findFirst($user_current["id"]);
+                $participante = new Participantes();
+                $participante->primer_nombre = $usuario->primer_nombre;
+                $participante->segundo_nombre = $usuario->segundo_nombre;
+                $participante->primer_apellido = $usuario->primer_apellido;
+                $participante->segundo_apellido = $usuario->segundo_apellido;
+                $participante->correo_electronico = $usuario->username;
+            
+            }
+                        
+            $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
+            $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
+            $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;   
 
             //Creo todos los array del registro
             $array["participante"] = $participante;
@@ -394,6 +393,7 @@ $app->get('/search', function () use ($app, $config) {
     }
 }
 );
+
 
 
 //Busca el registro
@@ -501,12 +501,12 @@ $app->post('/new_participante', function () use ($app, $config) {
                   $new_participante->usuario_perfil = $old_participante->usuario_perfil;
 
                   if ($new_participante->save($post) === false) {
-                      echo "error";
-
-
-                      foreach ($participante->getMessages() as $message) {
+                      
+                      /*foreach ($new_participante->getMessages() as $message) {
                            echo $message;
-                         }
+                      }*/
+                         
+                      echo "error";
 
                   } else {
 
