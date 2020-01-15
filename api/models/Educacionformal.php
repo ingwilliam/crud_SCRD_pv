@@ -13,6 +13,16 @@ class Educacionformal extends Model
             'Propuestas',
             'id'
         );
+        
+        //Se define relacion de N a 1 con Ciudades
+        $this->belongsTo(
+            'ciudad',
+            'Ciudades',
+            'id',
+            [
+                'alias' => "Ciudad"
+            ]
+            );
     }
 
      public function validation(){

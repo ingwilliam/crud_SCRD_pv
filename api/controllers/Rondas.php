@@ -166,7 +166,7 @@ $app->post('/new', function () use ($app, $config) {
         $tokens = new Tokens();
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -175,7 +175,7 @@ $app->post('/new', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl."Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -185,22 +185,21 @@ $app->post('/new', function () use ($app, $config) {
                 //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
-                //$area = new Entidades();
-                //$area->creado_por = $user_current["id"];
-                //$area->fecha_creacion = date("Y-m-d H:i:s");
-                //$area->active = true;
+
 
                 $ronda = new Convocatoriasrondas();
                 $ronda->creado_por = $user_current["id"];
                 $ronda->fecha_creacion = date("Y-m-d H:i:s");
                 $ronda->active = true;
+                $ronda->grupoevaluador = null;
 
 
                 if ($ronda->save($post) === false) {
 
-                  /*  foreach ($ronda->getMessages() as $message) {
+                    foreach ($ronda->getMessages() as $message) {
                       echo $message;
-                    }*/
+                    }
+
                     echo "error";
                 } else {
                     echo $ronda->id;
@@ -211,10 +210,11 @@ $app->post('/new', function () use ($app, $config) {
                 echo "acceso_denegado";
             }
         } else {
-            echo "error";
+            echo "error_token";
         }
 
     } catch (Exception $ex) {
+        // echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
         echo "error_metodo";
     }
 }
@@ -425,6 +425,8 @@ $app->get('/all_convocatoria', function () use ($app) {
           //validar si tiene $categorias
           $convocatoria = Convocatorias::findFirst($request->get('idcat'));
 
+          array_push($array, $convocatoria->id);
+
           if( $convocatoria->tiene_categorias){
 
             $convocatorias = Convocatorias::find(
@@ -438,12 +440,7 @@ $app->get('/all_convocatoria', function () use ($app) {
               array_push($array, $conv->id);
             }
 
-              //array_push($array, $convocatoria->id);
-          }else{
-              array_push($array, $convocatoria->id);
           }
-
-
 
           //resultado con filtro
           $rondas = Convocatoriasrondas::find(
@@ -458,23 +455,21 @@ $app->get('/all_convocatoria', function () use ($app) {
                 ]
             );
 
+          foreach ($rondas as $ronda) {
+                $ronda->actualizado_por = null;
+                $ronda->creado_por = null;
+                array_push($response, ['categoria'=>$ronda->convocatorias->nombre, 'ronda'=>$ronda]);
+            }
 
-            foreach ($rondas as $ronda) {
-                  $ronda->actualizado_por = null;
-                  $ronda->creado_por = null;
-                  array_push($response, ['categoria'=>$ronda->convocatorias->nombre, 'ronda'=>$ronda]);
-              }
-
-
-            //resultado sin filtro
-            $trondas = Convocatoriasrondas::find(
-                [
-                    "convocatoria IN ({idConvocatoria:array}) ",
-                    "bind" => [
-                      "idConvocatoria" => $array
-                    ]
-                ]
-              );
+          //resultado sin filtro
+          $trondas = Convocatoriasrondas::find(
+              [
+                  "convocatoria IN ({idConvocatoria:array}) ",
+                  "bind" => [
+                    "idConvocatoria" => $array
+                  ]
+              ]
+            );
 
             //creo el array
             $json_data = array(

@@ -61,11 +61,11 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-    
+
     try {
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión ', ['user' => $this->request->getPost('username'), 'token' => '']);        
-        
+        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión ', ['user' => $this->request->getPost('username'), 'token' => '']);
+
         //Consulto el usuario por username del parametro get
         $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
 
@@ -94,27 +94,27 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
 
                 //Genero el array que retornare como json, para el manejo del localStorage en el cliente
                 $token_actual = array("token" => $tokens->token, "usuario" => $usuario_validar->primer_nombre . " " . $usuario_validar->segundo_nombre . " " . $usuario_validar->primer_apellido . " " . $usuario_validar->segundo_apellido);
-                
+
                 //Registro la accion en el log de convocatorias
-                $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al sistema, los datos de acceso son los correctos.', ['user' => $this->request->getPost('username'), 'token' => $tokens->token]);        
+                $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al sistema, los datos de acceso son los correctos.', ['user' => $this->request->getPost('username'), 'token' => $tokens->token]);
                 $logger->close();
-                
+
                 echo json_encode($token_actual);
             } else {
-                //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto', ['user' => $this->request->getPost('username'), 'token' => '']);        
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto', ['user' => $this->request->getPost('username'), 'token' => '']);
                 $logger->close();
                 echo "error_clave";
             }
         } else {
-            //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado', ['user' => $this->request->getPost('username'), 'token' => '']);        
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado', ['user' => $this->request->getPost('username'), 'token' => '']);
             $logger->close();
             echo "error_usuario";
-            
+
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_participante ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -128,46 +128,46 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-    
+
     try {
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario ', ['user' => $this->request->getPost('username'), 'token' => '']);        
-        
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario ', ['user' => $this->request->getPost('username'), 'token' => '']);
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
+
             //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
             $user_current = json_decode($token_actual->user_current, true);
-                
+
             if (isset($user_current["id"])) {
-                
+
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo consultar_usuario"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
-                
+
                 echo json_encode($user_current);
                 exit;
             }
             else {
-                   //Registro la accion en el log de convocatorias           
+                   //Registro la accion en el log de convocatorias
                    $logger->error('"token":"{token}","user":"{user}","message":"Error el usuario no existe en la base de datos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                    $logger->close();
                    echo "error";
                    exit;
                }
         }
-        else 
+        else
         {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -232,7 +232,7 @@ $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
         $usuario_validar = Usuarios::findFirst("id = '" . $id . "'");
         if (isset($usuario_validar->id)) {
             if ($usuario_validar->active) {
-                //Redireccionar                    
+                //Redireccionar
                 header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
                 exit();
             } else {
@@ -240,17 +240,17 @@ $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $usuario_validar->actualizado_por = "7";
                 $usuario_validar->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($usuario_validar->save() === false) {
-                    //Redireccionar                    
+                    //Redireccionar
                     header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se registro un error en el método, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
                     exit();
                 } else {
-                    //Redireccionar                    
+                    //Redireccionar
                     header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
                     exit();
                 }
             }
         } else {
-            //Redireccionar                
+            //Redireccionar
             header('Location: ' . $config->sistema->url_admin . 'index.html?msg=No es un usuario valido, comuníquese con la mesa de ayuda soporte.convocatorias@scrd.gov.co&msg_tipo=danger');
             exit();
         }
@@ -338,7 +338,8 @@ $app->post('/crear_usuario', function () use ($app, $config) {
             echo "robot";
         }
     } catch (Exception $ex) {
-        echo "error_metodo";
+        //echo "error_metodo";
+          return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );
@@ -404,7 +405,7 @@ $app->get('/login_actions', function () use ($app, $config) {
     } else {
         // To protect against timing attacks. Regardless of whether a user
         // exists or not, the script will take roughly the same amount as
-        // it will always be computing a hash.        
+        // it will always be computing a hash.
         //echo $this->security->hash(rand());
         echo "error";
     }

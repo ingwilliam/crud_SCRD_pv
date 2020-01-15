@@ -23,6 +23,14 @@ class Juradospostulados extends Model
         'id',
         ['alias' => 'Propuestas']
       );
+
+      $this->hasMany(
+        'id',
+        'Juradosnotificaciones',
+        'juradospostulado',
+        ['alias' => 'Notificaciones']
+      );
+
     }
 
      public function validation(){
