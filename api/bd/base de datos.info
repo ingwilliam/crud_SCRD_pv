@@ -97,4 +97,18 @@ ALTER TABLE convocatorias DROP COLUMN propuestas_permitidas;
 ALTER TABLE convocatorias ADD COLUMN propuestas_permitidas Integer DEFAULT NULL;
 
 INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Anulada', true, 7, 3);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Por Subsanar', true, 7, 4);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Subsanación Recibida', true, 7, 5);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Rechazada', true, 7, 6);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Habilitada', true, 7, 7);
+
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación de propuestas', true, 7);
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación documentos administrativos', true, 7);
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación documentos técnicos', true, 7);
+
+ALTER TABLE propuestas ADD verificacion_administrativos boolean DEFAULT FALSE;
+ALTER TABLE propuestas ADD verificacion_tecnicos boolean DEFAULT FALSE;
+
+
+
 

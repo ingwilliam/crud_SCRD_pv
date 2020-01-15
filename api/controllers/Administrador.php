@@ -528,7 +528,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Tecnicos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Técnicos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
@@ -551,7 +551,8 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>                                    
+                                    <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
+                                    <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>                                    
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

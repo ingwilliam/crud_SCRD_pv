@@ -290,6 +290,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
 
                     if($propuesta->id!=null)
                     {
+                    
                         $convocatoria= Convocatorias::findFirst("id=".$propuesta->convocatoria." AND active=TRUE");
 
                         //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
@@ -311,19 +312,19 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         else
                         {
                             $consultar=false;
-                        }    
+                        }
                     }
                     else
                     {
                         $consultar=false;
-                    } 
-                                        
+                    }
                 }
                 
                 if($consultar==true)
                 {
                     
-                    $where .= " WHERE p.active=true ";
+                    //Consulto todas las propuestas menos la del estado registrada
+                    $where .= " WHERE p.active=true AND p.estado <> 7 ";
                     
                     
                     if($params["convocatoria"]!="")
@@ -373,6 +374,12 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "p.convocatoria AS id_convocatoria,"
                             . "p.nombre AS propuesta,"
                             . "p.codigo,"
+                            . "p.verificacion_administrativos,"
+                            . "p.verificacion_tecnicos,"
+                            . "'a' AS btn_ver_documentacion,"
+                            . "'a' AS btn_ver_subsanacion,"
+                            . "'a' AS btn_verificacion_1,"
+                            . "'a' AS btn_verificacion_2,"
                             . "per.id AS perfil ,"
                             . "per.nombre AS tipo_participante ,"
                             . "$participante AS participante,"                        
@@ -471,8 +478,6 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
             
             if (isset($propuesta->id)) {
                 
-                $bogota = ($propuesta->bogota) ? "Si" : "No";
-
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
                 $nombre_categoria = "";
@@ -481,53 +486,21 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     $nombre_categoria = $propuesta->getConvocatorias()->nombre;
                 }
 
-                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
-                
                 //Cambio del nombre del participante
+                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
                 if($propuesta->getConvocatorias()->seudonimo)
                 {
                     $participante=$propuesta->codigo;    
                 }
-                
-                
+                    
+                //Creo el array que se va a retornar
                 $array=array();
-                $array["propuesta"]["codigo_propuesta"]=$propuesta->codigo;
-                $array["propuesta"]["nombre_convocatoria"]=$nombre_convocatoria;
-                $array["propuesta"]["nombre_categoria"]=$nombre_categoria;
-                $array["propuesta"]["nombre_participante"]=$participante;
-                $array["propuesta"]["tipo_participante"]=$propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
                 $array["propuesta"]["nombre_estado"]=$propuesta->getEstados()->nombre;
+                $array["propuesta"]["codigo_propuesta"]=$propuesta->codigo;
+                $array["propuesta"]["tipo_participante"]=$propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
+                $array["propuesta"]["nombre_participante"]=$participante;                                
                 $array["propuesta"]["nombre_propuesta"]=$propuesta->nombre;
-                $array["propuesta"]["resumen_propuesta"]=$propuesta->resumen;
-                $array["propuesta"]["objetivo_propuesta"]=$propuesta->objetivo;
-                $array["propuesta"]["desarrollo_bogota"]=$bogota;
-                $array["propuesta"]["nombre_localidad"]=$propuesta->getLocalidades()->nombre;
-                $array["propuesta"]["nombre_upz"]=$propuesta->getUpzs()->nombre;
-                $array["propuesta"]["nombre_barrio"]=$propuesta->getBarrios()->nombre;
-            
-                
-                //Recorro los valores de los parametros con el fin de ingresarlos al formulario
-                $propuestaparametros = Propuestasparametros::find("propuesta=" . $propuesta->id);
-                $html_dinamico="";
-                $tr=1;
-                foreach ($propuestaparametros as $pp) {
-                    if($tr==1)
-                    {
-                        $html_dinamico = $html_dinamico."<tr class='tr_eliminar'>";                        
-                    }
-                    $html_dinamico = $html_dinamico."<th>".$pp->getConvocatoriaspropuestasparametros()->label."</th><td>".$pp->valor."</td>";                            
-                    if($tr==2)
-                    {
-                        $html_dinamico = $html_dinamico."</tr>";                        
-                        $tr=1;
-                    }
-                    else 
-                    {
-                        $tr++;
-                    }                                        
-                }                        
-                $array["propuesta_dinamico"] = $html_dinamico;        
-                                               
+                                
                 //Se crea todo el array de documentos administrativos y tecnicos
                 $conditions = ['convocatoria' => $propuesta->convocatoria, 'active' => true];
                 $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
@@ -535,34 +508,75 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             'bind' => $conditions,
                             'order' => 'orden ASC',
                 ]));
+                
                 foreach ($consulta_documentos_administrativos as $documento) {
                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                         if ($documento->etapa == "Registro") {
                             $documentos_administrativos[$documento->id]["id"] = $documento->id;
-                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                            $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
-                            $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                            $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
+                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;                            
                             $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+                            
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                            $consulta_archivos_propuesta = Propuestasdocumentos::find(([
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                        'bind' => $conditions,
+                                        'order' => 'fecha_creacion ASC',
+                            ]));
+                            
+                            foreach ($consulta_archivos_propuesta as $archivo) {
+                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id"] = $archivo->id;                                
+                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
+                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                            }
+                            
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                            $consulta_links_propuesta = Propuestaslinks::find(([
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                        'bind' => $conditions,
+                                        'order' => 'fecha_creacion ASC',
+                            ]));
+                            
+                            foreach ($consulta_links_propuesta as $link) {
+                                $documentos_administrativos[$documento->id]["links"][$link->id]["id"] = $link->id;                                
+                                $documentos_administrativos[$documento->id]["links"][$link->id]["link"] = $link->link;                                                                
+                            }
                         }
                     }
 
                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
                         $documentos_tecnicos[$documento->id]["id"] = $documento->id;
                         $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                        $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
-                        $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                        $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
                         $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
+                        
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                        $consulta_archivos_propuesta = Propuestasdocumentos::find(([
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                    'bind' => $conditions,
+                                    'order' => 'fecha_creacion ASC',
+                        ]));
+
+                        foreach ($consulta_archivos_propuesta as $archivo) {
+                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id"] = $archivo->id;                                
+                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
+                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                        }
+
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                        $consulta_links_propuesta = Propuestaslinks::find(([
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                    'bind' => $conditions,
+                                    'order' => 'fecha_creacion ASC',
+                        ]));
+
+                        foreach ($consulta_links_propuesta as $link) {
+                            $documentos_tecnicos[$documento->id]["links"][$link->id]["id"] = $link->id;                                
+                            $documentos_tecnicos[$documento->id]["links"][$link->id]["link"] = $link->link;                                                                
+                        }
+                        
                     }
                 }
 
-                //Solo muestro los archivos administrativos cuando es una convocatoria sin seudonimos
-                if($propuesta->getConvocatorias()->seudonimo == false)
-                {
-                    $array["administrativos"] = $documentos_administrativos;
-                }
-
+                $array["administrativos"] = $documentos_administrativos;                
                 $array["tecnicos"] = $documentos_tecnicos;                
                 
                 //Registro la accion en el log de convocatorias
@@ -575,7 +589,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $id . ') no existe en el metodo cargar_propuesta', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
-                
+                echo "error_propuesta";
             }
                         
         } else {
