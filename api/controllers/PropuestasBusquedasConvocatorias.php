@@ -487,6 +487,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 ]));
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                 $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                
                 if ($fecha_actual > $fecha_cierre) {
                     //Registro la accion en el log de convocatorias
                     $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria('.$id.') no esta activa, la fecha de cierre es ('.$fecha_cierre_real->fecha_fin.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -517,7 +518,35 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     'bind' => $conditions,
                         ]));
                         
-                        if($convocatoria->modalidad==2)
+                        //Valido la modalidad de la convocatoria
+                        $modalidad_convocatoria=$convocatoria->modalidad;                        
+                        $in_convocatorias=$id;
+                        if($convocatoria->convocatoria_padre_categoria!=null)
+                        {
+                            $modalidad_convocatoria=$convocatoria->getConvocatorias()->modalidad;
+                            
+                            //Consulto todas las convocatorias hijas
+                            $convocatorias_hijas = Convocatorias::find("convocatoria_padre_categoria=" . $convocatoria->convocatoria_padre_categoria . "");
+                            $in_convocatorias="";
+                            foreach ($convocatorias_hijas as $convocatoria_hija) {
+                                $in_convocatorias=$in_convocatorias.$convocatoria_hija->id.",";
+                            }
+                            $in_convocatorias = substr($in_convocatorias, 0, -1);                           
+                        }     
+                        
+                        //Valido cuantas propuestas estan permitidas por convocatoria
+                        //Valido que sea la convocatoria principal                    
+                        $propuestas_permitidas=$convocatoria->propuestas_permitidas;
+                        if($convocatoria->convocatoria_padre_categoria!=null)
+                        {
+                            $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
+                        }                    
+                        if($propuestas_permitidas==null)
+                        {
+                            $propuestas_permitidas = 1;
+                        }
+                                                
+                        if($modalidad_convocatoria==2)
                         {
                             echo "ingresar"; 
                         }
@@ -527,19 +556,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                             if(is_numeric($request->getPost('p'))) 
                             {
                                 if($request->getPost('p')==0)
-                                {
-                                    //Valido cuantas propuestas estan permitidas por convocatoria
-                                    //Valido que sea la convocatoria principal                    
-                                    $propuestas_permitidas=$convocatoria->propuestas_permitidas;
-                                    if($convocatoria->convocatoria_padre_categoria!=null)
-                                    {
-
-                                        $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
-                                    }                    
-                                    if($propuestas_permitidas==null)
-                                    {
-                                        $propuestas_permitidas = 1;
-                                    }
+                                {                                    
 
                                     //Consulto los perfiles del usuario
                                     $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
@@ -558,7 +575,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     $array_participantes = substr($array_participantes, 0, -1);
 
                                     //Consulto las propuestas de los participantes
-                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");
+                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
                                     if(count($propuestas)<$propuestas_permitidas)
                                     {
                                         //Registro la accion en el log de convocatorias
@@ -601,20 +618,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                 }                                                
                             }
                             else
-                            {
-
-                                //Valido cuantas propuestas estan permitidas por convocatoria
-                                //Valido que sea la convocatoria principal                    
-                                $propuestas_permitidas=$convocatoria->propuestas_permitidas;
-                                if($convocatoria->convocatoria_padre_categoria!=null)
-                                {
-
-                                    $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
-                                }                    
-                                if($propuestas_permitidas==null)
-                                {
-                                    $propuestas_permitidas = 1;
-                                }
+                            {                                
 
                                 //Consulto los perfiles del usuario
                                 $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
@@ -633,7 +637,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                 $array_participantes = substr($array_participantes, 0, -1);
 
                                 //Consulto las propuestas de los participantes
-                                $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria=".$id."");
+                                $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
                                 if(count($propuestas)<$propuestas_permitidas)
                                 {
                                     //Registro la accion en el log de convocatorias
@@ -653,10 +657,6 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                     }
                 }
             }
-            
-            
-            
-            
         } else {
             //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);

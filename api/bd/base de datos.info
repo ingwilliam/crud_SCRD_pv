@@ -110,6 +110,13 @@ INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación do
 ALTER TABLE propuestas ADD verificacion_administrativos boolean DEFAULT FALSE;
 ALTER TABLE propuestas ADD verificacion_tecnicos boolean DEFAULT FALSE;
 
+# Enero 16 del 2020
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'Cumple', true, 7, 1);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'No Cumple', true, 7, 2);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'Subsanar', true, 7, 3);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'No Aplica', true, 7, 4);
 
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_2', 'Cumple', true, 7, 1);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_2', 'No Cumple', true, 7, 2);
 
 
