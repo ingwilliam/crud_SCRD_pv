@@ -616,7 +616,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 ?>
                                 <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
-                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5)
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5||$request->getPost('m')==6||$request->getPost('m')==7||$request->getPost('m')==8)
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>

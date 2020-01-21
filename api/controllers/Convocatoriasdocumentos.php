@@ -344,7 +344,7 @@ $app->get('/search', function () use ($app, $config) {
             $array["etapas"] = explode(",", $tabla_maestra[0]->valor);                        
             $array["convocatoriadocumento"]=$convocatoriadocumento;
             $array["requisitos"]= Requisitos::find([
-                                                        'conditions' => "active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'",
+                                                        'conditions' => "active=true AND programas LIKE '%".$convocatoria->programa."%' AND tipo_requisito='".$request->get('tipo_requisito')."'",
                                                         "order" => 'orden',
                                                     ]);
             //Retorno el array

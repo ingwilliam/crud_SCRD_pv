@@ -120,3 +120,41 @@ INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALU
 INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_2', 'No Cumple', true, 7, 2);
 
 
+INSERT INTO public.programas (nombre, active, creado_por) VALUES('Programa Distrital Salas Concertadas', true, 7);
+
+INSERT INTO public.modalidades (nombre, active, creado_por, programa) VALUES ('Cerrada', true, 7, 2);
+INSERT INTO public.modalidades (nombre, active, creado_por, programa) VALUES ('Salas concertadas', true, 7, 3);
+
+ALTER TABLE tiposeventos ADD COLUMN programas text;
+
+UPDATE public.tiposeventos SET programas='1' WHERE id>0;
+
+UPDATE public.tiposeventos SET programas='1,2,3' WHERE id IN (12,11,16,13,17,15,14);
+
+ALTER TABLE requisitos ADD COLUMN programas text;
+UPDATE public.requisitos SET programas='1' WHERE id>0;
+
+UPDATE public.requisitos SET programas='1,3' WHERE id IN (943,960,937,944,941,945,961);
+
+
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia de los estatutos de la entidad participante.', true, 7, 8,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Carta de certificación firmada por el representante legal en la que manifiesta que la entidad participante se encuentra inscrita como Proveedor del Estado Colombiano en el sistema de información Colombia Compra Eficiente/ Secop II.', true, 7, 9,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia del acta de la Junta Directiva en donde se autoriza al representante legal de la persona jurídica participante para suscribir contratos con el Instituto Distrital de las Artes.', true, 7, 10,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificado de inspección, vigilancia y control de la entidad participante, expedido por la Dirección de Personas Jurídicas de la SCRD o por la autoridad encargada de ejercer la inspección, vigilancia y control, correspondiente a la vigencia actual, sin observaciones pendientes.', true, 7, 11,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del Registro Único Tributario (RUT) actualizado.', true, 7, 12,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del Registro de Información Tributaria (RIT) actualizado.', true, 7, 13,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificado expedido por el revisor fiscal o por el representante legal.', true, 7, 14,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible de la declaración de renta o de ingresos y patrimonio.', true, 7, 15,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del conjunto completo de estados financieros comparativos.', true, 7, 16,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal de la entidad participante en donde conste, bajo la gravedad de juramento, que la entidad sin ánimo de lucro cuenta con una estructura organizacional, de administración y control que le permite ejecutar el proyecto presentado de manera idónea y responsable.', true, 7, 16,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Una carta de compromiso de la organización participante en la que conste que aportará o gestionará los recursos para la cofinanciación del proyecto, firmada por el represente legal.', true, 7, 17,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Mínimo cinco (5) y máximo ocho (8) certificaciones o actas de liquidación, expedidas por entidades públicas o privadas con las que la entidad participante haya suscrito contratos o convenios en los últimos cinco (5) años.', true, 7, 18,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal en donde se manifieste, bajo la gravedad del juramento, que el representante legal, los miembros dignatarios y demás miembros de la persona jurídica, no hacen parte de la lista de personas políticamente expuestas, en cumplimiento de lo establecido en el Decreto 1674 del 21 de octubre de 2016.', true, 7, 19,'1,3');
+
+
+
+
+
+
+
+
