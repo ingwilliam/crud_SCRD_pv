@@ -516,9 +516,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;                            
                             $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
                             
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id];
                             $consulta_archivos_propuesta = Propuestasdocumentos::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
                                         'bind' => $conditions,
                                         'order' => 'fecha_creacion ASC',
                             ]));
@@ -529,9 +529,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                 $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                             }
                             
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id];
                             $consulta_links_propuesta = Propuestaslinks::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
                                         'bind' => $conditions,
                                         'order' => 'fecha_creacion ASC',
                             ]));
@@ -548,9 +548,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
                         $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
                         
-                        $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id];
                         $consulta_archivos_propuesta = Propuestasdocumentos::find(([
-                                    'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
                                     'bind' => $conditions,
                                     'order' => 'fecha_creacion ASC',
                         ]));
@@ -561,9 +561,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                         }
 
-                        $conditions = ['propuesta' => $propuesta->id, 'active' => true];
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id];
                         $consulta_links_propuesta = Propuestaslinks::find(([
-                                    'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
                                     'bind' => $conditions,
                                     'order' => 'fecha_creacion ASC',
                         ]));
@@ -576,6 +576,11 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     }
                 }
 
+                $array["estados"] = Estados::find(array(
+                                                        "tipo_estado = 'verificacion_1' AND active = true",
+                                                        "order" => "orden"
+                                                    )
+                                                );
                 $array["administrativos"] = $documentos_administrativos;                
                 $array["tecnicos"] = $documentos_tecnicos;                
                 

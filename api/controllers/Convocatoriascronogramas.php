@@ -369,7 +369,8 @@ $app->get('/search', function () use ($app, $config) {
             $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
             //Creo todos los array de la convocatoria cronograma
             $array["convocatoriacronograma"]=$convocatoriacronograma;
-            $array["tipos_eventos"]= Tiposeventos::find("active=true AND programa=".$convocatoria->programa);
+            $array["tipos_eventos"] = Tiposeventos::find(array("conditions" => "programas LIKE '%" . $convocatoria->programa . "%' AND active=TRUE"));
+            
             //Retorno el array
             echo json_encode($array);       
         } else {

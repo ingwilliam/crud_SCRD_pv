@@ -76,7 +76,19 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
             if (isset($propuesta->id)) {
-                if ($propuesta->estado == 8) {
+                
+                //Valido para que genere el reporte solo al momento de 
+                //clic en generar reporte al inscribir la propuesta por primera vez
+                $estado = $propuesta->estado;
+                $titulo_reporte="CERTIFICADO DE INSCRIPCIÓN";
+                $generar = $request->getPut('vi');
+                if($generar==1)
+                {
+                    $estado=8;
+                    $titulo_reporte="CERTIFICADO DE PRE-INSCRIPCIÓN";
+                }
+                
+                if ($estado == 8) {
                     $array_administrativos = array();
                     $array_tecnicos = array();
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
@@ -396,7 +408,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                 background-color: #ffffee;
 	}
 </style>
-<h2  style="text-align:center;">CERTIFICADO DE INSCRIPCIÓN</h2>
+<h2  style="text-align:center;">'.$titulo_reporte.'</h2>
 <h3>Información de la propuesta</h3>        
 <p>Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.</p>
 <table>
