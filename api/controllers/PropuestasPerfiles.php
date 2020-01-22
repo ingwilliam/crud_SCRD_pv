@@ -75,6 +75,14 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
             
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($id);
+
+            //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                $id = $convocatoria->getConvocatorias()->id;                    
+            }
+            
             //Consulto los tipos de partticipantes permitidos de la convocatoria
             $conditions = ['convocatoria' => $id, 'active' => true];
             $tipos_participantes = Convocatoriasparticipantes::find(([

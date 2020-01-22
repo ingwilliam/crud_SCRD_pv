@@ -256,7 +256,7 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                 
                 if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
                     $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
-                    $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+                    //$valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
                     
                     $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                     $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
@@ -479,6 +479,14 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             }
             else
             {
+                //Consulto la convocatoria
+                $convocatoria = Convocatorias::findFirst($id);
+
+                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                    $id = $convocatoria->getConvocatorias()->id;                    
+                }
+                
                 //Consulto la fecha de cierre del cronograma de la convocatoria
                 $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst(([

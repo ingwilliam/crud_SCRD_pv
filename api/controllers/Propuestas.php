@@ -185,7 +185,7 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                                 "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
                                             )
                                         ),
-                                        "medio_se_entero[]" => array(
+                                        "porque_medio[]" => array(
                                             "validators" => array(
                                                 "notEmpty" => array("message" => "El medio por el cual se enteró de esta convocatoria es requerido.")
                                             )
@@ -419,8 +419,17 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                 //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
                 $user_current = json_decode($token_actual->user_current, true);
 
+                //Consulto la convocatoria
+                $id=$request->getPut('conv');
+                $convocatoria = Convocatorias::findFirst($id);
+
+                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                    $id = $convocatoria->getConvocatorias()->id;                    
+                }                
+                
                 //Consulto la fecha de cierre del cronograma de la convocatoria
-                $conditions = ['convocatoria' => $request->getPut('conv'), 'active' => true, 'tipo_evento' => 12];
+                $conditions = ['convocatoria' => $id, 'active' => true, 'tipo_evento' => 12];
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                             'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                             'bind' => $conditions,
@@ -442,10 +451,10 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                                                     COUNT(p.id) as total_propuestas
                                             FROM Propuestas AS p                                
                                             WHERE
-                                            p.estado = 8 AND p.convocatoria=" . $request->getPut('conv');
+                                            p.estado = 8 AND p.convocatoria=" . $id;
 
                         $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
-                        $codigo_propuesta = $request->getPut('conv') . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
+                        $codigo_propuesta = $id . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
 
                         $post["estado"] = 8;
                         $post["actualizado_por"] = $user_current["id"];
