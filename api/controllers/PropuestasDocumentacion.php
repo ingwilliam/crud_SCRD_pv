@@ -133,7 +133,17 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 $array["estado"] = $propuesta->estado;
                                 $array["participante"] = $propuesta->participante;
 
-                                $conditions = ['convocatoria' => $request->get('conv'), 'active' => true];
+                                $id = $request->get('conv');
+                                
+                                //Consulto la convocatoria
+                                $convocatoria = Convocatorias::findFirst($id);
+
+                                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                                    $id = $convocatoria->getConvocatorias()->id;                    
+                                }
+                                
+                                $conditions = ['convocatoria' => $id, 'active' => true];
 
                                 //Se crea todo el array de documentos administrativos y tecnicos
                                 $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
@@ -293,6 +303,15 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
 
                 if (isset($propuesta->id)) {
 
+                    //Consulto la convocatoria
+                    $id=$request->get('conv');
+                    $convocatoria = Convocatorias::findFirst($id);
+
+                    //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                    if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                        $id = $convocatoria->getConvocatorias()->id;                    
+                    }
+                    
                     //Consulto los requisitos no guardados
                     $sql_requisitos = "SELECT 
                                                 cd.id,
@@ -301,11 +320,35 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
                                         LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE 
                                         LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE
-                                        WHERE cd.obligatorio=TRUE AND cd.convocatoria=" . $request->get('conv') . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
+                                        WHERE cd.obligatorio=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
 
                     $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
 
-
+                    $id_perfil = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id;
+                    
+                    if( $id_perfil==7 || $id_perfil==8)
+                    {
+                        $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
+                        
+                        if( count($participantes) <= 0 )
+                        {
+                            $data = json_decode(json_encode($requisitos), true);
+                    
+                            if( $id_perfil==7)
+                            {
+                                $new_json = array(array('id' => "Junta", 'nombre' => "Junta"));
+                            }
+                            
+                            if($id_perfil==8)
+                            {
+                                $new_json = array(array('id' => "Integrante", 'nombre' => "Integrante"));
+                            }
+                            
+                            $requisitos = array_merge($data, $new_json);
+                        }
+                        
+                    }
+                    
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
