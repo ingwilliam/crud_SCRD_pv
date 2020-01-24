@@ -559,7 +559,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                             echo "ingresar"; 
                         }
                         else
-                        {
+                        {                            
                             //Valido si existe el codigo de la propuesta
                             if(is_numeric($request->getPost('p'))) 
                             {
@@ -582,23 +582,32 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     }
                                     $array_participantes = substr($array_participantes, 0, -1);
 
-                                    //Consulto las propuestas de los participantes
-                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
-                                    if(count($propuestas)<$propuestas_permitidas)
+                                    if( $array_participantes == "")
                                     {
                                         //Registro la accion en el log de convocatorias
-                                        $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la propuesta ('.$request->getPost('p').')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->error('"token":"{token}","user":"{user}","message":"No ha creado, ningun participante en busqueda de propuestas."', ['user' => "", 'token' => $request->get('token')]);
                                         $logger->close();
-                                        echo "ingresar";
+                                        echo "error_participante";                                   
                                     }
                                     else
                                     {
-                                        //Registro la accion en el log de convocatorias
-                                        $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
-                                        $logger->close();
-                                        echo "error_maximo";
-                                    }
-
+                                        //Consulto las propuestas de los participantes
+                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
+                                        if(count($propuestas)<$propuestas_permitidas)
+                                        {
+                                            //Registro la accion en el log de convocatorias
+                                            $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la propuesta ('.$request->getPost('p').')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                            $logger->close();
+                                            echo "ingresar";
+                                        }
+                                        else
+                                        {
+                                            //Registro la accion en el log de convocatorias
+                                            $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
+                                            $logger->close();
+                                            echo "error_maximo";
+                                        }
+                                    }                                                                                                            
                                 }
                                 else
                                 {
@@ -627,7 +636,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                             }
                             else
                             {                                
-
+                                
                                 //Consulto los perfiles del usuario
                                 $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
                                 $array_usuarios_perfiles="";
@@ -644,22 +653,32 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                 }
                                 $array_participantes = substr($array_participantes, 0, -1);
 
-                                //Consulto las propuestas de los participantes
-                                $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
-                                if(count($propuestas)<$propuestas_permitidas)
+                                if( $array_participantes == "")
                                 {
                                     //Registro la accion en el log de convocatorias
                                     $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la convocatoria('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     $logger->close();
-                                    echo "ingresar";
+                                    echo "ingresar";                                   
                                 }
                                 else
                                 {
-                                    //Registro la accion en el log de convocatorias
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
-                                    $logger->close();
-                                    echo "error_maximo";
-                                }
+                                    //Consulto las propuestas de los participantes
+                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
+                                    if(count($propuestas)<$propuestas_permitidas)
+                                    {
+                                        //Registro la accion en el log de convocatorias
+                                        $logger->info('"token":"{token}","user":"{user}","message":"Selecciono la convocatoria('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->close();
+                                        echo "ingresar";
+                                    }
+                                    else
+                                    {
+                                        //Registro la accion en el log de convocatorias
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Supera el máximo permitido de propuestas"', ['user' => "", 'token' => $request->get('token')]);
+                                        $logger->close();
+                                        echo "error_maximo";
+                                    }
+                                }                                                                
                             }
                         }                                                                    
                     }
