@@ -524,12 +524,21 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     echo "error";
                 } else {
                     
-                    //Modifico el estado para todas las categorias
-                    $phql = "UPDATE Convocatorias SET estado=:estado: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
-                    $app->modelsManager->executeQuery($phql, array(
-                        'convocatoria_padre_categoria' => $id,
-                        'estado' => $put["estado"]
-                    ));                    
+                    if($put["tiene_categorias"]=="true")
+                    {                    
+                        //Modifico el estado para todas las categorias
+                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'estado' => $put["estado"],
+                            'anio' => $put["programa"],
+                            'programa' => $put["programa"],
+                            'entidad' => $put["entidad"],
+                            'area' => $put["area"],
+                            'linea_estrategica' => $put["linea_estrategica"],
+                            'enfoque' => $put["enfoque"]
+                        ));                    
+                    }
                     echo $id;
                 }
             } else {
