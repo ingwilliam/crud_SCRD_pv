@@ -151,6 +151,31 @@ INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden
 INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Mínimo cinco (5) y máximo ocho (8) certificaciones o actas de liquidación, expedidas por entidades públicas o privadas con las que la entidad participante haya suscrito contratos o convenios en los últimos cinco (5) años.', true, 7, 18,'1,3');
 INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal en donde se manifieste, bajo la gravedad del juramento, que el representante legal, los miembros dignatarios y demás miembros de la persona jurídica, no hacen parte de la lista de personas políticamente expuestas, en cumplimiento de lo establecido en el Decreto 1674 del 21 de octubre de 2016.', true, 7, 19,'1,3');
 
+# Enero 27 2020
+CREATE TABLE public.propuestasvericaciones
+(
+  id serial NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  verificacion integer NOT NULL,
+  estado integer NOT NULL,
+  observacion TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasvericaciones_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasvericaciones_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasvericaciones_estado_fkey FOREIGN KEY (estado)
+      REFERENCES public.estados (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasvericaciones_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
 
 
 

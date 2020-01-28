@@ -537,7 +537,7 @@ $app->post('/anular_propuesta', function () use ($app, $config, $logger) {
 
                     //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
                     
-                    $post["estado"] = 14;
+                    $post["estado"] = 20;
                     $post["actualizado_por"] = $user_current["id"];
                     $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                    
 
