@@ -479,16 +479,62 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             }
             else
             {
-                //Consulto la convocatoria
-                $convocatoria = Convocatorias::findFirst($id);
-
-                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
-                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
-                    $id = $convocatoria->getConvocatorias()->id;                    
+                //Consulto la convocatoria solicitada
+                $convocatoria_solicitada = Convocatorias::findFirst($id);
+                
+                //Valido cuantas propuestas estan permitidas por convocatoria                   
+                $propuestas_permitidas=$convocatoria_solicitada->propuestas_permitidas;
+                
+                //Valido la modalidad de la convocatoria
+                $modalidad_convocatoria=$convocatoria_solicitada->modalidad;     
+                
+                //Tipo de consulta la solicitada o la padre
+                $consultar_solicitada=true;
+                
+                //Realizo el in para las propuestas con las categorias
+                $in_convocatorias=$id;
+                
+                if($convocatoria_solicitada->convocatoria_padre_categoria!=null)
+                {
+                    //Consulto la convocatoria padre
+                    $convocatoria_padre = $convocatoria_solicitada->getConvocatorias();
+                    
+                    //Seteo el numero de propuestas y la modalidad
+                    $propuestas_permitidas = $convocatoria_solicitada->getConvocatorias()->propuestas_permitidas;                    
+                    $modalidad_convocatoria=$convocatoria_solicitada->getConvocatorias()->modalidad;                    
+                    
+                    //Si la convocatoria seleccionada es categoria 
+                    //y no es especial invierto los id                    
+                    if ($convocatoria_padre->tiene_categorias == true && $convocatoria_padre->diferentes_categorias == false) {                    
+                        $consultar_solicitada=false;
+                        $id = $convocatoria_solicitada->getConvocatorias()->id;                    
+                    }                    
+                    
+                    //Consulto todas las convocatorias hijas
+                    $convocatorias_hijas = Convocatorias::find("convocatoria_padre_categoria=" . $convocatoria_padre->id . "");
+                    $in_convocatorias="";
+                    foreach ($convocatorias_hijas as $convocatoria_hija) {
+                        $in_convocatorias=$in_convocatorias.$convocatoria_hija->id.",";
+                    }
+                    $in_convocatorias = substr($in_convocatorias, 0, -1);                                         
+                }
+                 
+                //Valido si el total de propuestas permitidas es null
+                if($propuestas_permitidas==null)
+                {
+                    $propuestas_permitidas = 1;
                 }
                 
-                //Consulto la fecha de cierre del cronograma de la convocatoria
-                $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
+                //Consulto la fecha de cierre del cronograma de la convocatoria                
+                if($consultar_solicitada)
+                {
+                    $conditions = ['convocatoria' => $convocatoria_solicitada->id, 'active' => true,'tipo_evento'=>12];
+                }
+                else
+                {
+                    $conditions = ['convocatoria' => $convocatoria_padre->id, 'active' => true,'tipo_evento'=>12];
+                }                
+                
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                             'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                             'bind' => $conditions,
@@ -504,12 +550,21 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 }
                 else
                 {
-                    //Consulto la fecha de apertura del cronograma de la convocatoria
-                    $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>11];
+                    //Consulto la fecha de apertura del cronograma de la convocatoria                    
+                    if($consultar_solicitada)
+                    {
+                        $conditions = ['convocatoria' => $convocatoria_solicitada->id, 'active' => true,'tipo_evento'=>11];
+                    }
+                    else
+                    {
+                        $conditions = ['convocatoria' => $convocatoria_padre->id, 'active' => true,'tipo_evento'=>11];
+                    }
+                
                     $fecha_apertura_real = Convocatoriascronogramas::findFirst(([
                                 'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                                 'bind' => $conditions,
-                    ]));
+                    ]));                    
+                    
                     $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
                     if ($fecha_actual < $fecha_apertura) {
                         //Registro la accion en el log de convocatorias
@@ -518,42 +573,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                         echo "error_fecha_apertura";
                     }
                     else
-                    {
-                        //Consulto la convocatoria solicitada
-                        $conditions = ['id' => $id, 'active' => true];
-                        $convocatoria = Convocatorias::findFirst(([
-                                    'conditions' => 'id=:id: AND active=:active:',
-                                    'bind' => $conditions,
-                        ]));
-                        
-                        //Valido la modalidad de la convocatoria
-                        $modalidad_convocatoria=$convocatoria->modalidad;                        
-                        $in_convocatorias=$id;
-                        if($convocatoria->convocatoria_padre_categoria!=null)
-                        {
-                            $modalidad_convocatoria=$convocatoria->getConvocatorias()->modalidad;
-                            
-                            //Consulto todas las convocatorias hijas
-                            $convocatorias_hijas = Convocatorias::find("convocatoria_padre_categoria=" . $convocatoria->convocatoria_padre_categoria . "");
-                            $in_convocatorias="";
-                            foreach ($convocatorias_hijas as $convocatoria_hija) {
-                                $in_convocatorias=$in_convocatorias.$convocatoria_hija->id.",";
-                            }
-                            $in_convocatorias = substr($in_convocatorias, 0, -1);                           
-                        }     
-                        
-                        //Valido cuantas propuestas estan permitidas por convocatoria
-                        //Valido que sea la convocatoria principal                    
-                        $propuestas_permitidas=$convocatoria->propuestas_permitidas;
-                        if($convocatoria->convocatoria_padre_categoria!=null)
-                        {
-                            $propuestas_permitidas = $convocatoria->getConvocatorias()->propuestas_permitidas;
-                        }                    
-                        if($propuestas_permitidas==null)
-                        {
-                            $propuestas_permitidas = 1;
-                        }
-                                                
+                    {                                                                                                                                               
                         if($modalidad_convocatoria==2)
                         {
                             echo "ingresar"; 
@@ -592,7 +612,8 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     else
                                     {
                                         //Consulto las propuestas de los participantes
-                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
+                                        //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
+                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24)");                                    
                                         if(count($propuestas)<$propuestas_permitidas)
                                         {
                                             //Registro la accion en el log de convocatorias
@@ -663,7 +684,9 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                 else
                                 {
                                     //Consulto las propuestas de los participantes
-                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.")");
+                                    //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
+                                    $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24)");
+                                    
                                     if(count($propuestas)<$propuestas_permitidas)
                                     {
                                         //Registro la accion en el log de convocatorias
