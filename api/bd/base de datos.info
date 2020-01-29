@@ -152,9 +152,26 @@ INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden
 INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal en donde se manifieste, bajo la gravedad del juramento, que el representante legal, los miembros dignatarios y demás miembros de la persona jurídica, no hacen parte de la lista de personas políticamente expuestas, en cumplimiento de lo establecido en el Decreto 1674 del 21 de octubre de 2016.', true, 7, 19,'1,3');
 
 # Enero 27 2020
-CREATE TABLE public.propuestasvericaciones
+UPDATE public.requisitos SET nombre='Certificado de existencia y representación legal de la persona jurídica participante.'  WHERE id=961;
+UPDATE public.requisitos SET nombre='Copia de los estatutos de la entidad participante.'  WHERE id=1052;
+UPDATE public.requisitos SET nombre='Carta de certificación de inscripción en el sistema Colombia Compra Eficiente/ Secop II.'  WHERE id=1053;
+UPDATE public.requisitos SET nombre='Documento de identidad del representante legal de la persona jurídica participante.'  WHERE id=941;
+UPDATE public.requisitos SET nombre='Acta de la Junta Directiva en donde se autoriza al representante legal de la persona jurídica participante para suscribir contratos con el Instituto Distrital de las Artes.'  WHERE id=1054;
+UPDATE public.requisitos SET nombre='Certificado de inspección, vigilancia y   control de la entidad participante.'  WHERE id=1055;
+UPDATE public.requisitos SET nombre='Registro Único Tributario (RUT) actualizado.'  WHERE id=1056;
+UPDATE public.requisitos SET nombre='Registro de Información Tributaria (RIT) actualizado.'  WHERE id=1057;
+UPDATE public.requisitos SET nombre='Certificado de aportes parafiscales y de seguridad social de la entidad participante.'  WHERE id=1058;
+UPDATE public.requisitos SET nombre='Declaración de renta o de ingresos y patrimonio'  WHERE id=1059;
+UPDATE public.requisitos SET nombre='Conjunto completo de estados financieros comparativos.'  WHERE id=1060;
+UPDATE public.requisitos SET nombre='Certificación de estructura organizacional, de administración y control de la entidad participante.'  WHERE id=1061;
+UPDATE public.requisitos SET nombre='Carta de compromiso de cofinanciación del proyecto, por parte de la entidad participante.'  WHERE id=1062;
+UPDATE public.requisitos SET nombre='Mínimo cinco (5) y máximo ocho (8) certificaciones o actas de liquidación, expedidas por entidades públicas o privadas con las que la entidad participante haya suscrito contratos o convenios en los últimos cinco (5) años.'  WHERE id=1063;
+UPDATE public.requisitos SET nombre='Certificación de personas políticamente expuestas (Decreto 1674 del 21de octubre de 2016).'  WHERE id=1064;
+
+CREATE TABLE public.propuestasverificaciones
 (
   id serial NOT NULL,
+  propuesta integer NOT NULL,
   convocatoriadocumento integer NOT NULL,
   verificacion integer NOT NULL,
   estado integer NOT NULL,
@@ -164,14 +181,17 @@ CREATE TABLE public.propuestasvericaciones
   fecha_creacion timestamp without time zone,
   creado_por integer NOT NULL,
   actualizado_por integer,
-  CONSTRAINT propuestasvericaciones_pkey PRIMARY KEY (id),
-  CONSTRAINT propuestasvericaciones_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+  CONSTRAINT propuestasverificaciones_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasverificaciones_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasverificaciones_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
       REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT propuestasvericaciones_estado_fkey FOREIGN KEY (estado)
+  CONSTRAINT propuestasverificaciones_estado_fkey FOREIGN KEY (estado)
       REFERENCES public.estados (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
-  CONSTRAINT propuestasvericaciones_creado_por_fkey FOREIGN KEY (creado_por)
+  CONSTRAINT propuestasverificaciones_creado_por_fkey FOREIGN KEY (creado_por)
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
