@@ -533,6 +533,12 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;                            
                             $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
                             
+                            //Consulto las posible verificaciones
+                            $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=1");                                
+                            $documentos_administrativos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
+                            $documentos_administrativos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
+                            $documentos_administrativos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
+                            
                             $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id];
                             $consulta_archivos_propuesta = Propuestasdocumentos::find(([
                                         'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
@@ -565,6 +571,13 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
                         $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
                         
+                        //Consulto las posible verificaciones
+                        $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=1");                                
+                        $documentos_tecnicos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
+                        $documentos_tecnicos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
+                        $documentos_tecnicos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
+                            
+                        
                         $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id];
                         $consulta_archivos_propuesta = Propuestasdocumentos::find(([
                                     'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
@@ -593,8 +606,14 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     }
                 }
 
-                $array["estados"] = Estados::find(array(
+                $array["estados_verificacion_1"] = Estados::find(array(
                                                         "tipo_estado = 'verificacion_1' AND active = true",
+                                                        "order" => "orden"
+                                                    )
+                                                );
+                
+                $array["estados_verificacion_2"] = Estados::find(array(
+                                                        "tipo_estado = 'verificacion_2' AND active = true",
                                                         "order" => "orden"
                                                     )
                                                 );
@@ -629,20 +648,18 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
 }
 );
 
-//Metodo el cual carga el formulario del integrante
-//Verifica que que tenga creada la propuestas
-$app->get('/buscar_archivos', function () use ($app, $config, $logger) {
+$app->post('/guardar_verificacion_1', function () use ($app, $config,$logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-
+    
     try {
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_archivos de la propuesta (' . $request->get('propuesta') . ')"', ['user' => '', 'token' => $request->get('token')]);
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_verificacion_1 para guardar la verificacion de la propuesta(' . $request->getPost('propuesta') . ')"', ['user' => '', 'token' => $request->getPost('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
@@ -651,132 +668,69 @@ $app->get('/buscar_archivos', function () use ($app, $config, $logger) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+
+                //Consulto el usuario actual
                 $user_current = json_decode($token_actual->user_current, true);
 
-                $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
+                //Consulto la propuesta actual
+                $propuesta = Propuestas::findFirst("id=" . $request->getPost('propuesta') . "");
 
                 if (isset($propuesta->id)) {
-
-                    $conditions = ['propuesta' => $propuesta->id, 'convocatoriadocumento' => $request->get('documento'), 'active' => true];
-                    //Se crea todo el array de archivos de la propuesta
-                    $consulta_documentos_administrativos = Propuestasdocumentos::find(([
-                                'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
-                                'bind' => $conditions,
-                                'order' => 'id ASC',
-                    ]));
-
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información documentacion de la propuesta (' . $request->get('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-
-                    //Retorno el array
-                    echo json_encode($consulta_documentos_administrativos);
+                    
+                    $new_array = $app->request->getPost();
+                    unset($new_array['token']);
+                    unset($new_array['modulo']);
+                    
+                    $propuestasverificaciones = new Propuestasverificaciones();
+                    $propuestasverificaciones->creado_por = $user_current["id"];
+                    $propuestasverificaciones->fecha_creacion = date("Y-m-d H:i:s");
+                    $propuestasverificaciones->active = true;
+                    if ($propuestasverificaciones->save($new_array) === false) {
+                        //Muestra los mensajes de error cuando no guarda
+                        //foreach ($propuestasverificaciones->getMessages() as $message) {
+                        //    echo $message;
+                        //}
+  
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"El metodo guardar_verificacion_1 presento error al al guardar la verificacion 1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"El metodo guardar_verificacion_1 guardo con exito la verificacion 1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
+                        $logger->close();
+                    
+                        echo $propuestasverificaciones->id;
+                    }                                                            
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->get('propuesta') . ') no existe"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
+                    $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), no esta registrada en el metodo guardar_verificacion_1 "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
                     $logger->close();
                     echo "crear_propuesta";
                     exit;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_archivos de la propuesta (' . $request->get('propuesta') . ')"', ['user' => "", 'token' => $request->get('token')]);                
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo guardar_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_archivos de la propuesta (' . $request->get('propuesta') . ')"', ['user' => "", 'token' => $request->get('token')]);            
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo guardar_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_archivos de la propuesta (' . $request->get('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);        
-        $logger->close();
-        echo "error_metodo";
-    }
-}
-);
-
-$app->get('/buscar_link', function () use ($app, $config, $logger) {
-    //Instancio los objetos que se van a manejar
-    $request = new Request();
-    $tokens = new Tokens();
-
-    try {
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
-                $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
-
-                if (isset($propuesta->id)) {
-
-                    $conditions = ['propuesta' => $propuesta->id, 'convocatoriadocumento' => $request->get('documento'), 'active' => true];
-                    //Se crea todo el array de archivos de la propuesta
-                    $consulta_documentos_link = Propuestaslinks::find(([
-                                'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
-                                'bind' => $conditions,
-                                'order' => 'id ASC',
-                    ]));
-
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información documento convocatoriadocumento para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-
-                    //Retorno el array
-                    echo json_encode($consulta_documentos_link);
-                } else {
-                    //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "crear_propuesta";
-                    exit;
-                }
-            } else {
-                //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
-                $logger->close();
-                echo "acceso_denegado";
-            }
-        } else {
-            //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
-            $logger->close();
-            echo "error_token";
-        }
-    } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPost('token')]);
         $logger->close();
         echo "error_metodo";
     }

@@ -451,10 +451,10 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                                                     COUNT(p.id) as total_propuestas
                                             FROM Propuestas AS p                                
                                             WHERE
-                                            p.estado = 8 AND p.convocatoria=" . $id;
+                                            p.estado = 8 AND p.convocatoria=" . $convocatoria->id;
 
                         $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
-                        $codigo_propuesta = $id . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
+                        $codigo_propuesta = $convocatoria->id . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
 
                         $post["estado"] = 8;
                         $post["actualizado_por"] = $user_current["id"];
