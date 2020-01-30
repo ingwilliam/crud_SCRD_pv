@@ -197,9 +197,10 @@ CREATE TABLE public.propuestasverificaciones
 );
 
 
+ALTER TABLE enfoques ADD COLUMN programa integer;
 
+INSERT INTO public.enfoques (nombre, active, creado_por, programa) VALUES ('Multidisciplinar', true, 7, 3);
 
+UPDATE public.enfoques SET programa=1 WHERE id<5;
 
-
-
-
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Subsanada', true, 7, 7);

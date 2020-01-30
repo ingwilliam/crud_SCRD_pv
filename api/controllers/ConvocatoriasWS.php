@@ -165,7 +165,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     foreach ($consulta_rondas_evaluacion as $ronda) {
                         $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
-                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Ronda:</b> " . $ronda->nombre_ronda;
+                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
                         $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
                         $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
                                         [
