@@ -80,8 +80,19 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Consulto la convocatoria
+            $convocatoria= Convocatorias::findFirst("id=".$id." AND active=TRUE");
+
+            //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+            $id_convocatoria=$convocatoria->id;                
+
+            //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                $id_convocatoria = $convocatoria->getConvocatorias()->id;                                    
+            }
+                                    
             //Consulto la fecha de cierre del cronograma de la convocatoria
-            $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
             $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                         'bind' => $conditions,
@@ -320,6 +331,39 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         {
                             $consultar=false;
                         }
+                    }
+                    else
+                    {
+                        $consultar=false;
+                    }
+                }
+                else 
+                {
+                    //Consulto la convocatoria
+                    $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+
+                    //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+                    $id_convocatoria=$convocatoria->id;                
+                    $seudonimo=$convocatoria->seudonimo;                        
+
+                    //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                    if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                        $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
+                        $seudonimo=$convocatoria->getConvocatorias()->seudonimo;
+                    }
+
+
+                    //Consulto la fecha de cierre del cronograma de la convocatoria
+                    $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                                'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                                'bind' => $conditions,
+                    ]));
+
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $consultar=true;
                     }
                     else
                     {

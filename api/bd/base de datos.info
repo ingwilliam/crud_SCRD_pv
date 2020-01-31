@@ -204,3 +204,14 @@ INSERT INTO public.enfoques (nombre, active, creado_por, programa) VALUES ('Mult
 UPDATE public.enfoques SET programa=1 WHERE id<5;
 
 INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Subsanada', true, 7, 7);
+
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Subsanación de propuestas', true, 7);
+
+ALTER TABLE propuestas ADD fecha_inicio_subsanacion timestamp without time zone;
+ALTER TABLE propuestas ADD fecha_fin_subsanacion timestamp without time zone;
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion','3',TRUE,NOW(),7);
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('html_subsanacion','<p>Cordial saludo,</p><p>Su propuesta **nombre_propuesta** - **codigo_propuesta** fue verificada y quedó en estado <b>POR SUBSANAR</b>.</p><p>Recuerde que su propuesta se podrá subsanar desde el día **fecha_inicio_propuesta** hasta el día **fecha_fin_propuesta**. Para revisar los documentos que debe subsanar, por favor ingrese al sistema de inscripción en línea, vaya a la opción de Mis Propuestas busque la propuesta correspondiente y de clic en el botón Subsanar Propuesta.</p><p>Gracias</p>',TRUE,NOW(),7);
+
+
