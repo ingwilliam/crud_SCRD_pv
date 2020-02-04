@@ -33,7 +33,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -554,6 +554,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>                                    
+                                    
+                                    <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>                                    
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

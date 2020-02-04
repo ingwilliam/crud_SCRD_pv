@@ -29,6 +29,13 @@ class Usuariosperfiles extends Model
         'Perfiles',
         'id'
     );
+    
+    //Se define relacion de N a 1 con Paises
+    $this->belongsTo(
+        'usuario',
+        'Usuarios',
+        'id'
+    );
 
    }
 

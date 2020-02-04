@@ -37,7 +37,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -80,8 +80,19 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Consulto la convocatoria
+            $convocatoria= Convocatorias::findFirst("id=".$id." AND active=TRUE");
+
+            //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+            $id_convocatoria=$convocatoria->id;                
+
+            //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                $id_convocatoria = $convocatoria->getConvocatorias()->id;                                    
+            }
+                                    
             //Consulto la fecha de cierre del cronograma de la convocatoria
-            $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
             $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                         'bind' => $conditions,
@@ -326,6 +337,39 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         $consultar=false;
                     }
                 }
+                else 
+                {
+                    //Consulto la convocatoria
+                    $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+
+                    //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+                    $id_convocatoria=$convocatoria->id;                
+                    $seudonimo=$convocatoria->seudonimo;                        
+
+                    //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                    if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                        $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
+                        $seudonimo=$convocatoria->getConvocatorias()->seudonimo;
+                    }
+
+
+                    //Consulto la fecha de cierre del cronograma de la convocatoria
+                    $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                                'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                                'bind' => $conditions,
+                    ]));
+
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $consultar=true;
+                    }
+                    else
+                    {
+                        $consultar=false;
+                    }
+                }
                 
                 if($consultar==true)
                 {
@@ -513,10 +557,13 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 //Creo el array que se va a retornar
                 $array=array();
                 $array["propuesta"]["nombre_estado"]=$propuesta->getEstados()->nombre;
+                $array["propuesta"]["estado"]=$propuesta->estado;
                 $array["propuesta"]["codigo_propuesta"]=$propuesta->codigo;
                 $array["propuesta"]["tipo_participante"]=$propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
                 $array["propuesta"]["nombre_participante"]=$participante;                                
                 $array["propuesta"]["nombre_propuesta"]=$propuesta->nombre;
+                $array["propuesta"]["verificacion_administrativos"]=$propuesta->verificacion_administrativos;
+                $array["propuesta"]["verificacion_tecnicos"]=$propuesta->verificacion_tecnicos;
                                 
                 //Se crea todo el array de documentos administrativos y tecnicos
                 $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
@@ -534,7 +581,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
                             
                             //Consulto las posible verificaciones
-                            $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=1");                                
+                            $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=".$request->get('verificacion'));                                
                             $documentos_administrativos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
                             $documentos_administrativos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
                             $documentos_administrativos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
@@ -731,6 +778,214 @@ $app->post('/guardar_verificacion_1', function () use ($app, $config,$logger) {
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPost('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/valida_verificacion', function () use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo valida_verificacion_1 para guardar la validar la propuesta(' . $request->getPost('propuesta') . ')"', ['user' => '', 'token' => $request->getPost('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+
+                //Consulto la propuesta actual
+                $propuesta = Propuestas::findFirst("id=" . $request->getPost('propuesta') . "");
+
+                if (isset($propuesta->id)) {
+                    
+                    //Consulto todos los requisitos verificados
+                    //Verifico que uno de ellos este en no cumple para informarle al funcinario que debe rechazar
+                    //Si no le digo que confirme la verificacion
+                    $array_propuestas_verificaciones = Propuestasverificaciones::find("propuesta=" . $request->getPost('propuesta') . " AND verificacion=" . $request->getPost('verificacion') . "");
+                    $rechazo=false;
+                    foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
+                        if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
+                        {
+                            if( $propuesta_verificacion->estado == 26){
+                                $rechazo=true;                                                                
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if($rechazo)
+                    {
+                        echo "rechazar";
+                    }
+                    else
+                    {
+                        $subsanar=false;
+                        foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
+                            if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
+                            {
+                                if( $propuesta_verificacion->estado == 27){
+                                    $subsanar=true;                                                                
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if($subsanar)
+                        {
+                            echo "subsanar";
+                        }
+                        else
+                        {
+                            echo "confirmar";
+                        }
+                    }
+                    
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), no esta registrada en el metodo valida_verificacion_1 "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
+                    $logger->close();
+                    echo "crear_propuesta";
+                    exit;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo valida_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo valida_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo valida_verificacion_1 de la propuesta (' . $request->getPost('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPost('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_confirmacion para guardar la validar la propuesta(' . $request->getPost('propuesta') . ')"', ['user' => '', 'token' => $request->getPost('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+
+                //Consulto la propuesta actual
+                $propuesta = Propuestas::findFirst("id=" . $request->getPost('propuesta') . "");
+
+                if (isset($propuesta->id)) {
+                    
+                    if($request->getPost('estado_actual_propuesta')=="rechazar")
+                    {
+                        $propuesta->estado=23;
+                    }
+                    
+                    if($request->getPost('estado_actual_propuesta')=="subsanar")
+                    {
+                        $propuesta->estado=21;
+                    }
+                    
+                    //Solo la verificacion tecnica puede pasar la propuesta a estado 
+                    //habilitada, en la primera verificacion                    
+                    if($request->getPost('tipo_verificacion')=="tecnica")
+                    {
+                        $propuesta->verificacion_tecnicos=true;
+                        if($request->getPost('estado_actual_propuesta')=="habilitada")
+                        {
+                            if($propuesta->estado==8||$propuesta->estado==31)
+                            {
+                                $propuesta->estado=24;
+                            }
+                        }
+                    }
+                    
+                    //Solo la verificacion administrativa
+                    if($request->getPost('tipo_verificacion')=="administrativa")
+                    {
+                        $propuesta->verificacion_administrativos=true;
+                    }                                                                                    
+                    
+                    $propuesta->update();
+                    
+                    //Registro la accion en el log de convocatorias                    
+                    $logger->info('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), se actualizo correctamente el metodo guardar_confirmacion "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
+                    $logger->close();                        
+                    echo "exito";
+                    exit;
+                    
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), no esta registrada en el metodo guardar_confirmacion "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
+                    $logger->close();
+                    echo "crear_propuesta";
+                    exit;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo guardar_confirmacion de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo guardar_confirmacion de la propuesta (' . $request->getPost('propuesta') . ')"', ['user' => "", 'token' => $request->getPost('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_confirmacion de la propuesta (' . $request->getPost('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPost('token')]);
         $logger->close();
         echo "error_metodo";
     }
