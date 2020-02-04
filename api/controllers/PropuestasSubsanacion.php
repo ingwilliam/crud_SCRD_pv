@@ -37,7 +37,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -101,8 +101,17 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
             if ($fecha_actual > $fecha_cierre) {  
                 
-                //Dias habilitados para subsanar
-                $tabla_maestra= Tablasmaestras::find("active=true AND nombre='dias_subsanacion'");
+                //Dias habilitados para subsanar                
+                if($convocatoria->programa==1 || $convocatoria->programa==2)
+                {
+                    $variable_dias_subsanacion="dias_subsanacion_pde";
+                }
+                if($convocatoria->programa==3)
+                {
+                    $variable_dias_subsanacion="dias_subsanacion_pdsc";
+                }
+                
+                $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$variable_dias_subsanacion."'");
                 $dias = $tabla_maestra[0]->valor;
                 
                 //Genero el periodo de fechas para subsanar

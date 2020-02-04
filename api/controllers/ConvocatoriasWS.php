@@ -34,7 +34,8 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
+        "port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -49,6 +50,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Si existe consulto la convocatoria y creo el objeto
         $convocatoria = Convocatorias::findFirst($id);
+        $array_convocatoria["id_programa"] = $convocatoria->programa;
         $array_convocatoria["programa"] = $convocatoria->getProgramas()->nombre;
         $array_convocatoria["convocatoria"] = $convocatoria->nombre;
         $array_convocatoria["entidad"] = $convocatoria->getEntidades()->nombre;

@@ -210,8 +210,24 @@ INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Subsanación de 
 ALTER TABLE propuestas ADD fecha_inicio_subsanacion timestamp without time zone;
 ALTER TABLE propuestas ADD fecha_fin_subsanacion timestamp without time zone;
 
-INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion','3',TRUE,NOW(),7);
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion_pde','3',TRUE,NOW(),7);
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion_pdsc','5',TRUE,NOW(),7);
 
 INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('html_subsanacion','<p>Cordial saludo,</p><p>Su propuesta **nombre_propuesta** - **codigo_propuesta** fue verificada y quedó en estado <b>POR SUBSANAR</b>.</p><p>Recuerde que su propuesta se podrá subsanar desde el día **fecha_inicio_propuesta** hasta el día **fecha_fin_propuesta**. Para revisar los documentos que debe subsanar, por favor ingrese al sistema de inscripción en línea, vaya a la opción de Mis Propuestas busque la propuesta correspondiente y de clic en el botón Subsanar Propuesta.</p><p>Gracias</p>',TRUE,NOW(),7);
+
+
+UPDATE public.tiposeventos SET nombre='Verificación de documentación administrativa' WHERE id=19;
+UPDATE public.tiposeventos SET nombre='Publicación de listados de proyectos habilitados, rechazados y por subsanar' WHERE id=20;
+UPDATE public.tiposeventos SET nombre='Evaluación administrativa y técnica de los proyectos' WHERE id=21;
+UPDATE public.tiposeventos SET nombre='Publicación de listas de proyectos elegibles' WHERE id=22;
+UPDATE public.tiposeventos SET nombre='Evaluación administrativa de los proyectos' WHERE id=23;
+UPDATE public.tiposeventos SET nombre='Evaluación técnica de los proyectos', periodo=true WHERE id=24;
+
+UPDATE public.requisitos SET nombre='Archivo de video' WHERE id IN (171,1024);
+
+
+UPDATE public.tablasmaestras SET valor='pdf,doc,docx,xls,xlsx,jpg,gif,png,mp3,wav,wma,avi,mp4,mpeg,mwv,wmv' WHERE id IN (13,12);
+
 
 
