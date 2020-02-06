@@ -776,7 +776,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
 </style>
 <h2  style="text-align:center;">'.$titulo_reporte.'</h2>
 <h3>Información de la propuesta</h3>        
-<p>La subsanación ha sido realizada correctamente, recuerde que después del periodo de subsanación, su propuesta para a verificación de los requisitos subsanados.</p>
+<p>La subsanación ha sido realizada correctamente, recuerde que después del periodo de subsanación, su propuesta pasa a verificación de los requisitos subsanados.</p>
 <table>
     <tr>
         <td colspan="2"><b>Código</b></td>
