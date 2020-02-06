@@ -249,15 +249,18 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                             //Creo el cronograma de las categorias especiales
                             foreach ($consulta_cronogramas as $evento) {
-                                $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
-                                if ($evento->getTiposeventos()->periodo) {
-                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
-                                } else {
-                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
+                                if($evento->getTiposeventos()->publico)
+                                {                                                                
+                                    $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
+                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                                    if ($evento->getTiposeventos()->periodo) {
+                                        $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
+                                    } else {
+                                        $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
+                                    }
+                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["descripcion"] = $evento->descripcion;
+                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["convocatoria"] = $categoria->id;
                                 }
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["descripcion"] = $evento->descripcion;
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["convocatoria"] = $categoria->id;
                             }
 
 
@@ -359,14 +362,17 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
             ]));
             foreach ($consulta_cronogramas as $evento) {
-                $cronogramas[$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
-                if ($evento->getTiposeventos()->periodo) {
-                    $cronogramas[$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
-                } else {
-                    $cronogramas[$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
-                }
-                $cronogramas[$evento->id]["descripcion"] = $evento->descripcion;
-                $cronogramas[$evento->id]["convocatoria"] = $id;
+                if($evento->getTiposeventos()->publico)
+                {
+                    $cronogramas[$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                    if ($evento->getTiposeventos()->periodo) {
+                        $cronogramas[$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
+                    } else {
+                        $cronogramas[$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
+                    }
+                    $cronogramas[$evento->id]["descripcion"] = $evento->descripcion;
+                    $cronogramas[$evento->id]["convocatoria"] = $id;
+                }                                                
             }
 
             //Se crea todo el array de participantes

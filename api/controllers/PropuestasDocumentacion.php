@@ -269,6 +269,129 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
 }
 );
 
+//Metodo el cual carga el formulario del integrante
+//Verifica que que tenga creada la propuestas
+$app->get('/buscar_documentacion_subsanacion', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_documentacion_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+                $user_current = json_decode($token_actual->user_current, true);
+
+                //Valido si existe el codigo de la propuesta
+                //De lo contratio creo el participante del cual depende del inicial
+                //Creo la propuesta asociando el participante creado
+                if (is_numeric($request->get('p'))) {
+                    //Consulto la propuesta solicitada
+                    $conditions = ['id' => $request->get('p'), 'active' => true , 'estado' => 22 ];
+                    $propuesta = Propuestas::findFirst(([
+                                'conditions' => 'id=:id: AND active=:active: AND estado=:estado:',
+                                'bind' => $conditions,
+                    ]));
+
+                    if (isset($propuesta->id)) {
+
+                        //Creo el array de la propuesta
+                        $array = array();
+                        $array["propuesta"] = $propuesta->id;
+                        $array["periodo_actual"] = "desde <b>" .date('Y-m-d',strtotime($propuesta->fecha_inicio_subsanacion, time()))."</b> hasta el <b>".$propuesta->fecha_fin_subsanacion."</b>";
+                        
+                        $array["nombre_propuesta"] = $propuesta->nombre;
+                        $array["estado"] = $propuesta->estado;
+                        $array["participante"] = $propuesta->participante;
+
+                        $id = $propuesta->convocatoria;
+
+                        //Consulto la convocatoria
+                        $convocatoria = Convocatorias::findFirst($propuesta->convocatoria);
+
+                        //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                        if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                            $id = $convocatoria->getConvocatorias()->id;                    
+                        }
+
+                         //Consulto los documentos por subsanar y la verificacion 1
+                        $verificaciones_1 = Propuestasverificaciones::find("propuesta=" . $propuesta->id . " AND estado=27");
+                        $documentos_administrativos=array();
+                        foreach ($verificaciones_1 as $documento) {                            
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["id"] = $documento->getConvocatoriasdocumentos()->id;
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["requisito"] = $documento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["descripcion"] = "<b>".$documento->observacion."</b>";
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["archivos_permitidos"] = json_decode($documento->getConvocatoriasdocumentos()->archivos_permitidos);
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["tamano_permitido"] = $documento->getConvocatoriasdocumentos()->tamano_permitido;
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["estado"] = $documento->estado;
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["orden"] = $documento->getConvocatoriasdocumentos()->orden;                                                         
+                        }
+                        
+                        
+                        $array["administrativos"] = $documentos_administrativos;                        
+
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion_subsanacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+
+                        //Retorno el array
+                        echo json_encode($array);
+
+                    } else {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion_subsanacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "crear_propuesta";
+                        exit;
+                    }
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error_cod_propuesta";
+                    exit;
+                }
+                                
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_documentacion_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_documentacion_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_documentacion_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
@@ -377,6 +500,120 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo validar_requisitos_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+                $user_current = json_decode($token_actual->user_current, true);
+
+                $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
+
+                if (isset($propuesta->id)) {
+
+                    //Consulto la convocatoria
+                    $id=$request->get('conv');
+                    $convocatoria = Convocatorias::findFirst($id);
+
+                    //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                    if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                        $id = $convocatoria->getConvocatorias()->id;                    
+                    }
+                    
+                    //Consulto los requisitos no guardados
+                    $sql_requisitos = "SELECT 
+                                                cd.id,
+                                                r.nombre	
+                                        FROM Convocatoriasdocumentos AS cd
+                                        INNER JOIN Requisitos AS r ON r.id=cd.requisito
+                                        LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE AND pd.cargue_subsanacion = TRUE 
+                                        LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE AND pl.cargue_subsanacion = TRUE 
+                                        WHERE r.tipo_requisito='Administrativos' AND cd.obligatorio=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
+
+                    $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
+
+                    $id_perfil = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id;
+                    
+                    if( $id_perfil==7 || $id_perfil==8)
+                    {
+                        $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
+                        
+                        if( count($participantes) <= 0 )
+                        {
+                            $data = json_decode(json_encode($requisitos), true);
+                    
+                            if( $id_perfil==7)
+                            {
+                                $new_json = array(array('id' => "Junta", 'nombre' => "Junta"));
+                            }
+                            
+                            if($id_perfil==8)
+                            {
+                                $new_json = array(array('id' => "Integrante", 'nombre' => "Integrante"));
+                            }
+                            
+                            $requisitos = array_merge($data, $new_json);
+                        }
+                        
+                    }
+                    
+                    //Registro la accion en el log de convocatorias
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos_subsanacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+
+                    //Retorno el array
+                    echo json_encode($requisitos);
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos_subsanacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "crear_propuesta";
+                    exit;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo validar_requisitos_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo validar_requisitos_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_requisitos_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -588,6 +825,10 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
                     $propuestasdocumentos->convocatoriadocumento = $request->getPut('documento');
                     $propuestasdocumentos->id_alfresco = $return;
                     $propuestasdocumentos->nombre = $request->getPut('srcName');
+                    if($request->getPut('cargue_subsanacion'))
+                    {
+                        $propuestasdocumentos->cargue_subsanacion = true;
+                    }                                        
                     if ($propuestasdocumentos->save() === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
@@ -656,6 +897,10 @@ $app->post('/guardar_link', function () use ($app, $config, $logger) {
                 $propuestaslinks->propuesta = $request->getPut('propuesta');
                 $propuestaslinks->convocatoriadocumento = $request->getPut('documento');
                 $propuestaslinks->link = $request->getPut('link');
+                if($request->getPut('cargue_subsanacion'))
+                {
+                    $propuestaslinks->cargue_subsanacion = true;
+                } 
                 if ($propuestaslinks->save() === false) {
                     //Registro la accion en el log de convocatorias           
                     $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el link en la base de datos (' . $request->getPut('documento') . ') en el metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
