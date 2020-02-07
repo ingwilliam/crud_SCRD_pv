@@ -674,6 +674,17 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li>
                                     <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>
                                 </li>
+                                <?php
+                                $style_update="display: none";                                
+                                if($request->getPost('sub')!="")
+                                {                                    
+                                    $style_update="display: block";
+                                }
+                                ?>
+                                <li>
+                                    <a style="<?php echo $style_update;?>" href="../propuestas/subsanar_propuesta.html?id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>&sub=<?php echo $request->getPost('sub');?>">Subsanar propuesta</a>
+
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

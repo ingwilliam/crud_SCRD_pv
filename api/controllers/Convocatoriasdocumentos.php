@@ -332,7 +332,7 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriadocumento = new Convocatoriasdocumentos();
             }
             //Cargo la convocatoria actual
-            $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
             //Creo todos los array de la convocatoria cronograma
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_archivos_tecnicos'");
             $array["tipos_archivos_tecnicos"] = explode(",", $tabla_maestra[0]->valor);

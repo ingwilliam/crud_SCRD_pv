@@ -828,7 +828,7 @@ $app->post('/valida_verificacion', function () use ($app, $config,$logger) {
                     foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
                         if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
                         {
-                            if( $propuesta_verificacion->estado == 26){
+                            if( $propuesta_verificacion->estado == 30){
                                 $rechazo=true;                                                                
                                 break;
                             }
@@ -858,7 +858,27 @@ $app->post('/valida_verificacion', function () use ($app, $config,$logger) {
                         }
                         else
                         {
-                            echo "confirmar";
+                            //WILLIAM OJO QUEDO EN VALIDAR QUE TODOS ESTEN EN ESTADO CUMPLE 29
+                            
+                            $habilitar=false;
+                            foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
+                                if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
+                                {
+                                    if( $propuesta_verificacion->estado == 27){
+                                        $subsanar=true;                                                                
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if($habilitar)
+                            {
+                                echo "habilitada";
+                            }
+                            else
+                            {
+                                echo "confirmar";
+                            }
                         }
                     }
                     
@@ -934,6 +954,11 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     if($request->getPost('estado_actual_propuesta')=="subsanar")
                     {
                         $propuesta->estado=21;
+                    }
+                    
+                    if($request->getPost('estado_actual_propuesta')=="habilitada")
+                    {
+                        $propuesta->estado=24;
                     }
                     
                     //Solo la verificacion tecnica puede pasar la propuesta a estado 

@@ -500,6 +500,105 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
 }
 );
 
+$app->post('/subsanar_propuesta', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo subsanar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+                $user_current = json_decode($token_actual->user_current, true);
+
+                //Consulto la convocatoria
+                $id=$request->getPut('conv');
+                $convocatoria = Convocatorias::findFirst($id);
+
+                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                    $id = $convocatoria->getConvocatorias()->id;                    
+                }                
+                                
+                //Consulto la propuesta
+                $propuesta = Propuestas::findFirst($request->getPut('id'));
+                
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_inicio_subsanacion = strtotime($propuesta->fecha_inicio_subsanacion, time());
+                $fecha_fin_subsanacion = strtotime($propuesta->fecha_fin_subsanacion, time());
+                
+                if (($fecha_actual >= $fecha_inicio_subsanacion) && ($fecha_actual <= $fecha_fin_subsanacion))
+                {
+                    if ($propuesta->estado == 22) {
+
+                        $post["estado"] = 31;
+                        $post["fecha_subsanacion"] = date("Y-m-d H:i:s");                        
+
+                        if ($propuesta->save($post) === false) {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo $propuesta->id;
+                        }
+                    } else {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no esta en estado Subsanación Recibida en el metodo subsanar_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error_estado";
+                    }
+                                        
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria(' . $request->getPut('conv') . ') no esta activa, el periodo de subsanacion es  (' . $propuesta->fecha_inicio_subsanacion . ' a ' . $propuesta->fecha_fin_subsanacion . ')", en el metodo subsanar_propuesta', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error_fecha_cierre";                   
+                    
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo subsanar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo subsanar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo subsanar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->post('/anular_propuesta', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
