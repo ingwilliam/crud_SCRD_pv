@@ -156,22 +156,22 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 foreach ($consulta_documentos_administrativos as $documento) {
                                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                         if ($documento->etapa == "Registro") {
-                                            $documentos_administrativos[$documento->id]["id"] = $documento->id;
-                                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                            $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
-                                            $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                            $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                            $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+                                            $documentos_administrativos[$documento->orden]["id"] = $documento->id;
+                                            $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                            $documentos_administrativos[$documento->orden]["descripcion"] = $documento->descripcion;
+                                            $documentos_administrativos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                            $documentos_administrativos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                            $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
                                         }
                                     }
 
                                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                                        $documentos_tecnicos[$documento->id]["id"] = $documento->id;
-                                        $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                        $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
-                                        $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                        $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                        $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
+                                        $documentos_tecnicos[$documento->orden]["id"] = $documento->id;
+                                        $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                        $documentos_tecnicos[$documento->orden]["descripcion"] = $documento->descripcion;
+                                        $documentos_tecnicos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                        $documentos_tecnicos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                        $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
                                     }
                                 }
 
