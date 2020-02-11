@@ -435,12 +435,6 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
         <td>' . $propuesta->nombre . '</td>
     </tr>    
     <tr>
-        <td>Resumen de la propuesta</td>
-        <td>' . $propuesta->resumen . '</td>
-        <td>Objetivo de la propuesta</td>
-        <td>' . $propuesta->objetivo . '</td>
-    </tr>    
-    <tr>
         <td>¿Su propuesta se desarrolla en Bogotá D.C.?</td>
         <td>' . $bogota . '</td>
         <td>Localidad</td>
@@ -799,12 +793,6 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
         <td><b>' . $propuesta->getEstados()->nombre . '</b></td>
         <td>Nombre de la propuesta</td>
         <td>' . $propuesta->nombre . '</td>
-    </tr>    
-    <tr>
-        <td>Resumen de la propuesta</td>
-        <td>' . $propuesta->resumen . '</td>
-        <td>Objetivo de la propuesta</td>
-        <td>' . $propuesta->objetivo . '</td>
     </tr>    
     <tr>
         <td>¿Su propuesta se desarrolla en Bogotá D.C.?</td>

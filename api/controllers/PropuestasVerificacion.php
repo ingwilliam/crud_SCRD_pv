@@ -984,7 +984,7 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     $propuesta->update();
                     
                     //Registro la accion en el log de convocatorias                    
-                    $logger->info('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), se actualizo correctamente el metodo guardar_confirmacion "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . '), Se actualizó correctamente el metodo guardar_confirmacion "', ['user' => $user_current["username"], 'token' => $request->getPost('token')]);
                     $logger->close();                        
                     echo "exito";
                     exit;

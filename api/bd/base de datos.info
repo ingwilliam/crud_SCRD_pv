@@ -264,3 +264,22 @@ ALTER TABLE propuestaslinks ADD cargue_subsanacion boolean DEFAULT FALSE;
 
 ALTER TABLE propuestas ADD fecha_subsanacion timestamp without time zone;
 
+#10 de febrero del 2020
+
+UPDATE public.tablasmaestras SET valor='<p>Bienvenido al sistema de inscripción en línea del <b>Programa Distrital de Estímulos, Programa Distrital de Apoyos Concertados, Programa Distrital de Salas Concertadas y Banco de Jurados.</b></p><p>Su nombre de usuario para ingresar al sistema es el correo electrónico <b>**usuario**</b>. Para iniciar la inscripción de propuestas, debe verificar esta dirección de correo electrónico, ingresando al siguiente enlace:</p><p><a href="**srcverificacion**">Verificación de cuenta</a></p><p>Gracias.</p>' WHERE id=18;
+
+
+UPDATE public.tablasmaestras SET nombre='condiciones_participacion_pde_2019' WHERE id=27;
+
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('condiciones_participacion_pde_2020', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('condiciones_participacion_pdsc_2020', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_pn_2020', 'https://drive.google.com/file/d/10Op9QaU9FcK4uYIpjLboR-w4AC3OPfg-/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_pj_2020', 'https://drive.google.com/file/d/1uB7NDC58BV2icUEcx_ccx49wAllXrIrh/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_agr_2020', 'https://drive.google.com/file/d/18KsE_YbS8aTZMFZJkSCD47Wjt7ORtBWk/view?usp=sharing', true, 7);
+
+UPDATE public.requisitos SET active=TRUE,programas='1,2,3' WHERE id IN (118,935,193,672,714,71,185,363,38,39,40,41,42,48,893,49,50,896,895,891,73,74,890,101,103,104,105,119,889,887,62,888,55,186,246,344,907,900,901,902,903,904,905,906,885,1017,457,882,899,809,894,810,836,811,812,813,818,814,815,886,1022,936,859,1023,947,816,929,824,16,27,72,120,308,730,817,825,866,842,861,892,897,883,884,914,916,911,930,910,921,934,908,917,919,925,915,932,931,918,933,909,912,922,928,1016,967,984,983,994,995,982,981,980,988,992,991,1012,997,976,996,993,986,1013,1034,1036,1041,1019,1020,1024,1037,1038,1029,1030,1031,1032,1033,1035,1018,1021,1040,1027,1028,1044,1043);
+
+#OJO WILLIAM PARA PASAR TODAS LAS CONVOCATORIAS AL AÑO 2016 PARA PRODUCCION
+UPDATE public.convocatorias SET anio=2016 ,active=false WHERE id NOT IN (153,152,142);
+
+
