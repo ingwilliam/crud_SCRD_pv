@@ -233,7 +233,7 @@ $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
         if (isset($usuario_validar->id)) {
             if ($usuario_validar->active) {
                 //Redireccionar
-                header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
+                header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activó el usuario con éxito, por favor ingrese al sistema.....&msg_tipo=success');
                 exit();
             } else {
                 $usuario_validar->active = true;
@@ -245,7 +245,7 @@ $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
                     exit();
                 } else {
                     //Redireccionar
-                    header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activo el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
+                    header('Location: ' . $config->sistema->url_admin . 'index.html?msg=Se activó el usuario con éxito, por favor ingrese al sistema.&msg_tipo=success');
                     exit();
                 }
             }

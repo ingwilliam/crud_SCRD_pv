@@ -469,7 +469,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             //Consulto la propuesta solicitada, con el fin de mostrar el formulario inhabilitado
             $conditions = ['id' => $request->getPost('p'), 'active' => true];
             $propuesta_formulario = Propuestas::findFirst(([
-                        'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24)',
+                        'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24,31)',
                         'bind' => $conditions,
             ]));
             

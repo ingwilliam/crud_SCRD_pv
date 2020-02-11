@@ -207,6 +207,10 @@ $app->get('/all', function () use ($app) {
             if (!empty($request->get("params"))) {
                 foreach (json_decode($request->get("params")) AS $clave=>$valor)
                 {
+                    if($clave=="anio" && $valor==null){
+                        $valor=date("Y");
+                    }
+                    
                     if($clave=="nombre" && $valor!="")
                     {
                         $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($valor) . "%' ";
