@@ -249,7 +249,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                 else
                 {
                     //Creo el where para traer todas las propuestas asociadas con el usuario logueado
-                    $where .= " WHERE p.active=true AND p.participante IN (" . $array_participantes . ") ";
+                    $where .= " WHERE c.modalidad<>2 AND p.active=true AND p.participante IN (" . $array_participantes . ") ";
 
                     if ($params["codigo"] != "") {
                         $where .= " AND p.codigo='" . $params["codigo"] . "'";

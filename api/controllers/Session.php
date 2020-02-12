@@ -225,6 +225,10 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
 }
 );
 
+$app->get('/validar_actualizacion_codigo/{id:[0-9]+}', function ($id) use ($app, $config) {
+    echo "WMX2 11 febrero 2020";
+});
+
 // Verifica el usuario
 $app->get('/verificar_usuario/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
