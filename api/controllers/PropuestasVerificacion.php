@@ -566,14 +566,42 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $array["propuesta"]["verificacion_tecnicos"]=$propuesta->verificacion_tecnicos;
                                 
                 //Se crea todo el array de documentos administrativos y tecnicos
+                //Si es la verificacion 1 traigo todos los documentos administrativos de la convocatoria
+                if($request->get('verificacion')==1)
+                {
                 $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
                 $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
                             'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                             'bind' => $conditions,
                             'order' => 'orden ASC',
                 ]));
+                }
                 
-                foreach ($consulta_documentos_administrativos as $documento) {
+                //Si es la verificacion 2 traigo todos los documentos administrativos que fueron marcados como subsanar
+                if($request->get('verificacion')==2)
+                {
+                    $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'estado' => 27];
+                    $consulta_propuestas_verificaciones = Propuestasverificaciones::find(([
+                                'conditions' => 'propuesta=:propuesta: AND active=:active: AND estado=:estado:',
+                                'bind' => $conditions
+                    ]));                    
+                    $id_convocatorias_documentos = "";
+                    foreach ($consulta_propuestas_verificaciones as $cpv) {
+                        $id_convocatorias_documentos = $id_convocatorias_documentos . $cpv->convocatoriadocumento . ",";
+                    }
+                    $id_convocatorias_documentos = substr($id_convocatorias_documentos, 0, -1);
+                    
+                    
+                    $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
+                    $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
+                                'conditions' => 'id IN ('.$id_convocatorias_documentos.') AND convocatoria=:convocatoria: AND active=:active:',
+                                'bind' => $conditions,
+                                'order' => 'orden ASC',
+                    ]));
+                }
+                
+                
+                foreach ($consulta_documentos_administrativos as $documento) {                                                           
                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                         if ($documento->etapa == "Registro") {
                             $documentos_administrativos[$documento->id]["id"] = $documento->id;
@@ -586,9 +614,15 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_administrativos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
                             $documentos_administrativos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
                             
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id];
+                            //Consulto todos los documentos cargados por el usuario
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];                            
+                            if($request->get('verificacion')==2)
+                            {
+                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                            }
+                            
                             $consulta_archivos_propuesta = Propuestasdocumentos::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
                                         'bind' => $conditions,
                                         'order' => 'fecha_creacion ASC',
                             ]));
@@ -599,9 +633,14 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                 $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                             }
                             
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id];
+                            //Consulto todos los link cargados por el usuario
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
+                            if($request->get('verificacion')==2)
+                            {
+                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                            }                            
                             $consulta_links_propuesta = Propuestaslinks::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
                                         'bind' => $conditions,
                                         'order' => 'fecha_creacion ASC',
                             ]));
@@ -688,7 +727,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_cronograma ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_propuesta ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -828,7 +867,7 @@ $app->post('/valida_verificacion', function () use ($app, $config,$logger) {
                     foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
                         if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
                         {
-                            if( $propuesta_verificacion->estado == 30){
+                            if( $propuesta_verificacion->estado == 30 || $propuesta_verificacion->estado == 26){
                                 $rechazo=true;                                                                
                                 break;
                             }
@@ -859,25 +898,42 @@ $app->post('/valida_verificacion', function () use ($app, $config,$logger) {
                         else
                         {
                             //WILLIAM OJO QUEDO EN VALIDAR QUE TODOS ESTEN EN ESTADO CUMPLE 29
-                            
-                            $habilitar=false;
+                            $cumple=false;
                             foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
                                 if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
                                 {
-                                    if( $propuesta_verificacion->estado == 27){
-                                        $subsanar=true;                                                                
+                                    if( $propuesta_verificacion->estado == 29){
+                                        $cumple=true;                                                                
                                         break;
                                     }
                                 }
                             }
-                            
-                            if($habilitar)
+
+                            if($cumple)
                             {
-                                echo "habilitada";
+                                echo "cumple";
                             }
                             else
                             {
-                                echo "confirmar";
+                                $habilitar=false;
+                                foreach ($array_propuestas_verificaciones as $propuesta_verificacion) {                    
+                                    if( $propuesta_verificacion->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito==$request->getPost('tipo_requisito') )
+                                    {
+                                        if( $propuesta_verificacion->estado == 27){
+                                            $subsanar=true;                                                                
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if($habilitar)
+                                {
+                                    echo "habilitada";
+                                }
+                                else
+                                {
+                                    echo "confirmar";
+                                }
                             }
                         }
                     }
@@ -959,6 +1015,11 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     if($request->getPost('estado_actual_propuesta')=="habilitada")
                     {
                         $propuesta->estado=24;
+                    }
+                    
+                    if($request->getPost('estado_actual_propuesta')=="cumple")
+                    {
+                        $propuesta->estado=8;
                     }
                     
                     //Solo la verificacion tecnica puede pasar la propuesta a estado 
