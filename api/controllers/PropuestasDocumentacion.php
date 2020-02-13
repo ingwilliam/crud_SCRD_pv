@@ -553,39 +553,15 @@ $app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $lo
                     $sql_requisitos = "SELECT 
                                                 cd.id,
                                                 r.nombre	
-                                        FROM Convocatoriasdocumentos AS cd
+                                        FROM Propuestasverificaciones AS pv
+                                        INNER JOIN Convocatoriasdocumentos AS cd ON cd.id=pv.convocatoriadocumento AND pv.verificacion=1 AND pv.estado=27
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
                                         LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE AND pd.cargue_subsanacion = TRUE 
                                         LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE AND pl.cargue_subsanacion = TRUE 
                                         WHERE r.tipo_requisito='Administrativos' AND cd.obligatorio=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
-
+                    
                     $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
 
-                    $id_perfil = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id;
-                    
-                    if( $id_perfil==7 || $id_perfil==8)
-                    {
-                        $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
-                        
-                        if( count($participantes) <= 0 )
-                        {
-                            $data = json_decode(json_encode($requisitos), true);
-                    
-                            if( $id_perfil==7)
-                            {
-                                $new_json = array(array('id' => "Junta", 'nombre' => "Junta"));
-                            }
-                            
-                            if($id_perfil==8)
-                            {
-                                $new_json = array(array('id' => "Integrante", 'nombre' => "Integrante"));
-                            }
-                            
-                            $requisitos = array_merge($data, $new_json);
-                        }
-                        
-                    }
-                    
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos_subsanacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();

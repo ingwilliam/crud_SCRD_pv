@@ -92,7 +92,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $array_administrativos = array();
                     $array_tecnicos = array();
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
-                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
+                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == false) {
                             $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
                         }
@@ -106,7 +106,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $array_administrativos_link = array();
                     $array_tecnicos_link = array();
                     foreach ($propuesta->Propuestaslinks as $propuestalink) {
-                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos") {
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == false) {
                             $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }
@@ -561,7 +561,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
 
                     $array_administrativos_link = array();                    
                     foreach ($propuesta->Propuestaslinks as $propuestalink) {
-                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == true) {
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == true) {
                             $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }                        

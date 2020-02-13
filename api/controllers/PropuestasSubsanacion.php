@@ -212,8 +212,18 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
                     $html_subsanacion = str_replace("**codigo_propuesta**", $propuesta->codigo, $html_subsanacion);
                     
                     //Dias habilitados para subsanar
-                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='dias_subsanacion'");
-                    $dias = $tabla_maestra[0]->valor;
+                    if($convocatoria->programa==1 || $convocatoria->programa==2)
+                    {
+                        $variable_dias_subsanacion="dias_subsanacion_pde";
+                    }
+                    if($convocatoria->programa==3)
+                    {
+                        $variable_dias_subsanacion="dias_subsanacion_pdsc";
+                    }
+
+                    $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$variable_dias_subsanacion."'");
+                    $dias = $tabla_maestra[0]->valor;                                        
+                    
                     //Genero el periodo de fechas para subsanar
                     $datestart= strtotime(date("Y-m-d"));
                     $datesuma = 15 * 86400;
