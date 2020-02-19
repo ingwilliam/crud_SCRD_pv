@@ -63,10 +63,11 @@ $app->get('/all', function () use ($app) {
                 1 => 'u.segundo_nombre',
                 2 => 'u.primer_apellido',
                 3 => 'u.segundo_apellido',
-                4 => 'u.username',                
+                4 => 'u.username',
+                5 => 'u.active',                
             );
 
-            $where .= " WHERE u.active=true";
+            $where .= " WHERE u.active IN (true,false)";
             //Condiciones para la consulta
             if (!empty($request->get("search")['value'])) {
                 $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
@@ -78,7 +79,8 @@ $app->get('/all', function () use ($app) {
 
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Usuarios AS u ";
-            $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u ";
+            //$sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger a_',u.id,'\" onclick=\"form_del(',u.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Usuarios AS u ";
+            $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . ", concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',u.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Usuarios AS u ";
             
             //concatenate search sql if value exist
             if (isset($where) && $where != '') {
