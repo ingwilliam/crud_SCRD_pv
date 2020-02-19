@@ -352,6 +352,7 @@ $app->get('/formulario_convocatorias', function () use ($app, $logger) {
             $array["lineas_estrategicas"] = Lineasestrategicas::find("active = true");
             $array["programas"] = Programas::find("active = true");
             $array["enfoques"] = Enfoques::find("active = true");
+            $array["modalidades"] = Modalidades::find("active = true");
             $array["estados"] = Estados::find(
                             array(
                                 "tipo_estado = 'convocatorias' AND active = true AND id IN (5,6)",
