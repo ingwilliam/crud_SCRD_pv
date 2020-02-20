@@ -282,4 +282,21 @@ UPDATE public.requisitos SET active=TRUE,programas='1,2,3' WHERE id IN (118,935,
 #OJO WILLIAM PARA PASAR TODAS LAS CONVOCATORIAS AL AÑO 2016 PARA PRODUCCION
 UPDATE public.convocatorias SET anio=2016 ,active=false WHERE id NOT IN (153,152,142);
 
+#Miercoles 19 de febrero - Administracion de usuarios
+UPDATE public.perfiles SET nombre='Misional' WHERE id=4;
+UPDATE public.perfiles SET nombre='Profesional' WHERE id=5;
+UPDATE public.perfiles SET nombre='Publicar' WHERE id=15;
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Búsqueda', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Verificación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Subsanación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Preselección', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Selección', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Grupos de evaluación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Deliberación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Administrador Sectorial', true, NOW(), 7);
+
+
+
+
+
 
