@@ -296,7 +296,66 @@ INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES(
 INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Administrador Sectorial', true, NOW(), 7);
 
 
+#Miercoles 20 de febrero
+UPDATE public.enfoques SET active=false WHERE id=5;
+UPDATE public.modalidades SET nombre='LEP', programa='1' WHERE id=6;
+ALTER TABLE convocatorias ALTER COLUMN valor_total_estimulos SET DATA TYPE bigint;
+
+UPDATE public.requisitos SET nombre='10. DOCUMENTO TODAS LAS LÍNEAS - Balance general y estados financieros completos y detallados de la organización (en formato PDF).)' WHERE id=956;
+UPDATE public.requisitos SET active=true,programas='6' WHERE id IN (835,942,948,949,951,952,953,954,955,956,957,958,959);
+
+UPDATE public.requisitos SET orden=1 WHERE id=835;
+UPDATE public.requisitos SET orden=2 WHERE id=942;
+UPDATE public.requisitos SET orden=3 WHERE id=948;
+UPDATE public.requisitos SET orden=4 WHERE id=949;
+UPDATE public.requisitos SET orden=5 WHERE id=951;
+UPDATE public.requisitos SET orden=6 WHERE id=952;
+UPDATE public.requisitos SET orden=7 WHERE id=953;
+UPDATE public.requisitos SET orden=8 WHERE id=954;
+UPDATE public.requisitos SET orden=9 WHERE id=955;
+UPDATE public.requisitos SET orden=10 WHERE id=956;
+UPDATE public.requisitos SET orden=11 WHERE id=957;
+UPDATE public.requisitos SET orden=12 WHERE id=958;
+UPDATE public.requisitos SET orden=13 WHERE id=959;
+
+UPDATE public.requisitos SET orden=1,active=true,programas='6',nombre='01. DOCUMENTO TODAS LAS LÍNEAS - Registro fotográfico (Anexo 6) en donde se muestren cada una de las áreas del proyecto a intervenir con pies de foto donde se indique su contenido (en formato Excel)' WHERE id=833;
+UPDATE public.requisitos SET orden=2,active=true,programas='6',nombre='02. DOCUMENTO TODAS LAS LÍNEAS - Certificación de programación permanente expedida por el Instituto Distrital de las Artes – IDARTES. (en formato PDF).' WHERE id=834;
+UPDATE public.requisitos SET orden=3,active=true,programas='6',nombre='03. DOCUMENTO TODAS LAS LÍNEAS - Listado de funciones realizadas (Anexo 9).' WHERE id=1042;
+UPDATE public.requisitos SET orden=4,active=true,programas='6',nombre='04. DOCUMENTO TODAS LAS LÍNEAS - Formato de Presupuesto (Anexo 4) debidamente firmado (en formato PDF).' WHERE id=843;
+UPDATE public.requisitos SET orden=5,active=true,programas='6',nombre='05. DOCUMENTO TODAS LAS LÍNEAS - Formato de Presupuesto (Anexo 4) (en formato Excel).' WHERE id=844;
+UPDATE public.requisitos SET orden=6,active=true,programas='6',nombre='06. DOCUMENTO TODAS LAS LÍNEAS - Cuadro comparativo de cotizaciones (Anexo 5) debidamente firmado (en formato PDF).' WHERE id=845;
+UPDATE public.requisitos SET orden=7,active=true,programas='6',nombre='07. DOCUMENTO TODAS LAS LÍNEAS - Cuadro comparativo de cotizaciones (Anexo 5) (en formato Excel).' WHERE id=846;
+UPDATE public.requisitos SET orden=8,active=true,programas='6',nombre='08. DOCUMENTO TODAS LAS LÍNEAS – Anexar mínimo dos cotizaciones en formato PDF por cada uno de los ítems presentados.' WHERE id=847;
+UPDATE public.requisitos SET orden=9,active=true,programas='6',nombre='09. DOCUMENTO TODAS LAS LÍNEAS - Formato de cronograma de obra (Anexo 7) (en formato Excel)' WHERE id=863;
+UPDATE public.requisitos SET orden=10,active=true,programas='6',nombre='10. DOCUMENTO TODAS LAS LÍNEAS - Formato de equipo humano (Anexo 8) (en formato Excel)' WHERE id=1045;
+UPDATE public.requisitos SET orden=11,active=true,programas='6',nombre='11. DOCUMENTO TODAS LAS LÍNEAS - Plan de emergencia y contingencias (en formato PDF).' WHERE id=848;
+UPDATE public.requisitos SET orden=12,active=true,programas='6',nombre='12. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Hoja de vida de cada uno de los constructores responsables propuestos con sus respectivos soportes y certificado de vigencia de la matrícula profesional no superior a 6 meses (en formato PDF).' WHERE id=849;
+UPDATE public.requisitos SET orden=13,active=true,programas='6',nombre='13. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Licencia de construcción vigente, debidamente aprobada, ejecutoriada y con vigencia de al menos un (1) año prorrogable por un (1) año más o certificación de reparaciones locativas según el caso (en formato PDF).' WHERE id=850;
+UPDATE public.requisitos SET orden=14,active=true,programas='6',nombre='14. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - En los predios definidos como Bienes de Interés Cultural, Resolución de Viabilidad del proyecto expedida por el Instituto Distrital de Patrimonio Cultural (IDPC) o Ministerio de Cultura, según corresponda (en formato PDF).' WHERE id=851;
+UPDATE public.requisitos SET orden=15,active=true,programas='6',nombre='15. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Para las obras que no requieran Licencia de Construcción, Concepto de reparaciones locativas expedido por la Curaduría Urbana respectiva (en formato PDF).' WHERE id=852;
+UPDATE public.requisitos SET orden=16,active=true,programas='6',nombre='16. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Estudio de suelos (en formato PDF).' WHERE id=853;
+UPDATE public.requisitos SET orden=17,active=true,programas='6',nombre='17. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento topográfico (para obra nueva) (en formato DWG y/o PDF). Máximo 20 Mb' WHERE id=854;
+UPDATE public.requisitos SET orden=18,active=true,programas='6',nombre='18. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento arquitectónico del escenario. (Cuando se requiera y será obligatorio cuando la intervención sea para Bien de interés Cultural (en formato DWG y/o PDF). Máximo 20 Mb cada archivo' WHERE id=856;
+UPDATE public.requisitos SET orden=19,active=true,programas='6',nombre='19. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Planos arquitectónicos (Plantas, Cortes, Fachadas) y estructurales aprobados por la curaduría en la licencia de construcción ejecutoriada. Adicionalmente se deberán presentar planos técnicos (hidrosanitarios, eléctricos, red de voz y datos, red contra incendios, etc.) y detalles constructivos firmados por el profesional responsable en cada caso (en formato DWG y/o PDF). Los planos deben estar acotados. Máximo 20 Mb cada archivo' WHERE id=857;
+UPDATE public.requisitos SET orden=20,active=true,programas='6',nombre='20. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Tabla de relación de planos en formato Excel o Word.' WHERE id=858;
+UPDATE public.requisitos SET orden=21,active=true,programas='6',nombre='21. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Concepto técnico eléctrico avalado y suscrito por un ingeniero eléctrico con experiencia en diseño de redes eléctricas, voz y datos, sistemas de automatización en el que se certifique que las actividades cumplen con el RETIE y RETILAP (en formato PDF).' WHERE id=867;
+UPDATE public.requisitos SET orden=22,active=true,programas='6',nombre='22. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Concepto técnico de un ingeniero eléctrico sobre el estado y capacidad de la red eléctrica del inmueble, que certifique que la misma es apta para la conexión de los equipos que se pretende adquirir. Debe incluir cuadro de cargas eléctricas y planos (en formato PDF).' WHERE id=868;
+UPDATE public.requisitos SET orden=23,active=true,programas='6',nombre='23. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Planos arquitectónicos del escenario incluyendo planos de las instalaciones eléctricas del inmueble y del escenario. Planos donde se identifiquen los aspectos técnicos relacionando los espacios del escenario y la ubicación de los elementos de dotación que se pretenden adquirir (en formato DWG y/o PDF). Máximo 20 Mb cada archivo' WHERE id=869;
+UPDATE public.requisitos SET orden=24,active=true,programas='6',nombre='24. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Diagramas de cubrimiento de los sistemas electro acústicos y los planos de flujo de señal, donde se señale cómo se utilizará cada elemento solicitado (en formato PDF).' WHERE id=870;
+UPDATE public.requisitos SET orden=25,active=true,programas='6',nombre='25. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Tres (3) propuestas comparables y equiparables entre sí, que contengan la descripción y el alcance técnico de los estudios y diseños a realizar, las cuales deberán ir acompañadas de la hoja de vida del profesional que la suscribe, la cotización y el cronograma de actividades (en formato PDF).' WHERE id=871;
+UPDATE public.requisitos SET orden=26,active=true,programas='6',nombre='26. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Cuadro comparativo de las tres (3) cotizaciones (Anexo 5) (en formato Excel). En este la organización deberá indicar y argumentar cuál de las tres (3) propuestas elige.' WHERE id=872;
+UPDATE public.requisitos SET orden=27,active=true,programas='6',nombre='27. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Cuadro comparativo de las tres (3) cotizaciones (Anexo 5) (en formato PDF). En este la organización deberá indicar y argumentar cuál de las tres (3) propuestas elige.' WHERE id=873;
+UPDATE public.requisitos SET orden=28,active=true,programas='6',nombre='28. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Hojas de vida de los diseñadores propuestos con sus respectivos soportes y certificado de vigencia de la matrícula profesional no superior a 6 meses (en formato PDF).' WHERE id=874;
+UPDATE public.requisitos SET orden=29,active=true,programas='6',nombre='29. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Certificaciones de los diseñadores propuestos que acrediten experiencia en diseños de acuerdo con la propuesta presentada (en formato PDF).' WHERE id=875;
+UPDATE public.requisitos SET orden=30,active=true,programas='6',nombre='30. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Avalúo comercial del bien inmueble objeto de compra, expedido por la Lonja de Bogotá o por un profesional afiliado a la misma. Con fecha de expedición no mayor a un (1) año (en formato PDF).' WHERE id=876;
+UPDATE public.requisitos SET orden=31,active=true,programas='6',nombre='31. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Manifestación de acuerdo entre el titular del bien y la organización en donde se determine el precio acordado para la compra debidamente registrado en Notaría (en formato PDF).' WHERE id=877;
+UPDATE public.requisitos SET orden=32,active=true,programas='6',nombre='32. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Histórico de cánones de arrendamiento firmado por el representante legal y contador o revisor fiscal según sea el caso (en formato PDF).' WHERE id=878;
+UPDATE public.requisitos SET orden=33,active=true,programas='6',nombre='33. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Justificación con soportes de la cofinanciación del valor del inmueble (cartas de aprobación de créditos, donaciones, cuentas bancarias para demostrar recursos propios, etc) (en formato PDF).' WHERE id=879;
+UPDATE public.requisitos SET orden=34,active=true,programas='6',nombre='34. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Copias de paz y salvo del pago de impuesto predial, valorizaciones y complementarios del bien objeto de compra (en formato PDF).' WHERE id=880;
+UPDATE public.requisitos SET orden=35,active=true,programas='6',nombre='35. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Certificación suscrita por la organización en la que se manifieste los compromisos señalados en el punto 34 del numeral 2.2.3.6. de la Cartilla (en formato PDF).' WHERE id=864;
+UPDATE public.requisitos SET orden=36,active=true,programas='6',nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Diseños completos del escenario que se pretende adquirir o construir, incluyendo planos generales y de redes eléctrica y de sonido (en formato PDF). Máximo 20 Mb cada archivo' WHERE id=881;
+UPDATE public.requisitos SET orden=37,active=true,programas='6',nombre='37. DOCUMENTOS ADICIONALES (Estos aplicarán solo si la Secretaría los solicita en la etapa de subsanación)' WHERE id=898;
 
 
-
-
+UPDATE public.requisitos SET nombre='Certificado pago de aportes parafiscales y de seguridad social.' WHERE id=1058;
+UPDATE public.requisitos SET nombre='Registros y soportes documentales que den cuenta de la trayectoria.' WHERE id=836;

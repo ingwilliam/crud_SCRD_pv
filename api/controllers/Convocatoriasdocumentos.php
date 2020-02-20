@@ -343,8 +343,14 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='etapas_participantes'");
             $array["etapas"] = explode(",", $tabla_maestra[0]->valor);                        
             $array["convocatoriadocumento"]=$convocatoriadocumento;
+            $programa=$convocatoria->programa;
+            //Documentos administrativos para LEP
+            if($convocatoria->modalidad==6){
+                $programa=$convocatoria->modalidad;
+            }
+            
             $array["requisitos"]= Requisitos::find([
-                                                        'conditions' => "active=true AND programas LIKE '%".$convocatoria->programa."%' AND tipo_requisito='".$request->get('tipo_requisito')."'",
+                                                        'conditions' => "active=true AND programas LIKE '%".$programa."%' AND tipo_requisito='".$request->get('tipo_requisito')."'",
                                                         "order" => 'orden',
                                                     ]);
             //Retorno el array
@@ -355,6 +361,23 @@ $app->get('/search', function () use ($app, $config) {
     } catch (Exception $ex) {
         //retorno el array en json null
         echo "error_metodo";
+    }
+}
+);
+
+// Recupera todos las modalidades dependiendo el programa
+$app->get('/pruebaxyz', function () use ($app,$config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($request->get('keyy') == 'WMx2') {                       
+            echo json_encode($config->database);
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
