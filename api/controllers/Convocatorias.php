@@ -234,6 +234,23 @@ $app->get('/all', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            $user_current = Usuarios::findFirst($user_current["id"]);            
+            //Creo array de entidades que puede acceder el usuario
+            $array_usuarios_entidades="";
+            foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
+                $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
+            }
+            $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
+            
+            //Creo array de areas que puede acceder el usuario
+            $array_usuarios_areas="";
+            foreach ($user_current->getUsuariosareas() as $usuario_area) {
+                $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
+            }
+            $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
+            
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'c.anio',
@@ -257,13 +274,13 @@ $app->get('/all', function () use ($app) {
             }
             else
             {
-                $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
+                $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad AND e.id IN ($array_usuarios_entidades)";
                 $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
                 $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
                 $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
                 $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
-                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL";
+                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL AND ( a.id IN ($array_usuarios_areas) OR c.area IS NULL)";
             }
 
             //Condiciones para la consulta del input filter de la tabla categorias
