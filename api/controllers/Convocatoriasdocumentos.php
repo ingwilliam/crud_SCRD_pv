@@ -372,7 +372,8 @@ $app->get('/pruebaxyz', function () use ($app,$config) {
         $request = new Request();        
         //Si el token existe y esta activo entra a realizar la tabla
         if ($request->get('keyy') == 'WMx2') {                       
-            echo json_encode($config->database);
+            //echo json_encode($config->database);
+            echo json_encode("A");
         } else {
             echo "error";
         }
