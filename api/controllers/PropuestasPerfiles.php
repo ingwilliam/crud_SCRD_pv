@@ -84,15 +84,15 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             }
                         
             //generar las siglas del programa
-            if($convocatoria->programa=1)
+            if($convocatoria->programa==1)
             {
                 $siglas_programa="pde";
             }
-            if($convocatoria->programa=2)
+            if($convocatoria->programa==2)
             {
                 $siglas_programa="pdac";
             }
-            if($convocatoria->programa=3)
+            if($convocatoria->programa==3)
             {
                 $siglas_programa="pdsc";
             }
