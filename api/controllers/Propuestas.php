@@ -145,7 +145,12 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 $logger->info('"token":"{token}","user":"{user}","message":"Se consulta la propuesta propuesta (' . $propuesta->id . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
                                 //Consulto los parametros adicionales para el formulario de la propuesta
-                                $parametros = Convocatoriaspropuestasparametros::find("active=true AND convocatoria=" . $convocatoria->id);
+                                $conditions = ['convocatoria' => $convocatoria->id, 'active' => true];
+                                $parametros = Convocatoriaspropuestasparametros::find(([
+                                    'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                                    'bind' => $conditions,
+                                    'order' => 'orden ASC',
+                                ]));
                                 $propuestaparametros = Propuestasparametros::find("propuesta=" . $propuesta->id);
 
 
