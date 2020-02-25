@@ -365,3 +365,10 @@ UPDATE public.requisitos SET nombre='18. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE
 UPDATE public.requisitos SET nombre='19. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Planos arquitectónicos (Plantas, Cortes, Fachadas) y estructurales aprobados por la curaduría en la licencia de construcción ejecutoriada. Adicionalmente se deberán presentar planos técnicos (hidrosanitarios, eléctricos, red de voz y datos, red contra incendios, etc.) y detalles constructivos firmados por el profesional responsable en cada caso (en formato PDF). Los planos deben estar acotados. Máximo 15 Mb cada archivo' WHERE id=857;
 UPDATE public.requisitos SET nombre='23. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Planos arquitectónicos del escenario incluyendo planos de las instalaciones eléctricas del inmueble y del escenario. Planos donde se identifiquen los aspectos técnicos relacionando los espacios del escenario y la ubicación de los elementos de dotación que se pretenden adquirir (en formato PDF). Máximo 15 Mb cada archivo' WHERE id=869;
 UPDATE public.requisitos SET nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Diseños completos del escenario que se pretende adquirir o construir, incluyendo planos generales y de redes eléctrica y de sonido (en formato PDF). Máximo 15 Mb cada archivo' WHERE id=881;
+
+#febrero 25 de 2020
+ALTER TABLE participantes ADD representante boolean DEFAULT FALSE;
+
+
+
+
