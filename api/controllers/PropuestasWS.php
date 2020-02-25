@@ -576,9 +576,6 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                     $nombre_representante=$propuesta->codigo;
                 }
                         
-                        
-                
-                
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
@@ -587,8 +584,6 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }
-            
-            
                         
             //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
             $user_current = json_decode($token_actual->user_current, true);
