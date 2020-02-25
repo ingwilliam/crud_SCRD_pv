@@ -837,6 +837,9 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+                
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
@@ -847,47 +850,72 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
             curl_close($ch);
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
+            if ($permiso_escritura == "ok") {                
 
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
 
-                //Valido si existe para editar o crear
-                if (is_numeric($post["id"])) {
-                    $participante = Participantes::findFirst($post["id"]);
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                } else {
-                    //Consulto el participante
-                    $participante_padre = Participantes::findFirst($post["participante"]);
-
-                    //Creo el objeto del particpante de persona natural
-                    $participante = new Participantes();
-                    $participante->creado_por = $user_current["id"];
-                    $participante->fecha_creacion = date("Y-m-d H:i:s");
-                    $participante->participante_padre = $post["participante"];
-                    $participante->usuario_perfil = $participante_padre->usuario_perfil;
-                    //$participante->tipo = "Integrante";
-                    $participante->active = TRUE;
+                //Validar que exite un representante
+                $validar_representante=true;
+                if( $post["representante"] == "true")
+                {
+                    //Valido si enviaron el id del participante
+                    $validacion="";
+                    if (is_numeric($post["id"])) {
+                     $validacion= "id<>".$post["id"]." AND ";
+                    }                    
+                    
+                    $representante = Participantes::findFirst($validacion." participante_padre=".$post["participante"]." AND representante = true AND active = true");
+                    if($representante->id>0)
+                    {
+                        $validar_representante=false;
+                    }                                                            
                 }
+                                
+                if($validar_representante)
+                {
+                    //Valido si existe para editar o crear
+                    if (is_numeric($post["id"])) {
+                        $participante = Participantes::findFirst($post["id"]);
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    } else {
+                        //Consulto el participante
+                        $participante_padre = Participantes::findFirst($post["participante"]);
 
-                if ($participante->save($post) === false) {
+                        //Creo el objeto del particpante de persona natural
+                        $participante = new Participantes();
+                        $participante->creado_por = $user_current["id"];
+                        $participante->fecha_creacion = date("Y-m-d H:i:s");
+                        $participante->participante_padre = $post["participante"];
+                        $participante->usuario_perfil = $participante_padre->usuario_perfil;
+                        //$participante->tipo = "Integrante";
+                        $participante->active = TRUE;
+                    }
+
+                    if ($participante->save($post) === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+
+                        echo $participante->id;
+                    }
+                }
+                else
+                {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Ya existe el representante en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
-                    echo "error";
-                } else {
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-
-                    echo $participante->id;
-                }
+                    echo "error_representante";
+                }                                
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
