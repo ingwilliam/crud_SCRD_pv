@@ -517,6 +517,381 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     }
 });
 
+$app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('id'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $id_convocatoria=$convocatoria->id;
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            $entidad = $convocatoria->getEntidades()->descripcion;
+            $seudonimo = $convocatoria->seudonimo;
+            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;                
+                $entidad = $convocatoria->getConvocatorias()->getEntidades()->descripcion;                
+                $seudonimo = $convocatoria->getConvocatorias()->seudonimo;
+            }
+             
+            
+            //consulto las propuestas inscritas para crear el listado
+            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
+            $listado_propuestas_inscritas = Propuestas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (24)',
+                        'bind' => $conditions,
+                        'order' => 'codigo ASC',
+            ]));
+            
+            $html_propuestas = "";
+            foreach ($listado_propuestas_inscritas as $propuesta) {
+                
+                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $participante=$propuesta->codigo;
+                }
+                
+                $representante = Participantes::findFirst("participante_padre=".$propuesta->participante." AND representante = true AND active = true");
+                $nombre_representante = $representante->primer_nombre . " " . $representante->segundo_nombre . " " . $representante->primer_apellido . " " . $representante->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $nombre_representante=$propuesta->codigo;
+                }
+                        
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+             
+            }
+                        
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if (isset($convocatoria->id)) {
+                
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center">Listado de habilitados</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td>Convocatoria</td>
+                        <td>'.$nombre_convocatoria.'</td>
+                        <td>Categoría</td>
+                        <td>'.$nombre_categoria.'</td>
+                    </tr>                    
+                </table>
+                <br/><br/>
+                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Código de inscripción</td>
+                        <td align="center">Participante</td>
+                        <td align="center">Representante</td>
+                        <td align="center">Nombre de la propuesta</td>
+                        <td align="center">Estado</td>
+                        <td align="center">Observaciones</td>
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo reporte_propuesta_inscrita', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('id'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $id_convocatoria=$convocatoria->id;
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            $entidad = $convocatoria->getEntidades()->descripcion;
+            $seudonimo = $convocatoria->seudonimo;
+            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;                
+                $entidad = $convocatoria->getConvocatorias()->getEntidades()->descripcion;                
+                $seudonimo = $convocatoria->getConvocatorias()->seudonimo;
+            }
+             
+            
+            //consulto las propuestas inscritas para crear el listado
+            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
+            $listado_propuestas_inscritas = Propuestas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (23,24)',
+                        'bind' => $conditions,
+                        'order' => 'codigo ASC',
+            ]));
+            
+            $html_propuestas = "";
+            foreach ($listado_propuestas_inscritas as $propuesta) {
+                
+                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $participante=$propuesta->codigo;
+                }
+                
+                $representante = Participantes::findFirst("participante_padre=".$propuesta->participante." AND representante = true AND active = true");
+                $nombre_representante = $representante->primer_nombre . " " . $representante->segundo_nombre . " " . $representante->primer_apellido . " " . $representante->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $nombre_representante=$propuesta->codigo;
+                }
+                        
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+             
+            }
+                        
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if (isset($convocatoria->id)) {
+                
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center">Listado de habilitados y rechazados</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td>Convocatoria</td>
+                        <td>'.$nombre_convocatoria.'</td>
+                        <td>Categoría</td>
+                        <td>'.$nombre_categoria.'</td>
+                    </tr>                    
+                </table>
+                <br/><br/>
+                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Código de inscripción</td>
+                        <td align="center">Participante</td>
+                        <td align="center">Representante</td>
+                        <td align="center">Nombre de la propuesta</td>
+                        <td align="center">Estado</td>
+                        <td align="center">Observaciones</td>
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo reporte_propuesta_inscrita', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_subsanar para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('id'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $id_convocatoria=$convocatoria->id;
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            $entidad = $convocatoria->getEntidades()->descripcion;
+            $seudonimo = $convocatoria->seudonimo;
+            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;                
+                $entidad = $convocatoria->getConvocatorias()->getEntidades()->descripcion;                
+                $seudonimo = $convocatoria->getConvocatorias()->seudonimo;
+            }
+             
+            
+            //consulto las propuestas inscritas para crear el listado
+            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
+            $listado_propuestas_inscritas = Propuestas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (21,22,23,24,31)',
+                        'bind' => $conditions,
+                        'order' => 'codigo ASC',
+            ]));
+            
+            $html_propuestas = "";
+            foreach ($listado_propuestas_inscritas as $propuesta) {
+                
+                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $participante=$propuesta->codigo;
+                }
+                
+                $representante = Participantes::findFirst("participante_padre=".$propuesta->participante." AND representante = true AND active = true");
+                $nombre_representante = $representante->primer_nombre . " " . $representante->segundo_nombre . " " . $representante->primer_apellido . " " . $representante->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $nombre_representante=$propuesta->codigo;
+                }
+                        
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+             
+            }
+                        
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if (isset($convocatoria->id)) {
+                
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td>Convocatoria</td>
+                        <td>'.$nombre_convocatoria.'</td>
+                        <td>Categoría</td>
+                        <td>'.$nombre_categoria.'</td>
+                    </tr>                    
+                </table>
+                <br/><br/>
+                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Código de inscripción</td>
+                        <td align="center">Participante</td>
+                        <td align="center">Representante</td>
+                        <td align="center">Nombre de la propuesta</td>
+                        <td align="center">Estado</td>
+                        <td align="center">Observaciones</td>
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo reporte_propuesta_inscrita', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_subsanar al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_subsanar al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger) {
 
 //Instancio los objetos que se van a manejar
@@ -542,8 +917,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
             $nombre_categoria = "";
             $entidad = $convocatoria->getEntidades()->descripcion;
             $seudonimo = $convocatoria->seudonimo;
-            if ($convocatoria->convocatoria_padre_categoria > 0) {
-                $id_convocatoria=$convocatoria->getConvocatorias()->id;
+            if ($convocatoria->convocatoria_padre_categoria > 0) {                
                 $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
                 $nombre_categoria = $convocatoria->nombre;                
                 $entidad = $convocatoria->getConvocatorias()->getEntidades()->descripcion;                
@@ -634,6 +1008,126 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_inscrita al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_pre_inscrita para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('id'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $id_convocatoria=$convocatoria->id;
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            $entidad = $convocatoria->getEntidades()->descripcion;
+            $seudonimo = $convocatoria->seudonimo;
+            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;                
+                $entidad = $convocatoria->getConvocatorias()->getEntidades()->descripcion;                
+                $seudonimo = $convocatoria->getConvocatorias()->seudonimo;
+            }
+             
+            
+            //consulto las propuestas inscritas para crear el listado
+            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
+            $listado_propuestas_inscritas = Propuestas::find(([
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (7)',
+                        'bind' => $conditions,
+                        'order' => 'codigo ASC',
+            ]));
+            
+            $html_propuestas = "";
+            foreach ($listado_propuestas_inscritas as $propuesta) {
+                
+                $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $participante=$propuesta->codigo;
+                }
+                
+                $representante = Participantes::findFirst("participante_padre=".$propuesta->participante." AND representante = true AND active = true");
+                $nombre_representante = $representante->primer_nombre . " " . $representante->segundo_nombre . " " . $representante->primer_apellido . " " . $representante->segundo_apellido;
+                if($seudonimo==true)
+                {
+                    $nombre_representante=$propuesta->codigo;
+                }
+                        
+                $html_propuestas = $html_propuestas . "<tr>";
+                //$html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+             
+            }
+                        
+            //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if (isset($convocatoria->id)) {
+                
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center">Listado de participantes pre-inscritos</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td>Convocatoria</td>
+                        <td>'.$nombre_convocatoria.'</td>
+                        <td>Categoría</td>
+                        <td>'.$nombre_categoria.'</td>
+                    </tr>                    
+                </table>
+                <br/><br/>
+                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Participante</td>
+                        <td align="center">Representante</td>
+                        <td align="center">Nombre de la propuesta</td>
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo reporte_propuesta_inscrita', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_pre_inscrita al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_pre_inscrita al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }

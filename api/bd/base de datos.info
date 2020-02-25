@@ -370,5 +370,7 @@ UPDATE public.requisitos SET nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE E
 ALTER TABLE participantes ADD representante boolean DEFAULT FALSE;
 
 
+UPDATE public.propuestas SET estado=20 WHERE convocatoria IN (142,152,153);
+
 
 
