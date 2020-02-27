@@ -580,8 +580,7 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                                
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }
@@ -612,8 +611,7 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
-                        <td align="center">Estado</td>
-                        <td align="center">Observaciones</td>
+                        <td align="center">Estado</td>                        
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -699,6 +697,16 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 {
                     $nombre_representante=$propuesta->codigo;
                 }
+                
+                $observaciones = $propuesta->getPropuestasverificaciones([
+                                "observacion <> '' AND verificacion IN (1,2)"                                
+                    ]);
+                $text_observacion="";
+                foreach ($observaciones as $observacion) {
+                    $text_observacion=$observacion->observacion." , ".$text_observacion;
+                }
+                
+                $text_observacion = substr($text_observacion, 0, -2);
                         
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
@@ -706,7 +714,7 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $text_observacion. "</td>";                                
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }
@@ -824,14 +832,24 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 {
                     $nombre_representante=$propuesta->codigo;
                 }
-                        
+                
+                $observaciones = $propuesta->getPropuestasverificaciones([
+                                "observacion <> '' AND verificacion=1"                                
+                    ]);
+                $text_observacion="";
+                foreach ($observaciones as $observacion) {
+                    $text_observacion=$observacion->observacion." , ".$text_observacion;
+                }
+                
+                $text_observacion = substr($text_observacion, 0, -2);
+                
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td></td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $text_observacion. "</td>";                
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }

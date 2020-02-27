@@ -20,6 +20,13 @@ class Propuestasverificaciones extends Model
             'Convocatoriasdocumentos',
             'id'
         );
+        
+        //Se define relacion de N a 1 con Propuestas
+        $this->belongsTo(
+            'propuesta',
+            'Propuestas',
+            'id'
+        );
 
     }    
 }
