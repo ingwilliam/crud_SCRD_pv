@@ -370,5 +370,11 @@ UPDATE public.requisitos SET nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE E
 ALTER TABLE participantes ADD representante boolean DEFAULT FALSE;
 
 
+UPDATE public.propuestas SET estado=20 WHERE convocatoria IN (142,152,153);
+
+UPDATE public.tablasmaestras SET valor='pdf,doc,docx,xls,xlsx,jpg,gif,png,mp3,wav,wma,avi,mp4,mpg,mpeg,mwv,wmv' WHERE id IN (13,12);
+
+UPDATE public.convocatoriasdocumentos SET archivos_permitidos='["avi","mp4","mpg","mpeg","mwv","wmv"]' WHERE id=136;
+
 
 
