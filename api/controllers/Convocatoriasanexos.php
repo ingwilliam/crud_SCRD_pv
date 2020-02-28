@@ -162,7 +162,7 @@ $app->post('/new', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
+        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
         
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -190,6 +190,15 @@ $app->post('/new', function () use ($app, $config) {
                     $post["convocatoria"]=$post["convocatoria_padre_categoria"];                    
                 }
                 
+                //Modifico habilitar cronograma
+                if($post["tipo_documento"]=="Aviso modificatorio"){                                    
+                    $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE (convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:)";            
+                    $app->modelsManager->executeQuery($phql, array(
+                        'convocatoria_padre_categoria' => $post["convocatoria_padre_categoria"],
+                        'habilitar_cronograma' => TRUE                    
+                    )); 
+                }
+                
                 $convocatoriaanexo = new Convocatoriasanexos();                
                 $convocatoriaanexo->creado_por = $user_current["id"];
                 $convocatoriaanexo->fecha_creacion = date("Y-m-d H:i:s");
@@ -197,7 +206,8 @@ $app->post('/new', function () use ($app, $config) {
                 if ($convocatoriaanexo->save($post) === false) {
                     echo "error";
                 } else {
-                    
+                    echo $convocatoriaanexo->id;
+                    /*
                     //Recorro todos los posibles archivos
                     foreach($_FILES as $clave => $valor){        
                         $fileTmpPath = $valor['tmp_name'];                                
@@ -220,7 +230,8 @@ $app->post('/new', function () use ($app, $config) {
                             }
                         }
                         
-                    }                                                            
+                    }                       
+                    */                                                          
                 }
             } else {
                 echo "acceso_denegado";
