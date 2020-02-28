@@ -179,7 +179,7 @@ $app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
                 {
                     $convocatoria->actualizado_por = $user_current["id"];
                     $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                    $convocatoria->estado = 5;                
+                    $convocatoria->estado = 5;                                    
                     if ($convocatoria->save() === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al editar la convocatoria en el modulo publicar_convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -188,6 +188,13 @@ $app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
                     } else {
                         $logger->info('"token":"{token}","user":"{user}","message":"Se edita la convocatoria con exito en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
                         $logger->close();
+                        
+                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $convocatoria->id,
+                            'estado' => 5,
+                            'habilitar_cronograma' => FALSE                    
+                        )); 
                         echo $convocatoria->id;
                     } 
                 }
@@ -632,7 +639,18 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                             'linea_estrategica' => $put["linea_estrategica"],
                             'modalidad' => $put["modalidad"],
                             'enfoque' => $put["enfoque"]
-                        ));                    
+                        )); 
+                        
+                        if($put["estado"]==5)
+                        {
+                            $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                            $app->modelsManager->executeQuery($phql, array(
+                                'convocatoria_padre_categoria' => $id,
+                                'habilitar_cronograma' => FALSE                    
+                            ));
+                        }
+                        
+                        
                     }
                     echo $id;
                 }

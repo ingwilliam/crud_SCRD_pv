@@ -113,9 +113,10 @@ $app->get('/all', function () use ($app) {
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[0] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' )";
             }                                
 
             //Defino el sql del total y el array de datos
@@ -131,7 +132,7 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-            
+                        
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -274,6 +275,14 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
                 $convocatoriacronograma->actualizado_por = $user_current["id"];
                 $convocatoriacronograma->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                //Modifico habilitar cronograma
+                $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE (convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:)";            
+                $app->modelsManager->executeQuery($phql, array(
+                    'convocatoria_padre_categoria' => $put["convocatoria_padre_categoria"],
+                    'habilitar_cronograma' => FALSE                    
+                ));                 
+                
                 if ($convocatoriacronograma->save($put) === false) {
                     echo "error";
                 } else {

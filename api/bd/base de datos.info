@@ -379,3 +379,5 @@ UPDATE public.convocatoriasdocumentos SET archivos_permitidos='["avi","mp4","mpg
 
 UPDATE public.requisitos SET active=true WHERE id=1051;
 
+ALTER TABLE convocatorias ADD COLUMN habilitar_cronograma boolean DEFAULT TRUE;
+
