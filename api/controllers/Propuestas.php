@@ -290,6 +290,162 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
 }
 );
 
+$app->get('/buscar_propuesta_visualizar_formulario', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
+                $user_current = json_decode($token_actual->user_current, true);
+
+                //Consulto la convocatoria
+                $convocatoria = Convocatorias::findFirst($request->get('id'));
+
+                //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                $nombre_convocatoria = $convocatoria->nombre;
+                $nombre_categoria = "";
+                $modalidad = $convocatoria->modalidad;
+                if ($convocatoria->convocatoria_padre_categoria > 0) {
+                    $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                    $nombre_categoria = $convocatoria->nombre;
+                    $modalidad = $convocatoria->getConvocatorias()->modalidad;
+                }
+
+                //Consulto los parametros adicionales para el formulario de la propuesta
+                $conditions = ['convocatoria' => $convocatoria->id, 'active' => true];
+                $parametros = Convocatoriaspropuestasparametros::find(([
+                    'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
+                    'bind' => $conditions,
+                    'order' => 'orden ASC',
+                ]));
+                
+                //Creo el array de la propuesta
+                $array = array();
+                $array["estado"] = "";
+                $array["propuesta"]["nombre_participante"] = "";
+                $array["propuesta"]["tipo_participante"] = "";
+                $array["propuesta"]["nombre_convocatoria"] = $nombre_convocatoria;
+                $array["propuesta"]["nombre_categoria"] = $nombre_categoria;
+                $array["propuesta"]["modalidad"] = $modalidad;
+                $array["propuesta"]["estado"] = "";
+                $array["propuesta"]["nombre"] = "";
+                $array["propuesta"]["resumen"] = "";
+                $array["propuesta"]["objetivo"] = "";
+                $array["propuesta"]["bogota"] = true;
+                $array["propuesta"]["localidad"] = "";
+                $array["propuesta"]["upz"] = "";
+                $array["propuesta"]["barrio"] = "";
+                $array["propuesta"]["ejecucion_menores_edad"] = true;
+                $array["propuesta"]["porque_medio"] = "";
+                $array["propuesta"]["id"] = "";
+                $array["localidades"] = Localidades::find("active=true");
+                $array["parametros"] = $parametros;
+                $tabla_maestra = Tablasmaestras::find("active=true AND nombre='medio_se_entero'");
+                $array["medio_se_entero"] = explode(",", $tabla_maestra[0]->valor);
+
+                //Creo los parametros obligatorios del formulario
+                $options = array(
+                    "fields" => array(
+                        "nombre" => array(
+                            "validators" => array(
+                                "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
+                            )
+                        ),
+                        "porque_medio[]" => array(
+                            "validators" => array(
+                                "notEmpty" => array("message" => "El medio por el cual se enteró de esta convocatoria es requerido.")
+                            )
+                        )
+                    )
+                );
+
+                if ($modalidad != 4) {
+                    $options["fields"] += array(
+                        "resumen" => array(
+                            "validators" => array(
+                                "notEmpty" => array("message" => "El resumen de la propuesta es requerido.")
+                            )
+                        ),
+                        "objetivo" => array(
+                            "validators" => array(
+                                "notEmpty" => array("message" => "El objetivo de la propuesta es requerido.")
+                            )
+                        )
+                    );
+                }
+
+                foreach ($parametros as $k => $v) {
+                    if ($v->obligatorio) {
+                        $options["fields"] += array(
+                            "parametro[" . $v->id . "]" => array(
+                                "validators" => array(
+                                    "notEmpty" => array("message" => "El campo es requerido.")
+                                )
+                            )
+                        );
+                    }
+                }
+
+
+                $array["validator"] = $options;
+
+                $array["upzs"] = array();
+                $array["barrios"] = array();
+                if (isset($propuesta->localidad)) {
+                    $array["upzs"] = Upzs::find("active=true AND localidad=" . $propuesta->localidad);
+                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $propuesta->localidad);
+                }
+
+                //Registro la accion en el log de convocatorias
+                $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+
+                //Retorno el array
+                echo json_encode($array);
+                    
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();

@@ -377,4 +377,5 @@ UPDATE public.tablasmaestras SET valor='pdf,doc,docx,xls,xlsx,jpg,gif,png,mp3,wa
 UPDATE public.convocatoriasdocumentos SET archivos_permitidos='["avi","mp4","mpg","mpeg","mwv","wmv"]' WHERE id=136;
 
 
+UPDATE public.requisitos SET active=true WHERE id=1051;
 
