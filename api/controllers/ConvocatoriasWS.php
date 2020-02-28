@@ -331,23 +331,23 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                             ]));
                             foreach ($consulta_documentos_administrativos as $documento) {
                                 if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
-                                    $documentos_administrativos[$documento->orden]["categoria"] = $categoria->nombre;
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["orden"] = $documento->orden;
-                                    $documentos_administrativos[$documento->orden]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                    $documentos_administrativos[$categoria->id]["categoria"] = $categoria->nombre;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["descripcion"] = $documento->descripcion;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["orden"] = $documento->orden;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["convocatoria"] = $id;
                                 }
 
                                 if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                                    $documentos_tecnicos[$documento->orden]["categoria"] = $categoria->nombre;
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["orden"] = $documento->orden;
-                                    $documentos_tecnicos[$documento->orden]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                    $documentos_tecnicos[$categoria->id]["categoria"] = $categoria->nombre;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["descripcion"] = $documento->descripcion;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["orden"] = $documento->orden;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["convocatoria"] = $id;
                                 }
                             }
 
