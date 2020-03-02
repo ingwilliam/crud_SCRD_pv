@@ -64,7 +64,7 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
 
     try {
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión ', ['user' => $this->request->getPost('username'), 'token' => '']);
+        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión"', ['user' => $this->request->getPost('username'), 'token' => '']);
 
         //Consulto el usuario por username del parametro get
         $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
@@ -96,26 +96,26 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
                 $token_actual = array("token" => $tokens->token, "usuario" => $usuario_validar->primer_nombre . " " . $usuario_validar->segundo_nombre . " " . $usuario_validar->primer_apellido . " " . $usuario_validar->segundo_apellido);
 
                 //Registro la accion en el log de convocatorias
-                $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al sistema, los datos de acceso son los correctos.', ['user' => $this->request->getPost('username'), 'token' => $tokens->token]);
+                $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al sistema, los datos de acceso son los correctos."', ['user' => $this->request->getPost('username'), 'token' => $tokens->token]);
                 $logger->close();
 
                 echo json_encode($token_actual);
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto', ['user' => $this->request->getPost('username'), 'token' => '']);
+                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto"', ['user' => $this->request->getPost('username'), 'token' => '']);
                 $logger->close();
                 echo "error_clave";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado', ['user' => $this->request->getPost('username'), 'token' => '']);
+            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado"', ['user' => $this->request->getPost('username'), 'token' => '']);
             $logger->close();
             echo "error_usuario";
 
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_participante ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_participante "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -131,7 +131,7 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
 
     try {
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario ', ['user' => $this->request->getPost('username'), 'token' => '']);
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
@@ -168,7 +168,7 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -176,30 +176,39 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
 );
 
 // Recupera todos los registros
-$app->post('/recordar_usuario', function () use ($app, $config) {
+$app->post('/recordar_usuario', function () use ($app, $config, $logger) {
 
     try {
+        
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
+        
         //Consulto el usuario por username del parametro get
         $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
 
         //Valido si existe
         if (isset($usuario_validar->id)) {
+            
             $usuario_validar->password = $this->security->hash(date("Ymd"));
             if ($usuario_validar->save() === false) {
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"Error editar contrasena recordar_contrasena "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close(); 
+        
                 echo "error_editar";
             } else {
+                
+                //Registro la accion en el log de convocatorias
+                $logger->info('"token":"{token}","user":"{user}","message":"Edito la contrasena en recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
+        
                 //Creo el cuerpo del messaje html del email
                 $html_recordar_usuario = Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
                 $html_recordar_usuario = str_replace("**password**", date("Ymd"), $html_recordar_usuario);
 
                 $mail = new PHPMailer();
                 $mail->IsSMTP();
-                $mail->SMTPAuth = true;
-                $mail->Host = "smtp.gmail.com";
-                $mail->SMTPSecure = 'ssl';
-                $mail->Username = "convocatorias@scrd.gov.co";
-                $mail->Password = "fomento2017";
-                $mail->Port = 465;
+                $mail->Host = "smtp-relay.gmail.com";
+                $mail->Port = 25;
                 $mail->CharSet = "UTF-8";
                 $mail->IsHTML(true); // El correo se env  a como HTML
                 $mail->From = "convocatorias@scrd.gov.co";
@@ -211,8 +220,12 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
                 $exito = $mail->Send(); // Env  a el correo.
 
                 if ($exito) {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Envio la contrasena en recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
+                    $logger->close();
                     echo "exito";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Error al enviar la contrasena en recordar_usuario "'.$mail->ErrorInfo.' "', ['user' => $this->request->getPost('username'), 'token' => '']);
+                    $logger->close();
                     echo "error_email";
                 }
             }
@@ -220,6 +233,9 @@ $app->post('/recordar_usuario', function () use ($app, $config) {
             echo "error_usuario";
         }
     } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo recordar_contrasena "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();        
         echo "error_metodo";
     }
 }
