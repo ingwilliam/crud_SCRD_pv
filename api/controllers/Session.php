@@ -330,14 +330,10 @@ $app->post('/crear_usuario', function () use ($app, $config) {
 
                         $mail = new PHPMailer();
                         $mail->IsSMTP();
-                        $mail->SMTPAuth = true;
-                        $mail->Host = "smtp.gmail.com";
-                        $mail->SMTPSecure = 'ssl';
-                        $mail->Username = "convocatorias@scrd.gov.co";
-                        $mail->Password = "fomento2017";
-                        $mail->Port = 465;
+                        $mail->Host = "smtp-relay.gmail.com";
+                        $mail->Port = 25;
                         $mail->CharSet = "UTF-8";
-                        $mail->IsHTML(true); // El correo se env  a como HTML
+                        $mail->IsHTML(true); // El correo se env  a como HTML                        
                         $mail->From = "convocatorias@scrd.gov.co";
                         $mail->FromName = "Sistema de Convocatorias";
                         $mail->AddAddress($post["username"]);

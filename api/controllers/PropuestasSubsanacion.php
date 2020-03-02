@@ -243,14 +243,10 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
 
                     $mail = new PHPMailer();
                     $mail->IsSMTP();
-                    $mail->SMTPAuth = true;
-                    $mail->Host = "smtp.gmail.com";
-                    $mail->SMTPSecure = 'ssl';
-                    $mail->Username = "convocatorias@scrd.gov.co";
-                    $mail->Password = "fomento2017";
-                    $mail->Port = 465;
+                    $mail->Host = "smtp-relay.gmail.com";
+                    $mail->Port = 25;
                     $mail->CharSet = "UTF-8";
-                    $mail->IsHTML(true); // El correo se env  a como HTML
+                    $mail->IsHTML(true); // El correo se env  a como HTML  
                     $mail->From = "convocatorias@scrd.gov.co";
                     $mail->FromName = "Sistema de Convocatorias";
                     $usuario_participante=$propuesta->getParticipantes()->getUsuariosperfiles()->getUsuarios()->username;
