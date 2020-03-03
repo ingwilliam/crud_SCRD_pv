@@ -162,7 +162,7 @@ $app->post('/new', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);        
         
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -207,7 +207,7 @@ $app->post('/new', function () use ($app, $config) {
                     echo "error";
                 } else {
                     echo $convocatoriaanexo->id;
-                    /*
+                    
                     //Recorro todos los posibles archivos
                     foreach($_FILES as $clave => $valor){        
                         $fileTmpPath = $valor['tmp_name'];                                
@@ -231,7 +231,7 @@ $app->post('/new', function () use ($app, $config) {
                         }
                         
                     }                       
-                    */                                                          
+                                                                            
                 }
             } else {
                 echo "acceso_denegado";
