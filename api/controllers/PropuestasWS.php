@@ -947,7 +947,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
             //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
-                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (8,20,21,22,23,24,31)',
+                        'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (8,21,22,23,24,31)',
                         'bind' => $conditions,
                         'order' => 'codigo ASC',
             ]));

@@ -276,12 +276,17 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $convocatoriacronograma->actualizado_por = $user_current["id"];
                 $convocatoriacronograma->fecha_actualizacion = date("Y-m-d H:i:s");
                 
+                $convocatoria= Convocatorias::findFirst($put["convocatoria_padre_categoria"]);
+                
                 //Modifico habilitar cronograma
-                $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE (convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:)";            
-                $app->modelsManager->executeQuery($phql, array(
-                    'convocatoria_padre_categoria' => $put["convocatoria_padre_categoria"],
-                    'habilitar_cronograma' => FALSE                    
-                ));                 
+                if($convocatoria->estado==5)
+                {
+                    $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE (convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:)";            
+                    $app->modelsManager->executeQuery($phql, array(
+                        'convocatoria_padre_categoria' => $put["convocatoria_padre_categoria"],
+                        'habilitar_cronograma' => FALSE                    
+                    ));                 
+                }
                 
                 if ($convocatoriacronograma->save($put) === false) {
                     echo "error";
