@@ -412,3 +412,7 @@ GROUP BY 1,2
 ORDER BY 1;
 
 
+UPDATE public.convocatorias SET habilitar_cronograma=true WHERE id IN (196,234,270,216,272,273,228,355,268,353,198);
+
+
+
