@@ -374,10 +374,11 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriacronograma = Convocatoriascronogramas::findFirst($request->get('id'));                
                 $convocatoriacronograma->fecha_inicio = (new DateTime($convocatoriacronograma->fecha_inicio))->format('Y-m-d');
                 $convocatoriacronograma->fecha_fin = (new DateTime($convocatoriacronograma->fecha_fin))->format('Y-m-d');                
+                $array["es_periodo"] = $convocatoriacronograma->getTiposeventos()->periodo;
             }
             else 
             {
-                $convocatoriacronograma = new Convocatoriascronogramas();
+                $convocatoriacronograma = new Convocatoriascronogramas();                
             }
             //Cargo la convocatoria actual
             $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));

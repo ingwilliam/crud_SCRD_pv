@@ -482,6 +482,21 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                 $post["porque_medio"] = json_encode($post["porque_medio"]);
                 $post["actualizado_por"] = $user_current["id"];
                 $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                
+                if($post["localidad"]=="")
+                {
+                    unset($post["localidad"]);
+                }
+                
+                if($post["upz"]=="")
+                {
+                    unset($post["upz"]);
+                }
+                
+                if($post["barrio"]=="")
+                {
+                    unset($post["barrio"]);
+                }
 
                 if ($propuesta->save($post) === false) {
                     $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
