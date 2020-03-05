@@ -599,6 +599,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $convocatoria = Convocatorias::findFirst(json_decode($id));
                 $convocatoria->actualizado_por = $user_current["id"];
                 $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                if($put["value_CKEDITOR"]!=""){
+                    $put[$put["variable"]]=$put["value_CKEDITOR"];
+                }                
+                
                 if($put["tiene_categorias"]=="false")
                 {
                     $put["diferentes_categorias"]=FALSE;
@@ -641,17 +646,17 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                             'enfoque' => $put["enfoque"]
                         )); 
                         
-                        if($put["estado"]==5)
-                        {
-                            $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
-                            $app->modelsManager->executeQuery($phql, array(
-                                'convocatoria_padre_categoria' => $id,
-                                'habilitar_cronograma' => FALSE                    
-                            ));
-                        }
-                        
-                        
                     }
+                    
+                    if($put["estado"]==5)
+                    {
+                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'habilitar_cronograma' => FALSE                    
+                        ));
+                    }
+                        
                     echo $id;
                 }
             } else {
