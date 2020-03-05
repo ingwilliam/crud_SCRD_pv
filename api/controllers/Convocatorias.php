@@ -646,17 +646,17 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                             'enfoque' => $put["enfoque"]
                         )); 
                         
-                        if($put["estado"]==5)
-                        {
-                            $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
-                            $app->modelsManager->executeQuery($phql, array(
-                                'convocatoria_padre_categoria' => $id,
-                                'habilitar_cronograma' => FALSE                    
-                            ));
-                        }
-                        
-                        
                     }
+                    
+                    if($put["estado"]==5)
+                    {
+                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'habilitar_cronograma' => FALSE                    
+                        ));
+                    }
+                        
                     echo $id;
                 }
             } else {
