@@ -240,8 +240,13 @@ $app->get('/search', function () use ($app, $config) {
             //Creo los array de los select del formulario
             $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
             
-            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
-            $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            $array["barrio_residencia_name"] = "";            
+            $array["ciudad_residencia_name"] = "";
+            if(isset($participante->id))
+            {
+                $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
+                $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            } 
             
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
