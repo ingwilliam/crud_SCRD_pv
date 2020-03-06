@@ -722,7 +722,19 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                                 
                                 //Creo el array de la propuesta
                                 $array = array();
-                                $array["estado"] = $propuesta->estado;
+                                //Valido si se habilita propuesta por derecho de petición
+                                $array["estado"] = $propuesta->estado;                                    
+                                if($propuesta->habilitar)
+                                {
+                                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                                    $habilitar_fecha_inicio = strtotime($propuesta->habilitar_fecha_inicio, time());
+                                    $habilitar_fecha_fin = strtotime($propuesta->habilitar_fecha_fin, time());
+                                    if (($fecha_actual >= $habilitar_fecha_inicio) && ($fecha_actual <= $habilitar_fecha_fin))
+                                    {
+                                        $array["estado"] = 7;                                    
+                                    }
+                                } 
+                                
                                 $array["formulario"]["propuesta"] = $propuesta->id;
                                 $array["formulario"]["participante"] = $propuesta->participante;
                                 //Creo los array de los select del formulario
@@ -898,7 +910,9 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                         //$participante->tipo = "Integrante";
                         $participante->active = TRUE;
                     }
-
+                    
+                    $post["representante"] = $post["representante"] === 'true'? true: false;                    
+                    
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);

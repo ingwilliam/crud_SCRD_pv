@@ -156,7 +156,18 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
 
                                 //Creo el array de la propuesta
                                 $array = array();
-                                $array["estado"] = $propuesta->estado;
+                                //Valido si se habilita propuesta por derecho de petición
+                                $array["estado"] = $propuesta->estado;                                    
+                                if($propuesta->habilitar)
+                                {
+                                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                                    $habilitar_fecha_inicio = strtotime($propuesta->habilitar_fecha_inicio, time());
+                                    $habilitar_fecha_fin = strtotime($propuesta->habilitar_fecha_fin, time());
+                                    if (($fecha_actual >= $habilitar_fecha_inicio) && ($fecha_actual <= $habilitar_fecha_fin))
+                                    {
+                                        $array["estado"] = 7;                                    
+                                    }
+                                }                                 
                                 $array["propuesta"]["nombre_participante"] = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
                                 $array["propuesta"]["tipo_participante"] = $tipo_participante;
                                 $array["propuesta"]["nombre_convocatoria"] = $nombre_convocatoria;
@@ -611,16 +622,41 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                             'bind' => $conditions,
                 ]));
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
-                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                
+                //Consulto la propuesta actual
+                $propuesta = Propuestas::findFirst($request->getPut('id'));
+                
+                //Valido que sea la fecha del cronograma o la fecha de habilitada
+                if($propuesta->habilitar)
+                {
+                    $fecha_cierre = strtotime($propuesta->habilitar_fecha_fin, time());
+                }
+                else
+                {
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                }
+                
                 if ($fecha_actual > $fecha_cierre) {
                     //Registro la accion en el log de convocatorias           
                     $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria(' . $request->getPut('conv') . ') no esta activa, la fecha de cierre es (' . $fecha_cierre_real->fecha_fin . ')", en el metodo inscribir_propuesta', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error_fecha_cierre";
                 } else {
-                    //parametros de la peticion
-                    $propuesta = Propuestas::findFirst($request->getPut('id'));
-                    if ($propuesta->estado == 7) {
+                    
+                    //Valido si se habilita propuesta por derecho de petición
+                    $estado_actual=$propuesta->estado;
+                    if($propuesta->habilitar)
+                    {
+                        $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                        $habilitar_fecha_inicio = strtotime($propuesta->habilitar_fecha_inicio, time());
+                        $habilitar_fecha_fin = strtotime($propuesta->habilitar_fecha_fin, time());
+                        if (($fecha_actual >= $habilitar_fecha_inicio) && ($fecha_actual <= $habilitar_fecha_fin))
+                        {
+                            $estado_actual = 7;                                    
+                        }
+                    } 
+                    
+                    if ($estado_actual == 7) {
 
                         //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
                         $sql_total_propuestas = "SELECT 
@@ -635,6 +671,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                         $post["estado"] = 8;
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                        $post["habilitar"] = FALSE;
                         $propuesta->codigo = $codigo_propuesta;
 
                         if ($propuesta->save($post) === false) {
