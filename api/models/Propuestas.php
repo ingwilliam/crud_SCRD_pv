@@ -129,6 +129,14 @@ class Propuestas extends Model
             'Evaluacion',
             'propuesta'
         );
+        
+        
+        //Se define la relación con 1 a N con Propuestasverificaciones
+        $this->hasMany(
+            'id',
+            'Propuestasverificaciones',
+            'propuesta'
+        );
 
     }
 

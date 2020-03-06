@@ -110,6 +110,315 @@ INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Verificación do
 ALTER TABLE propuestas ADD verificacion_administrativos boolean DEFAULT FALSE;
 ALTER TABLE propuestas ADD verificacion_tecnicos boolean DEFAULT FALSE;
 
+# Enero 16 del 2020
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'Cumple', true, 7, 1);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'No Cumple', true, 7, 2);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'Subsanar', true, 7, 3);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_1', 'No Aplica', true, 7, 4);
+
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_2', 'Cumple', true, 7, 1);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('verificacion_2', 'No Cumple', true, 7, 2);
 
 
+INSERT INTO public.programas (nombre, active, creado_por) VALUES('Programa Distrital Salas Concertadas', true, 7);
 
+INSERT INTO public.modalidades (nombre, active, creado_por, programa) VALUES ('Cerrada', true, 7, 2);
+INSERT INTO public.modalidades (nombre, active, creado_por, programa) VALUES ('Salas concertadas', true, 7, 3);
+
+ALTER TABLE tiposeventos ADD COLUMN programas text;
+
+UPDATE public.tiposeventos SET programas='1' WHERE id>0;
+
+UPDATE public.tiposeventos SET programas='1,2,3' WHERE id IN (12,11,16,13,17,15,14);
+
+ALTER TABLE requisitos ADD COLUMN programas text;
+UPDATE public.requisitos SET programas='1' WHERE id>0;
+
+UPDATE public.requisitos SET programas='1,3' WHERE id IN (943,960,937,944,941,945,961);
+
+
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia de los estatutos de la entidad participante.', true, 7, 8,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Carta de certificación firmada por el representante legal en la que manifiesta que la entidad participante se encuentra inscrita como Proveedor del Estado Colombiano en el sistema de información Colombia Compra Eficiente/ Secop II.', true, 7, 9,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia del acta de la Junta Directiva en donde se autoriza al representante legal de la persona jurídica participante para suscribir contratos con el Instituto Distrital de las Artes.', true, 7, 10,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificado de inspección, vigilancia y control de la entidad participante, expedido por la Dirección de Personas Jurídicas de la SCRD o por la autoridad encargada de ejercer la inspección, vigilancia y control, correspondiente a la vigencia actual, sin observaciones pendientes.', true, 7, 11,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del Registro Único Tributario (RUT) actualizado.', true, 7, 12,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del Registro de Información Tributaria (RIT) actualizado.', true, 7, 13,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificado expedido por el revisor fiscal o por el representante legal.', true, 7, 14,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible de la declaración de renta o de ingresos y patrimonio.', true, 7, 15,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Copia legible del conjunto completo de estados financieros comparativos.', true, 7, 16,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal de la entidad participante en donde conste, bajo la gravedad de juramento, que la entidad sin ánimo de lucro cuenta con una estructura organizacional, de administración y control que le permite ejecutar el proyecto presentado de manera idónea y responsable.', true, 7, 16,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Una carta de compromiso de la organización participante en la que conste que aportará o gestionará los recursos para la cofinanciación del proyecto, firmada por el represente legal.', true, 7, 17,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Mínimo cinco (5) y máximo ocho (8) certificaciones o actas de liquidación, expedidas por entidades públicas o privadas con las que la entidad participante haya suscrito contratos o convenios en los últimos cinco (5) años.', true, 7, 18,'1,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, creado_por, orden,programas) VALUES('Administrativos', 'Certificación, firmada por el representante legal en donde se manifieste, bajo la gravedad del juramento, que el representante legal, los miembros dignatarios y demás miembros de la persona jurídica, no hacen parte de la lista de personas políticamente expuestas, en cumplimiento de lo establecido en el Decreto 1674 del 21 de octubre de 2016.', true, 7, 19,'1,3');
+
+# Enero 27 2020
+UPDATE public.requisitos SET nombre='Certificado de existencia y representación legal de la persona jurídica participante.'  WHERE id=961;
+UPDATE public.requisitos SET nombre='Copia de los estatutos de la entidad participante.'  WHERE id=1052;
+UPDATE public.requisitos SET nombre='Carta de certificación de inscripción en el sistema Colombia Compra Eficiente/ Secop II.'  WHERE id=1053;
+UPDATE public.requisitos SET nombre='Documento de identidad del representante legal de la persona jurídica participante.'  WHERE id=941;
+UPDATE public.requisitos SET nombre='Acta de la Junta Directiva en donde se autoriza al representante legal de la persona jurídica participante para suscribir contratos con el Instituto Distrital de las Artes.'  WHERE id=1054;
+UPDATE public.requisitos SET nombre='Certificado de inspección, vigilancia y   control de la entidad participante.'  WHERE id=1055;
+UPDATE public.requisitos SET nombre='Registro Único Tributario (RUT) actualizado.'  WHERE id=1056;
+UPDATE public.requisitos SET nombre='Registro de Información Tributaria (RIT) actualizado.'  WHERE id=1057;
+UPDATE public.requisitos SET nombre='Certificado de aportes parafiscales y de seguridad social de la entidad participante.'  WHERE id=1058;
+UPDATE public.requisitos SET nombre='Declaración de renta o de ingresos y patrimonio'  WHERE id=1059;
+UPDATE public.requisitos SET nombre='Conjunto completo de estados financieros comparativos.'  WHERE id=1060;
+UPDATE public.requisitos SET nombre='Certificación de estructura organizacional, de administración y control de la entidad participante.'  WHERE id=1061;
+UPDATE public.requisitos SET nombre='Carta de compromiso de cofinanciación del proyecto, por parte de la entidad participante.'  WHERE id=1062;
+UPDATE public.requisitos SET nombre='Mínimo cinco (5) y máximo ocho (8) certificaciones o actas de liquidación, expedidas por entidades públicas o privadas con las que la entidad participante haya suscrito contratos o convenios en los últimos cinco (5) años.'  WHERE id=1063;
+UPDATE public.requisitos SET nombre='Certificación de personas políticamente expuestas (Decreto 1674 del 21de octubre de 2016).'  WHERE id=1064;
+
+CREATE TABLE public.propuestasverificaciones
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  convocatoriadocumento integer NOT NULL,
+  verificacion integer NOT NULL,
+  estado integer NOT NULL,
+  observacion TEXT,
+  active bool NULL DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT propuestasverificaciones_pkey PRIMARY KEY (id),
+  CONSTRAINT propuestasverificaciones_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasverificaciones_convocatoriadocumento_fkey FOREIGN KEY (convocatoriadocumento)
+      REFERENCES public.convocatoriasdocumentos (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasverificaciones_estado_fkey FOREIGN KEY (estado)
+      REFERENCES public.estados (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT propuestasverificaciones_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION      
+);
+
+
+ALTER TABLE enfoques ADD COLUMN programa integer;
+
+INSERT INTO public.enfoques (nombre, active, creado_por, programa) VALUES ('Multidisciplinar', true, 7, 3);
+
+UPDATE public.enfoques SET programa=1 WHERE id<5;
+
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Subsanada', true, 7, 7);
+
+INSERT INTO public.modulos (nombre, active, creado_por) VALUES('Subsanación de propuestas', true, 7);
+
+ALTER TABLE propuestas ADD fecha_inicio_subsanacion timestamp without time zone;
+ALTER TABLE propuestas ADD fecha_fin_subsanacion timestamp without time zone;
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion_pde','3',TRUE,NOW(),7);
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('dias_subsanacion_pdsc','5',TRUE,NOW(),7);
+
+INSERT INTO public.tablasmaestras(nombre, valor, active, fecha_creacion,creado_por) VALUES ('html_subsanacion','<p>Cordial saludo,</p><p>Su propuesta **nombre_propuesta** - **codigo_propuesta** fue verificada y quedó en estado <b>POR SUBSANAR</b>.</p><p>Recuerde que su propuesta se podrá subsanar desde el día **fecha_inicio_propuesta** hasta el día **fecha_fin_propuesta**. Para revisar los documentos que debe subsanar, por favor ingrese al sistema de inscripción en línea, vaya a la opción de Mis Propuestas busque la propuesta correspondiente y de clic en el botón Subsanar Propuesta.</p><p>Gracias</p>',TRUE,NOW(),7);
+
+
+UPDATE public.tiposeventos SET nombre='Verificación de documentación administrativa' WHERE id=19;
+UPDATE public.tiposeventos SET nombre='Publicación de listados de proyectos habilitados, rechazados y por subsanar' WHERE id=20;
+UPDATE public.tiposeventos SET nombre='Evaluación administrativa y técnica de los proyectos' WHERE id=21;
+UPDATE public.tiposeventos SET nombre='Publicación de listas de proyectos elegibles' WHERE id=22;
+UPDATE public.tiposeventos SET nombre='Evaluación administrativa de los proyectos' WHERE id=23;
+UPDATE public.tiposeventos SET nombre='Evaluación técnica de los proyectos', periodo=true WHERE id=24;
+
+UPDATE public.requisitos SET nombre='Archivo de video' WHERE id IN (171,1024);
+
+
+UPDATE public.tablasmaestras SET valor='pdf,doc,docx,xls,xlsx,jpg,gif,png,mp3,wav,wma,avi,mp4,mpeg,mwv,wmv' WHERE id IN (13,12);
+
+#SE REALIZA ACTUALIZACION EL 3 DE FEBRERO 2020 EN EL SERVIDOR DE PRUEBAS
+
+UPDATE public.tiposeventos SET programas='2,3' WHERE id IN (19,20,21,22,23,24);
+
+UPDATE public.requisitos SET programas='',active=false WHERE active=true;
+
+UPDATE public.requisitos SET programas='1',active=true WHERE id=937;
+UPDATE public.requisitos SET programas='1',active=true WHERE id=945;
+UPDATE public.requisitos SET programas='1',active=true WHERE id=943;
+UPDATE public.requisitos SET programas='1,2,3',active=true WHERE id=941;
+UPDATE public.requisitos SET programas='1,2,3',active=true WHERE id=961;
+UPDATE public.requisitos SET programas='1',active=true WHERE id=938;
+UPDATE public.requisitos SET programas='1',active=true WHERE id=944;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1001;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1007;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1003;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1010;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=999;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1002;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1005;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1008;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1006;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1004;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=946;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1009;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=1000;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=998;
+UPDATE public.requisitos SET programas='2,3',active=true WHERE id=973;
+
+
+ALTER TABLE propuestasdocumentos ADD cargue_subsanacion boolean DEFAULT FALSE;
+ALTER TABLE propuestaslinks ADD cargue_subsanacion boolean DEFAULT FALSE;
+
+ALTER TABLE propuestas ADD fecha_subsanacion timestamp without time zone;
+
+#10 de febrero del 2020
+
+UPDATE public.tablasmaestras SET valor='<p>Bienvenido al sistema de inscripción en línea del <b>Programa Distrital de Estímulos, Programa Distrital de Apoyos Concertados, Programa Distrital de Salas Concertadas y Banco de Jurados.</b></p><p>Su nombre de usuario para ingresar al sistema es el correo electrónico <b>**usuario**</b>. Para iniciar la inscripción de propuestas, debe verificar esta dirección de correo electrónico, ingresando al siguiente enlace:</p><p><a href="**srcverificacion**">Verificación de cuenta</a></p><p>Gracias.</p>' WHERE id=18;
+
+
+UPDATE public.tablasmaestras SET nombre='condiciones_participacion_pde_2019' WHERE id=27;
+
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('condiciones_participacion_pde_2020', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('condiciones_participacion_pdsc_2020', 'https://drive.google.com/file/d/1p07C-nJww_AIOaaQLFkWKTdYxmiybVGd/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_pn_2020', 'https://drive.google.com/file/d/10Op9QaU9FcK4uYIpjLboR-w4AC3OPfg-/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_pj_2020', 'https://drive.google.com/file/d/1uB7NDC58BV2icUEcx_ccx49wAllXrIrh/view?usp=sharing', true, 7);
+INSERT INTO public.tablasmaestras (nombre, valor, active, creado_por) VALUES('tc_td_au_agr_2020', 'https://drive.google.com/file/d/18KsE_YbS8aTZMFZJkSCD47Wjt7ORtBWk/view?usp=sharing', true, 7);
+
+UPDATE public.requisitos SET active=TRUE,programas='1,2,3' WHERE id IN (118,935,193,672,714,71,185,363,38,39,40,41,42,48,893,49,50,896,895,891,73,74,890,101,103,104,105,119,889,887,62,888,55,186,246,344,907,900,901,902,903,904,905,906,885,1017,457,882,899,809,894,810,836,811,812,813,818,814,815,886,1022,936,859,1023,947,816,929,824,16,27,72,120,308,730,817,825,866,842,861,892,897,883,884,914,916,911,930,910,921,934,908,917,919,925,915,932,931,918,933,909,912,922,928,1016,967,984,983,994,995,982,981,980,988,992,991,1012,997,976,996,993,986,1013,1034,1036,1041,1019,1020,1024,1037,1038,1029,1030,1031,1032,1033,1035,1018,1021,1040,1027,1028,1044,1043);
+
+#OJO WILLIAM PARA PASAR TODAS LAS CONVOCATORIAS AL AÑO 2016 PARA PRODUCCION
+UPDATE public.convocatorias SET anio=2016 ,active=false WHERE id NOT IN (153,152,142);
+
+#Miercoles 19 de febrero - Administracion de usuarios
+UPDATE public.perfiles SET nombre='Misional' WHERE id=4;
+UPDATE public.perfiles SET nombre='Profesional' WHERE id=5;
+UPDATE public.perfiles SET nombre='Publicar' WHERE id=15;
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Búsqueda', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Verificación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Subsanación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Preselección', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Selección', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Grupos de evaluación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Deliberación', true, NOW(), 7);
+INSERT INTO public.perfiles (nombre, active, fecha_creacion, creado_por) VALUES('Administrador Sectorial', true, NOW(), 7);
+
+
+#Miercoles 20 de febrero
+UPDATE public.enfoques SET active=false WHERE id=5;
+UPDATE public.modalidades SET nombre='LEP', programa='1' WHERE id=6;
+ALTER TABLE convocatorias ALTER COLUMN valor_total_estimulos SET DATA TYPE bigint;
+
+UPDATE public.requisitos SET nombre='10. DOCUMENTO TODAS LAS LÍNEAS - Balance general y estados financieros completos y detallados de la organización (en formato PDF).)' WHERE id=956;
+UPDATE public.requisitos SET active=true,programas='6' WHERE id IN (835,942,948,949,951,952,953,954,955,956,957,958,959);
+
+UPDATE public.requisitos SET orden=1 WHERE id=835;
+UPDATE public.requisitos SET orden=2 WHERE id=942;
+UPDATE public.requisitos SET orden=3 WHERE id=948;
+UPDATE public.requisitos SET orden=4 WHERE id=949;
+UPDATE public.requisitos SET orden=5 WHERE id=951;
+UPDATE public.requisitos SET orden=6 WHERE id=952;
+UPDATE public.requisitos SET orden=7 WHERE id=953;
+UPDATE public.requisitos SET orden=8 WHERE id=954;
+UPDATE public.requisitos SET orden=9 WHERE id=955;
+UPDATE public.requisitos SET orden=10 WHERE id=956;
+UPDATE public.requisitos SET orden=11 WHERE id=957;
+UPDATE public.requisitos SET orden=12 WHERE id=958;
+UPDATE public.requisitos SET orden=13 WHERE id=959;
+
+UPDATE public.requisitos SET orden=1,active=true,programas='6',nombre='01. DOCUMENTO TODAS LAS LÍNEAS - Registro fotográfico (Anexo 6) en donde se muestren cada una de las áreas del proyecto a intervenir con pies de foto donde se indique su contenido (en formato Excel)' WHERE id=833;
+UPDATE public.requisitos SET orden=2,active=true,programas='6',nombre='02. DOCUMENTO TODAS LAS LÍNEAS - Certificación de programación permanente expedida por el Instituto Distrital de las Artes – IDARTES. (en formato PDF).' WHERE id=834;
+UPDATE public.requisitos SET orden=3,active=true,programas='6',nombre='03. DOCUMENTO TODAS LAS LÍNEAS - Listado de funciones realizadas (Anexo 9).' WHERE id=1042;
+UPDATE public.requisitos SET orden=4,active=true,programas='6',nombre='04. DOCUMENTO TODAS LAS LÍNEAS - Formato de Presupuesto (Anexo 4) debidamente firmado (en formato PDF).' WHERE id=843;
+UPDATE public.requisitos SET orden=5,active=true,programas='6',nombre='05. DOCUMENTO TODAS LAS LÍNEAS - Formato de Presupuesto (Anexo 4) (en formato Excel).' WHERE id=844;
+UPDATE public.requisitos SET orden=6,active=true,programas='6',nombre='06. DOCUMENTO TODAS LAS LÍNEAS - Cuadro comparativo de cotizaciones (Anexo 5) debidamente firmado (en formato PDF).' WHERE id=845;
+UPDATE public.requisitos SET orden=7,active=true,programas='6',nombre='07. DOCUMENTO TODAS LAS LÍNEAS - Cuadro comparativo de cotizaciones (Anexo 5) (en formato Excel).' WHERE id=846;
+UPDATE public.requisitos SET orden=8,active=true,programas='6',nombre='08. DOCUMENTO TODAS LAS LÍNEAS – Anexar mínimo dos cotizaciones en formato PDF por cada uno de los ítems presentados.' WHERE id=847;
+UPDATE public.requisitos SET orden=9,active=true,programas='6',nombre='09. DOCUMENTO TODAS LAS LÍNEAS - Formato de cronograma de obra (Anexo 7) (en formato Excel)' WHERE id=863;
+UPDATE public.requisitos SET orden=10,active=true,programas='6',nombre='10. DOCUMENTO TODAS LAS LÍNEAS - Formato de equipo humano (Anexo 8) (en formato Excel)' WHERE id=1045;
+UPDATE public.requisitos SET orden=11,active=true,programas='6',nombre='11. DOCUMENTO TODAS LAS LÍNEAS - Plan de emergencia y contingencias (en formato PDF).' WHERE id=848;
+UPDATE public.requisitos SET orden=12,active=true,programas='6',nombre='12. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Hoja de vida de cada uno de los constructores responsables propuestos con sus respectivos soportes y certificado de vigencia de la matrícula profesional no superior a 6 meses (en formato PDF).' WHERE id=849;
+UPDATE public.requisitos SET orden=13,active=true,programas='6',nombre='13. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Licencia de construcción vigente, debidamente aprobada, ejecutoriada y con vigencia de al menos un (1) año prorrogable por un (1) año más o certificación de reparaciones locativas según el caso (en formato PDF).' WHERE id=850;
+UPDATE public.requisitos SET orden=14,active=true,programas='6',nombre='14. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - En los predios definidos como Bienes de Interés Cultural, Resolución de Viabilidad del proyecto expedida por el Instituto Distrital de Patrimonio Cultural (IDPC) o Ministerio de Cultura, según corresponda (en formato PDF).' WHERE id=851;
+UPDATE public.requisitos SET orden=15,active=true,programas='6',nombre='15. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Para las obras que no requieran Licencia de Construcción, Concepto de reparaciones locativas expedido por la Curaduría Urbana respectiva (en formato PDF).' WHERE id=852;
+UPDATE public.requisitos SET orden=16,active=true,programas='6',nombre='16. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Estudio de suelos (en formato PDF).' WHERE id=853;
+UPDATE public.requisitos SET orden=17,active=true,programas='6',nombre='17. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento topográfico (para obra nueva) (en formato DWG y/o PDF). Máximo 20 Mb' WHERE id=854;
+UPDATE public.requisitos SET orden=18,active=true,programas='6',nombre='18. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento arquitectónico del escenario. (Cuando se requiera y será obligatorio cuando la intervención sea para Bien de interés Cultural (en formato DWG y/o PDF). Máximo 20 Mb cada archivo' WHERE id=856;
+UPDATE public.requisitos SET orden=19,active=true,programas='6',nombre='19. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Planos arquitectónicos (Plantas, Cortes, Fachadas) y estructurales aprobados por la curaduría en la licencia de construcción ejecutoriada. Adicionalmente se deberán presentar planos técnicos (hidrosanitarios, eléctricos, red de voz y datos, red contra incendios, etc.) y detalles constructivos firmados por el profesional responsable en cada caso (en formato DWG y/o PDF). Los planos deben estar acotados. Máximo 20 Mb cada archivo' WHERE id=857;
+UPDATE public.requisitos SET orden=20,active=true,programas='6',nombre='20. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Tabla de relación de planos en formato Excel o Word.' WHERE id=858;
+UPDATE public.requisitos SET orden=21,active=true,programas='6',nombre='21. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Concepto técnico eléctrico avalado y suscrito por un ingeniero eléctrico con experiencia en diseño de redes eléctricas, voz y datos, sistemas de automatización en el que se certifique que las actividades cumplen con el RETIE y RETILAP (en formato PDF).' WHERE id=867;
+UPDATE public.requisitos SET orden=22,active=true,programas='6',nombre='22. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Concepto técnico de un ingeniero eléctrico sobre el estado y capacidad de la red eléctrica del inmueble, que certifique que la misma es apta para la conexión de los equipos que se pretende adquirir. Debe incluir cuadro de cargas eléctricas y planos (en formato PDF).' WHERE id=868;
+UPDATE public.requisitos SET orden=23,active=true,programas='6',nombre='23. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Planos arquitectónicos del escenario incluyendo planos de las instalaciones eléctricas del inmueble y del escenario. Planos donde se identifiquen los aspectos técnicos relacionando los espacios del escenario y la ubicación de los elementos de dotación que se pretenden adquirir (en formato DWG y/o PDF). Máximo 20 Mb cada archivo' WHERE id=869;
+UPDATE public.requisitos SET orden=24,active=true,programas='6',nombre='24. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Diagramas de cubrimiento de los sistemas electro acústicos y los planos de flujo de señal, donde se señale cómo se utilizará cada elemento solicitado (en formato PDF).' WHERE id=870;
+UPDATE public.requisitos SET orden=25,active=true,programas='6',nombre='25. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Tres (3) propuestas comparables y equiparables entre sí, que contengan la descripción y el alcance técnico de los estudios y diseños a realizar, las cuales deberán ir acompañadas de la hoja de vida del profesional que la suscribe, la cotización y el cronograma de actividades (en formato PDF).' WHERE id=871;
+UPDATE public.requisitos SET orden=26,active=true,programas='6',nombre='26. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Cuadro comparativo de las tres (3) cotizaciones (Anexo 5) (en formato Excel). En este la organización deberá indicar y argumentar cuál de las tres (3) propuestas elige.' WHERE id=872;
+UPDATE public.requisitos SET orden=27,active=true,programas='6',nombre='27. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Cuadro comparativo de las tres (3) cotizaciones (Anexo 5) (en formato PDF). En este la organización deberá indicar y argumentar cuál de las tres (3) propuestas elige.' WHERE id=873;
+UPDATE public.requisitos SET orden=28,active=true,programas='6',nombre='28. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Hojas de vida de los diseñadores propuestos con sus respectivos soportes y certificado de vigencia de la matrícula profesional no superior a 6 meses (en formato PDF).' WHERE id=874;
+UPDATE public.requisitos SET orden=29,active=true,programas='6',nombre='29. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESTUDIOS Y DISEÑOS - Certificaciones de los diseñadores propuestos que acrediten experiencia en diseños de acuerdo con la propuesta presentada (en formato PDF).' WHERE id=875;
+UPDATE public.requisitos SET orden=30,active=true,programas='6',nombre='30. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Avalúo comercial del bien inmueble objeto de compra, expedido por la Lonja de Bogotá o por un profesional afiliado a la misma. Con fecha de expedición no mayor a un (1) año (en formato PDF).' WHERE id=876;
+UPDATE public.requisitos SET orden=31,active=true,programas='6',nombre='31. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Manifestación de acuerdo entre el titular del bien y la organización en donde se determine el precio acordado para la compra debidamente registrado en Notaría (en formato PDF).' WHERE id=877;
+UPDATE public.requisitos SET orden=32,active=true,programas='6',nombre='32. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Histórico de cánones de arrendamiento firmado por el representante legal y contador o revisor fiscal según sea el caso (en formato PDF).' WHERE id=878;
+UPDATE public.requisitos SET orden=33,active=true,programas='6',nombre='33. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Justificación con soportes de la cofinanciación del valor del inmueble (cartas de aprobación de créditos, donaciones, cuentas bancarias para demostrar recursos propios, etc) (en formato PDF).' WHERE id=879;
+UPDATE public.requisitos SET orden=34,active=true,programas='6',nombre='34. DOCUMENTO ADICIONAL PARA LA LÍNEA DE COMPRA DE INMUEBLE - Copias de paz y salvo del pago de impuesto predial, valorizaciones y complementarios del bien objeto de compra (en formato PDF).' WHERE id=880;
+UPDATE public.requisitos SET orden=35,active=true,programas='6',nombre='35. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Certificación suscrita por la organización en la que se manifieste los compromisos señalados en el punto 34 del numeral 2.2.3.6. de la Cartilla (en formato PDF).' WHERE id=864;
+UPDATE public.requisitos SET orden=36,active=true,programas='6',nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Diseños completos del escenario que se pretende adquirir o construir, incluyendo planos generales y de redes eléctrica y de sonido (en formato PDF). Máximo 20 Mb cada archivo' WHERE id=881;
+UPDATE public.requisitos SET orden=37,active=true,programas='6',nombre='37. DOCUMENTOS ADICIONALES (Estos aplicarán solo si la Secretaría los solicita en la etapa de subsanación)' WHERE id=898;
+
+
+UPDATE public.requisitos SET nombre='Certificado pago de aportes parafiscales y de seguridad social.' WHERE id=1058;
+UPDATE public.requisitos SET nombre='Registros y soportes documentales que den cuenta de la trayectoria.' WHERE id=836;
+
+UPDATE public.requisitos SET nombre='17. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento topográfico (para obra nueva) (en formato PDF). Máximo 15 Mb' WHERE id=854;
+UPDATE public.requisitos SET nombre='18. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Levantamiento arquitectónico del escenario. (Cuando se requiera y será obligatorio cuando la intervención sea para Bien de interés Cultural (en formato PDF). Máximo 15 Mb cada archivo' WHERE id=856;
+UPDATE public.requisitos SET nombre='19. DOCUMENTO ADICIONAL PARA LAS LÍNEAS DE CONSTRUCCIÓN Y ADECUACIÓN Y MEJORAMIENTO - Planos arquitectónicos (Plantas, Cortes, Fachadas) y estructurales aprobados por la curaduría en la licencia de construcción ejecutoriada. Adicionalmente se deberán presentar planos técnicos (hidrosanitarios, eléctricos, red de voz y datos, red contra incendios, etc.) y detalles constructivos firmados por el profesional responsable en cada caso (en formato PDF). Los planos deben estar acotados. Máximo 15 Mb cada archivo' WHERE id=857;
+UPDATE public.requisitos SET nombre='23. DOCUMENTO ADICIONAL PARA LA LÍNEA DE DOTACIÓN - Planos arquitectónicos del escenario incluyendo planos de las instalaciones eléctricas del inmueble y del escenario. Planos donde se identifiquen los aspectos técnicos relacionando los espacios del escenario y la ubicación de los elementos de dotación que se pretenden adquirir (en formato PDF). Máximo 15 Mb cada archivo' WHERE id=869;
+UPDATE public.requisitos SET nombre='36. DOCUMENTO ADICIONAL PARA LA LÍNEA DE ESCENARIO MÓVIL - Diseños completos del escenario que se pretende adquirir o construir, incluyendo planos generales y de redes eléctrica y de sonido (en formato PDF). Máximo 15 Mb cada archivo' WHERE id=881;
+
+#febrero 25 de 2020
+ALTER TABLE participantes ADD representante boolean DEFAULT FALSE;
+
+
+UPDATE public.propuestas SET estado=20 WHERE convocatoria IN (142,152,153);
+
+UPDATE public.tablasmaestras SET valor='pdf,doc,docx,xls,xlsx,jpg,gif,png,mp3,wav,wma,avi,mp4,mpg,mpeg,mwv,wmv' WHERE id IN (13,12);
+
+UPDATE public.convocatoriasdocumentos SET archivos_permitidos='["avi","mp4","mpg","mpeg","mwv","wmv"]' WHERE id=136;
+
+
+UPDATE public.requisitos SET active=true WHERE id=1051;
+
+ALTER TABLE convocatorias ADD COLUMN habilitar_cronograma boolean DEFAULT TRUE;
+
+
+UPDATE public.requisitos SET active=false WHERE tipo_requisito='Tecnicos';
+
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','ACOMPAÑAMIENTO',true,NOW(),7,'1,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','ARCHIVO DE AUDIO',true,NOW(),7,'2,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','ARCHIVO DE VIDEO ',true,NOW(),7,'3,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','AUTORIZACIÓN PARA LA PARTICIPACIÓN DE MENORES DE EDAD',true,NOW(),7,'4,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','DOCUMENTO EN PDF',true,NOW(),7,'5,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','CARTA ',true,NOW(),7,'6,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','CERTIFICACIÓN',true,NOW(),7,'7,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','REGISTRO',true,NOW(),7,'8,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','RECIBO',true,NOW(),7,'9,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','FICHA TÉCNICA ',true,NOW(),7,'10,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','HOJA DE VIDA',true,NOW(),7,'11,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','FOTOGRAFÍAS',true,NOW(),7,'12,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','SOPORTES',true,NOW(),7,'13,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','PARTITURA',true,NOW(),7,'14,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','PORTAFOLIO',true,NOW(),7,'15,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','REGISTROS Y SOPORTES DOCUMENTALES QUE DEN CUENTA DE LA TRAYECTORIA.',true,NOW(),7,'16,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','ENLACE URL',true,NOW(),7,'17,2,3');
+INSERT INTO public.requisitos (tipo_requisito, nombre, active, fecha_creacion, creado_por, programas) VALUES ('Tecnicos','FORMATO DE PRESENTACIÓN DE PROPUESTA',true,NOW(),7,'18,2,3');
+
+UPDATE public.requisitos SET active=true WHERE id IN (333,184,354,382,383,231,377,191,355,395,200,232);
+
+
+SELECT r.id,r.active,count(*) FROM requisitos AS r
+INNER JOIN convocatoriasdocumentos AS cd ON cd.requisito=r.id AND r.tipo_requisito='Tecnicos' AND r.active=TRUE
+GROUP BY 1,2
+ORDER BY 1;
+
+
+UPDATE public.convocatorias SET habilitar_cronograma=true WHERE id IN (196,234,270,216,272,273,228,355,268,353,198);
+
+
+//MAL EDITADA VERIFICAR ESTE ESTADO
+UPDATE public.requisitos SET active=true WHERE id IN (333,184,354,382,383,231,377,191,355,395,200,232);
+UPDATE public.requisitos SET active=false WHERE id IN (333,184,354,382,383,231,377,191,355,395,200,232);
+
+ALTER TABLE propuestas ADD habilitar boolean DEFAULT FALSE;
+ALTER TABLE propuestas ADD habilitar_fecha_inicio timestamp without time zone;
+ALTER TABLE propuestas ADD habilitar_fecha_fin timestamp without time zone;

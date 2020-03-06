@@ -37,7 +37,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -80,8 +80,19 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Consulto la convocatoria
+            $convocatoria= Convocatorias::findFirst("id=".$id." AND active=TRUE");
+
+            //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+            $id_convocatoria=$convocatoria->id;                
+
+            //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                $id_convocatoria = $convocatoria->getConvocatorias()->id;                                    
+            }
+                                    
             //Consulto la fecha de cierre del cronograma de la convocatoria
-            $conditions = ['convocatoria' => $id, 'active' => true,'tipo_evento'=>12];
+            $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];            
             $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                         'bind' => $conditions,
@@ -295,14 +306,20 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
                         $id_convocatoria=$convocatoria->id;                
                         $seudonimo=$convocatoria->seudonimo;
-                        $where .= " AND p.convocatoria=$id_convocatoria ";
+                        
+                        //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                        if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                            $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
+                            $seudonimo=$convocatoria->getConvocatorias()->seudonimo;
+                        }                                                
 
                         //Consulto la fecha de cierre del cronograma de la convocatoria
-                        $conditions = ['convocatoria' => $propuesta->convocatoria, 'active' => true,'tipo_evento'=>12];
+                        $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
                         $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
                                     'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
                                     'bind' => $conditions,
                         ]));
+                        
                         $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                         $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
                         if ($fecha_actual > $fecha_cierre) {
@@ -319,6 +336,39 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     } 
                                         
                 }
+                else 
+                {
+                    //Consulto la convocatoria
+                    $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+
+                    //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
+                    $id_convocatoria=$convocatoria->id;                
+                    $seudonimo=$convocatoria->seudonimo;                        
+
+                    //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                    if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                        $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
+                        $seudonimo=$convocatoria->getConvocatorias()->seudonimo;
+                    }
+
+
+                    //Consulto la fecha de cierre del cronograma de la convocatoria
+                    $conditions = ['convocatoria' => $id_convocatoria, 'active' => true,'tipo_evento'=>12];
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                                'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                                'bind' => $conditions,
+                    ]));
+
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $consultar=true;
+                    }
+                    else
+                    {
+                        $consultar=false;
+                    }
+                }
                 
                 if($consultar==true)
                 {
@@ -333,6 +383,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
                         $id_convocatoria=$convocatoria->id;                
                         $seudonimo=$convocatoria->seudonimo;
+                        
                         $where .= " AND p.convocatoria=$id_convocatoria ";
                     }
                     
@@ -383,7 +434,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
                             . "INNER JOIN Entidades AS e ON e.id=c.entidad "
-                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
 
@@ -415,16 +466,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     //creo el array
                     $json_data = array(
                         "draw" => intval($request->get("draw")),
-                        "recordsTotal" => 0,
-                        "recordsFiltered" => 0,
+                        "recordsTotal" => null,
+                        "recordsFiltered" => null,
                         "data" => array()   // total data array
                     );
                     //retorno el array en json
                     echo json_encode($json_data);
-                }
-                
-                
-                        
+                }                                                         
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_propuesta  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => "", 'token' => $request->get('token')]);                
@@ -472,10 +520,22 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
             if (isset($propuesta->id)) {
                 
                 $bogota = ($propuesta->bogota) ? "Si" : "No";
-
+                
+                //Consulto la convocatoria de la propuesta
+                $convocatoria= Convocatorias::findFirst("id=".$propuesta->convocatoria." AND active=TRUE");                
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
                 $nombre_categoria = "";
+                $seudonimo=$convocatoria->seudonimo;
+                $id_convocatoria = $convocatoria->id; 
+                
+                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                    $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
+                    $seudonimo=$convocatoria->getConvocatorias()->seudonimo;
+                }
+                
+                //Si la convocatoria tiene categorias invierto los nombres
                 if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
                     $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;
                     $nombre_categoria = $propuesta->getConvocatorias()->nombre;
@@ -484,7 +544,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
                 
                 //Cambio del nombre del participante
-                if($propuesta->getConvocatorias()->seudonimo)
+                if($seudonimo)
                 {
                     $participante=$propuesta->codigo;    
                 }
@@ -529,7 +589,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $array["propuesta_dinamico"] = $html_dinamico;        
                                                
                 //Se crea todo el array de documentos administrativos y tecnicos
-                $conditions = ['convocatoria' => $propuesta->convocatoria, 'active' => true];
+                $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
                 $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
                             'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                             'bind' => $conditions,
@@ -558,10 +618,10 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 }
 
                 //Solo muestro los archivos administrativos cuando es una convocatoria sin seudonimos
-                if($propuesta->getConvocatorias()->seudonimo == false)
-                {
+                //if($propuesta->getConvocatorias()->seudonimo == false)
+                //{
                     $array["administrativos"] = $documentos_administrativos;
-                }
+                //}
 
                 $array["tecnicos"] = $documentos_tecnicos;                
                 

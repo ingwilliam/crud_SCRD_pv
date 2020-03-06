@@ -37,7 +37,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -229,84 +229,106 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     $array_participantes = $array_participantes . $participante->id . ",";
                 }
                 $array_participantes = substr($array_participantes, 0, -1);
-
-                //Creo el where para traer todas las propuestas asociadas con el usuario logueado
-                $where .= " WHERE p.active=true AND p.participante IN (" . $array_participantes . ") ";
-
-                if ($params["codigo"] != "") {
-                    $where .= " AND p.codigo='" . $params["codigo"] . "'";
-                }
                 
-                if ($params["anio"] != "") {
-                    $where .= " AND c.anio='" . $params["anio"] . "'";
+                if( $array_participantes == "")
+                {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"No ha creado ningun participante vericación en el modulo mis propuestas" ', ['user' => "", 'token' => $request->get('token')]);
+                    $logger->close();
+                    
+                    //creo el array
+                    $json_data = array(
+                        "draw" => 0,
+                        "recordsTotal" => 0,
+                        "recordsFiltered" => 0,
+                        "data" => array()   // total data array
+                    );
+                    //retorno el array en json
+                    echo json_encode($json_data);                                        
                 }
-                
-                if ($params["entidad"] != "") {
-                    $where .= " AND c.entidad='" . $params["entidad"] . "'";
-                }
-                
-                if ($params["estado"] != "") {
-                    $where .= " AND p.estado='" . $params["estado"] . "'";
-                }
+                else
+                {
+                    //Creo el where para traer todas las propuestas asociadas con el usuario logueado
+                    $where .= " WHERE c.modalidad<>2 AND p.active=true AND p.participante IN (" . $array_participantes . ") ";
 
-                $participante = "CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido)";
-                
-                //Defino el sql del total y el array de datos
-                $sqlTot = "SELECT count(*) as total FROM Propuestas AS p "
-                        . "INNER JOIN Estados AS est ON est.id=p.estado "
-                        . "INNER JOIN Participantes AS par ON par.id=p.participante "
-                        . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                        . "INNER JOIN Entidades AS e ON e.id=c.entidad "
-                        . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
-                        . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
-                        . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
-                $token = $request->get('token');
-                $sqlRec = "SELECT "
-                        . "est.nombre AS estado,"
-                        . "c.anio ,"
-                        . "e.nombre AS entidad ,"
-                        . "c.nombre AS convocatoria,"
-                        . "cat.nombre AS categoria,"
-                        . "p.id AS id_propuesta,"
-                        . "p.convocatoria AS id_convocatoria,"
-                        . "p.nombre AS propuesta,"
-                        . "p.codigo,"
-                        . "per.id AS perfil ,"
-                        . "per.nombre AS tipo_participante ,"
-                        . "$participante AS participante,"
-                        . "'a' AS ver_propuesta,"
-                        . "concat('<a href=\"" . $config->sistema->url_report . "reporte_propuesta_inscrita.php?id=',p.id,'&token=" . $request->get('token') . "\" target=\"_blank\"><button type=\"button\" class=\"btn btn-danger\"><span class=\"fa fa-bar-chart-o\"></span></button></a>') as ver_reporte  "
-                        . "FROM Propuestas AS p "
-                        . "INNER JOIN Estados AS est ON est.id=p.estado "
-                        . "INNER JOIN Participantes AS par ON par.id=p.participante "
-                        . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                        . "INNER JOIN Entidades AS e ON e.id=c.entidad "
-                        . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
-                        . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
-                        . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
+                    if ($params["codigo"] != "") {
+                        $where .= " AND p.codigo='" . $params["codigo"] . "'";
+                    }
 
-                //concatenate search sql if value exist
-                if (isset($where) && $where != '') {
+                    if ($params["anio"] != "") {
+                        $where .= " AND c.anio='" . $params["anio"] . "'";
+                    }
 
-                    $sqlTot .= $where;
-                    $sqlRec .= $where;
-                }
+                    if ($params["entidad"] != "") {
+                        $where .= " AND c.entidad='" . $params["entidad"] . "'";
+                    }
 
-                //Concateno el orden y el limit para el paginador
-                $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                    if ($params["estado"] != "") {
+                        $where .= " AND p.estado='" . $params["estado"] . "'";
+                    }
 
-                //ejecuto el total de registros actual
-                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+                    $participante = "CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido)";
 
-                //creo el array
-                $json_data = array(
-                    "draw" => intval($request->get("draw")),
-                    "recordsTotal" => intval($totalRecords["total"]),
-                    "recordsFiltered" => intval($totalRecords["total"]),
-                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
-                );
-                //retorno el array en json
-                echo json_encode($json_data);
+                    //Defino el sql del total y el array de datos
+                    $sqlTot = "SELECT count(*) as total FROM Propuestas AS p "
+                            . "INNER JOIN Estados AS est ON est.id=p.estado "
+                            . "INNER JOIN Participantes AS par ON par.id=p.participante "
+                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
+                            . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
+                    $token = $request->get('token');
+                    $sqlRec = "SELECT "
+                            . "est.nombre AS estado,"
+                            . "est.id AS id_estado,"
+                            . "c.anio ,"
+                            . "e.nombre AS entidad ,"
+                            . "c.nombre AS convocatoria,"
+                            . "cat.nombre AS categoria,"
+                            . "p.id AS id_propuesta,"
+                            . "p.convocatoria AS id_convocatoria,"
+                            . "p.nombre AS propuesta,"
+                            . "p.codigo,"
+                            . "p.fecha_subsanacion,"
+                            . "'".$request->get('token')."' AS token,"
+                            . "per.id AS perfil ,"
+                            . "per.nombre AS tipo_participante ,"
+                            . "$participante AS participante,"
+                            . "'a' AS ver_propuesta,"
+                            . "'a' as ver_reporte  "
+                            . "FROM Propuestas AS p "
+                            . "INNER JOIN Estados AS est ON est.id=p.estado "
+                            . "INNER JOIN Participantes AS par ON par.id=p.participante "
+                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
+                            . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
+
+                    //concatenate search sql if value exist
+                    if (isset($where) && $where != '') {
+
+                        $sqlTot .= $where;
+                        $sqlRec .= $where;
+                    }
+
+                    //Concateno el orden y el limit para el paginador
+                    $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
+                    //ejecuto el total de registros actual
+                    $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                    //creo el array
+                    $json_data = array(
+                        "draw" => intval($request->get("draw")),
+                        "recordsTotal" => intval($totalRecords["total"]),
+                        "recordsFiltered" => intval($totalRecords["total"]),
+                        "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                    );
+                    //retorno el array en json
+                    echo json_encode($json_data);
+                }                                
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_propuesta  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => "", 'token' => $request->get('token')]);

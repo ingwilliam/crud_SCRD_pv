@@ -34,7 +34,8 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
+        "port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -49,6 +50,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
     try {
         //Si existe consulto la convocatoria y creo el objeto
         $convocatoria = Convocatorias::findFirst($id);
+        $array_convocatoria["id_programa"] = $convocatoria->programa;
         $array_convocatoria["programa"] = $convocatoria->getProgramas()->nombre;
         $array_convocatoria["convocatoria"] = $convocatoria->nombre;
         $array_convocatoria["entidad"] = $convocatoria->getEntidades()->nombre;
@@ -67,7 +69,22 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
         $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
         
-        $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   
+        //generar las siglas del programa
+        if($convocatoria->programa==1)
+        {
+            $siglas_programa="pde";
+        }
+        if($convocatoria->programa==2)
+        {
+            $siglas_programa="pdac";
+        }
+        if($convocatoria->programa==3)
+        {
+            $siglas_programa="pdsc";
+        }
+        
+        $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");                           
+        
         $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
 
         $tipo_convocatoria = "";
@@ -127,7 +144,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
                 $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
                                 [
-                                    "convocatoria_ronda = " . $ronda->id . "",
+                                    "convocatoria_ronda = " . $ronda->id . " AND active=true",
                                     "order" => 'orden'
                                 ]
                 );
@@ -165,11 +182,11 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     foreach ($consulta_rondas_evaluacion as $ronda) {
                         $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
-                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Ronda:</b> " . $ronda->nombre_ronda;
+                        $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
                         $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
                         $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
                                         [
-                                            "convocatoria_ronda = " . $ronda->id . "",
+                                            "convocatoria_ronda = " . $ronda->id . " AND active=true",
                                             "order" => 'orden'
                                         ]
                         );
@@ -243,19 +260,31 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                             $consulta_cronogramas = Convocatoriascronogramas::find(([
                                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                                         'bind' => $conditions,
+                                        'order' => 'fecha_inicio ASC',
                             ]));
 
                             //Creo el cronograma de las categorias especiales
+                            $i=0;
                             foreach ($consulta_cronogramas as $evento) {
-                                $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
-                                if ($evento->getTiposeventos()->periodo) {
-                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
-                                } else {
-                                    $cronogramas[$categoria->id]["eventos"][$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
+                                if($evento->getTiposeventos()->publico)
+                                {                                                                
+                                    $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
+                                    $cronogramas[$categoria->id]["eventos"][$i]["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                                    if ($evento->getTiposeventos()->periodo) {
+                                        $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');
+                                    } else {
+                                        if ($evento->tipo_evento==12) {
+                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y H:i:s');   
+                                        }
+                                        else
+                                        {
+                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');   
+                                        }                                                                                
+                                    }
+                                    $cronogramas[$categoria->id]["eventos"][$i]["descripcion"] = $evento->descripcion;
+                                    $cronogramas[$categoria->id]["eventos"][$i]["convocatoria"] = $categoria->id;
+                                    $i++;
                                 }
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["descripcion"] = $evento->descripcion;
-                                $cronogramas[$categoria->id]["eventos"][$evento->id]["convocatoria"] = $categoria->id;
                             }
 
 
@@ -306,22 +335,22 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                             foreach ($consulta_documentos_administrativos as $documento) {
                                 if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                     $documentos_administrativos[$categoria->id]["categoria"] = $categoria->nombre;
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["orden"] = $documento->orden;
-                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["descripcion"] = $documento->descripcion;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["orden"] = $documento->orden;
+                                    $documentos_administrativos[$categoria->id]["administrativos"][$documento->orden]["convocatoria"] = $id;
                                 }
 
                                 if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
                                     $documentos_tecnicos[$categoria->id]["categoria"] = $categoria->nombre;
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["descripcion"] = $documento->descripcion;
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["orden"] = $documento->orden;
-                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->id]["convocatoria"] = $id;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["descripcion"] = $documento->descripcion;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["orden"] = $documento->orden;
+                                    $documentos_tecnicos[$categoria->id]["administrativos"][$documento->orden]["convocatoria"] = $id;
                                 }
                             }
 
@@ -337,7 +366,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                                 $rondas_evaluacion[$ronda->id]["descripcion"] = $ronda->descripcion_ronda;
                                 $rondas_evaluacion[$ronda->id]["criterios"] = Convocatoriasrondascriterios::find(
                                                 [
-                                                    "convocatoria_ronda = " . $ronda->id . "",
+                                                    "convocatoria_ronda = " . $ronda->id . " AND active=true",
                                                     "order" => 'orden'
                                                 ]
                                 );
@@ -355,16 +384,28 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             $consulta_cronogramas = Convocatoriascronogramas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                         'bind' => $conditions,
+                        'order' => 'fecha_inicio ASC',
             ]));
+            $i=0;
             foreach ($consulta_cronogramas as $evento) {
-                $cronogramas[$evento->id]["tipo_evento"] = $evento->getTiposeventos()->nombre;
-                if ($evento->getTiposeventos()->periodo) {
-                    $cronogramas[$evento->id]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');
-                } else {
-                    $cronogramas[$evento->id]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');
-                }
-                $cronogramas[$evento->id]["descripcion"] = $evento->descripcion;
-                $cronogramas[$evento->id]["convocatoria"] = $id;
+                if($evento->getTiposeventos()->publico)
+                {
+                    $cronogramas[$i]["tipo_evento"] = $evento->getTiposeventos()->nombre;
+                    if ($evento->getTiposeventos()->periodo) {
+                        $cronogramas[$i]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');
+                    } else {
+                        if ($evento->tipo_evento==12) {
+                            $cronogramas[$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y H:i:s');
+                        }
+                        else
+                        {
+                            $cronogramas[$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');
+                        }
+                    }
+                    $cronogramas[$i]["descripcion"] = $evento->descripcion;
+                    $cronogramas[$i]["convocatoria"] = $id;
+                    $i++;
+                }                                                
             }
 
             //Se crea todo el array de participantes
@@ -388,21 +429,21 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
             ]));
             foreach ($consulta_documentos_administrativos as $documento) {
                 if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
-                    $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                    $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
-                    $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                    $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                    $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
-                    $documentos_administrativos[$documento->id]["convocatoria"] = $id;
+                    $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                    $documentos_administrativos[$documento->orden]["descripcion"] = $documento->descripcion;
+                    $documentos_administrativos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                    $documentos_administrativos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                    $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
+                    $documentos_administrativos[$documento->orden]["convocatoria"] = $id;
                 }
 
                 if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                    $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                    $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
-                    $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                    $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                    $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
-                    $documentos_tecnicos[$documento->id]["convocatoria"] = $id;
+                    $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                    $documentos_tecnicos[$documento->orden]["descripcion"] = $documento->descripcion;
+                    $documentos_tecnicos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                    $documentos_tecnicos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                    $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
+                    $documentos_tecnicos[$documento->orden]["convocatoria"] = $id;
                 }
             }
 
@@ -746,9 +787,9 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config) 
                 $array_evento=array();
                 $array_evento["tipo_evento"] = $evento->getTiposeventos()->nombre;
                 if ($evento->getTiposeventos()->periodo) {
-                    $array_evento["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y h:i:s a');                
+                    $array_evento["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');                
                 } else {
-                    $array_evento["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y h:i:s a');                
+                    $array_evento["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');                
                 }
                 $array_evento["descripcion"] = $evento->descripcion;            
                 $cronogramas[]=$array_evento;
