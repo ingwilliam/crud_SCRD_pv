@@ -1070,10 +1070,11 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (7)',
                         'bind' => $conditions,
-                        'order' => 'codigo ASC',
+                        'order' => 'fecha_creacion ASC',
             ]));
             
             $html_propuestas = "";
+            $i=1;
             foreach ($listado_propuestas_inscritas as $propuesta) {
                 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
@@ -1083,6 +1084,7 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                 }
                 
                 $representante = Participantes::findFirst("participante_padre=".$propuesta->participante." AND representante = true AND active = true");
+                $creado_por = Usuarios::findFirst("id=".$propuesta->creado_por."");
                 $nombre_representante = $representante->primer_nombre . " " . $representante->segundo_nombre . " " . $representante->primer_apellido . " " . $representante->segundo_apellido;
                 if($seudonimo==true)
                 {
@@ -1090,12 +1092,13 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                 }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
-                //$html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $i . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $creado_por->username . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . "</tr>";
-             
+                $i++;
             }
                         
             //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
@@ -1120,9 +1123,11 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                 <br/><br/>
                 <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Participante</td>
-                        <td align="center">Representante</td>
-                        <td align="center">Nombre de la propuesta</td>
+                        <td align="center" width="30"></td>
+                        <td align="center" width="200">Usuario</td>
+                        <td align="center" width="250">Participante</td>
+                        <td align="center" width="200">Representante</td>
+                        <td align="center" width="255">Nombre de la propuesta</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';

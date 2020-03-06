@@ -419,4 +419,6 @@ UPDATE public.convocatorias SET habilitar_cronograma=true WHERE id IN (196,234,2
 UPDATE public.requisitos SET active=true WHERE id IN (333,184,354,382,383,231,377,191,355,395,200,232);
 UPDATE public.requisitos SET active=false WHERE id IN (333,184,354,382,383,231,377,191,355,395,200,232);
 
-
+ALTER TABLE propuestas ADD habilitar boolean DEFAULT FALSE;
+ALTER TABLE propuestas ADD habilitar_fecha_inicio timestamp without time zone;
+ALTER TABLE propuestas ADD habilitar_fecha_fin timestamp without time zone;

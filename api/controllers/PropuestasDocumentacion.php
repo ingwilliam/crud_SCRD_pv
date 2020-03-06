@@ -130,7 +130,19 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 //Creo el array de la propuesta
                                 $array = array();
                                 $array["propuesta"] = $propuesta->id;
-                                $array["estado"] = $propuesta->estado;
+                                //Valido si se habilita propuesta por derecho de petición
+                                $array["estado"] = $propuesta->estado;                                    
+                                if($propuesta->habilitar)
+                                {
+                                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                                    $habilitar_fecha_inicio = strtotime($propuesta->habilitar_fecha_inicio, time());
+                                    $habilitar_fecha_fin = strtotime($propuesta->habilitar_fecha_fin, time());
+                                    if (($fecha_actual >= $habilitar_fecha_inicio) && ($fecha_actual <= $habilitar_fecha_fin))
+                                    {
+                                        $array["estado"] = 7;                                    
+                                    }
+                                }                                          
+                                
                                 $array["participante"] = $propuesta->participante;
 
                                 $id = $request->get('conv');
@@ -451,6 +463,8 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     
                     if( $id_perfil==7 || $id_perfil==8)
                     {
+                        
+                        //Se valida que al menos tenga registrado un integrante
                         $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
                         
                         if( count($participantes) <= 0 )
@@ -465,6 +479,26 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                             if($id_perfil==8)
                             {
                                 $new_json = array(array('id' => "Integrante", 'nombre' => "Integrante"));
+                            }
+                            
+                            $requisitos = array_merge($data, $new_json);
+                        }
+                        
+                        //Se valida que al menos tenga un representante de la junta o agrupación
+                        $participantes = Participantes::find("representante = TRUE AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
+                        
+                        if( count($participantes) <= 0 )
+                        {
+                            $data = json_decode(json_encode($requisitos), true);
+                    
+                            if( $id_perfil==7)
+                            {
+                                $new_json = array(array('id' => "RJunta", 'nombre' => "RJunta"));
+                            }
+                            
+                            if($id_perfil==8)
+                            {
+                                $new_json = array(array('id' => "RIntegrante", 'nombre' => "RIntegrante"));
                             }
                             
                             $requisitos = array_merge($data, $new_json);
