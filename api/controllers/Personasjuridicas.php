@@ -36,7 +36,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -240,8 +240,13 @@ $app->get('/search', function () use ($app, $config) {
             //Creo los array de los select del formulario
             $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
             
-            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
-            $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            $array["barrio_residencia_name"] = "";            
+            $array["ciudad_residencia_name"] = "";
+            if(isset($participante->id))
+            {
+                $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
+                $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            } 
             
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);

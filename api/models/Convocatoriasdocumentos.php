@@ -25,5 +25,12 @@ class Convocatoriasdocumentos extends Model
             'Propuestaslinks',
             'convocatoriadocumento'
         ); 
+        
+        //Se define la relación con 1 a N con Propuestaslinks
+        $this->hasMany(
+            'id',
+            'Propuestasverificaciones',
+            'convocatoriadocumento'
+        ); 
     }
 }

@@ -34,7 +34,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -113,9 +113,10 @@ $app->get('/all', function () use ($app) {
             //Condiciones para la consulta
 
             if (!empty($request->get("search")['value'])) {
-                $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";                
-                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";
+                $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[0] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' ";                
+                $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . mb_strtoupper($request->get("search")['value']) . "%' )";
             }                                
 
             //Defino el sql del total y el array de datos
@@ -131,7 +132,7 @@ $app->get('/all', function () use ($app) {
 
             //Concateno el orden y el limit para el paginador
             $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-            
+                        
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
 
@@ -274,6 +275,19 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 }
                 $convocatoriacronograma->actualizado_por = $user_current["id"];
                 $convocatoriacronograma->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                $convocatoria= Convocatorias::findFirst($put["convocatoria_padre_categoria"]);
+                
+                //Modifico habilitar cronograma
+                if($convocatoria->estado==5)
+                {
+                    $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE (convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:)";            
+                    $app->modelsManager->executeQuery($phql, array(
+                        'convocatoria_padre_categoria' => $put["convocatoria_padre_categoria"],
+                        'habilitar_cronograma' => FALSE                    
+                    ));                 
+                }
+                
                 if ($convocatoriacronograma->save($put) === false) {
                     echo "error";
                 } else {
@@ -360,16 +374,18 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriacronograma = Convocatoriascronogramas::findFirst($request->get('id'));                
                 $convocatoriacronograma->fecha_inicio = (new DateTime($convocatoriacronograma->fecha_inicio))->format('Y-m-d');
                 $convocatoriacronograma->fecha_fin = (new DateTime($convocatoriacronograma->fecha_fin))->format('Y-m-d');                
+                $array["es_periodo"] = $convocatoriacronograma->getTiposeventos()->periodo;
             }
             else 
             {
-                $convocatoriacronograma = new Convocatoriascronogramas();
+                $convocatoriacronograma = new Convocatoriascronogramas();                
             }
             //Cargo la convocatoria actual
             $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
             //Creo todos los array de la convocatoria cronograma
             $array["convocatoriacronograma"]=$convocatoriacronograma;
-            $array["tipos_eventos"]= Tiposeventos::find("active=true AND programa=".$convocatoria->programa);
+            $array["tipos_eventos"] = Tiposeventos::find(array("conditions" => "programas LIKE '%" . $convocatoria->programa . "%' AND active=TRUE"));
+            
             //Retorno el array
             echo json_encode($array);       
         } else {

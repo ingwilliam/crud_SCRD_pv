@@ -33,7 +33,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -100,14 +100,14 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Jurados' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_jurados = $app->modelsManager->executeQuery($phql);
-            
-            
+
+
             //Cesar Britto, 2020-01-17
             //Consultar todos los permiso del menu jurados
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                 . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
                 . " WHERE m.nombre='Evaluación de propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-            
+
             $evaluar_propuestas = $app->modelsManager->executeQuery($phql);
 
             ?>
@@ -563,7 +563,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
-                                                                        
+
+                                    <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -626,7 +627,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 ?>
                                 <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
-                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5)
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5||$request->getPost('m')==6||$request->getPost('m')==7||$request->getPost('m')==8)
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
@@ -681,18 +682,29 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>
-                                    
+
                                       <!--Cesar Britto, 2020-01-17-->
                         <?php
-                                               
+
                         if( count($evaluar_propuestas) > 0 )
                         {
-                            ?>                           
+                            ?>
                                     <a style="" href="../administracionpropuestas/evaluacion_propuestas.html">Evaluar propuestas</a>
-                                
+
                         <?php
                         }
                         ?>
+                                </li>
+                                <?php
+                                $style_update="display: none";
+                                if($request->getPost('sub')!="")
+                                {
+                                    $style_update="display: block";
+                                }
+                                ?>
+                                <li>
+                                    <a style="<?php echo $style_update;?>" href="../propuestas/subsanar_propuesta.html?id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>&sub=<?php echo $request->getPost('sub');?>">Subsanar propuesta</a>
+
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -734,7 +746,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-                      
+
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

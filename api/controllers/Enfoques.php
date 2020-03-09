@@ -33,7 +33,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -42,6 +42,29 @@ $di->set('db', function () use ($config) {
 });
 
 $app = new Micro($di);
+
+// Recupera todos las enfoques dependiendo el programa
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {            
+            $array = Enfoques::find("active = true AND programa=".$request->get('programa')."");            
+            echo json_encode($array);
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
+    }
+}
+);
 
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {

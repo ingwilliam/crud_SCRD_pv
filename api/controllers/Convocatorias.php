@@ -36,7 +36,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -149,6 +149,85 @@ $app->get('/verificar_estado', function () use ($app, $config) {
 }
 );
 
+$app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+        
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            
+            
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            $usuariosperfiles = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 15");
+            
+            if($usuariosperfiles->id)
+            {
+                $convocatoria = Convocatorias::findFirst($request->get('id'));                                                                
+                if($convocatoria->estado!=5)
+                {
+                    $convocatoria->actualizado_por = $user_current["id"];
+                    $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $convocatoria->estado = 5;                                    
+                    if ($convocatoria->save() === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al editar la convocatoria en el modulo publicar_convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                    
+                        echo "error";
+                    } else {
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se edita la convocatoria con exito en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+                        $logger->close();
+                        
+                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $convocatoria->id,
+                            'estado' => 5,
+                            'habilitar_cronograma' => FALSE                    
+                        )); 
+                        echo $convocatoria->id;
+                    } 
+                }
+                else
+                {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Ya esta publicada la convocatoria en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo $convocatoria->id;
+                }                                                               
+            }
+            else
+            {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"No tiene permisos para publicar la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                echo "error_publicacion";                                
+            }                        
+            
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo publicar_convocatoria para publicar la convocatoria"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo publicar_convocatoria para publicar convocatoria' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 // Recupera todos los registros
 $app->get('/all', function () use ($app) {
     try {
@@ -162,6 +241,23 @@ $app->get('/all', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
 
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            $user_current = Usuarios::findFirst($user_current["id"]);            
+            //Creo array de entidades que puede acceder el usuario
+            $array_usuarios_entidades="";
+            foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
+                $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
+            }
+            $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
+            
+            //Creo array de areas que puede acceder el usuario
+            $array_usuarios_areas="";
+            foreach ($user_current->getUsuariosareas() as $usuario_area) {
+                $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
+            }
+            $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
+            
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'c.anio',
@@ -185,13 +281,13 @@ $app->get('/all', function () use ($app) {
             }
             else
             {
-                $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad";
+                $where .= " INNER JOIN Entidades AS e ON e.id=c.entidad AND e.id IN ($array_usuarios_entidades)";
                 $where .= " INNER JOIN Programas AS p ON p.id=c.programa";
                 $where .= " LEFT JOIN Areas AS a ON a.id=c.area";
                 $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=c.linea_estrategica";
                 $where .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
                 $where .= " INNER JOIN Estados AS es ON es.id=c.estado";
-                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL";
+                $where .= " WHERE c.active IN (true,false) AND c.convocatoria_padre_categoria IS NULL AND ( a.id IN ($array_usuarios_areas) OR c.area IS NULL)";
             }
 
             //Condiciones para la consulta del input filter de la tabla categorias
@@ -207,6 +303,10 @@ $app->get('/all', function () use ($app) {
             if (!empty($request->get("params"))) {
                 foreach (json_decode($request->get("params")) AS $clave=>$valor)
                 {
+                    if($clave=="anio" && $valor==null){
+                        $valor=date("Y");
+                    }
+                    
                     if($clave=="nombre" && $valor!="")
                     {
                         $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($valor) . "%' ";
@@ -236,7 +336,8 @@ $app->get('/all', function () use ($app) {
             }
             else
             {
-                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
+                //$sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " , concat('<button type=\"button\" class=\"btn btn-info\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones, concat('<button type=\"button\" class=\"btn btn-danger convocatoria_publicar\" data-toggle=\"modal\" data-target=\"#modal_confirmar_publicar\" title=\"',c.id,'\"><span class=\"glyphicon glyphicon-globe\"></span></button>') as publicar FROM Convocatorias AS c";
             }
 
             //concatenate search sql if value exist
@@ -498,6 +599,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $convocatoria = Convocatorias::findFirst(json_decode($id));
                 $convocatoria->actualizado_por = $user_current["id"];
                 $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                if($put["value_CKEDITOR"]!=""){
+                    $put[$put["variable"]]=$put["value_CKEDITOR"];
+                }                
+                
                 if($put["tiene_categorias"]=="false")
                 {
                     $put["diferentes_categorias"]=FALSE;
@@ -524,12 +630,33 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                     echo "error";
                 } else {
                     
-                    //Modifico el estado para todas las categorias
-                    $phql = "UPDATE Convocatorias SET estado=:estado: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
-                    $app->modelsManager->executeQuery($phql, array(
-                        'convocatoria_padre_categoria' => $id,
-                        'estado' => $put["estado"]
-                    ));                    
+                    if($put["tiene_categorias"]=="true")
+                    {                    
+                        //Modifico el estado para todas las categorias
+                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque:,modalidad=:modalidad: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'estado' => $put["estado"],
+                            'anio' => $put["anio"],
+                            'programa' => $put["programa"],
+                            'entidad' => $put["entidad"],
+                            'area' => $put["area"],
+                            'linea_estrategica' => $put["linea_estrategica"],
+                            'modalidad' => $put["modalidad"],
+                            'enfoque' => $put["enfoque"]
+                        )); 
+                        
+                    }
+                    
+                    if($put["estado"]==5)
+                    {
+                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'habilitar_cronograma' => FALSE                    
+                        ));
+                    }
+                        
                     echo $id;
                 }
             } else {
@@ -680,6 +807,9 @@ $app->get('/search', function () use ($app) {
             if(isset($convocatoria->id))
             {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
+                
+                $array["enfoques"]= Enfoques::find("active=true AND programa=".$convocatoria->programa);
+                
                 /*
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE /Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");*/
                 //cesar britto
@@ -692,8 +822,7 @@ $app->get('/search', function () use ($app) {
                     $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
                 }
                 $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);
-            }
-            $array["enfoques"]= Enfoques::find("active=true");
+            }            
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
             $array["areas"]= Areas::find("active=true");
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");

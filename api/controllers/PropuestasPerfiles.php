@@ -36,7 +36,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -74,6 +74,28 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
+            
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($id);
+
+            //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                $id = $convocatoria->getConvocatorias()->id;                    
+            }
+                        
+            //generar las siglas del programa
+            if($convocatoria->programa==1)
+            {
+                $siglas_programa="pde";
+            }
+            if($convocatoria->programa==2)
+            {
+                $siglas_programa="pdac";
+            }
+            if($convocatoria->programa==3)
+            {
+                $siglas_programa="pdsc";
+            }
             
             //Consulto los tipos de partticipantes permitidos de la convocatoria
             $conditions = ['convocatoria' => $id, 'active' => true];
@@ -196,7 +218,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                     
                 }                
                 
-                $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".date("Y")."'");   
+                $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");   
                 $array_tipos_participantes[$i]["condiciones_participacion"] = str_replace("/view?usp=sharing", "/preview", $condiciones_participancion->valor);                
                 
                 $i++;

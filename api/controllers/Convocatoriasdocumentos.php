@@ -33,7 +33,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -127,7 +127,7 @@ $app->get('/all', function () use ($app) {
             }
 
             //Concarno el orden y el limit para el paginador
-            $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            $sqlRec .= " ORDER BY cd.orden   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
             
             //ejecuto el total de registros actual
             $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -332,7 +332,7 @@ $app->get('/search', function () use ($app, $config) {
                 $convocatoriadocumento = new Convocatoriasdocumentos();
             }
             //Cargo la convocatoria actual
-            $convocatoria= Convocatorias::findFirst($request->get('convocatoria_padre_categoria'));
+            $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
             //Creo todos los array de la convocatoria cronograma
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipos_archivos_tecnicos'");
             $array["tipos_archivos_tecnicos"] = explode(",", $tabla_maestra[0]->valor);
@@ -343,8 +343,14 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='etapas_participantes'");
             $array["etapas"] = explode(",", $tabla_maestra[0]->valor);                        
             $array["convocatoriadocumento"]=$convocatoriadocumento;
+            $programa=$convocatoria->programa;
+            //Documentos administrativos para LEP
+            if($convocatoria->modalidad==6){
+                $programa=$convocatoria->modalidad;
+            }
+            
             $array["requisitos"]= Requisitos::find([
-                                                        'conditions' => "active=true AND programa=".$convocatoria->programa." AND tipo_requisito='".$request->get('tipo_requisito')."'",
+                                                        'conditions' => "active=true AND programas LIKE '%".$programa."%' AND tipo_requisito='".$request->get('tipo_requisito')."'",
                                                         "order" => 'orden',
                                                     ]);
             //Retorno el array
@@ -355,6 +361,24 @@ $app->get('/search', function () use ($app, $config) {
     } catch (Exception $ex) {
         //retorno el array en json null
         echo "error_metodo";
+    }
+}
+);
+
+// Recupera todos las modalidades dependiendo el programa
+$app->get('/pruebaxyz', function () use ($app,$config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($request->get('keyy') == 'WMx2') {                       
+            //echo json_encode($config->database);
+            echo json_encode("A");
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo". $ex->getMessage();
     }
 }
 );
