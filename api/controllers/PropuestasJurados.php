@@ -347,7 +347,7 @@ $app->post('/edit_participante', function () use ($app, $config) {
 
                   if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
-                      $participante->propuestas->modalidad_participa = $request->get('categoria');
+                      $participante->propuestas->modalidad_participa = $request->get('modalidad_participa');
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -369,8 +369,6 @@ $app->post('/edit_participante', function () use ($app, $config) {
                   }
 
                 }
-
-
 
             } else {
                 echo "acceso_denegado";
@@ -3968,7 +3966,7 @@ $app->get('/postular', function () use ($app, $config) {
                          ->execute();
 
                          if( $documentos->count() == 0 ){
-                          
+
                            return "error_documento_administrativo";
                          }
 
@@ -4116,8 +4114,6 @@ $app->get('/search_documento', function () use ($app, $config) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
-
-
            if( $user_current["id"]){
 
                  // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
@@ -4142,7 +4138,7 @@ $app->get('/search_documento', function () use ($app, $config) {
 
                         //$tipos =Categoriajurado::find("active=true AND tipo='anexo'");
                         $tipos = Convocatoriasdocumentos::find(
-                          " convocatoria=68 and active=true AND etapa='Registro'"
+                          " convocatoria=".$request->get('idc')." and active=true AND etapa='Registro'"
                         );
 
                         $array["tipo"]=array();
@@ -4236,7 +4232,7 @@ $app->get('/all_documento', function () use ($app, $config) {
                            $tipo = Convocatoriasdocumentos::findFirst(
                              [" active=true AND id =".$documento->requisito]
                            );
-                          //  echo json_encode($tipo);
+
                            $documento->categoria_jurado = $tipo->Requisitos->nombre;
                          }
 
@@ -5376,7 +5372,7 @@ $app->get('/download_condiciones', function () use ($app, $config) {
 
            $condiciones= Tablasmaestras::findFirst("active=true AND nombre='Condiciones de participación jurados'");
 
-            echo  json_encode(["archivo"=>$condiciones->valor]) ;
+            echo  json_encode(["archivo"=>str_replace("/view?usp=sharing", "/preview", $condiciones->valor)]) ;
 
 
         } else {
@@ -5391,6 +5387,42 @@ $app->get('/download_condiciones', function () use ($app, $config) {
 }
 );
 
+//Busca los registros de postulaciones
+$app->get('/select_categoria', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            $categorias = Tablasmaestras::findFirst([" active=true  AND nombre = 'jurado_categoria_participa'"]);
+
+              foreach ( explode(",", $categorias->valor) as $categoria) {
+                array_push( $response, ["id"=> $categoria, "nombre"=> $categoria] );
+              }
+
+          echo json_encode($response);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
 
 try {
     // Gestionar la consulta

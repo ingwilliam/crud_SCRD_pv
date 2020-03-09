@@ -612,7 +612,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 if($request->getPost('m')==2)
                                 {
                                 ?>
-                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Información Básica</a></li>
+                                <li><a href="../propuestasjurados/perfil.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Información Básica</a></li>
                                 <li><a href="../propuestasjurados/educacion_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación formal</a></li>
                                 <li><a href="../propuestasjurados/educacion_no_formal.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Educación no formal</a></li>
                                 <li><a href="../propuestasjurados/experiencia_profesional.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>">Experiencia disciplinar</a></li>
