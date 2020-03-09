@@ -179,28 +179,28 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
 $app->post('/recordar_usuario', function () use ($app, $config, $logger) {
 
     try {
-        
+
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
-        
+
         //Consulto el usuario por username del parametro get
         $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
 
         //Valido si existe
         if (isset($usuario_validar->id)) {
-            
+
             $usuario_validar->password = $this->security->hash(date("Ymd"));
             if ($usuario_validar->save() === false) {
                 //Registro la accion en el log de convocatorias
                 $logger->error('"token":"{token}","user":"{user}","message":"Error editar contrasena recordar_contrasena "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
-                $logger->close(); 
-        
+                $logger->close();
+
                 echo "error_editar";
             } else {
-                
+
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Edito la contrasena en recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
-        
+
                 //Creo el cuerpo del messaje html del email
                 $html_recordar_usuario = Tablasmaestras::find("active=true AND nombre='html_recordar_usuario'")[0]->valor;
                 $html_recordar_usuario = str_replace("**password**", date("Ymd"), $html_recordar_usuario);
@@ -235,7 +235,7 @@ $app->post('/recordar_usuario', function () use ($app, $config, $logger) {
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo recordar_contrasena "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
-        $logger->close();        
+        $logger->close();
         echo "error_metodo";
     }
 }
@@ -333,7 +333,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
                         $mail->Host = "smtp-relay.gmail.com";
                         $mail->Port = 25;
                         $mail->CharSet = "UTF-8";
-                        $mail->IsHTML(true); // El correo se env  a como HTML                        
+                        $mail->IsHTML(true); // El correo se env  a como HTML
                         $mail->From = "convocatorias@scrd.gov.co";
                         $mail->FromName = "Sistema de Convocatorias";
                         $mail->AddAddress($post["username"]);

@@ -296,6 +296,37 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+/**
+*Cesar Britto, 2020-01-20
+*Retorna información de id y nombre del enfoque
+**/
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $enfoques=array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ( $token_actual != false ) {
+
+                foreach ( Enfoques::find("active=true") as $enfoque) {
+                  array_push($enfoques, ["id"=> $enfoque->id, "nombre"=> $enfoque->nombre ] );
+                }
+
+            echo json_encode($enfoques);
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+        return "error_metodo".$ex->getMessage();
+    }
+}
+);
+
 
 try {
     // Gestionar la consulta

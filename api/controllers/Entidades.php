@@ -317,6 +317,44 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+/* Cesar Britto, 2020-01-17
+ * Retorna la información para establecer los componentes select
+ */
+$app->get('/all_select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+        
+        //Si el token existe y esta activo entra a establecer los datos
+        if ($token_actual > 0) {            
+            
+           $entidades = Entidades::find([
+               ' active = true',
+               'order'=>'nombre'
+           ]); 
+           
+           foreach ($entidades as $entidad) {
+               array_push($response, ["id"=>$entidad->id, "nombre"=>$entidad->nombre]);
+            }
+           
+            
+            return json_encode($response);
+            
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
+    }
+}
+);
+
 
 try {
     // Gestionar la consulta
