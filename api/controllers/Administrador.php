@@ -100,6 +100,15 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Jurados' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_jurados = $app->modelsManager->executeQuery($phql);
+            
+            
+            //Cesar Britto, 2020-01-17
+            //Consultar todos los permiso del menu jurados
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                . " WHERE m.nombre='Evaluación de propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+            
+            $evaluar_propuestas = $app->modelsManager->executeQuery($phql);
 
             ?>
 
@@ -553,7 +562,8 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li>
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
-                                    <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>                                    
+                                    <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
+                                                                        
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -671,6 +681,18 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>
+                                    
+                                      <!--Cesar Britto, 2020-01-17-->
+                        <?php
+                                               
+                        if( count($evaluar_propuestas) > 0 )
+                        {
+                            ?>                           
+                                    <a style="" href="../administracionpropuestas/evaluacion_propuestas.html">Evaluar propuestas</a>
+                                
+                        <?php
+                        }
+                        ?>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -678,7 +700,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-                        <!--Cesar britto-->
+                        <!--Cesar Britto-->
                         <?php
                         if( count($permisos_jurados) > 0 )
                         {
@@ -712,10 +734,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-
-
-
-
+                      
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

@@ -366,11 +366,12 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
                     ->andWhere("Juradospostulados.rol = 'Principal' ")
                     ->execute();
 
-
+              $estado = Estados::findFirst('id = '. $grupoevaluador->estado);
 
               array_push( $response, [
                         "id" =>  $grupoevaluador->id,
                         "nombre_grupo" =>  $grupoevaluador->nombre,
+                        "nombre_estado"=> $estado->nombre,
                         "numero_principales" =>  $principales->count(),
                         "numero_suplentes" => $suplentes->count(),
                         "numero_total" => ( $principales->count()+$suplentes->count() ),

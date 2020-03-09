@@ -762,10 +762,20 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                        foreach ($documentos as $documento) {
 
-                         $tipo = Categoriajurado::findFirst(
-                           ["active=true AND id=".$documento->categoria_jurado]
-                         );
-                         $documento->categoria_jurado = $tipo->nombre;
+                         if( isset($documento->categoria_jurado) ){
+                           $tipo = Categoriajurado::findFirst(
+                             ["active=true AND id=".$documento->categoria_jurado]
+                           );
+                           $documento->categoria_jurado = $tipo->nombre;
+                         }
+
+                         if( isset($documento->requisito) ){
+                           $tipo = Convocatoriasdocumentos::findFirst(
+                             ["active=true AND id=".$documento->requisito]
+                           );
+                           $documento->categoria_jurado = $tipo->Requisito->nombre;
+                         }
+
 
                          $documento->creado_por = null;
                          $documento->actualizado_por = null;
@@ -864,8 +874,13 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                        foreach ($educacionformales as $educacionformal) {
 
                          $ciudad =  Ciudades::findFirst(
-                           ["active=true AND id=".$educacionformal->ciudad]
+                           [" active=true AND id=".$educacionformal->ciudad]
                          );
+
+                         $nivel_educativo = Niveleseducativos::findFirst(
+                           ["id = ".$educacionformal->nivel_educacion]
+                         );
+                         $educacionformal->nivel_educacion= $nivel_educativo->nombre;
 
                          $educacionformal->ciudad = $ciudad->nombre;
                          $educacionformal->creado_por = null;
