@@ -306,7 +306,6 @@ $app->get('/search', function () use ($app, $config) {
     }
 });
 
-
 // Edito registro participante
 $app->post('/edit_participante', function () use ($app, $config) {
     try {
@@ -389,7 +388,6 @@ $app->post('/edit_participante', function () use ($app, $config) {
     }
 }
 );
-
 
 // Funcionalidad CRUD Educacion formal
 //Busca el registro educación formal
@@ -542,6 +540,8 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                        $teducacionformal = Educacionformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                          ]
                         );
 
@@ -1047,8 +1047,6 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
     }
 });
 
-
-
 // Funcionalidad CRUD Educacion no formal
 //Busca el registro Educacion no formal
 $app->get('/search_educacion_no_formal', function () use ($app, $config) {
@@ -1200,6 +1198,8 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                        $teducacionnoformal = Educacionnoformal::find(
                          [
                           " propuesta = ".$participante->propuestas->id
+                          ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
+                          ." OR institucion LIKE '%".$request->get("search")['value']."%' )"
                          ]
                        );
 
@@ -1627,7 +1627,6 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
     }
 });
 
-
 // Funcionalidad CRUD Experiencia_laboral
 //Busca el registro experiencia_laboral
 $app->get('/search_experiencia_laboral', function () use ($app, $config) {
@@ -1785,8 +1784,8 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                        //resultado sin filtro
                        $texperiencialaboral = Experiencialaboral::find([
                           " propuesta= ".$participante->propuestas->id
-                          ." AND entidad LIKE '%".$request->get("search")['value']."%'"
-                          ." OR cargo LIKE '%".$request->get("search")['value']."%'"
+                          ." AND ( entidad LIKE '%".$request->get("search")['value']."%'"
+                          ." OR cargo LIKE '%".$request->get("search")['value']."%')"
                        ]);
 
                      }
@@ -2193,7 +2192,6 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
     }
 });
 
-
 //Funcionalidad CRUD Experiencia jurado
 //Busca el registro experiencia jurado
 $app->get('/search_experiencia_jurado', function () use ($app, $config) {
@@ -2341,9 +2339,9 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                        $texperienciajurado = Experienciajurado::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%')",
                         ]
                       );
 
@@ -2750,7 +2748,6 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
     }
 });
 
-
 //Funcionalidad CRUD Reconocimiento
 //Busca el registro reconocimiento
 $app->get('/search_reconocimiento', function () use ($app, $config) {
@@ -2895,10 +2892,10 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                        //resultado sin filtro
                        $treconocimiento = Propuestajuradoreconocimiento::find(
                          [
-                           " propuesta= ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                           ." OR anio LIKE '%".$request->get("search")['value']."%')"
                         ]
                       );
 
@@ -3306,7 +3303,6 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
         return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
     }
 });
-
 
 //Funcionalidad CRUD Publicaciones
 //Busca el registro publicacion
@@ -3876,7 +3872,6 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
     }
 });
 
-
 //Funcionalidad Descargar archivos
 //descargar archivos
 $app->post('/download_file', function () use ($app, $config) {
@@ -3958,9 +3953,24 @@ $app->get('/postular', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
+
+
                          //valido si la propuesta tiene el estado registrada
                            //9	jurados	Registrado
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
+
+                       $documentos = Propuestajuradodocumento::query()
+                         ->join("Convocatoriasdocumentos","Propuestajuradodocumento.requisito = Convocatoriasdocumentos.id")
+                         ->join("Requisitos"," Convocatoriasdocumentos.requisito = Requisitos.id")
+                          //perfil = 17  perfil de jurado
+                         ->where("Propuestajuradodocumento.propuesta = ".$participante->propuestas->id)
+                         ->andWhere("Convocatoriasdocumentos.etapa = 'Registro'")
+                         ->execute();
+
+                         if( $documentos->count() == 0 ){
+                          
+                           return "error_documento_administrativo";
+                         }
 
                           //10	jurados	Inscrito
                            $participante->propuestas->estado = 10; //inscrita
@@ -4058,14 +4068,13 @@ $app->get('/propuesta', function () use ($app, $config) {
 
                        $array["propuesta"] = $participante->propuestas;
 
-                       $documento = Convocatoriasanexos::findFirst(
-                         [
-                           "tipo_documento = 'Anexo' AND nombre = 'Condiciones de participación'"
-                           ."AND convocatoria = ".$request->get('idc')
-                         ]
-                       );
+                       $participante->tipo_documento = $participante->Tiposdocumentos->nombre;
+                       $participante->sexo = $participante->Sexos->nombre;
+                       $participante->orientacion_sexual = $participante->Orientacionessexuales->nombre;
+                       $participante->identidad_genero = $participante->Identidadesgeneros->nombre;
+                       $participante->grupo_etnico = $participante->Gruposetnicos->nombre;
 
-                       $array["documento"] = $documento;
+                       $array["participante"] = $participante;
 
                        //echo json_encode($participante->propuestas);
                       echo json_encode( $array );
@@ -4089,7 +4098,6 @@ $app->get('/propuesta', function () use ($app, $config) {
 
 }
 );
-
 
 //Funcionalidad CRUD Documentos
 //Busca el registro documento
@@ -4132,10 +4140,14 @@ $app->get('/search_documento', function () use ($app, $config) {
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
 
-                        $tipos =Categoriajurado::find("active=true AND tipo='anexo'");
+                        //$tipos =Categoriajurado::find("active=true AND tipo='anexo'");
+                        $tipos = Convocatoriasdocumentos::find(
+                          " convocatoria=68 and active=true AND etapa='Registro'"
+                        );
+
                         $array["tipo"]=array();
                         foreach ( $tipos as $tipo) {
-                          array_push($array["tipo"], ["id"=> $tipo->id, "nombre"=> $tipo->nombre ] );
+                          array_push($array["tipo"], ["id"=> $tipo->id, "nombre"=> $tipo->Requisitos->nombre ] );
                         }
 
                         $array["documento"] = $documento;
@@ -4212,10 +4224,21 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                        foreach ($documentos as $documento) {
 
-                         $tipo = Categoriajurado::findFirst(
-                           ["active=true AND id=".$documento->categoria_jurado]
-                         );
-                         $documento->categoria_jurado = $tipo->nombre;
+                         if( isset($documento->categoria_jurado) ){
+                           $tipo = Categoriajurado::findFirst(
+                             ["active=true AND id=".$documento->categoria_jurado]
+                           );
+                           $documento->categoria_jurado = $tipo->nombre;
+                         }
+
+                         if( isset($documento->requisito) ){
+
+                           $tipo = Convocatoriasdocumentos::findFirst(
+                             [" active=true AND id =".$documento->requisito]
+                           );
+                          //  echo json_encode($tipo);
+                           $documento->categoria_jurado = $tipo->Requisitos->nombre;
+                         }
 
                          $documento->creado_por = null;
                          $documento->actualizado_por = null;
@@ -4472,7 +4495,6 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                            } else {
 
-
                                 //echo "guardando archivo";
                                 //echo json_encode($_FILES);
                                 //Recorro todos los posibles archivos
@@ -4637,41 +4659,6 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
 
 
 //Funcionalidad Postular
-//Retorna información de id y nombre del area
-$app->get('/postulacion_select_area', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $categorias=  array();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
-
-
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-              //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
-
-
-                $areas=array();
-                foreach ( Areas::find("active=true") as $area) {
-                  array_push($areas, ["id"=> $area->id, "nombre"=> $area->nombre ] );
-                }
-
-            echo json_encode($areas);
-        } else {
-            return "error_token";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
-    }
-}
-);
 
 //Busca los registros de postulaciones
 $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
@@ -4692,8 +4679,9 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         if ($token_actual > 0) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
-             $response = array();
-           if( $user_current["id"]){
+            $response = array();
+
+           if( $user_current["id"] ){
 
                  // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                      $usuario_perfil  = Usuariosperfiles::findFirst(
@@ -4715,11 +4703,13 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
-
                       $postulaciones = $participante->propuestas->juradospostulados;
 
                       //se crea el array con los id de las convocatorias a las cuales aplicó el jurado
                       foreach ($postulaciones as $postulacion) {
+
+                        //si la postulacion está activa se agrega la postulación
+                        if( $postulacion->active){
 
                           if( $postulacion->convocatorias->tiene_categorias && $postulacion->convocatorias->diferentes_categorias ){
 
@@ -4732,31 +4722,47 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                              array_push($id_convocatorias_postuladas,$postulacion->convocatorias->id);
 
                           }
+                        }
 
+                      }//fin foreach
 
+                      $query = Convocatorias::query();
+
+                      //$convocatorias = Convocatorias::query()
+                      $query->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+
+                      if( $request->get('enfoque') ){
+                        $query->andWhere(" Convocatorias.enfoque = ".$request->get('enfoque') );
+                      }
+
+                      if( $request->get('linea') ){
+                        $query->andWhere(" Convocatorias.linea = ".$request->get('linea') );
+                      }
+
+                      if( $request->get('area') ){
+                        $query->andWhere(" Convocatorias.area = ".$request->get('area') );
                       }
 
 
-                      $convocatorias = Convocatorias::query()
-                            ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
-                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
-                            ->andWhere(" Convocatorias.area = ".$request->get('area') )
-                            //palabra clave
-                            ->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
-                            //5	convocatorias	Publicada
-                            ->andWhere(" Convocatorias.estado = 5 ")
-                            ->andWhere(" Convocatorias.active = true  ")
-                            ->andWhere(" Convocatorias.modalidad != 2  ")
-                          //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
-                            ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
-                            ->andWhere(" Convocatoriascronogramas.active = true  ")
-                            //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
-                            ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
-                            ->order(' Convocatorias.id ASC ')
-                            ->limit(  "".$request->get('length'), "".$request->get('start') )
-                            ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
-                            ->execute();
+                      //palabra clave tabla
+                      //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                      //palabra clave formulario
+                      $query->andWhere(" ( lower(Convocatorias.nombre) LIKE '%".strtolower($request->get("pclave"))."%' OR lower(Convocatorias.descripcion) LIKE '%".strtolower( $request->get("pclave") )."%') " )
+                      //5	convocatorias	Publicada
+                      ->andWhere(" Convocatorias.estado = 5 ")
+                      ->andWhere(" Convocatorias.active = true  ")
+                      ->andWhere(" Convocatorias.modalidad != 2  ")
+                    //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                      ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                      ->andWhere(" Convocatoriascronogramas.active = true  ")
+                      //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                      ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                      ->order(' Convocatorias.id ASC ')
+                      ->limit(  "".$request->get('length'), "".$request->get('start') )
+                      ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
 
+                      $convocatorias = $query->execute();
 
                           //  echo json_encode($convocatorias);
 
@@ -4792,8 +4798,6 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                                     ["id=".$convocatoria->enfoque]
                                   );
                                   $convocatoria->enfoque = $enfoque->nombre;
-
-
                                   $convocatoria->creado_por = null;
                                   $convocatoria->actualizado_por = null;
 
@@ -4801,7 +4805,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                                 }
 
                        //resultado sin filtro
-                       $tconvocatorias = Convocatorias::find(
+                       /*$tconvocatorias = Convocatorias::find(
                          [
                            "id NOT IN ({idConvocatoria:array}) " //las postuladas
                            ." AND area = ".$request->get('area')
@@ -4812,32 +4816,46 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                              "idConvocatoria" => $id_convocatorias_postuladas
                            ],
                          ]
-                       );
+                       );*/
 
-                       $tconvocatorias = Convocatorias::query()
-                             ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
-                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
-                             ->andWhere(" Convocatorias.area = ".$request->get('area') )
+
+                      // $tconvocatorias = Convocatorias::query()
+                       $tquery = Convocatorias::query();
+
+                       $tquery->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+
+
+                       if( $request->get('enfoque') ){
+                         $tquery->andWhere(" Convocatorias.enfoque = ".$request->get('enfoque') );
+                       }
+
+                       if( $request->get('linea') ){
+                         $tquery->andWhere(" Convocatorias.linea = ".$request->get('linea') );
+                       }
+
+                      if( $request->get('area') ){
+                        $tquery->andWhere(" Convocatorias.area = ".$request->get('area') );
+                      }
                              //palabra clave
-                             //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
-                             ->andWhere(" Convocatorias.estado = 5 ")
-                             ->andWhere(" Convocatorias.active = true  ")
-                             ->andWhere(" Convocatorias.modalidad != 2  ")
-                           //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
-                             ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
-                             ->andWhere(" Convocatoriascronogramas.active = true  ")
-                             //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
-                             ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
-                             ->order(' Convocatorias.id ASC ')
-                             ->limit(  "".$request->get('length'), "".$request->get('start') )
-                             ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
-                             ->execute();
+                           //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                      $tquery->andWhere(" Convocatorias.estado = 5 ")
+                           ->andWhere(" Convocatorias.active = true  ")
+                           ->andWhere(" Convocatorias.modalidad != 2  ")
+                         //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                           ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                           ->andWhere(" Convocatoriascronogramas.active = true  ")
+                           //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                           ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                           ->order(' Convocatorias.id ASC ')
+                           ->limit(  "".$request->get('length'), "".$request->get('start') )
+                           ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
 
+                      $tconvocatorias = $tquery->execute();
 
                      }
 
             }
-
 
             //creo el array
             $json_data = array(
@@ -4855,7 +4873,6 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
-
       //Para auditoria en versión de pruebas
       echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
@@ -5120,7 +5137,14 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
-                       $postulaciones = $participante->propuestas->juradospostulados;
+                       //$postulaciones = $participante->propuestas->juradospostulados;
+
+                       $postulaciones = Juradospostulados::find(
+                         [
+                           'propuesta ='.$participante->propuestas->id
+                           .' AND active = true '
+                         ]
+                       );
 
                       //  echo json_encode($convocatorias);
 
@@ -5137,7 +5161,6 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                          }else{
                            $convocatoria['nombre']= $postulacion->convocatorias->nombre;
                          }
-
 
                          $area =  Areas::findFirst(
                            ["id=".$postulacion->convocatorias->area]
@@ -5243,7 +5266,6 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                     ]
                   );
 
-
                   if( $usuario_perfil->id != null ){
 
                     $participante = Participantes::query()
@@ -5259,7 +5281,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                       $juradospostulado = Juradospostulados::findFirst($id);
 
                       //9	jurados	Registrado
-                      if($participante->propuestas->estado == 9){
+                      if( $participante->propuestas->estado == 9 ){
                          return "error";
                       }
 
@@ -5267,7 +5289,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
 
                       //Calcula el numero de postulaciones del jurado
                       //echo "cantidad-->".$postulaciones->count();
-                      foreach ($postulaciones as $postulacion) {
+                    /*7  foreach ($postulaciones as $postulacion) {
 
                         //la convocatoria está activa y está publicada
                          if( $postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active){
@@ -5275,20 +5297,21 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                          }
 
                        }
+                       */
 
-                       $nummax = Tablasmaestras::findFirst(
+                  /*     $nummax = Tablasmaestras::findFirst(
                          [
                          " nombre = 'numero_maximo_postulaciones_jurado'"
                          ]
                        );
-
+                       */
                        //9	jurados	Registrado
                     if( $juradospostulado != null and $juradospostulado->estado == 9 ){
 
-                      if($juradospostulado->active==true){
+                      if( $juradospostulado->active == true ){
                           $juradospostulado->active=false;
                           $retorna="No";
-                      }else{
+                      }/*else{
 
                         //Controla el límite de postulaciones
                         //limite tabla maestra
@@ -5299,9 +5322,8 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                         }else {
                          return "error_limite";
                         }
+                      }*/
 
-
-                      }
 
                       $juradospostulado->actualizado_por = $user_current["id"];
                       $juradospostulado->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -5337,7 +5359,37 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
     }
 });
 
+//Funcionalidad Descargar archivos
+//descargar archivos
+$app->get('/download_condiciones', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+      //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if ($token_actual > 0) {
+
+           $condiciones= Tablasmaestras::findFirst("active=true AND nombre='Condiciones de participación jurados'");
+
+            echo  json_encode(["archivo"=>$condiciones->valor]) ;
+
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+      //  echo "error_metodo";
+
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
 
 
 try {

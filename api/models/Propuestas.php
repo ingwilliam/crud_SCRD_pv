@@ -122,13 +122,26 @@ class Propuestas extends Model
         );
 
 
-
         //hasMany	Defines a 1-n relationship
         $this->hasMany(
             'id',
             'Evaluacion',
             'propuesta'
         );
+        
+        //hasMany 	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Evaluacionpropuestas',
+            'propuesta'
+            );
+        
+        //hasMany 	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Propuestasparametros',
+            'propuesta'
+            );
 
     }
 
