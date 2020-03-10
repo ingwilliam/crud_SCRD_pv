@@ -534,7 +534,7 @@ $app->get('/all', function () use ($app) {
         $where_convocatorias .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
         $where_convocatorias .= " INNER JOIN Estados AS es ON es.id=c.estado";
         $where_convocatorias .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";
-        $where_convocatorias .= " WHERE es.id IN (5, 6) AND c.active IN (true) ";
+        $where_convocatorias .= " WHERE c.modalidad <> 2 AND es.id IN (5, 6) AND c.active IN (true) ";
 
 
         //Condiciones para la consulta del select del buscador principal
