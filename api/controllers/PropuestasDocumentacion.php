@@ -350,6 +350,12 @@ $app->get('/buscar_documentacion_subsanacion', function () use ($app, $config, $
                         $documentos_administrativos=array();
                         foreach ($verificaciones_1 as $documento) {                            
                             $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["id"] = $documento->getConvocatoriasdocumentos()->id;
+                            $tipo_requisito=$documento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito;
+                            if($tipo_requisito=="Tecnicos")
+                            {
+                                $tipo_requisito="Técnicos";
+                            }
+                            $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["tipo_requisito"] = $tipo_requisito;
                             $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["requisito"] = $documento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["descripcion"] = "<b>".$documento->observacion."</b>";
                             $documentos_administrativos[$documento->getConvocatoriasdocumentos()->id]["archivos_permitidos"] = json_decode($documento->getConvocatoriasdocumentos()->archivos_permitidos);
@@ -592,7 +598,7 @@ $app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $lo
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
                                         LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE AND pd.cargue_subsanacion = TRUE 
                                         LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE AND pl.cargue_subsanacion = TRUE 
-                                        WHERE r.tipo_requisito='Administrativos' AND cd.obligatorio=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
+                                        WHERE r.tipo_requisito IN ('Administrativos','Tecnicos') AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
                     
                     $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
 

@@ -206,7 +206,7 @@ $app->post('/new', function () use ($app, $config) {
                 if ($convocatoriaanexo->save($post) === false) {
                     echo "error";
                 } else {
-                    echo $convocatoriaanexo->id;
+                    //echo $convocatoriaanexo->id;
                     
                     //Recorro todos los posibles archivos
                     foreach($_FILES as $clave => $valor){        

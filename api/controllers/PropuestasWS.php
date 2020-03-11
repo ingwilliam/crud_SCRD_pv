@@ -1192,7 +1192,8 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
                     
                     $array_administrativos = array();                    
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
-                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == true) {
+                        //if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == true) {
+                        if ($propuestadocumento->cargue_subsanacion == true) {
                             $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
                         }                        
@@ -1200,7 +1201,8 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
 
                     $array_administrativos_link = array();                    
                     foreach ($propuesta->Propuestaslinks as $propuestalink) {
-                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == true) {
+                        //if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == true) {
+                        if ($propuestalink->cargue_subsanacion == true) {
                             $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }                        
@@ -1448,7 +1450,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
 </table>
 <h3>Información del participante</h3>
 ' . $tabla_participante . '
-<h3>Documentación administrativa cargada en la subsanación</h3>
+<h3>Documentación cargada en la subsanación</h3>
 <table>    
     <tr>
         <td align="center" bgcolor="#BDBDBD">N°</td>
