@@ -4733,7 +4733,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                       }
 
                       if( $request->get('linea') ){
-                        $query->andWhere(" Convocatorias.linea = ".$request->get('linea') );
+                        $query->andWhere(" Convocatorias.linea_estrategica = ".$request->get('linea') );
                       }
 
                       if( $request->get('area') ){
@@ -4757,6 +4757,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                       ->order(' Convocatorias.id ASC ')
                       ->limit(  "".$request->get('length'), "".$request->get('start') )
                       ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
+
 
                       $convocatorias = $query->execute();
 
@@ -4827,7 +4828,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                        }
 
                        if( $request->get('linea') ){
-                         $tquery->andWhere(" Convocatorias.linea = ".$request->get('linea') );
+                         $tquery->andWhere(" Convocatorias.linea_estrategica = ".$request->get('linea') );
                        }
 
                       if( $request->get('area') ){
