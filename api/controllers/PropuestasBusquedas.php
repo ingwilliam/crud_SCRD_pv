@@ -372,8 +372,25 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                 
                 if($consultar==true)
                 {
+                    //Consulto el usuario actual
+                    $user_current = json_decode($token_actual->user_current, true);
+                    $user_current = Usuarios::findFirst($user_current["id"]);            
+                    //Creo array de entidades que puede acceder el usuario
+                    $array_usuarios_entidades="";
+                    foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
+                        $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
+                    }
+                    $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
                     
-                    $where .= " WHERE p.active=true ";
+                    //Creo array de areas que puede acceder el usuario
+                    $array_usuarios_areas="";
+                    foreach ($user_current->getUsuariosareas() as $usuario_area) {
+                        $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
+                    }
+                    $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
+                    
+                    
+                    $where .= " WHERE p.active=true AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
                     
                     
                     if($params["convocatoria"]!="")
@@ -409,7 +426,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
                             . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
@@ -433,7 +450,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
                             . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
@@ -598,22 +615,22 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 foreach ($consulta_documentos_administrativos as $documento) {
                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                         if ($documento->etapa == "Registro") {
-                            $documentos_administrativos[$documento->id]["id"] = $documento->id;
-                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                            $documentos_administrativos[$documento->id]["descripcion"] = $documento->descripcion;
-                            $documentos_administrativos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                            $documentos_administrativos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                            $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+                            $documentos_administrativos[$documento->orden]["id"] = $documento->id;
+                            $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                            $documentos_administrativos[$documento->orden]["descripcion"] = $documento->descripcion;
+                            $documentos_administrativos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                            $documentos_administrativos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                            $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
                         }
                     }
 
                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                        $documentos_tecnicos[$documento->id]["id"] = $documento->id;
-                        $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                        $documentos_tecnicos[$documento->id]["descripcion"] = $documento->descripcion;
-                        $documentos_tecnicos[$documento->id]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                        $documentos_tecnicos[$documento->id]["tamano_permitido"] = $documento->tamano_permitido;
-                        $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
+                        $documentos_tecnicos[$documento->orden]["id"] = $documento->id;
+                        $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                        $documentos_tecnicos[$documento->orden]["descripcion"] = $documento->descripcion;
+                        $documentos_tecnicos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                        $documentos_tecnicos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                        $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
                     }
                 }
 
