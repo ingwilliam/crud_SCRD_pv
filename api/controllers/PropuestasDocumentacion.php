@@ -168,12 +168,15 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 foreach ($consulta_documentos_administrativos as $documento) {
                                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                         if ($documento->etapa == "Registro") {
-                                            $documentos_administrativos[$documento->orden]["id"] = $documento->id;
-                                            $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
-                                            $documentos_administrativos[$documento->orden]["descripcion"] = $documento->descripcion;
-                                            $documentos_administrativos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
-                                            $documentos_administrativos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
-                                            $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
+                                            if($documento->getRequisitos()->perfiles==$propuesta->getParticipantes()->getUsuariosperfiles()->perfil)
+                                            {                                            
+                                                $documentos_administrativos[$documento->orden]["id"] = $documento->id;
+                                                $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                                                $documentos_administrativos[$documento->orden]["descripcion"] = $documento->descripcion;
+                                                $documentos_administrativos[$documento->orden]["archivos_permitidos"] = json_decode($documento->archivos_permitidos);
+                                                $documentos_administrativos[$documento->orden]["tamano_permitido"] = $documento->tamano_permitido;
+                                                $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
+                                            }
                                         }
                                     }
 
@@ -453,18 +456,43 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                         $id = $convocatoria->getConvocatorias()->id;                    
                     }
                     
-                    //Consulto los requisitos no guardados
-                    $sql_requisitos = "SELECT 
+                    //Consulto los requisitos administrativos no guardados
+                    $sql_requisitos_administrativos = "SELECT 
                                                 cd.id,
                                                 r.nombre	
                                         FROM Convocatoriasdocumentos AS cd
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
                                         LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE 
                                         LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE
-                                        WHERE cd.obligatorio=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
+                                        WHERE r.tipo_requisito='Administrativos' AND r.perfiles='".$propuesta->getParticipantes()->getUsuariosperfiles()->perfil."' AND cd.obligatorio=TRUE AND cd.active=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
 
-                    $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
+                    $requisitos_administrativos = $app->modelsManager->executeQuery($sql_requisitos_administrativos);
+                    
+                    $array_retorno=array();
+                    foreach ($requisitos_administrativos as $requisito) {
+                        
+                        $array_retorno[] = array('id' => $requisito->id, 'nombre' => $requisito->nombre);
+                                                
+                    }
+                    
+                    //Consulto los requisitos tecnicos no guardados
+                    $sql_requisitos_tecnicos = "SELECT 
+                                                cd.id,
+                                                r.nombre	
+                                        FROM Convocatoriasdocumentos AS cd
+                                        INNER JOIN Requisitos AS r ON r.id=cd.requisito
+                                        LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE 
+                                        LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE
+                                        WHERE r.tipo_requisito='Tecnicos'  AND cd.obligatorio=TRUE AND cd.active=TRUE AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
 
+                    $requisitos_tecnicos = $app->modelsManager->executeQuery($sql_requisitos_tecnicos);
+                                        
+                    foreach ($requisitos_tecnicos as $requisito) {
+                        
+                        $array_retorno[] = array('id' => $requisito->id, 'nombre' => $requisito->nombre);
+                                                
+                    }
+                    
                     $id_perfil = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id;
                     
                     if( $id_perfil==7 || $id_perfil==8)
@@ -474,20 +502,16 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                         $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
                         
                         if( count($participantes) <= 0 )
-                        {
-                            $data = json_decode(json_encode($requisitos), true);
-                    
+                        {                                                
                             if( $id_perfil==7)
                             {
-                                $new_json = array(array('id' => "Junta", 'nombre' => "Junta"));
+                                $array_retorno[] = array('id' => "Junta", 'nombre' => "Junta");                                                                
                             }
                             
                             if($id_perfil==8)
                             {
-                                $new_json = array(array('id' => "Integrante", 'nombre' => "Integrante"));
-                            }
-                            
-                            $requisitos = array_merge($data, $new_json);
+                                $array_retorno[] = array('id' => "Integrante", 'nombre' => "Integrante");                                                                                                                                
+                            }                                                        
                         }
                         
                         //Se valida que al menos tenga un representante de la junta o agrupación
@@ -495,19 +519,15 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                         
                         if( count($participantes) <= 0 )
                         {
-                            $data = json_decode(json_encode($requisitos), true);
-                    
                             if( $id_perfil==7)
                             {
-                                $new_json = array(array('id' => "RJunta", 'nombre' => "RJunta"));
+                                $array_retorno[] = array('id' => "RJunta", 'nombre' => "RJunta");                                                                                                                                
                             }
                             
                             if($id_perfil==8)
                             {
-                                $new_json = array(array('id' => "RIntegrante", 'nombre' => "RIntegrante"));
-                            }
-                            
-                            $requisitos = array_merge($data, $new_json);
+                                $array_retorno[] = array('id' => "RIntegrante", 'nombre' => "RIntegrante");                                                                                                                                                                
+                            }                                                        
                         }
                         
                     }
@@ -515,9 +535,9 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
-
-                    //Retorno el array
-                    echo json_encode($requisitos);
+                    
+                    echo json_encode($array_retorno);
+                    
                 } else {
                     //Registro la accion en el log de convocatorias           
                     $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
