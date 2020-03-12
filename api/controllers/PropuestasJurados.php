@@ -9,6 +9,8 @@ use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Mvc\Model\Query;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -42,6 +44,16 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
+
 
 $app = new Micro($di);
 
@@ -307,12 +319,17 @@ $app->get('/search', function () use ($app, $config) {
 });
 
 // Edito registro participante
-$app->post('/edit_participante', function () use ($app, $config) {
+$app->post('/edit_participante', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar el participante"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -355,33 +372,62 @@ $app->post('/edit_participante', function () use ($app, $config) {
                       $participante->propuestas->resumen =$request->getPost('resumen') ;
 
                     if ($participante->save($post) === false) {
-                        echo "error";
 
                         //Para auditoria en versión de pruebas
-                        foreach ($participante->getMessages() as $message) {
+                        /*foreach ($participante->getMessages() as $message) {
                              echo $message;
                            }
+                           */
+
+                         $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar el participante como jurado"',
+                                        ['user' => "", 'token' => $request->get('token')]
+                                      );
+                         $logger->close();
+
+                         echo "error";
 
                     }
                         echo $participante->id;
                   }else{
+                    $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado para modificar el participante como jurado"',
+                                   ['user' => "", 'token' => $request->get('token')]
+                                 );
+                    $logger->close();
+
                     echo "deshabilitado";
                   }
 
                 }
 
             } else {
-                echo "acceso_denegado";
+
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
+              echo "acceso_denegado";
             }
         } else {
-            echo "error_token";
+
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
+          echo "error_token";
         }
     } catch (Exception $ex) {
 
-        echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      //echo "error_metodo" . $ex->getMessage();
 
-        //Para auditoria en versión de pruebas
-        //echo "error_metodo" . $ex->getMessage();
+      $logger->error('"token":"{token}","user":"{user}","message":"Error método' . $ex->getMessage() . '"',
+                    ['user' => "", 'token' => $request->get('token')]
+                  );
+      $logger->close();
+
+      echo "error_metodo";
 
     }
 }
@@ -620,12 +666,18 @@ $app->get('/select_nucleobasico', function () use ($app) {
 );
 
 // Crea el registro de educacion formal
-$app->post('/new_educacion_formal', function () use ($app, $config) {
+$app->post('/new_educacion_formal', function () use ($app, $config,$logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar educación formal"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -684,11 +736,19 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                         //echo "educacionformal---->>".json_encode($educacionformal);
                         //  echo "post---->>".json_encode($post);
                          if ($educacionformal->save($post) === false) {
-                             echo "error";
+
                              //Para auditoria en versión de pruebas
-                             foreach ($educacionformal->getMessages() as $message) {
+                             /*foreach ($educacionformal->getMessages() as $message) {
                                   echo $message;
-                                }
+                                }*/
+
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                           ['user' => $user_current, 'token' => $request->get('token')]
+                                         );
+                            $logger->close();
+
+                            echo "error";
+
 
                          } else {
 
@@ -739,20 +799,36 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                                //echo "path".$filepath;
                                if(strpos($return, "Error") !== FALSE){
                                    //echo "    ".json_encode($return);
+                                   $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. Error alfresco '.json_encode($return).'"',
+                                                  ['user' => $user_current, 'token' => $request->get('token')]
+                                                );
+                                   $logger->close();
                                    echo "error_creo_alfresco";
                                }else{
 
                                    $educacionformal->file = $return;
                                    if ($educacionformal->save() === false) {
-                                       echo "error";
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($educacionformal->getMessages() as $message) {
+                                    /*  foreach ($educacionformal->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+
+                                     $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                                    ['user' => $user_current, 'token' => $request->get('token')]
+                                                  );
+                                     $logger->close();
+
+                                        echo "error";
                                    }
 
                                }
                              }else{
+                               $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                              ['user' => $user_current, 'token' => $request->get('token')]
+                                            );
+                               $logger->close();
+                              // echo "error_archivo
                                //echo "error".$valor['error'];
                              }
 
@@ -763,6 +839,11 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                          }
 
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -771,21 +852,38 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                        }
 
             } else {
+
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+      //  return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+          echo "error_metodo";
     }
 }
 );
 
 // Edita el registro de educacion formal
-$app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 
   try {
 
@@ -794,6 +892,12 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar educación formal"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //echo "put-->".json_encode($request->getPost());
 
@@ -818,7 +922,6 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $post = $app->request->getPost();
-
                 $user_current = json_decode($token_actual->user_current, true);
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
@@ -842,23 +945,36 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                           //9	jurados	Registrado
+                        //9	jurados	Registrado
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $educacionformal = Educacionformal::findFirst($id);
                            $educacionformal->actualizado_por = $user_current["id"];
                            $educacionformal->fecha_actualizacion = date("Y-m-d H:i:s");
+                           $educacionformal->nivel_educacion = $request->getPost('nivel_educacion');
+                           $educacionformal->titulo = $request->getPost('titulo');
+                           $educacionformal->area_conocimiento = $request->getPost('area_conocimiento');
+                           $educacionformal->nucleo_basico = $request->getPost('nucleo_basico');
+                           $educacionformal->institucion = $request->getPost('institucion');
+                           $educacionformal->ciudad = $request->getPost('ciudad');
+                           $educacionformal->fecha_graduacion = $request->getPost('fecha_graduacion');
+                           $educacionformal->graduado = $request->getPost('graduado');
 
-                        //  echo "educacionformal---->>".json_encode($educacionformal);
-                            //echo "post---->>".json_encode($post);
-                           if ($educacionformal->save($post) === false) {
 
-                             //  return json_encode($user_current);
-                             echo "error";
+                           if ($educacionformal->save() === false) {
+
                              //Para auditoria en versión de pruebas
-                             foreach ($educacionformal->getMessages() as $message) {
+                             /*foreach ($educacionformal->getMessages() as $message) {
                                echo $message;
-                             }
+                             }*/
+
+                             $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                            ['user' => $user_current, 'token' => $request->get('token')]
+                                          );
+                             $logger->close();
+
+                             echo "error";
+
 
                            } else {
 
@@ -906,29 +1022,51 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
 
                                  if(strpos($return, "Error") !== FALSE){
                                       //echo "    ".json_encode($return);
+                                      $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. Error alfresco '.json_encode($return).'"',
+                                                     ['user' => $user_current, 'token' => $request->get('token')]
+                                                   );
+                                      $logger->close();
                                      echo "error_creo_alfresco";
                                  }else{
 
                                      $educacionformal->file = $return;
                                      if ($educacionformal->save() === false) {
-                                         echo "error";
+
                                         //Para auditoria en versión de pruebas
-                                        foreach ($educacionformal->getMessages() as $message) {
+                                      /*  foreach ($educacionformal->getMessages() as $message) {
                                              echo $message;
                                            }
+                                           */
+
+                                           $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                                          ['user' => $user_current, 'token' => $request->get('token')]
+                                                        );
+                                           $logger->close();
+
+                                           echo "error";
                                      }
 
                                  }
                                }else{
-                                 //echo "error".$valor['error'];
+                                 $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                                ['user' => $user_current, 'token' => $request->get('token')]
+                                              );
+                                 $logger->close();
+                                // echo "error_archivo ".$valor['error'];
 
                                }
 
                              }
 
-                               return $educacionformal->id;
-                           }
+                               return (String)$educacionformal->id;
+                           }//fin else
+
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+                         
                          return "deshabilitado";
                        }
 
@@ -937,15 +1075,33 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
-        //echo "error_metodo".$ex->getMessage();
+      //  echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        echo "error_metodo";
+
     }
 
 }
@@ -4845,7 +5001,6 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                            //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
                            ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
                            ->order(' Convocatorias.id ASC ')
-                           ->limit(  "".$request->get('length'), "".$request->get('start') )
                            ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
 
                       $tconvocatorias = $tquery->execute();
