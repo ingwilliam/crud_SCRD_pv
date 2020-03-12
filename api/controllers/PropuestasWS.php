@@ -92,12 +92,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $array_administrativos = array();
                     $array_tecnicos = array();
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
-                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == false) {
+                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == false AND $propuestadocumento->active == true) {
                             $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
                         }
 
-                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
+                        if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos" AND $propuestadocumento->active == true) {
                             $array_tecnicos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_tecnicos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
                         }
@@ -106,12 +106,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $array_administrativos_link = array();
                     $array_tecnicos_link = array();
                     foreach ($propuesta->Propuestaslinks as $propuestalink) {
-                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == false) {
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == false  AND $propuestalink->active == true) {
                             $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }
 
-                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos") {
+                        if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Tecnicos" AND $propuestalink->active == true) {
                             $array_tecnicos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_tecnicos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }

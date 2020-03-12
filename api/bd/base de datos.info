@@ -422,3 +422,12 @@ UPDATE public.requisitos SET active=false WHERE id IN (333,184,354,382,383,231,3
 ALTER TABLE propuestas ADD habilitar boolean DEFAULT FALSE;
 ALTER TABLE propuestas ADD habilitar_fecha_inicio timestamp without time zone;
 ALTER TABLE propuestas ADD habilitar_fecha_fin timestamp without time zone;
+
+//marzo 11 del 2020
+ALTER TABLE requisitos ADD COLUMN perfiles text;
+
+
+SELECT * FROM requisitos WHERE tipo_requisito='Administrativos' AND active= TRUE AND ( programas LIKE '%2%' OR programas LIKE '%3%');
+UPDATE public.requisitos SET perfiles='7' WHERE id IN (1052,1053,1054,1055,1056,1057,1059,1060,1061,1062,1064,1063,1001,1007,1003,1010,999,1002,946,1058,941,961,1005,1008,1006,1004,1009,1000,998,973);
+
+
