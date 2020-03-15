@@ -110,6 +110,14 @@ $app->post('/menu', function () use ($app,$config) {
 
             $evaluar_propuestas = $app->modelsManager->executeQuery($phql);
 
+            //Cesar Britto, 2020-03-11
+            //Consultar todos los permiso del menu Hoja de vida
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                . " WHERE m.nombre='Hoja de vida' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $hoja_de_vida = $app->modelsManager->executeQuery($phql);
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -595,6 +603,7 @@ $app->post('/menu', function () use ($app,$config) {
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
+
                         <li>
                             <a href="#"><i class="fa fa-users fa-fw"></i> Convocatorias<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
@@ -677,13 +686,14 @@ $app->post('/menu', function () use ($app,$config) {
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
+
                         <li>
                             <a href="#"><i class="fa  fa-file-text-o fa-fw"></i> Propuestas<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="../propuestas/mis_propuestas.html">Mis propuestas</a>
 
-                                      <!--Cesar Britto, 2020-01-17-->
+                        <!--Cesar Britto, 2020-01-17-->
                         <?php
 
                         if( count($evaluar_propuestas) > 0 )
@@ -717,13 +727,14 @@ $app->post('/menu', function () use ($app,$config) {
                         if( count($permisos_jurados) > 0 )
                         {
 
-                        $style_update="display: none";
-                        $style_new="";
-                        if($request->getPost('id')!="")
-                        {
-                            $style_update="";
-                            $style_new="display: none";
-                        }
+                            $style_update="display: none";
+                            $style_new="";
+
+                            if($request->getPost('id')!="")
+                            {
+                                $style_update="";
+                                $style_new="display: none";
+                            }
                         ?>
                         <li>
                             <a href="#"><i class="fa fa-users fa-fw"></i> Jurados<span class="fa arrow"></span></a>
@@ -746,6 +757,38 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
+
+                        <!--Cesar Britto-->
+                        <!--Hoja de vida-->
+                        <?php
+                        if( count($hoja_de_vida) > 0 )
+                        {
+
+                            $style_update="display: none";
+                            $style_new="";
+                            /*if($request->getPost('id')!="")
+                            {
+                                $style_update="";
+                                $style_new="display: none";
+                            }*/
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-folder-o fa-fw"></i>Hoja de vida<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../propuestasjurados/listar_hojas.html">Mis hojas de vida</a>
+                                </li>
+                                <!--li>
+                                    <a style="<?php echo $style_new;?>" href="../propuestasjurados/postulaciones.html">Mis postulaciones</a>
+                                </li-->
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        <!--FIN Mis hojas de vida-->
+
 
                     </ul>
                 </div>
