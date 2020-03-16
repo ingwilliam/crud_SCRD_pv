@@ -66,8 +66,8 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión"', ['user' => $this->request->getPost('username'), 'token' => '']);
 
-        //Consulto el usuario por username del parametro get
-        $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
+        //Consulto el usuario por username del parametro get        
+        $usuario_validar = Usuarios::findFirst("UPPER(username) = '" . strtoupper($this->request->getPost('username')) . "'");
 
         //Valido si existe
         if (isset($usuario_validar->id)) {
@@ -184,8 +184,8 @@ $app->post('/recordar_usuario', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a recordar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
         
         //Consulto el usuario por username del parametro get
-        $usuario_validar = Usuarios::findFirst("username = '" . $this->request->getPost('username') . "'");
-
+        $usuario_validar = Usuarios::findFirst("UPPER(username) = '" . strtoupper($this->request->getPost('username')) . "'");
+        
         //Valido si existe
         if (isset($usuario_validar->id)) {
             
@@ -300,7 +300,7 @@ $app->post('/crear_usuario', function () use ($app, $config) {
             $post = $app->request->getPost();
 
             //Valido si existe el correo electronico
-            $usuario_validar = Usuarios::findFirst("username = '" . $post["correo_electronico"] . "'");
+            $usuario_validar = Usuarios::findFirst("UPPER(username) = '" . strtoupper($post["correo_electronico"]) . "'");
             if (isset($usuario_validar->id)) {
                 echo "error_username";
             } else {
