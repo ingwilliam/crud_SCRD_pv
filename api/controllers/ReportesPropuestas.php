@@ -220,7 +220,7 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
                 //Genero reporte propuestas por estado
                 $sql_propuestas_estado = "
                             SELECT 
-                                    p.estado,count(p.id) AS total 
+                                e.nombre,count(p.id) AS total 
                             FROM Propuestas AS p 
                             LEFT JOIN Estados AS e ON e.id=p.estado
                             WHERE p.convocatoria=".$request->get('convocatoria')."
@@ -228,14 +228,53 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
 
                 $propuestas_estado = $app->modelsManager->executeQuery($sql_propuestas_estado);
                 
-                $array_retorno=array();
-                $array_propuestas_estado=array("7"=>0,"8"=>0,"20"=>0,"21"=>0,"22"=>0,"23"=>0,"24"=>0,"31"=>0);
+                $array_retorno=array();                
                 foreach ($propuestas_estado as $propuestas) {
-                    $array_propuestas_estado[$propuestas->estado]=$propuestas->total;
+                    $array_propuestas_estado[]=array("device"=>$propuestas->nombre,"geekbench"=>$propuestas->total);
                 }
+                
+                //Genero reporte propuestas por estado
+                $sql_propuestas_participante = "
+                            SELECT 
+                            per.id,
+                            pro.creado_por,
+                            count(per.id) 
+                            FROM Perfiles AS per
+                            INNER JOIN Usuariosperfiles AS up ON up.perfil=per.id
+                            INNER JOIN Participantes AS par ON par.usuario_perfil=up.id
+                            INNER JOIN Propuestas AS pro ON pro.participante=par.id
+                            WHERE per.id IN (6,7,8) AND pro.convocatoria=".$request->get('convocatoria')." AND par.tipo='Participante'
+                            GROUP BY 1,2";
+                
+                $propuestas_participantes = $app->modelsManager->executeQuery($sql_propuestas_participante);
+                
+                $array_participantes=array();
+                $pn_6=0;
+                $pj_7=0;
+                $agr_8=0;
+                foreach ($propuestas_participantes as $propuestas) {
+                    if($propuestas->id==6)
+                    {
+                        $pn_6++;
+                    }
+                    if($propuestas->id==7)
+                    {
+                        $pj_7++;
+                    }
+                    if($propuestas->id==8)
+                    {
+                        $agr_8++;
+                    }
+                }
+                
+                $array_propuestas_participantes[]=array("device"=>"Persona\nNatural","geekbench"=>$pn_6);
+                $array_propuestas_participantes[]=array("device"=>"Persona\nJurídica","geekbench"=>$pj_7);
+                $array_propuestas_participantes[]=array("device"=>"Agrupación","geekbench"=>$agr_8);
+                
+                //Seteo los varoles a retornar
                 $array_retorno["reporte_propuestas_estados"]=$array_propuestas_estado;
-                
-                
+                $array_retorno["reporte_propuestas_participantes"]=$array_propuestas_participantes;
+                $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                 echo json_encode($array_retorno);
                                                                         
             } else {

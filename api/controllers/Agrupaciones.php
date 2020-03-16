@@ -140,7 +140,11 @@ $app->post('/new', function () use ($app, $config, $logger) {
                 $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
 
                 //Consulto si existe partipantes que tengan el mismo nombre que sean diferentes a su perfil de agrupacion
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (".$id_usuarios_perfiles.") AND primer_nombre='".$post["primer_nombre"]."' ");
+                $conditions = ['primer_nombre' => $post["primer_nombre"]];
+                $participante_verificado = Participantes::find(([
+                            'conditions' => "usuario_perfil NOT IN (".$id_usuarios_perfiles.") AND primer_nombre=:primer_nombre:",
+                            'bind' => $conditions,
+                ])); 
                 
                 if(count($participante_verificado)>0)
                 {
