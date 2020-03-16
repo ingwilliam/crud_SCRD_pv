@@ -4956,7 +4956,6 @@ $app->get('/postular', function () use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
 
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -4986,8 +4985,6 @@ $app->get('/postular', function () use ($app, $config) {
                       ]
                     );
 
-
-
                      if( $usuario_perfil->id != null ){
 
                        $participante = Participantes::query()
@@ -5000,47 +4997,48 @@ $app->get('/postular', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
-
-
                          //valido si la propuesta tiene el estado registrada
                            //9	jurados	Registrado
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
-                       $documentos = Propuestajuradodocumento::query()
-                         ->join("Convocatoriasdocumentos","Propuestajuradodocumento.requisito = Convocatoriasdocumentos.id")
-                         ->join("Requisitos"," Convocatoriasdocumentos.requisito = Requisitos.id")
-                          //perfil = 17  perfil de jurado
-                         ->where("Propuestajuradodocumento.propuesta = ".$participante->propuestas->id)
-                         ->andWhere("Convocatoriasdocumentos.etapa = 'Registro'")
-                          ->andWhere("Propuestajuradodocumento.active = true")
-                         ->execute();
+                         if(  !$participante->propuestas->modalidad_participa ||  $participante->propuestas->modalidad_participa==''){
+                            return "error_modalidad";
+                         }
+
+                         $documentos = Propuestajuradodocumento::query()
+                           ->join("Convocatoriasdocumentos","Propuestajuradodocumento.requisito = Convocatoriasdocumentos.id")
+                           ->join("Requisitos"," Convocatoriasdocumentos.requisito = Requisitos.id")
+                            //perfil = 17  perfil de jurado
+                           ->where("Propuestajuradodocumento.propuesta = ".$participante->propuestas->id)
+                           ->andWhere("Convocatoriasdocumentos.etapa = 'Registro'")
+                            ->andWhere("Propuestajuradodocumento.active = true")
+                           ->execute();
 
                          if( $documentos->count() == 0 ){
 
                            return "error_documento_administrativo";
                          }
 
-                          //10	jurados	Inscrito
-                           $participante->propuestas->estado = 10; //inscrita
-                           $participante->propuestas->actualizado_por = $user_current["id"];
-                           $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
+                         //10	jurados	Inscrito
+                         $participante->propuestas->estado = 10; //inscrita
+                         $participante->propuestas->actualizado_por = $user_current["id"];
+                         $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
 
                          //  echo "educacionformal---->>".json_encode($educacionformal);
                             //echo "post---->>".json_encode($post);
-                           if ($participante->propuestas->save() === false) {
-                                    //  return json_encode($user_current);
+                         if ($participante->propuestas->save() === false) {
+                                  //  return json_encode($user_current);
+                             //Para auditoria en versión de pruebas
+                             foreach ($participante->propuestas->getMessages() as $message) {
+                                  echo $message;
+                                }
 
-                               //Para auditoria en versión de pruebas
-                               foreach ($participante->propuestas->getMessages() as $message) {
-                                    echo $message;
-                                  }
+                         } else {
+                             return (String)$participante->propuestas->id;
+                         }
 
-                           } else {
-
-                               echo $participante->propuestas->id;
-                           }
                        }else{
-                         return "deshabilitado";
+                          return "deshabilitado";
                        }
 
                      } else {
@@ -6576,6 +6574,117 @@ $app->get('/select_categoria', function () use ($app, $config) {
 
       //Para auditoria en versión de pruebas
       echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+//Lista las hojas de vida (propuestas) del jurado
+$app->get('/listar', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
+            $array = array();
+
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participantes = Participantes::query()
+                        //->columns("Participantes.id")
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        //->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute();
+                        //->getFirst();
+
+                      //  return json_encode($participantes);
+
+                      foreach ($participantes as $value){
+                          array_push($array, $value->id );
+                      }
+
+
+                       $propuestas = Propuestas::find(
+                         [
+                           " participante IN ({participante:array})  ",
+                           "order" => 'id ASC',
+                           'bind' => [
+                                 'participante' => $array
+                             ],
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+
+                       foreach ($propuestas as $propuesta){
+
+                           array_push($response,[
+                             "id"=>$propuesta->id,
+                             "codigo"=>$propuesta->codigo,
+                             "id_convocatoria" => $propuesta->convocatoria,
+                             "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
+                             "modalidad_participa" => $propuesta->modalidad_participa,
+                             "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
+
+                             ] );
+                       }
+
+
+                       //resultado sin filtro
+                       $tpropuestas = Propuestas::find(
+                         [
+                           " participante IN ({participante:array})  ",
+                           'bind' => [
+                                 'participante' => $array
+                             ],
+                         ]
+                       );
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tpropuestas ->count()),
+                "recordsFiltered" => intval($tpropuestas->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 }
 );

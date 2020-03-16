@@ -272,6 +272,37 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+/**
+*Cesar Britto, 2020-03-11
+*Retorna información de id y nombre del nivel educativo
+**/
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $areas=array();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if ($token_actual != false ) {
+
+                foreach ( Niveleseducativos::find("active=true") as $nivel_educativo) {
+                  array_push($niveles, ["id"=> $nivel_educativo->id, "nombre"=> $nivel_educativo->nombre ] );
+                }
+
+            echo json_encode($niveles);
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+        return "error_metodo".$ex->getMessage();
+    }
+}
+);
 
 try {
     // Gestionar la consulta
