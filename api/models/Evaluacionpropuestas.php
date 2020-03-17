@@ -1,7 +1,7 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Evaluacion extends Model
+class Evaluacionpropuestas extends Model
 {
     public $id;
 
@@ -13,12 +13,13 @@ class Evaluacion extends Model
             'Propuestas',
             'id'
         );
+             
+        //hasMany 	Defines a 1-n relationship
+        $this->hasMany(
+            'id',
+            'Evaluacioncriterios',
+            'evaluacionpropuesta'
+            );
 
-        //Se define la relación con  n-1 con Convocatoriasrondascriterios
-        $this->belongsTo(
-            'criterio',
-            'Convocatoriasrondascriterios',
-            'id'
-        );
     }
 }

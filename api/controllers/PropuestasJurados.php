@@ -4398,9 +4398,9 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                        $tpublicacion = Propuestajuradopublicacion::find(
                          [
                          " propuesta= ".$participante->propuestas->id
-                         ." AND titulo LIKE '%".$request->get("search")['value']."%'"
+                         ." AND (titulo LIKE '%".$request->get("search")['value']."%'"
                          ." OR tema LIKE '%".$request->get("search")['value']."%'"
-                         ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                         ." OR anio LIKE '%".$request->get("search")['value']."%')"
                           ]
                         );
 

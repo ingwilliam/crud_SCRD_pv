@@ -479,6 +479,7 @@ $app->put('/notificar', function () use ($app, $config) {
                     } else {
                         echo "error_email";
                         $this->db->rollback();
+                         echo 'Mailer Error: ' . $mail->ErrorInfo;
                     }
                 }
 
@@ -518,7 +519,7 @@ $app->get('/notificado_key_notificacion', function () use ($app) {
           ]
         );
 
-        
+
         if ($notificacion && $notificacion->active) {
 
             $participante = $notificacion->Juradospostulados->Propuestas->Participantes;
