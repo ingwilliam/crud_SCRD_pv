@@ -673,6 +673,8 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
 
               $participante->tipo_documento = Tiposdocumentos::findFirst($participante->tipo_documento)->descripcion;
               $participante->sexo = Sexos::findFirst($participante->sexo)->nombre;
+              $participante->orientacion_sexual = Orientacionessexuales::findFirst($participante->orientacion_sexual)->nombre;
+              $participante->identidad_genero = Identidadesgeneros::findFirst($participante->identidad_genero)->nombre;
               $participante->ciudad_residencia = Ciudades::findFirst($participante->ciudad_residencia)->nombre;
               $participante->fecha_creacion = null;
               $participante->participante_padre = null;
@@ -694,7 +696,7 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
 
 
         } else {
-            echo "error_token";
+            return "error_token";
         }
 
 
@@ -764,16 +766,16 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                          if( isset($documento->categoria_jurado) ){
                            $tipo = Categoriajurado::findFirst(
-                             ["active=true AND id=".$documento->categoria_jurado]
+                             ["id = ".$documento->categoria_jurado]
                            );
                            $documento->categoria_jurado = $tipo->nombre;
                          }
 
                          if( isset($documento->requisito) ){
                            $tipo = Convocatoriasdocumentos::findFirst(
-                             ["active=true AND id=".$documento->requisito]
+                             ["id = ".$documento->requisito]
                            );
-                           $documento->categoria_jurado = $tipo->Requisito->nombre;
+                           $documento->categoria_jurado = $tipo->Requisitos->nombre;
                          }
 
 
@@ -1500,9 +1502,10 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
 
               $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
 
-              $rondas = $postulacion->propuestas->convocatorias->convocatoriasrondas;
+            //  $rondas = $postulacion->propuestas->convocatorias->convocatoriasrondas;
 
                 //echo  json_encode($rondas);
+/*
               foreach ($rondas as $ronda) {
 
                 if($ronda->active){
@@ -1562,6 +1565,66 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                   }
 
               }
+*/
+              $ronda =  Convocatoriasrondas::findFirst(
+                [
+                  " nombre_ronda like '%".$postulacion->propuestas->modalidad_participa."%'"
+                ]
+              );
+
+              if($ronda->active){
+                //se construye el array de grupos d ecriterios
+                $grupo_criterios = array();
+                //se cronstruye el array de criterios
+                $criterios = array();
+
+                //Se crea el array en el orden de los criterios
+                foreach ($ronda->Convocatoriasrondascriterios as $criterio) {
+
+                  if($criterio->active){
+                    $grupo_criterios[$criterio->grupo_criterio]= $criterio->orden;
+                  }
+
+                }
+
+
+                //de acuerdo con el orden, se crea al array de criterios
+                foreach ($grupo_criterios as $categoria => $orden) {
+
+                  //$obj = ["grupo" => $categoria, "criterios"=> array()];
+                  $obj= array();
+                  $obj[$categoria] = array();
+
+                  foreach ($ronda->Convocatoriasrondascriterios as $criterio) {
+
+                    if( $criterio->active && $criterio->grupo_criterio === $categoria ){
+                      // $obj[$categoria][$criterio->orden]=  $criterio;
+                      $obj[$categoria][$criterio->orden]= [
+                                                            "id"=>$criterio->id,
+                                                            "descripcion_criterio"=>$criterio->descripcion_criterio,
+                                                            "puntaje_minimo"=>$criterio->puntaje_minimo,
+                                                            "puntaje_maximo"=>$criterio->puntaje_maximo,
+                                                            "orden"=>$criterio->orden,
+                                                            "grupo_criterio"=>$criterio->grupo_criterio,
+                                                            "exclusivo"=>$criterio->exclusivo,
+                                                            "evaluacion"=> Evaluacion::findFirst([
+                                                              "criterio = ".$criterio->id
+                                                              ." AND postulado = ".$postulacion->id
+                                                            ])
+                                                          ];
+
+                    }
+
+                  }
+
+
+                  $criterios[$orden]= $obj ;
+              }
+
+
+                $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"postulacion"=>$postulacion,"criterios"=>$criterios];
+              }
+
 
 
             }
