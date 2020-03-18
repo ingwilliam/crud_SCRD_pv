@@ -598,6 +598,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a style="" href="../reportes/propuestas.html">Propuestas</a>                                    
+                                    <a style="" href="../reportes/entidades.html">Entidad</a>                                    
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

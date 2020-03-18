@@ -298,6 +298,60 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
 }
 );
 
+$app->get('/generar_reportes_entidades', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+    
+    //Validar array del usuario
+    $user_current = json_decode($token_actual->user_current, true);
+        
+    try {
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                //Seteo los varoles a retornar
+                $array_retorno["reporte_propuestas_estados"]='<a target="_blank" href="'.$config->sistema->url_report.'listado_entidades_convocatorias_estado.php?token='.$request->get('token').'&anio='.$request->get('anio').'&entidad='.$request->get('entidad').'" class="btn">Generar Reporte <i class="fa fa-file-pdf-o"></i></a>';                
+                $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
+                echo json_encode($array_retorno);
+                                                                        
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo generar_reportes  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);            
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);        
+        $logger->close();
+        echo "error_metodo ".$ex->getMessage();
+    }
+}
+);
+
 
 try {
     // Gestionar la consulta
