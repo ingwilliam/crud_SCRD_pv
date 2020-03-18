@@ -423,12 +423,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
 
                     //Defino el sql del total y el array de datos
-                    $sqlTot = "SELECT count(*) as total FROM Propuestas AS p "
+                    $sqlTot = "SELECT count(*) as total "
+                            . "FROM Propuestas AS p "
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
                             . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
-                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
 
@@ -470,7 +471,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
 
                     //Concateno el orden y el limit para el paginador
-                    $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                    $sqlRec .= " ORDER BY p.codigo LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
                     
                     //ejecuto el total de registros actual
                     $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
