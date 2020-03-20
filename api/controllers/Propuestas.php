@@ -663,7 +663,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                                                     COUNT(p.id) as total_propuestas
                                             FROM Propuestas AS p                                
                                             WHERE
-                                            p.estado = 8 AND p.convocatoria=" . $convocatoria->id;
+                                            p.estado IN (8,20) AND p.codigo <> '' AND p.convocatoria=" . $convocatoria->id;
 
                         $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
                         $codigo_propuesta = $convocatoria->id . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));

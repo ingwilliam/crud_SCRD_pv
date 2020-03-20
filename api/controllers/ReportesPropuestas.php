@@ -352,6 +352,104 @@ $app->get('/generar_reportes_entidades', function () use ($app, $config, $logger
 }
 );
 
+$app->get('/generar_reportes_contratistas', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+    
+    //Validar array del usuario
+    $user_current = json_decode($token_actual->user_current, true);
+        
+    try {
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                                
+                //Defino columnas para el orden desde la tabla html
+                $columns = array(
+                    0 => 'ec.primer_nombre',
+                    1 => 'ec.segundo_nombre',
+                    2 => 'ec.primer_apellido',
+                    3 => 'ec.segundo_apellido'                    
+                );
+
+                
+                //Condiciones para la consulta
+                $where .= " INNER JOIN Entidades AS e ON e.id=ec.entidad";
+                $where .= " WHERE ec.active=true";
+                
+                
+
+                if (!empty($request->get("search")['value'])) {
+                    $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                    $where .= " OR  UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR  UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR ( UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }
+
+                //Defino el sql del total y el array de datos
+                $sqlTot = "SELECT count(*) as total FROM Entidadescontratistas AS ec";
+                $sqlRec = "SELECT e.nombre AS entidad," . $columns[0] . " ," . $columns[1] . " ," . $columns[2] . " ," . $columns[3] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',ec.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',ec.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Entidadescontratistas AS ec";
+
+                //concatenate search sql if value exist
+                if (isset($where) && $where != '') {
+
+                    $sqlTot .= $where;
+                    $sqlRec .= $where;
+                }
+
+                //Concateno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
+                //ejecuto el total de registros actual
+                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                //creo el array
+                $json_data = array(
+                    "draw" => intval($request->get("draw")),
+                    "recordsTotal" => intval($totalRecords["total"]),
+                    "recordsFiltered" => intval($totalRecords["total"]),
+                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                );
+                //retorno el array en json
+                echo json_encode($json_data);                                                
+                                                                        
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo generar_reportes  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);            
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);        
+        $logger->close();
+        echo "error_metodo ".$ex->getMessage();
+    }
+}
+);
+
 
 try {
     // Gestionar la consulta
