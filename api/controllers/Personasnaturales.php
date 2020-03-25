@@ -122,14 +122,14 @@ $app->post('/new', function () use ($app, $config, $logger) {
 
                 //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
                 $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]." AND tipo='Inicial'");
-                
+
                 if (count($participante_verificado) > 0) {
                     //Registro la accion en el log de convocatorias
                     $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos ' . $post["tipo_documento"] . ' ' . $post["numero_documento"] . '"', ['user' => "", 'token' => $request->get('token')]);
                     $logger->close();
                     echo "participante_existente";
                 } else {
-                    
+
                     //Consulto si existe el usuario perfil
                     $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=6");
 
@@ -139,7 +139,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
                         $usuario_perfil->usuario = $user_current["id"];
                         $usuario_perfil->perfil = 6;
                         if ($usuario_perfil->save($usuario_perfil) === false) {
-                            //Registro la accion en el log de convocatorias           
+                            //Registro la accion en el log de convocatorias
                             $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error_usuario_perfil";
@@ -218,7 +218,7 @@ $app->get('/search', function () use ($app, $config) {
                 $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 17");
                 $eliminar_id=true;
                 if (!isset($usuario_perfil_pn->id)) {
-                    $usuario_perfil_pn = new Usuariosperfiles();                    
+                    $usuario_perfil_pn = new Usuariosperfiles();
                 }
             }
 
@@ -226,17 +226,7 @@ $app->get('/search', function () use ($app, $config) {
             $participante = new Participantes();
             if (isset($usuario_perfil_pn->id)) {
                 $participante = Participantes::findFirst("usuario_perfil=" . $usuario_perfil_pn->id . " AND tipo='Inicial' AND active=TRUE");
-            }
-
-            /**
-            *Cesar Britto, 2020-02-28.
-            *Se realiza el ajuste para cuando no hay perfil de pn
-            */
-            //si el peril es 6 el id del participante es null, quiere decir que
-            //que no existe perfil de pn
-            if( $usuario_perfil_pn->perfil == 17 ){
-              $participante->id = null;
-            }
+            }        
 
             //Asigno siempre el correo electronico del usuario al participante
             if (!isset($participante->correo_electronico)) {
@@ -258,16 +248,16 @@ $app->get('/search', function () use ($app, $config) {
                 $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
                 $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
                 $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
-            }       
-            
+            }
+
             //Elimino el id si se importa de jurados
             if($eliminar_id)
             {
                 $participante->id=null;
             }
-            
+
             $array["participante"] = $participante;
-            
+
             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 

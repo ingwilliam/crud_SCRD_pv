@@ -126,9 +126,9 @@ $app->post('/new', function () use ($app, $config, $logger) {
                           ." AND numero_documento = '".$request->getPost('numero_documento')."'"
                           //6	Persona Natural
                           //17	Jurados
-                          //." AND ( Usuariosperfiles.perfil  NOT IN (17,6) )"
+                          ." AND ( Usuariosperfiles.perfil  NOT IN (17,6,8) )"
                           ." AND ( Usuariosperfiles.usuario  NOT IN (".$user_current["id"].") )"
-                        //  ." AND tipo = 'Inicial'"
+                          ." AND tipo = 'Inicial'"
                           )
                   ->execute();
 
@@ -295,7 +295,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                       [
                           " tipo_documento = ".$request->getPut('tipo_documento')
                           ." AND numero_documento = '".$request->getPut('numero_documento')."'"
-                          .' AND usuario_perfil NOT IN ({usuariosperfiles:array})',
+                          .' AND usuario_perfil NOT IN ({usuariosperfiles:array})'
+                          ." AND tipo = 'Inicial'",
                           'bind' => [
                               'usuariosperfiles' => $usuper
                           ]
