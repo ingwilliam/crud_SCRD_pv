@@ -9,6 +9,8 @@ use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Mvc\Model\Query;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -42,6 +44,16 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
+
 
 $app = new Micro($di);
 
@@ -89,7 +101,7 @@ $app->get('/search', function () use ($app, $config) {
                          ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
                          ->execute()
                          ->getFirst();
-                        
+
                        if( $participante->id == null ){
 
                          //busca la información del ultimo perfil creado con el perfil de jurado
@@ -100,9 +112,9 @@ $app->get('/search', function () use ($app, $config) {
                              "order" => "id DESC" //trae el último
                            ]
                           );
-                            
-                         if( $old_participante ){                            
-                             
+
+                         if( $old_participante ){
+
                              $new_participante = clone $old_participante;
                              $new_participante->id = null;
                              $new_participante->actualizado_por = null;
@@ -111,15 +123,15 @@ $app->get('/search', function () use ($app, $config) {
                              $new_participante->fecha_creacion = date("Y-m-d H:i:s");
                              $new_participante->participante_padre = $old_participante->id;
                              $new_participante->tipo = "Participante";
-                             
+
                          }else{
-                             
+
                              $usuario_perfil_pn  = Usuariosperfiles::findFirst(
                                  [
                                      " usuario = ".$user_current["id"]." AND perfil = 6"
                                  ]
                                  );
-                             
+
                              if( $usuario_perfil_pn->id != null ){
                                  //busca la información del ultimo perfil creado con el perfil de jurado
                                  //6	Persona Natural
@@ -129,9 +141,9 @@ $app->get('/search', function () use ($app, $config) {
                                          "order" => "id DESC" //trae el último
                                      ]
                                      );
-                                 
+
                                  if( $old_participante ){
-                                     
+
                                      $new_participante = clone $old_participante;
                                      $new_participante->id = null;
                                      $new_participante->actualizado_por = null;
@@ -141,13 +153,13 @@ $app->get('/search', function () use ($app, $config) {
                                      $new_participante->participante_padre = $old_participante->id;
                                      $new_participante->tipo = "Participante";
                                      $new_participante->usuario_perfil = $usuario_perfil->id ;
-                                     
+
                                  }
-                                 
+
                              }
-                             
+
                          }
-                         
+
 
 
                          //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
@@ -252,6 +264,7 @@ $app->get('/search', function () use ($app, $config) {
                             $array["participante"] = $new_participante;
                             $array["perfil"] = $new_participante->propuestas->resumen;
                             $participante = $new_participante;
+                            $array["estado"] = Estados::findFirst(' id = '.$participante->propuestas->estado)->nombre;
                           }
 
                       }else{
@@ -260,6 +273,8 @@ $app->get('/search', function () use ($app, $config) {
                         $array["participante"] = $participante;
                         //array_push($array["participante"], ["resumen" => $participante->propuestas->resumen] );
                         $array["perfil"] = $participante->propuestas->resumen;
+
+                        $array["estado"] = Estados::findFirst(' id = '.$participante->propuestas->estado)->nombre;
                       }
                          //Creo los array de los select del formulario
                          $array["categoria"]= $participante->propuestas->modalidad_participa;
@@ -268,10 +283,10 @@ $app->get('/search', function () use ($app, $config) {
                          $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
                          $array["identidad_genero"]= Identidadesgeneros::find("active=true");
                          $array["grupo_etnico"]= Gruposetnicos::find("active=true");
-                                               
+
                          $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
                          $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
-                         $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;                        
+                         $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
 
                          $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");
                          $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
@@ -303,14 +318,18 @@ $app->get('/search', function () use ($app, $config) {
     }
 });
 
-
 // Edito registro participante
-$app->post('/edit_participante', function () use ($app, $config) {
+$app->post('/edit_participante', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar el participante"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -345,7 +364,7 @@ $app->post('/edit_participante', function () use ($app, $config) {
 
                   if( $participante->propuestas  != null and $participante->propuestas->estado == 9 ){
 
-                      $participante->propuestas->modalidad_participa = $request->get('categoria');
+                      $participante->propuestas->modalidad_participa = $request->get('modalidad_participa');
                       //return json_encode($post);
                       $participante->actualizado_por = $user_current["id"];
                       $participante->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -353,40 +372,66 @@ $app->post('/edit_participante', function () use ($app, $config) {
                       $participante->propuestas->resumen =$request->getPost('resumen') ;
 
                     if ($participante->save($post) === false) {
-                        echo "error";
 
                         //Para auditoria en versión de pruebas
-                        foreach ($participante->getMessages() as $message) {
+                        /*foreach ($participante->getMessages() as $message) {
                              echo $message;
                            }
+                           */
+
+                         $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar el participante como jurado"',
+                                        ['user' => "", 'token' => $request->get('token')]
+                                      );
+                         $logger->close();
+
+                         echo "error";
 
                     }
                         echo $participante->id;
                   }else{
+                    $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado para modificar el participante como jurado"',
+                                   ['user' => "", 'token' => $request->get('token')]
+                                 );
+                    $logger->close();
+
                     echo "deshabilitado";
                   }
 
                 }
 
-
-
             } else {
-                echo "acceso_denegado";
+
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
+              echo "acceso_denegado";
             }
         } else {
-            echo "error_token";
+
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
+          echo "error_token";
         }
     } catch (Exception $ex) {
 
-        echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      //echo "error_metodo" . $ex->getMessage();
 
-        //Para auditoria en versión de pruebas
-        //echo "error_metodo" . $ex->getMessage();
+      $logger->error('"token":"{token}","user":"{user}","message":"Error método' . $ex->getMessage() . '"',
+                    ['user' => "", 'token' => $request->get('token')]
+                  );
+      $logger->close();
+
+      echo "error_metodo";
 
     }
 }
 );
-
 
 // Funcionalidad CRUD Educacion formal
 //Busca el registro educación formal
@@ -427,10 +472,8 @@ $app->get('/search_educacion_formal', function () use ($app, $config) {
 
                        }
 
+                        $array["usuario_perfil"]=$usuario_perfil->id;
 
-                        $array["usuario_perfil"]=$usuario_perfil->id; 
-                        
-                        
                         $array["ciudad_name"] = $educacionformal->Ciudad->nombre;
 
                         $array["nivel_educacion"] = Niveleseducativos::find("active=true");
@@ -525,11 +568,10 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                        foreach ($educacionformales as $educacionformal) {
 
-                         $ciudad =  Ciudades::findFirst(
-                           ["active=true AND id=".$educacionformal->ciudad]
-                         );
+                        // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
 
-                         $educacionformal->ciudad = $ciudad->nombre;
+                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
+                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
                          array_push($response,$educacionformal);
@@ -539,6 +581,8 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                        $teducacionformal = Educacionformal::find(
                          [
                            " propuesta = ".$participante->propuestas->id
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
                          ]
                         );
 
@@ -570,6 +614,106 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 }
 );
 
+//Busca los registros de educacion formal
+$app->get('/all_educacion_formal/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+                      //  echo json_encode($participante->propuestas);
+
+                       $educacionformales = Educacionformal::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active= true ",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                        // echo json_encode($educacionformales);
+
+                       foreach ($educacionformales as $educacionformal) {
+
+                        // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
+
+                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
+                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
+                         $educacionformal->creado_por = null;
+                         $educacionformal->actualizado_por = null;
+                         array_push($response,$educacionformal);
+                       }
+
+                       //resultado sin filtro
+                       $teducacionformal = Educacionformal::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active= true"
+                           ." AND ( titulo LIKE '%".$request->get("search")['value']."%'"
+                           ." OR institucion LIKE '%".$request->get("search")['value']."%' )",
+                         ]
+                        );
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($teducacionformal->count()),
+                "recordsFiltered" => intval($teducacionformal->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
 /*Retorna información de id y nombre del nucleobasico associado  al area_conocimiento*/
 $app->get('/select_nucleobasico', function () use ($app) {
     try {
@@ -619,12 +763,18 @@ $app->get('/select_nucleobasico', function () use ($app) {
 );
 
 // Crea el registro de educacion formal
-$app->post('/new_educacion_formal', function () use ($app, $config) {
+$app->post('/new_educacion_formal', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a crear educación formal."',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -683,17 +833,26 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                         //echo "educacionformal---->>".json_encode($educacionformal);
                         //  echo "post---->>".json_encode($post);
                          if ($educacionformal->save($post) === false) {
-                             echo "error";
+
                              //Para auditoria en versión de pruebas
-                             foreach ($educacionformal->getMessages() as $message) {
+                             /*foreach ($educacionformal->getMessages() as $message) {
                                   echo $message;
-                                }
+                                }*/
+
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                           ['user' => $user_current, 'token' => $request->get('token')]
+                                         );
+                            $logger->close();
+
+                            echo "error";
+
 
                          } else {
 
                            //echo "guardando archivo";
                            //Recorro todos los posibles archivos
                            foreach($_FILES as $clave => $valor){
+
                                $fileTmpPath = $valor['tmp_name'];
                                $fileType = $valor['type'];
                                $fileNameCmps = explode(".", $valor["name"]);
@@ -738,30 +897,51 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                                //echo "path".$filepath;
                                if(strpos($return, "Error") !== FALSE){
                                    //echo "    ".json_encode($return);
+                                   $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. Error alfresco '.json_encode($return).'"',
+                                                  ['user' => $user_current, 'token' => $request->get('token')]
+                                                );
+                                   $logger->close();
                                    echo "error_creo_alfresco";
                                }else{
 
                                    $educacionformal->file = $return;
                                    if ($educacionformal->save() === false) {
-                                       echo "error";
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($educacionformal->getMessages() as $message) {
+                                    /*  foreach ($educacionformal->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+
+                                     $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                                    ['user' => $user_current, 'token' => $request->get('token')]
+                                                  );
+                                     $logger->close();
+
+                                        echo "error";
                                    }
 
                                }
                              }else{
+                               $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                              ['user' => $user_current, 'token' => $request->get('token')]
+                                            );
+                               $logger->close();
+                              // echo "error_archivo
                                //echo "error".$valor['error'];
                              }
 
                            }
 
-                           return $educacionformal->id;
+                           return (String)$educacionformal->id;
 
                          }
 
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -770,21 +950,38 @@ $app->post('/new_educacion_formal', function () use ($app, $config) {
                        }
 
             } else {
+
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+      //  return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+          return "error_metodo";
     }
 }
 );
 
 // Edita el registro de educacion formal
-$app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 
   try {
 
@@ -793,6 +990,12 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar educación formal"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //echo "put-->".json_encode($request->getPost());
 
@@ -817,7 +1020,6 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $post = $app->request->getPost();
-
                 $user_current = json_decode($token_actual->user_current, true);
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
@@ -841,23 +1043,36 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
                          ->getFirst();
 
                          //valido si la propuesta tiene el estado registrada
-                           //9	jurados	Registrado
+                        //9	jurados	Registrado
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                            $educacionformal = Educacionformal::findFirst($id);
                            $educacionformal->actualizado_por = $user_current["id"];
                            $educacionformal->fecha_actualizacion = date("Y-m-d H:i:s");
+                           $educacionformal->nivel_educacion = $request->getPost('nivel_educacion');
+                           $educacionformal->titulo = $request->getPost('titulo');
+                           $educacionformal->area_conocimiento = $request->getPost('area_conocimiento');
+                           $educacionformal->nucleo_basico = $request->getPost('nucleo_basico');
+                           $educacionformal->institucion = $request->getPost('institucion');
+                           $educacionformal->ciudad = $request->getPost('ciudad');
+                           $educacionformal->fecha_graduacion = $request->getPost('fecha_graduacion');
+                           $educacionformal->graduado = $request->getPost('graduado');
 
-                        //  echo "educacionformal---->>".json_encode($educacionformal);
-                            //echo "post---->>".json_encode($post);
-                           if ($educacionformal->save($post) === false) {
 
-                             //  return json_encode($user_current);
-                             echo "error";
+                           if ($educacionformal->save() === false) {
+
                              //Para auditoria en versión de pruebas
-                             foreach ($educacionformal->getMessages() as $message) {
+                             /*foreach ($educacionformal->getMessages() as $message) {
                                echo $message;
-                             }
+                             }*/
+
+                             $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                            ['user' => $user_current, 'token' => $request->get('token')]
+                                          );
+                             $logger->close();
+
+                             return "error";
+
 
                            } else {
 
@@ -905,29 +1120,51 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
 
                                  if(strpos($return, "Error") !== FALSE){
                                       //echo "    ".json_encode($return);
-                                     echo "error_creo_alfresco";
+                                      $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. Error alfresco '.json_encode($return).'"',
+                                                     ['user' => $user_current, 'token' => $request->get('token')]
+                                                   );
+                                      $logger->close();
+                                     return "error_creo_alfresco";
                                  }else{
 
                                      $educacionformal->file = $return;
                                      if ($educacionformal->save() === false) {
-                                         echo "error";
+
                                         //Para auditoria en versión de pruebas
-                                        foreach ($educacionformal->getMessages() as $message) {
+                                      /*  foreach ($educacionformal->getMessages() as $message) {
                                              echo $message;
                                            }
+                                           */
+
+                                           $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. '.json_decode( $educacionformal->getMessages() ).'"',
+                                                          ['user' => $user_current, 'token' => $request->get('token')]
+                                                        );
+                                           $logger->close();
+
+                                           return "error";
                                      }
 
                                  }
                                }else{
-                                 //echo "error".$valor['error'];
+                                 $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                                ['user' => $user_current, 'token' => $request->get('token')]
+                                              );
+                                 $logger->close();
+                                // echo "error_archivo ".$valor['error'];
 
                                }
 
                              }
 
-                               return $educacionformal->id;
-                           }
+                               return (String)$educacionformal->id;
+                           }//fin else
+
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -936,15 +1173,33 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
-        //echo "error_metodo".$ex->getMessage();
+      //  echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        return "error_metodo";
+
     }
 
 }
@@ -1044,8 +1299,6 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
     }
 });
 
-
-
 // Funcionalidad CRUD Educacion no formal
 //Busca el registro Educacion no formal
 $app->get('/search_educacion_no_formal', function () use ($app, $config) {
@@ -1088,7 +1341,7 @@ $app->get('/search_educacion_no_formal', function () use ($app, $config) {
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
-                       
+
                         $array["ciudad_name"] = $educacionnoformal->Ciudad->nombre;
 
                         $tipos =Tablasmaestras::findFirst("active=true AND nombre='tipo_educacion_no_formal'");
@@ -1197,6 +1450,8 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                        $teducacionnoformal = Educacionnoformal::find(
                          [
                           " propuesta = ".$participante->propuestas->id
+                          ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
+                          ." OR institucion LIKE '%".$request->get("search")['value']."%' )"
                          ]
                        );
 
@@ -1228,13 +1483,118 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
 }
 );
 
+//Busca los registros de Educacion no formal
+$app->get('/all_educacion_no_formal/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+                      //  echo json_encode($participante->propuestas);
+
+                       $educacionnoformales = Educacionnoformal::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active = true",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($educacionnoformales as $educacionnoformal) {
+
+                         $ciudad =  Ciudades::findFirst(
+                           ["active=true AND id=".$educacionnoformal->ciudad]
+                         );
+
+                         $educacionnoformal->ciudad = $ciudad->nombre;
+                         $educacionnoformal->creado_por = null;
+                         $educacionnoformal->actualizado_por = null;
+                         array_push($response,$educacionnoformal);
+                       }
+
+                       //resultado sin filtro
+                       $teducacionnoformal = Educacionnoformal::find(
+                         [
+                          " propuesta = ".$participante->propuestas->id
+                           ." AND active = true"
+                         ]
+                       );
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($teducacionnoformal->count()),
+                "recordsFiltered" => intval($teducacionnoformal->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+
 // Crea el registro de Educacion no formal
-$app->post('/new_educacion_no_formal', function () use ($app, $config) {
+$app->post('/new_educacion_no_formal', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar educación no formal"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -1294,11 +1654,17 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                         //  echo "post---->>".json_encode($post);
                          if ($educacionnoformal->save($post) === false) {
                                   //  return json_encode($user_current);
-                                  echo "error";
+
                              //Para auditoria en versión de pruebas
-                             foreach ($educacionnoformal->getMessages() as $message) {
+                             /*foreach ($educacionnoformal->getMessages() as $message) {
                                   echo $message;
-                                }
+                                }*/
+
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación no formal. '.json_decode( $educacionnoformal->getMessages() ).'"',
+                                           ['user' => $user_current, 'token' => $request->get('token')]
+                                         );
+                            $logger->close();
+                              echo "error";
 
                          } else {
 
@@ -1348,20 +1714,37 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                               //  echo "    ".json_encode($return);
                                if(strpos($return, "Error") !== FALSE){
                                   //  echo "    ".json_encode($return);
+                                  $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación no formal. Error alfresco '.json_encode($return).'"',
+                                                 ['user' => $user_current, 'token' => $request->get('token')]
+                                               );
+                                  $logger->close();
                                    echo "error_creo_alfresco";
                                }else{
 
                                    $educacionnoformal->file = $return;
                                    if ($educacionnoformal->save() === false) {
-                                       echo "error";
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($educacionnoformal->getMessages() as $message) {
+                                    /*  foreach ($educacionnoformal->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+
+                                     $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación no formal. '.json_decode( $educacionnoformal->getMessages() ).'"',
+                                                    ['user' => $user_current, 'token' => $request->get('token')]
+                                                  );
+                                     $logger->close();
+
+                                      echo "error";
                                    }
 
                                }
                              }else{
+
+                               $logger->error('"token":"{token}","user":"{user}","message":"Error al crear educación no formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                              ['user' => $user_current, 'token' => $request->get('token')]
+                                            );
+                               $logger->close();
+
                                //echo "error".$valor['error'];
                              }
 
@@ -1371,6 +1754,11 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                          }
 
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -1379,21 +1767,38 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config) {
                        }
 
             } else {
+
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        echo "error_metodo";
     }
 }
 );
 
 // Edita el registro de Educacion no formal
-$app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 
   try {
 
@@ -1402,6 +1807,12 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar educación no formal"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
 
         //Consulto si al menos hay un token
@@ -1458,15 +1869,22 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
                             //echo "post---->>".json_encode($post);
                            if ($educacionnoformal->save($post) === false) {
                                     //  return json_encode($user_current);
-                               echo "error";
+
                                //Para auditoria en versión de pruebas
-                               foreach ($educacionnoformal->getMessages() as $message) {
+                              /* foreach ($educacionnoformal->getMessages() as $message) {
                                     echo $message;
-                                  }
+                                  }*/
+
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación no formal. '.json_decode( $educacionnoformal->getMessages() ).'"',
+                                               ['user' => $user_current, 'token' => $request->get('token')]
+                                             );
+                                $logger->close();
+
+                                 echo "error";
 
                            } else {
 
-                             //echo "file-->".json_encode($_FILES);
+                             echo "file-->".json_encode($_FILES);
                              //Recorro todos los posibles archivos
                              foreach($_FILES as $clave => $valor){
                                  $fileTmpPath = $valor['tmp_name'];
@@ -1485,20 +1903,36 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
 
                                  if(strpos($return, "Error") !== FALSE){
                                       //echo "    ".json_encode($return);
+                                      $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación no formal. Error alfresco '.json_encode($return).'"',
+                                                     ['user' => $user_current, 'token' => $request->get('token')]
+                                                   );
+                                      $logger->close();
+
                                      echo "error_creo_alfresco";
                                  }else{
 
                                      $educacionnoformal->file = $return;
                                      if ($educacionnoformal->save() === false) {
-                                         echo "error";
+
                                         //Para auditoria en versión de pruebas
-                                        foreach ($educacionnoformal->getMessages() as $message) {
+                                        /*foreach ($educacionnoformal->getMessages() as $message) {
                                              echo $message;
-                                           }
+                                           }*/
+
+                                         $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación no formal. '.json_decode( $educacionnoformal->getMessages() ).'"',
+                                                        ['user' => $user_current, 'token' => $request->get('token')]
+                                                      );
+                                         $logger->close();
+
+                                         echo "error";
                                      }
 
                                  }
                                }else{
+                                 $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar educación no formal. UPLOAD_ERROR '.$valor['error'].'"',
+                                                ['user' => $user_current, 'token' => $request->get('token')]
+                                              );
+                                 $logger->close();
                                  //echo "error".$valor['error'];
 
                                }
@@ -1508,6 +1942,11 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
                                return $educacionnoformal->id;
                            }
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -1516,15 +1955,30 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+      //  return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        echo "error_metodo";
     }
 
 }
@@ -1624,7 +2078,6 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
     }
 });
 
-
 // Funcionalidad CRUD Experiencia_laboral
 //Busca el registro experiencia_laboral
 $app->get('/search_experiencia_laboral', function () use ($app, $config) {
@@ -1667,9 +2120,9 @@ $app->get('/search_experiencia_laboral', function () use ($app, $config) {
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
-                                               
+
                         $array["ciudad_name"] = $experiencialaboral->Ciudad->nombre;
-                        
+
 
                         $tipos =Tablasmaestras::findFirst("active=true AND nombre='tipo_entidad'");
                         $array["tipo_entidad"]=array();
@@ -1782,8 +2235,107 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                        //resultado sin filtro
                        $texperiencialaboral = Experiencialaboral::find([
                           " propuesta= ".$participante->propuestas->id
-                          ." AND entidad LIKE '%".$request->get("search")['value']."%'"
-                          ." OR cargo LIKE '%".$request->get("search")['value']."%'"
+                          ." AND ( entidad LIKE '%".$request->get("search")['value']."%'"
+                          ." OR cargo LIKE '%".$request->get("search")['value']."%')"
+                       ]);
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($texperiencialaboral->count()),
+                "recordsFiltered" => intval($texperiencialaboral->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+//Busca los registros de experiencia_laboral
+$app->get('/all_experiencia_laboral/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+                       $experiencialaborales = Experiencialaboral::find(
+                         [
+                           " propuesta= ".$participante->propuestas->id
+                           ." AND active = true",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($experiencialaborales as $experiencialaboral) {
+
+                         $ciudad =  Ciudades::findFirst(
+                           ["id=".$experiencialaboral->ciudad]
+                         );
+                         $experiencialaboral->ciudad = $ciudad->nombre;
+
+                         $linea =Lineasestrategicas::findFirst(
+                           ["id = ".$experiencialaboral->linea]
+                         );
+                         $experiencialaboral->linea = $linea->nombre;
+
+                         $experiencialaboral->creado_por = null;
+                         $experiencialaboral->actualizado_por = null;
+                         array_push($response,$experiencialaboral);
+                       }
+
+                       //resultado sin filtro
+                       $texperiencialaboral = Experiencialaboral::find([
+                          " propuesta= ".$participante->propuestas->id
+                          ." AND active = true",
                        ]);
 
                      }
@@ -1815,12 +2367,19 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
 );
 
 // Crea el registro de experiencia_laboral
-$app->post('/new_experiencia_laboral', function () use ($app, $config) {
+$app->post('/new_experiencia_laboral', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a crear experiencia laboral"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
+
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -1884,9 +2443,17 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                                   //  return json_encode($user_current);
 
                              //Para auditoria en versión de pruebas
-                             foreach ($experiencialaboral->getMessages() as $message) {
+                            /* foreach ($experiencialaboral->getMessages() as $message) {
                                   echo $message;
                                 }
+                                */
+
+                              $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia laboral. '.json_decode( $experiencialaboral->getMessages() ).'"',
+                                             ['user' => $user_current, 'token' => $request->get('token')]
+                                           );
+                              $logger->close();
+
+                              echo "error";
 
                          } else {
 
@@ -1912,20 +2479,35 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                               //  echo "    ".json_encode($return);
                                if(strpos($return, "Error") !== FALSE){
                                   //  echo "    ".json_encode($return);
+                                  $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia laboral. Error alfresco '.json_encode($return).'"',
+                                                 ['user' => $user_current, 'token' => $request->get('token')]
+                                               );
+                                  $logger->close();
                                    echo "error_creo_alfresco";
                                }else{
 
                                    $experiencialaboral->file = $return;
                                    if ($experiencialaboral->save() === false) {
-                                       echo "error";
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($experiencialaboral->getMessages() as $message) {
+                                    /*  foreach ($experiencialaboral->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+
+                                      $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia laboral. '.json_decode( $experiencialaboral->getMessages() ).'"',
+                                                     ['user' => $user_current, 'token' => $request->get('token')]
+                                                   );
+                                      $logger->close();
+
+                                       echo "error";
                                    }
 
                                }
                              }else{
+                               $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia laboral. UPLOAD_ERROR '.$valor['error'].'"',
+                                              ['user' => $user_current, 'token' => $request->get('token')]
+                                            );
+                               $logger->close();
                                //echo "error".$valor['error'];
                              }
 
@@ -1935,7 +2517,12 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                          }
 
                        }else{
-                         echo "deshabilitado";
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
+                         return "deshabilitado";
                        }
 
                      }else {
@@ -1943,21 +2530,35 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config) {
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //  echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+        echo "error_metodo ";
     }
 }
 );
 
 // Edita el registro de experiencia_laboral
-$app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 
   try {
 
@@ -1966,6 +2567,12 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar experiencia laboral."',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
 
         //Consulto si al menos hay un token
@@ -2021,11 +2628,18 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
                             //echo "post---->>".json_encode($post);
                            if ($experiencialaboral->save($post) === false) {
                                     //  return json_encode($user_current);
-                                     echo "error";
+
                                //Para auditoria en versión de pruebas
-                               foreach ($experiencialaboral->getMessages() as $message) {
+                               /*foreach ($experiencialaboral->getMessages() as $message) {
                                     echo $message;
-                                  }
+                                  }*/
+
+                              $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia laboral. '.json_decode( $experiencialaboral->getMessages() ).'"',
+                                             ['user' => $user_current, 'token' => $request->get('token')]
+                                           );
+                              $logger->close();
+
+                               echo "error";
 
                            } else {
 
@@ -2051,6 +2665,10 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
                                 //  echo "    ".json_encode($return);
                                  if(strpos($return, "Error") !== FALSE){
                                     //  echo "    ".json_encode($return);
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia laboral. Error alfresco '.json_encode($return).'"',
+                                                   ['user' => $user_current, 'token' => $request->get('token')]
+                                                 );
+                                    $logger->close();
                                      echo "error_creo_alfresco";
                                  }else{
 
@@ -2058,21 +2676,37 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
                                      if ($experiencialaboral->save() === false) {
                                          echo "error";
                                         //Para auditoria en versión de pruebas
-                                        foreach ($experiencialaboral->getMessages() as $message) {
+                                        /*foreach ($experiencialaboral->getMessages() as $message) {
                                              echo $message;
-                                           }
+                                           }*/
+
+                                       $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia laboral. '.json_decode( $experiencialaboral->getMessages() ).'"',
+                                                      ['user' => $user_current, 'token' => $request->get('token')]
+                                                    );
+                                       $logger->close();
+
+                                          echo "error";
                                      }
 
                                  }
                                }else{
+                                 $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia laboral. UPLOAD_ERROR '.$valor['error'].'"',
+                                                ['user' => $user_current, 'token' => $request->get('token')]
+                                              );
+                                 $logger->close();
                                  //echo "error".$valor['error'];
                                }
 
                              }
 
-                               return $experiencialaboral->id;
+                               return (String)$experiencialaboral->id;
                            }
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                          return "deshabilitado";
                        }
 
@@ -2081,15 +2715,32 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
           return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        return "error_metodo";
     }
 
 }
@@ -2190,7 +2841,6 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
     }
 });
 
-
 //Funcionalidad CRUD Experiencia jurado
 //Busca el registro experiencia jurado
 $app->get('/search_experiencia_jurado', function () use ($app, $config) {
@@ -2231,8 +2881,8 @@ $app->get('/search_experiencia_jurado', function () use ($app, $config) {
                        }
 
 
-                        $array["usuario_perfil"]=$usuario_perfil->id;                        
-                         
+                        $array["usuario_perfil"]=$usuario_perfil->id;
+
                         $array["ciudad_name"] = $experienciajurado->Ciudad->nombre;
 
                         $ambitos =Categoriajurado::find("active=true AND tipo='jurado_ambito'");
@@ -2338,9 +2988,107 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                        $texperienciajurado = Experienciajurado::find(
                          [
                            " propuesta = ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR entidad LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'",
+                           ." OR anio LIKE '%".$request->get("search")['value']."%')",
+                        ]
+                      );
+
+                     }
+
+            }
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($texperienciajurado->count()),
+                "recordsFiltered" => intval($experienciajurados->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+//Busca los registros de educacion formal
+$app->get('/all_experiencia_jurado/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+                       $experienciajurados = Experienciajurado::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active = true ",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($experienciajurados as $experienciajurado) {
+
+                         $ciudad =  Ciudades::findFirst(
+                           ["active=true AND id=".$experienciajurado->ciudad]
+                         );
+                         $experienciajurado->ciudad = $ciudad->nombre;
+
+                         $ambito = Categoriajurado::findFirst(
+                           ["active=true AND id=".$experienciajurado->ambito]
+                         );
+                          $experienciajurado->ambito = $ambito->nombre;
+
+                         $experienciajurado->creado_por = null;
+                         $experienciajurado->actualizado_por = null;
+                         array_push($response,$experienciajurado);
+                       }
+
+                       //resultado sin filtro
+                       $texperienciajurado = Experienciajurado::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active = true "
                         ]
                       );
 
@@ -2371,13 +3119,18 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
 );
 
 // Crea el registro de experiencia jurado
-$app->post('/new_experiencia_jurado', function () use ($app, $config) {
+$app->post('/new_experiencia_jurado', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a crear experiencia como jurado."',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -2444,6 +3197,12 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                                   echo $message;
                                 }
 
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia como jurado. '.json_decode( $experienciajurado->getMessages() ).'"',
+                                           ['user' => $user_current, 'token' => $request->get('token')]
+                                         );
+                            $logger->close();
+
+                            echo "error";
                          } else {
                            //echo "guardando archivo";
                            //echo json_encode($_FILES);
@@ -2467,29 +3226,48 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                               //  echo "    ".json_encode($return);
                                if(strpos($return, "Error") !== FALSE){
                                   //  echo "    ".json_encode($return);
-                                   echo "error_creo_alfresco";
+                                  $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia como jurado. Error alfresco '.json_encode($return).'"',
+                                                 ['user' => $user_current, 'token' => $request->get('token')]
+                                               );
+                                  $logger->close();
+                                  echo "error_creo_alfresco";
                                }else{
 
                                    $experienciajurado->file = $return;
                                    if ($experienciajurado->save() === false) {
-                                       echo "error";
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($experienciajurado->getMessages() as $message) {
+                                      /*foreach ($experienciajurado->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+
+                                       $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia como jurado. '.json_decode( $experienciajurado->getMessages() ).'"',
+                                                      ['user' => $user_current, 'token' => $request->get('token')]
+                                                    );
+                                       $logger->close();
+
+                                       echo "error";
                                    }
 
                                }
                              }else{
+                               $logger->error('"token":"{token}","user":"{user}","message":"Error al crear experiencia como jurado. UPLOAD_ERROR '.$valor['error'].'"',
+                                              ['user' => $user_current, 'token' => $request->get('token')]
+                                            );
+                               $logger->close();
                                //echo "error".$valor['error'];
                              }
 
                            }
 
-                             return $experienciajurado->id;
+                             return (String)$experienciajurado->id;
                          }
 
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
                          return "deshabilitado";
                        }
 
@@ -2498,21 +3276,36 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config) {
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+        return "error_metodo";
     }
 }
 );
 
 // Edita el registro de experiencia jurado
-$app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 
   try {
 
@@ -2521,6 +3314,12 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a editar experiencia como  jurado"',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -2579,9 +3378,16 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
                                     //  return json_encode($user_current);
 
                                //Para auditoria en versión de pruebas
-                               foreach ($experienciajurado->getMessages() as $message) {
+                              /* foreach ($experienciajurado->getMessages() as $message) {
                                     echo $message;
-                                  }
+                                  }*/
+
+                              $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia como jurado. '.json_decode( $educacionformal->getMessages() ).'"',
+                                             ['user' => $user_current, 'token' => $request->get('token')]
+                                           );
+                              $logger->close();
+
+                              return "error";
 
                            } else {
 
@@ -2607,28 +3413,47 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
                                 //  echo "    ".json_encode($return);
                                  if(strpos($return, "Error") !== FALSE){
                                     //  echo "    ".json_encode($return);
-                                     echo "error_creo_alfresco";
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia como jurado. Error alfresco '.json_encode($return).'"',
+                                                   ['user' => $user_current, 'token' => $request->get('token')]
+                                                 );
+                                    $logger->close();
+
+                                     return "error_creo_alfresco";
                                  }else{
 
                                      $experienciajurado->file = $return;
                                      if ($experienciajurado->save() === false) {
-                                         echo "error";
+
                                         //Para auditoria en versión de pruebas
-                                        foreach ($experienciajurado->getMessages() as $message) {
+                                        /*foreach ($experienciajurado->getMessages() as $message) {
                                              echo $message;
-                                           }
+                                           }*/
+
+                                         $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia como jurado. '.json_decode( $experienciajurado->getMessages() ).'"',
+                                                        ['user' => $user_current, 'token' => $request->get('token')]
+                                                      );
+                                         $logger->close();
+                                         return "error";
                                      }
 
                                  }
                                }else{
+                                 $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar experiencia como jurado. UPLOAD_ERROR '.$valor['error'].'"',
+                                                ['user' => $user_current, 'token' => $request->get('token')]
+                                              );
+                                 $logger->close();
                                  //echo "error".$valor['error'];
                                }
 
                              }
 
-                               return $experienciajurado->id;
+                               return (String)$experienciajurado->id;
                            }
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => "", 'token' => $request->get('token')]
+                                     );
+                         $logger->close();
                          return "deshabilitado";
                        }
 
@@ -2637,15 +3462,30 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+
     }
 
 }
@@ -2747,7 +3587,6 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
     }
 });
 
-
 //Funcionalidad CRUD Reconocimiento
 //Busca el registro reconocimiento
 $app->get('/search_reconocimiento', function () use ($app, $config) {
@@ -2787,7 +3626,7 @@ $app->get('/search_reconocimiento', function () use ($app, $config) {
 
 
                         $array["usuario_perfil"]=$usuario_perfil->id;
-                         
+
                          $array["ciudad_name"] = $reconocimiento->Ciudad->nombre;
 
                         $tipos =Categoriajurado::find("active=true AND tipo='reconocimiento_tipo'");
@@ -2892,10 +3731,10 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                        //resultado sin filtro
                        $treconocimiento = Propuestajuradoreconocimiento::find(
                          [
-                           " propuesta= ".$participante->propuestas->id
-                           ." AND nombre LIKE '%".$request->get("search")['value']."%'"
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND ( nombre LIKE '%".$request->get("search")['value']."%'"
                            ." OR institucion LIKE '%".$request->get("search")['value']."%'"
-                           ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                           ." OR anio LIKE '%".$request->get("search")['value']."%')"
                         ]
                       );
 
@@ -2926,6 +3765,109 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
     }
 }
 );
+
+//Busca los registros de reconocimiento
+$app->get('/all_reconocimiento/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+
+                       $reconocimientos = Propuestajuradoreconocimiento::find(
+                         [
+                           " propuesta= ".$participante->propuestas->id
+                           ." AND active = true",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($reconocimientos as $reconocimiento) {
+
+                         $ciudad =  Ciudades::findFirst(
+                           ["active=true AND id=".$reconocimiento->ciudad]
+                         );
+                         $reconocimiento->ciudad = $ciudad->nombre;
+
+                         $tipo = Categoriajurado::findFirst(
+                           ["active=true AND id=".$reconocimiento->tipo]
+                         );
+                         $reconocimiento->tipo = $tipo->nombre;
+
+                         $reconocimiento->creado_por = null;
+                         $reconocimiento->actualizado_por = null;
+                         array_push($response,$reconocimiento);
+                       }
+
+                       //resultado sin filtro
+                       $treconocimiento = Propuestajuradoreconocimiento::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                          ." AND active = true"
+                        ]
+                      );
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $treconocimiento ->count()),
+                "recordsFiltered" => intval($reconocimientos->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           echo json_encode($json_data);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
 
 // Crea el registro de reconocimiento
 $app->post('/new_reconocimiento', function () use ($app, $config) {
@@ -3304,7 +4246,6 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
     }
 });
 
-
 //Funcionalidad CRUD Publicaciones
 //Busca el registro publicacion
 $app->get('/search_publicacion', function () use ($app, $config) {
@@ -3340,7 +4281,7 @@ $app->get('/search_publicacion', function () use ($app, $config) {
                              $publicacion=Propuestajuradopublicacion::findFirst( $request->get('idregistro') );
                        }
 
-                        $array["usuario_perfil"]=$usuario_perfil->id;                        
+                        $array["usuario_perfil"]=$usuario_perfil->id;
                         $array["ciudad_name"] = $publicacion->Ciudad->nombre;
 
                         $tipos =Categoriajurado::find("active=true AND tipo='publicaciones_tipo'");
@@ -3457,9 +4398,9 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                        $tpublicacion = Propuestajuradopublicacion::find(
                          [
                          " propuesta= ".$participante->propuestas->id
-                         ." AND titulo LIKE '%".$request->get("search")['value']."%'"
+                         ." AND (titulo LIKE '%".$request->get("search")['value']."%'"
                          ." OR tema LIKE '%".$request->get("search")['value']."%'"
-                         ." OR anio LIKE '%".$request->get("search")['value']."%'"
+                         ." OR anio LIKE '%".$request->get("search")['value']."%')"
                           ]
                         );
 
@@ -3490,6 +4431,111 @@ $app->get('/all_publicacion', function () use ($app, $config) {
     }
 }
 );
+
+//Busca los registros de educacion formal
+$app->get('/all_publicacion/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+                       $publicaciones = Propuestajuradopublicacion::find(
+                         [
+                           " propuesta= ".$participante->propuestas->id
+                           ." AND active = true",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($publicaciones as $publicacion) {
+
+                         $ciudad =  Ciudades::findFirst(
+                           ["active=true AND id=".$publicacion->ciudad]
+                         );
+                         $publicacion->ciudad = $ciudad->nombre;
+
+                         $tipo = Categoriajurado::findFirst(
+                           ["active=true AND id=".$publicacion->tipo]
+                         );
+                         $publicacion->tipo = $tipo->nombre;
+
+                         $formato = Categoriajurado::findFirst(
+                           ["active=true AND id=".$publicacion->formato]
+                         );
+                         $publicacion->formato = $formato->nombre;
+
+                         $publicacion->creado_por = null;
+                         $publicacion->actualizado_por = null;
+                         array_push($response,$publicacion);
+                       }
+
+                       //resultado sin filtro
+                       $tpublicacion = Propuestajuradopublicacion::find(
+                         [
+                         " propuesta= ".$participante->propuestas->id
+                        ." AND active = true"
+                          ]
+                        );
+
+                     }
+
+            }
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tpublicacion ->count()),
+                "recordsFiltered" => intval($publicaciones->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
 
 // Crea el registro
 $app->post('/new_publicacion', function () use ($app, $config) {
@@ -3873,7 +4919,6 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
     }
 });
 
-
 //Funcionalidad Descargar archivos
 //descargar archivos
 $app->post('/download_file', function () use ($app, $config) {
@@ -3911,7 +4956,6 @@ $app->get('/postular', function () use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
 
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -3941,8 +4985,6 @@ $app->get('/postular', function () use ($app, $config) {
                       ]
                     );
 
-
-
                      if( $usuario_perfil->id != null ){
 
                        $participante = Participantes::query()
@@ -3959,27 +5001,44 @@ $app->get('/postular', function () use ($app, $config) {
                            //9	jurados	Registrado
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
-                          //10	jurados	Inscrito
-                           $participante->propuestas->estado = 10; //inscrita
-                           $participante->propuestas->actualizado_por = $user_current["id"];
-                           $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
+                         if(  !$participante->propuestas->modalidad_participa ||  $participante->propuestas->modalidad_participa==''){
+                            return "error_modalidad";
+                         }
+
+                         $documentos = Propuestajuradodocumento::query()
+                           ->join("Convocatoriasdocumentos","Propuestajuradodocumento.requisito = Convocatoriasdocumentos.id")
+                           ->join("Requisitos"," Convocatoriasdocumentos.requisito = Requisitos.id")
+                            //perfil = 17  perfil de jurado
+                           ->where("Propuestajuradodocumento.propuesta = ".$participante->propuestas->id)
+                           ->andWhere("Convocatoriasdocumentos.etapa = 'Registro'")
+                            ->andWhere("Propuestajuradodocumento.active = true")
+                           ->execute();
+
+                         if( $documentos->count() == 0 ){
+
+                           return "error_documento_administrativo";
+                         }
+
+                         //10	jurados	Inscrito
+                         $participante->propuestas->estado = 10; //inscrita
+                         $participante->propuestas->actualizado_por = $user_current["id"];
+                         $participante->propuestas->fecha_actualizacion = date("Y-m-d H:i:s");
 
                          //  echo "educacionformal---->>".json_encode($educacionformal);
                             //echo "post---->>".json_encode($post);
-                           if ($participante->propuestas->save() === false) {
-                                    //  return json_encode($user_current);
+                         if ($participante->propuestas->save() === false) {
+                                  //  return json_encode($user_current);
+                             //Para auditoria en versión de pruebas
+                             foreach ($participante->propuestas->getMessages() as $message) {
+                                  echo $message;
+                                }
 
-                               //Para auditoria en versión de pruebas
-                               foreach ($participante->propuestas->getMessages() as $message) {
-                                    echo $message;
-                                  }
+                         } else {
+                             return (String)$participante->propuestas->id;
+                         }
 
-                           } else {
-
-                               echo $participante->propuestas->id;
-                           }
                        }else{
-                         return "deshabilitado";
+                          return "deshabilitado";
                        }
 
                      } else {
@@ -4055,14 +5114,13 @@ $app->get('/propuesta', function () use ($app, $config) {
 
                        $array["propuesta"] = $participante->propuestas;
 
-                       $documento = Convocatoriasanexos::findFirst(
-                         [
-                           "tipo_documento = 'Anexo' AND nombre = 'Condiciones de participación'"
-                           ."AND convocatoria = ".$request->get('idc')
-                         ]
-                       );
+                       $participante->tipo_documento = $participante->Tiposdocumentos->nombre;
+                       $participante->sexo = $participante->Sexos->nombre;
+                       $participante->orientacion_sexual = $participante->Orientacionessexuales->nombre;
+                       $participante->identidad_genero = $participante->Identidadesgeneros->nombre;
+                       $participante->grupo_etnico = $participante->Gruposetnicos->nombre;
 
-                       $array["documento"] = $documento;
+                       $array["participante"] = $participante;
 
                        //echo json_encode($participante->propuestas);
                       echo json_encode( $array );
@@ -4087,7 +5145,6 @@ $app->get('/propuesta', function () use ($app, $config) {
 }
 );
 
-
 //Funcionalidad CRUD Documentos
 //Busca el registro documento
 $app->get('/search_documento', function () use ($app, $config) {
@@ -4104,8 +5161,6 @@ $app->get('/search_documento', function () use ($app, $config) {
         if ($token_actual > 0) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
-
-
 
            if( $user_current["id"]){
 
@@ -4129,10 +5184,14 @@ $app->get('/search_documento', function () use ($app, $config) {
                         $array["usuario_perfil"]=$usuario_perfil->id;
 
 
-                        $tipos =Categoriajurado::find("active=true AND tipo='anexo'");
+                        //$tipos =Categoriajurado::find("active=true AND tipo='anexo'");
+                        $tipos = Convocatoriasdocumentos::find(
+                          " convocatoria=".$request->get('idc')." and active=true AND etapa='Registro'"
+                        );
+
                         $array["tipo"]=array();
                         foreach ( $tipos as $tipo) {
-                          array_push($array["tipo"], ["id"=> $tipo->id, "nombre"=> $tipo->nombre ] );
+                          array_push($array["tipo"], ["id"=> $tipo->id, "nombre"=> $tipo->Requisitos->nombre ] );
                         }
 
                         $array["documento"] = $documento;
@@ -4209,10 +5268,21 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                        foreach ($documentos as $documento) {
 
-                         $tipo = Categoriajurado::findFirst(
-                           ["active=true AND id=".$documento->categoria_jurado]
-                         );
-                         $documento->categoria_jurado = $tipo->nombre;
+                         if( isset($documento->categoria_jurado) ){
+                           $tipo = Categoriajurado::findFirst(
+                             ["active=true AND id=".$documento->categoria_jurado]
+                           );
+                           $documento->categoria_jurado = $tipo->nombre;
+                         }
+
+                         if( isset($documento->requisito) ){
+
+                           $tipo = Convocatoriasdocumentos::findFirst(
+                             [" active=true AND id =".$documento->requisito]
+                           );
+
+                           $documento->categoria_jurado = $tipo->Requisitos->nombre;
+                         }
 
                          $documento->creado_por = null;
                          $documento->actualizado_por = null;
@@ -4250,6 +5320,112 @@ $app->get('/all_documento', function () use ($app, $config) {
     }
 }
 );
+
+//Busca los registros de documento
+$app->get('/all_documento/active', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+             $response = array();
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participante = Participantes::query()
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute()
+                        ->getFirst();
+
+
+                       $documentos = Propuestajuradodocumento::find(
+                         [
+                           " propuesta = ".$participante->propuestas->id
+                           ." AND active = true",
+                           "order" => 'id ASC',
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+                       foreach ($documentos as $documento) {
+
+                         if( isset($documento->categoria_jurado) ){
+                           $tipo = Categoriajurado::findFirst(
+                             ["id=".$documento->categoria_jurado]
+                           );
+                           $documento->categoria_jurado = $tipo->nombre;
+                         }
+
+                         if( isset($documento->requisito) ){
+
+                           $tipo = Convocatoriasdocumentos::findFirst(
+                             ["id =".$documento->requisito]
+                           );
+
+                           $documento->categoria_jurado = $tipo->Requisitos->nombre;
+                         }
+
+                         $documento->creado_por = null;
+                         $documento->actualizado_por = null;
+                         array_push($response,$documento);
+                       }
+
+                       //resultado sin filtro
+                       $tdocumento = Propuestajuradodocumento::find([
+                         " propuesta = ".$participante->propuestas->id
+                         ." AND active = true"
+                       ]);
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tdocumento ->count()),
+                "recordsFiltered" => intval($documentos->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
 
 // Crea el registro de documento
 $app->post('/new_documento', function () use ($app, $config) {
@@ -4469,7 +5645,6 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                            } else {
 
-
                                 //echo "guardando archivo";
                                 //echo json_encode($_FILES);
                                 //Recorro todos los posibles archivos
@@ -4634,41 +5809,6 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
 
 
 //Funcionalidad Postular
-//Retorna información de id y nombre del area
-$app->get('/postulacion_select_area', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $categorias=  array();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
-
-
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-              //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
-
-
-                $areas=array();
-                foreach ( Areas::find("active=true") as $area) {
-                  array_push($areas, ["id"=> $area->id, "nombre"=> $area->nombre ] );
-                }
-
-            echo json_encode($areas);
-        } else {
-            return "error_token";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
-    }
-}
-);
 
 //Busca los registros de postulaciones
 $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
@@ -4689,8 +5829,9 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         if ($token_actual > 0) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
-             $response = array();
-           if( $user_current["id"]){
+            $response = array();
+
+           if( $user_current["id"] ){
 
                  // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                      $usuario_perfil  = Usuariosperfiles::findFirst(
@@ -4712,11 +5853,13 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                         ->execute()
                         ->getFirst();
 
-
                       $postulaciones = $participante->propuestas->juradospostulados;
 
                       //se crea el array con los id de las convocatorias a las cuales aplicó el jurado
                       foreach ($postulaciones as $postulacion) {
+
+                        //si la postulacion está activa se agrega la postulación
+                        if( $postulacion->active){
 
                           if( $postulacion->convocatorias->tiene_categorias && $postulacion->convocatorias->diferentes_categorias ){
 
@@ -4729,31 +5872,48 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                              array_push($id_convocatorias_postuladas,$postulacion->convocatorias->id);
 
                           }
+                        }
 
+                      }//fin foreach
 
+                      $query = Convocatorias::query();
+
+                      //$convocatorias = Convocatorias::query()
+                      $query->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+
+                      if( $request->get('enfoque') ){
+                        $query->andWhere(" Convocatorias.enfoque = ".$request->get('enfoque') );
+                      }
+
+                      if( $request->get('linea') ){
+                        $query->andWhere(" Convocatorias.linea_estrategica = ".$request->get('linea') );
+                      }
+
+                      if( $request->get('area') ){
+                        $query->andWhere(" Convocatorias.area = ".$request->get('area') );
                       }
 
 
-                      $convocatorias = Convocatorias::query()
-                            ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
-                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
-                            ->andWhere(" Convocatorias.area = ".$request->get('area') )
-                            //palabra clave
-                            ->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
-                            //5	convocatorias	Publicada
-                            ->andWhere(" Convocatorias.estado = 5 ")
-                            ->andWhere(" Convocatorias.active = true  ")
-                            ->andWhere(" Convocatorias.modalidad != 2  ")
-                          //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
-                            ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
-                            ->andWhere(" Convocatoriascronogramas.active = true  ")
-                            //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
-                            ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
-                            ->order(' Convocatorias.id ASC ')
-                            ->limit(  "".$request->get('length'), "".$request->get('start') )
-                            ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
-                            ->execute();
+                      //palabra clave tabla
+                      //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                      //palabra clave formulario
+                      $query->andWhere(" ( lower(Convocatorias.nombre) LIKE '%".strtolower($request->get("pclave"))."%' OR lower(Convocatorias.descripcion) LIKE '%".strtolower( $request->get("pclave") )."%') " )
+                      //5	convocatorias	Publicada
+                      ->andWhere(" Convocatorias.estado = 5 ")
+                      ->andWhere(" Convocatorias.active = true  ")
+                      ->andWhere(" Convocatorias.modalidad != 2  ")
+                    //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                      ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                      ->andWhere(" Convocatoriascronogramas.active = true  ")
+                      //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                      ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                      ->order(' Convocatorias.id ASC ')
+                      ->limit(  "".$request->get('length'), "".$request->get('start') )
+                      ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
 
+
+                      $convocatorias = $query->execute();
 
                           //  echo json_encode($convocatorias);
 
@@ -4789,8 +5949,6 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                                     ["id=".$convocatoria->enfoque]
                                   );
                                   $convocatoria->enfoque = $enfoque->nombre;
-
-
                                   $convocatoria->creado_por = null;
                                   $convocatoria->actualizado_por = null;
 
@@ -4798,7 +5956,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                                 }
 
                        //resultado sin filtro
-                       $tconvocatorias = Convocatorias::find(
+                       /*$tconvocatorias = Convocatorias::find(
                          [
                            "id NOT IN ({idConvocatoria:array}) " //las postuladas
                            ." AND area = ".$request->get('area')
@@ -4809,32 +5967,45 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                              "idConvocatoria" => $id_convocatorias_postuladas
                            ],
                          ]
-                       );
+                       );*/
 
-                       $tconvocatorias = Convocatorias::query()
-                             ->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
-                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ")
-                             ->andWhere(" Convocatorias.area = ".$request->get('area') )
+
+                      // $tconvocatorias = Convocatorias::query()
+                       $tquery = Convocatorias::query();
+
+                       $tquery->join("Convocatoriascronogramas","Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+
+
+                       if( $request->get('enfoque') ){
+                         $tquery->andWhere(" Convocatorias.enfoque = ".$request->get('enfoque') );
+                       }
+
+                       if( $request->get('linea') ){
+                         $tquery->andWhere(" Convocatorias.linea_estrategica = ".$request->get('linea') );
+                       }
+
+                      if( $request->get('area') ){
+                        $tquery->andWhere(" Convocatorias.area = ".$request->get('area') );
+                      }
                              //palabra clave
-                             //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
-                             ->andWhere(" Convocatorias.estado = 5 ")
-                             ->andWhere(" Convocatorias.active = true  ")
-                             ->andWhere(" Convocatorias.modalidad != 2  ")
-                           //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
-                             ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
-                             ->andWhere(" Convocatoriascronogramas.active = true  ")
-                             //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
-                             ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
-                             ->order(' Convocatorias.id ASC ')
-                             ->limit(  "".$request->get('length'), "".$request->get('start') )
-                             ->bind(["idConvocatoria" => $id_convocatorias_postuladas])
-                             ->execute();
+                           //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
+                      $tquery->andWhere(" Convocatorias.estado = 5 ")
+                           ->andWhere(" Convocatorias.active = true  ")
+                           ->andWhere(" Convocatorias.modalidad != 2  ")
+                         //  ->andWhere(" Convocatorias.convocatoria_padre_categoria = null  ")
+                           ->andWhere(" Convocatoriascronogramas.tipo_evento = 12 ")
+                           ->andWhere(" Convocatoriascronogramas.active = true  ")
+                           //Donde la fecha de cierre tiene mas de 48 horas (2 dias)
+                           ->andWhere(" Convocatoriascronogramas.fecha_fin >= '".date("Y-m-d H:i:s", strtotime($fecha_actual."+ 2 days") )."'"  )
+                           ->order(' Convocatorias.id ASC ')
+                           ->bind(["idConvocatoria" => $id_convocatorias_postuladas]);
 
+                      $tconvocatorias = $tquery->execute();
 
                      }
 
             }
-
 
             //creo el array
             $json_data = array(
@@ -4852,7 +6023,6 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
     } catch (Exception $ex) {
 
       //  echo "error_metodo";
-
       //Para auditoria en versión de pruebas
       echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
@@ -5117,7 +6287,14 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                          ->execute()
                          ->getFirst();
 
-                       $postulaciones = $participante->propuestas->juradospostulados;
+                       //$postulaciones = $participante->propuestas->juradospostulados;
+
+                       $postulaciones = Juradospostulados::find(
+                         [
+                           'propuesta ='.$participante->propuestas->id
+                           .' AND active = true '
+                         ]
+                       );
 
                       //  echo json_encode($convocatorias);
 
@@ -5134,7 +6311,6 @@ $app->get('/search_postulacion', function () use ($app, $config) {
                          }else{
                            $convocatoria['nombre']= $postulacion->convocatorias->nombre;
                          }
-
 
                          $area =  Areas::findFirst(
                            ["id=".$postulacion->convocatorias->area]
@@ -5240,7 +6416,6 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                     ]
                   );
 
-
                   if( $usuario_perfil->id != null ){
 
                     $participante = Participantes::query()
@@ -5256,7 +6431,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                       $juradospostulado = Juradospostulados::findFirst($id);
 
                       //9	jurados	Registrado
-                      if($participante->propuestas->estado == 9){
+                      if( $participante->propuestas->estado == 9 ){
                          return "error";
                       }
 
@@ -5264,7 +6439,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
 
                       //Calcula el numero de postulaciones del jurado
                       //echo "cantidad-->".$postulaciones->count();
-                      foreach ($postulaciones as $postulacion) {
+                    /*7  foreach ($postulaciones as $postulacion) {
 
                         //la convocatoria está activa y está publicada
                          if( $postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active){
@@ -5272,20 +6447,21 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                          }
 
                        }
+                       */
 
-                       $nummax = Tablasmaestras::findFirst(
+                  /*     $nummax = Tablasmaestras::findFirst(
                          [
                          " nombre = 'numero_maximo_postulaciones_jurado'"
                          ]
                        );
-
+                       */
                        //9	jurados	Registrado
                     if( $juradospostulado != null and $juradospostulado->estado == 9 ){
 
-                      if($juradospostulado->active==true){
+                      if( $juradospostulado->active == true ){
                           $juradospostulado->active=false;
                           $retorna="No";
-                      }else{
+                      }/*else{
 
                         //Controla el límite de postulaciones
                         //limite tabla maestra
@@ -5296,9 +6472,8 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
                         }else {
                          return "error_limite";
                         }
+                      }*/
 
-
-                      }
 
                       $juradospostulado->actualizado_por = $user_current["id"];
                       $juradospostulado->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -5334,8 +6509,185 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
     }
 });
 
+//Funcionalidad Descargar archivos
+//descargar archivos
+$app->get('/download_condiciones', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+      //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if ($token_actual > 0) {
+
+           $condiciones= Tablasmaestras::findFirst("active=true AND nombre='Condiciones de participación jurados'");
+
+            echo  json_encode(["archivo"=>str_replace("/view?usp=sharing", "/preview", $condiciones->valor)]) ;
 
 
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+      //  echo "error_metodo";
+
+        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+//Busca los registros de postulaciones
+$app->get('/select_categoria', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            $categorias = Tablasmaestras::findFirst([" active=true  AND nombre = 'jurado_categoria_participa'"]);
+
+              foreach ( explode(",", $categorias->valor) as $categoria) {
+                array_push( $response, ["id"=> $categoria, "nombre"=> $categoria] );
+              }
+
+          echo json_encode($response);
+
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+
+      //Para auditoria en versión de pruebas
+      echo "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+//Lista las hojas de vida (propuestas) del jurado
+$app->get('/listar', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
+            $array = array();
+
+           if( $user_current["id"]){
+
+                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                     $usuario_perfil  = Usuariosperfiles::findFirst(
+                       [
+                         " usuario = ".$user_current["id"]." AND perfil =17"
+                       ]
+                     );
+
+                    // return json_encode($usuario_perfil);
+                     if( $usuario_perfil->id != null ){
+
+                      $participantes = Participantes::query()
+                        //->columns("Participantes.id")
+                        ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                        ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                         //perfil = 17  perfil de jurado
+                        ->where("Usuariosperfiles.perfil = 17 ")
+                        ->andWhere("Usuariosperfiles.usuario = ".$user_current["id"])
+                        //->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                        ->execute();
+                        //->getFirst();
+
+                      //  return json_encode($participantes);
+
+                      foreach ($participantes as $value){
+                          array_push($array, $value->id );
+                      }
+
+
+                       $propuestas = Propuestas::find(
+                         [
+                           " participante IN ({participante:array})  ",
+                           "order" => 'id ASC',
+                           'bind' => [
+                                 'participante' => $array
+                             ],
+                           "limit" =>  $request->get('length'),
+                           "offset" =>  $request->get('start'),
+                         ]
+                       );
+
+
+                       foreach ($propuestas as $propuesta){
+
+                           array_push($response,[
+                             "id"=>$propuesta->id,
+                             "codigo"=>$propuesta->codigo,
+                             "id_convocatoria" => $propuesta->convocatoria,
+                             "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
+                             "modalidad_participa" => $propuesta->modalidad_participa,
+                             "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
+
+                             ] );
+                       }
+
+
+                       //resultado sin filtro
+                       $tpropuestas = Propuestas::find(
+                         [
+                           " participante IN ({participante:array})  ",
+                           'bind' => [
+                                 'participante' => $array
+                             ],
+                         ]
+                       );
+
+                     }
+
+            }
+
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval( $tpropuestas ->count()),
+                "recordsFiltered" => intval($tpropuestas->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+           return json_encode($json_data);
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+      //  echo "error_metodo";
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
 
 try {
     // Gestionar la consulta

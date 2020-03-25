@@ -13,7 +13,7 @@ class Experiencialaboral extends Model
           'Propuestas',
           'id'
       );
-      
+
       //Se define relacion de N a 1 con Ciudades
       $this->belongsTo(
           'ciudad',
@@ -23,7 +23,7 @@ class Experiencialaboral extends Model
               'alias' => "Ciudad"
           ]
           );
-      
+
     }
 
      public function validation(){
@@ -38,6 +38,12 @@ class Experiencialaboral extends Model
          $this->nucleo_basico = null;
        }
        */
+
+
+        if ($this->fecha_fin == "") {
+          $this->fecha_fin = null;
+        }
+
        return true;
      }
 

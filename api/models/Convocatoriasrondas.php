@@ -24,7 +24,7 @@ class Convocatoriasrondas extends Model
             'convocatoria_ronda'
         );
 
-        //Se define relacion de N a 1 con Convocatorias
+        //Se define relacion de N a 1 
         $this->belongsTo(
             'grupoevaluador',
             'Gruposevaluadores',

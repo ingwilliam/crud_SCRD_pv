@@ -273,6 +273,35 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
 }
 );
 
+/**
+*Cesar Britto, 2020-01-20
+*Retorna información de id y nombre de la línea estratégica
+**/
+$app->get('/select', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $lineasestrategicas = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ( $token_actual != false ) {
+
+                foreach ( Lineasestrategicas::find("active=true") as $lineaestrategica) {
+                  array_push($lineasestrategicas, ["id"=> $lineaestrategica->id, "nombre"=> $lineaestrategica->nombre ] );
+                }
+
+            echo json_encode($lineasestrategicas);
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        return "error_metodo".$ex->getMessage();
+    }
+}
+);
 
 try {
     // Gestionar la consulta

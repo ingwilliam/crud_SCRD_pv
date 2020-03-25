@@ -451,8 +451,8 @@ $app->put('/notificar', function () use ($app, $config) {
                     $mail->From = "convocatorias@scrd.gov.co";
                     $mail->FromName = "Sistema de Convocatorias";
                     $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-                    //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                    $mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
+                    $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+                    //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
                     $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
                     $mail->Body = $html_solicitud_usuario;
 
@@ -479,6 +479,7 @@ $app->put('/notificar', function () use ($app, $config) {
                     } else {
                         echo "error_email";
                         $this->db->rollback();
+                         echo 'Mailer Error: ' . $mail->ErrorInfo;
                     }
                 }
 
@@ -518,7 +519,7 @@ $app->get('/notificado_key_notificacion', function () use ($app) {
           ]
         );
 
-        //Si el token existe y esta activo entra a realizar la tabla
+
         if ($notificacion && $notificacion->active) {
 
             $participante = $notificacion->Juradospostulados->Propuestas->Participantes;
