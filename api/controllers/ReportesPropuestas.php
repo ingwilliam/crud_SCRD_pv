@@ -393,7 +393,9 @@ $app->get('/generar_reportes_contratistas', function () use ($app, $config, $log
                 $where .= " INNER JOIN Entidades AS e ON e.id=ec.entidad";
                 $where .= " WHERE ec.active=true";
                 
-                
+                if($request->get('entidad')!=""){
+                    $where .= " AND ec.entidad=".$request->get('entidad');                    
+                }
 
                 if (!empty($request->get("search")['value'])) {
                     $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
