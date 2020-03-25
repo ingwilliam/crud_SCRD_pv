@@ -112,22 +112,6 @@ $app->post('/new', function () use ($app, $config, $logger) {
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
 
-                //Consulto si existe el usuario perfil
-                $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=6");
-
-                //Verifico si existe, con el fin de crearlo
-                if (!isset($usuario_perfil->id)) {
-                    $usuario_perfil = new Usuariosperfiles();
-                    $usuario_perfil->usuario = $user_current["id"];
-                    $usuario_perfil->perfil = 6;
-                    if ($usuario_perfil->save($usuario_perfil) === false) {
-                        //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error_usuario_perfil";
-                    }
-                }
-
                 //Consulto los usuarios perfil del jurado y persona natural
                 $array_usuario_perfil = Usuariosperfiles::find("usuario=" . $user_current["id"] . " AND perfil IN (6,17,8)");
                 $id_usuarios_perfiles = "";
@@ -137,14 +121,30 @@ $app->post('/new', function () use ($app, $config, $logger) {
                 $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
 
                 //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]);
-
+                $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]." AND tipo='Inicial'");
+                
                 if (count($participante_verificado) > 0) {
                     //Registro la accion en el log de convocatorias
                     $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos ' . $post["tipo_documento"] . ' ' . $post["numero_documento"] . '"', ['user' => "", 'token' => $request->get('token')]);
                     $logger->close();
                     echo "participante_existente";
                 } else {
+                    
+                    //Consulto si existe el usuario perfil
+                    $usuario_perfil = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil=6");
+
+                    //Verifico si existe, con el fin de crearlo
+                    if (!isset($usuario_perfil->id)) {
+                        $usuario_perfil = new Usuariosperfiles();
+                        $usuario_perfil->usuario = $user_current["id"];
+                        $usuario_perfil->perfil = 6;
+                        if ($usuario_perfil->save($usuario_perfil) === false) {
+                            //Registro la accion en el log de convocatorias           
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error_usuario_perfil";
+                        }
+                    }
 
                     //Valido si existe para editar o crear
                     if (is_numeric($post["id"])) {
@@ -211,12 +211,14 @@ $app->get('/search', function () use ($app, $config) {
             $user_current = json_decode($token_actual->user_current, true);
 
             //Busco si tiene el perfil de persona natural
+            $eliminar_id=false;
             $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 6");
             if (!isset($usuario_perfil_pn->id)) {
                 //Busco si tiene el perfil de jurado
                 $usuario_perfil_pn = Usuariosperfiles::findFirst("usuario=" . $user_current["id"] . " AND perfil = 17");
+                $eliminar_id=true;
                 if (!isset($usuario_perfil_pn->id)) {
-                    $usuario_perfil_pn = new Usuariosperfiles();
+                    $usuario_perfil_pn = new Usuariosperfiles();                    
                 }
             }
 
@@ -242,26 +244,30 @@ $app->get('/search', function () use ($app, $config) {
             }
 
             //Creo todos los array del registro
-            $array["participante"] = $participante;
-
             //Creo los array de los select del formulario
             $array["tipo_documento"] = Tiposdocumentos::find("active=true AND id<>7");
             $array["sexo"] = Sexos::find("active=true");
             $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-            /**
-            *Cesar Britto, 2020-02-28.
-            *Se realiza el ajuste para cuando el valor des nulo
-            */
-            //$array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
-            //$array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
-            //$array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
-            //
-            $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
-            $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
-            $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
-
+            $array["barrio_residencia_name"] = "";
+            $array["ciudad_nacimiento_name"] = "";
+            $array["ciudad_residencia_name"] = "";
+            if(isset($participante->id))
+            {
+                $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
+                $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
+                $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            }       
+            
+            //Elimino el id si se importa de jurados
+            if($eliminar_id)
+            {
+                $participante->id=null;
+            }
+            
+            $array["participante"] = $participante;
+            
             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 

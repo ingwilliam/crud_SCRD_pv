@@ -663,7 +663,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                                                     COUNT(p.id) as total_propuestas
                                             FROM Propuestas AS p                                
                                             WHERE
-                                            p.estado = 8 AND p.convocatoria=" . $convocatoria->id;
+                                            p.estado IN (8,20) AND p.codigo <> '' AND p.convocatoria=" . $convocatoria->id;
 
                         $total_propuesta = $app->modelsManager->executeQuery($sql_total_propuestas)->getFirst();
                         $codigo_propuesta = $convocatoria->id . "-" . (str_pad($total_propuesta->total_propuestas + 1, 3, "0", STR_PAD_LEFT));
@@ -842,33 +842,65 @@ $app->post('/anular_propuesta', function () use ($app, $config, $logger) {
                 //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
                 $user_current = json_decode($token_actual->user_current, true);
 
-                //parametros de la peticion
+                //Consulto la propuesta
                 $propuesta = Propuestas::findFirst($request->getPost('propuesta'));
                 
-                if ($propuesta->estado == 7) {
-
-                    //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
-                    
-                    $post["estado"] = 20;
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                    
-
-                    if ($propuesta->save($post) === false) {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $request->getPost('propuesta') . ') en el metodo anular_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error";
-                    } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se anulo la propuesta con exito (' . $request->getPost('propuesta') . ') en el metodo anular_propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo $propuesta->id;
-                    }
-                } else {
-                    //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . ') no esta en estado Registrada en el metodo anular_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "error_estado";
+                //Consulto la convocatoria
+                $convocatoria = Convocatorias::findFirst($propuesta->convocatoria);
+                $id_convocatoria=$convocatoria->id;
+                //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+                if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
+                    $id_convocatoria = $convocatoria->getConvocatorias()->id;                    
                 }
+                                
+                //Consulto la fecha de cierre del cronograma de la convocatoria
+                $conditions = ['convocatoria' => $id_convocatoria, 'active' => true, 'tipo_evento' => 12];
+                $fecha_cierre_real = Convocatoriascronogramas::findFirst(([
+                            'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_evento=:tipo_evento:',
+                            'bind' => $conditions,
+                ]));
+                
+                //saco las fechas
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                
+                if ($fecha_actual > $fecha_cierre) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error no puede anular la propuesta (' . $request->getPost('propuesta') . '), ya que esta cerrada la convocatoria, en el metodo anular_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error_fecha_cierre";
+                } else {
+                    //Solo puede anular si esta en estado Guardada - No Inscrita, Inscrita
+                    if ( $propuesta->estado == 7 || $propuesta->estado == 8 ) {
+
+                        //Consulto el total de propuesta con el fin de generar el codigo de la propuesta
+
+                        $post["estado"] = 20;
+                        $post["codigo"] = "Anulada ".$propuesta->codigo;
+                        $post["justificacion_anulacion"] = $request->getPost('justificacion_anulacion');
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                    
+
+                        if ($propuesta->save($post) === false) {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $request->getPost('propuesta') . ') en el metodo anular_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se anulo la propuesta con exito (' . $request->getPost('propuesta') . ') en el metodo anular_propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo $propuesta->id;
+                        }
+                    } else {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPost('propuesta') . ') no esta en estado Registrada en el metodo anular_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error_estado";
+                    }
+                }
+               
+                
+                
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo anular_propuesta al anular la propuesta (' . $request->getPut('propuesta') . ')"', ['user' => "", 'token' => $request->getPut('token')]);

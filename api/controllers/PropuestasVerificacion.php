@@ -373,9 +373,25 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                 
                 if($consultar==true)
                 {
+                    //Consulto el usuario actual
+                    $user_current = json_decode($token_actual->user_current, true);
+                    $user_current = Usuarios::findFirst($user_current["id"]);            
+                    //Creo array de entidades que puede acceder el usuario
+                    $array_usuarios_entidades="";
+                    foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
+                        $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
+                    }
+                    $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
                     
+                    //Creo array de areas que puede acceder el usuario
+                    $array_usuarios_areas="";
+                    foreach ($user_current->getUsuariosareas() as $usuario_area) {
+                        $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
+                    }
+                    $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
+                                        
                     //Consulto todas las propuestas menos la del estado registrada
-                    $where .= " WHERE p.active=true AND p.estado <> 7 ";
+                    $where .= " WHERE p.active=true AND p.estado NOT IN (7,20)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
                     
                     
                     if($params["convocatoria"]!="")
@@ -407,12 +423,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
 
                     //Defino el sql del total y el array de datos
-                    $sqlTot = "SELECT count(*) as total FROM Propuestas AS p "
+                    $sqlTot = "SELECT count(*) as total "
+                            . "FROM Propuestas AS p "
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
-                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
+                            . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
 
@@ -441,7 +458,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
                             . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
@@ -454,7 +471,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
 
                     //Concateno el orden y el limit para el paginador
-                    $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                    $sqlRec .= " ORDER BY p.codigo LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
                     
                     //ejecuto el total de registros actual
                     $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -658,15 +675,20 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
                         
                         //Consulto las posible verificaciones
-                        $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=1");                                
+                        $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=".$request->get('verificacion'));                                
                         $documentos_tecnicos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
                         $documentos_tecnicos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
                         $documentos_tecnicos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
                             
                         
-                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id];
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id , 'cargue_subsanacion' => 'false'];
+                        //Solo aplica para LEP
+                        if($request->get('verificacion')==2)
+                        {
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                        }
                         $consulta_archivos_propuesta = Propuestasdocumentos::find(([
-                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
                                     'bind' => $conditions,
                                     'order' => 'fecha_creacion ASC',
                         ]));
@@ -677,9 +699,14 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                         }
 
-                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id];
+                        $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
+                        //Solo aplica para LEP
+                        if($request->get('verificacion')==2)
+                        {
+                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                        }
                         $consulta_links_propuesta = Propuestaslinks::find(([
-                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                    'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
                                     'bind' => $conditions,
                                     'order' => 'fecha_creacion ASC',
                         ]));
@@ -705,6 +732,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                                 );
                 $array["administrativos"] = $documentos_administrativos;                
                 $array["tecnicos"] = $documentos_tecnicos;                
+                $array["modalidad"] = $convocatoria->modalidad;                
                 
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna la propuesta ('.$id.') en el metodo cargar_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -1000,6 +1028,9 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                 //Consulto la propuesta actual
                 $propuesta = Propuestas::findFirst("id=" . $request->getPost('propuesta') . "");
 
+                echo $propuesta->estado;
+                
+                
                 if (isset($propuesta->id)) {
                     
                     if($request->getPost('estado_actual_propuesta')=="rechazar")
@@ -1009,7 +1040,18 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     
                     if($request->getPost('estado_actual_propuesta')=="subsanar")
                     {
-                        $propuesta->estado=21;
+                        //Valido que si la modalidad es diferente de LEP                        
+                        if($propuesta->getConvocatorias()->modalidad!=6)
+                        {
+                            $propuesta->estado=21;
+                        }
+                        else
+                        {
+                            if($propuesta->getConvocatorias()->modalidad==6 && $request->getPost('tipo_verificacion')=="tecnica")
+                            {
+                                $propuesta->estado=21;
+                            }
+                        }                        
                     }
                     
                     if($request->getPost('estado_actual_propuesta')=="habilitada")

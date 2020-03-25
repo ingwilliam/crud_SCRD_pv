@@ -85,6 +85,13 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Búsqueda de propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_propuestas = $app->modelsManager->executeQuery($phql);
+            
+            //Consultar todos los permiso de los reportes
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Reportes' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_reportes = $app->modelsManager->executeQuery($phql);
 
             //Consultar todos los permiso del menu participante
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
@@ -548,7 +555,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos.html?id=<?php echo $request->getPost('id');?>">Doc. Técnicos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/resoluciones.html?id=<?php echo $request->getPost('id');?>">Resoluciones</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>                                    
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/parametros_convocatorias.html?id=<?php echo $request->getPost('id');?>">Formulario de la propuesta</a>
                                     <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
@@ -573,6 +581,25 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        
+                        <?php
+                        if(count($permisos_reportes)>0)
+                        {
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i> Reportes<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="" href="../reportes/propuestas.html">Propuestas</a>                                    
+                                    <a style="" href="../reportes/entidades.html">Entidades</a>                                    
+                                    <a style="" href="../reportes/contratistas.html">Contratistas</a>                                    
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
