@@ -119,10 +119,16 @@ $app->post('/new', function () use ($app, $config, $logger) {
                     $id_usuarios_perfiles = $id_usuarios_perfiles . $aup->id . ",";
                 }
                 $id_usuarios_perfiles = substr($id_usuarios_perfiles, 0, -1);
-
+                
+                
+                $not_in_usuario_perfil="";
+                if($id_usuarios_perfiles!="")
+                {
+                    $not_in_usuario_perfil="usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND ";
+                }
+                                
                 //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
-                $participante_verificado = Participantes::find("usuario_perfil NOT IN (" . $id_usuarios_perfiles . ") AND numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]." AND tipo='Inicial'");
-
+                $participante_verificado = Participantes::find($not_in_usuario_perfil."numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]." AND tipo='Inicial'");
                 if (count($participante_verificado) > 0) {
                     //Registro la accion en el log de convocatorias
                     $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos ' . $post["tipo_documento"] . ' ' . $post["numero_documento"] . '"', ['user' => "", 'token' => $request->get('token')]);

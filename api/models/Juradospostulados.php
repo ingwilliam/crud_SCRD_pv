@@ -12,7 +12,7 @@ class Juradospostulados extends Model
       $this->hasOne(
         'convocatoria',
         'Convocatorias',
-        'id',
+        'id'
       //  ['alias' => 'Convocatorias']
       );
 

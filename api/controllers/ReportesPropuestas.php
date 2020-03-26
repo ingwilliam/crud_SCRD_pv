@@ -328,6 +328,8 @@ $app->get('/generar_reportes_entidades', function () use ($app, $config, $logger
                 
                 //Seteo los varoles a retornar
                 $array_retorno["reporte_propuestas_estados"]='<a target="_blank" href="'.$config->sistema->url_report.'listado_entidades_convocatorias_estado.php?token='.$request->get('token').'&anio='.$request->get('anio').'&entidad='.$request->get('entidad').'" class="btn">Generar Reporte <i class="fa fa-file-pdf-o"></i></a>';                
+                $array_retorno["reporte_convocatorias_cerrar"]='<a target="_blank" href="'.$config->sistema->url_report.'listado_entidades_convocatorias_cerrar.php?token='.$request->get('token').'&anio='.$request->get('anio').'&entidad='.$request->get('entidad').'" class="btn">Generar Reporte <i class="fa fa-file-pdf-o"></i></a>';                
+                $array_retorno["reporte_convocatorias_cantidad_jurados"]='<a target="_blank" href="'.$config->sistema->url_report.'listado_entidades_convocatorias_total_jurados.php?token='.$request->get('token').'&anio='.$request->get('anio').'&entidad='.$request->get('entidad').'" class="btn">Generar Reporte <i class="fa fa-file-pdf-o"></i></a>';                
                 $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                 echo json_encode($array_retorno);
                                                                         

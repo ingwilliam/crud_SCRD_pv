@@ -746,6 +746,189 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
     }
 });
 
+$app->post('/reporte_listado_entidades_convocatorias_cerrar', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            //Consulto lo necesario
+            $user_current = json_decode($token_actual->user_current, true);
+            $entidad = Entidades::findFirst($request->getPut('entidad'));
+
+            $html_propuestas = "";
+            
+            //Genero reporte propuestas por estado
+            $sql_convocatorias = "
+                        SELECT vc.convocatoria,vc.categoria,cc.fecha_fin FROM Viewconvocatorias AS vc
+                        INNER JOIN Convocatoriascronogramas AS cc ON cc.convocatoria=vc.id
+                        WHERE vc.anio='".$request->getPut('anio')."' AND cc.tipo_evento=12 AND vc.entidad='".$request->getPut('entidad')."'
+                        ORDER BY vc.convocatoria,cc.fecha_inicio";
+            
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+            
+            foreach ($convocatorias as $convocatoria) {
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . '<td colspan="2">' . $convocatoria->convocatoria . '</td>';
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->categoria . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_fin . "</td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+            }
+            
+            
+            
+            
+                
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center"> Convocatorias próximas a cerrar </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center"> Fecha de corte '.date("Y-m-d H:i:s").'</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">Año: '.$request->getPut('anio').'</td>
+                        <td colspan="2">Entidad: '.$entidad->descripcion.'</td>
+                    </tr>                                    
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center" colspan="2">Convocatoria</td>
+                        <td align="center">Categoria</td>
+                        <td align="center">Fecha de cierre</td>                                              
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_listado_entidades_convocatorias_total_jurados', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_total_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+            
+            //Consulto lo necesario
+            $user_current = json_decode($token_actual->user_current, true);
+            $entidad = Entidades::findFirst($request->getPut('entidad'));
+
+            $html_propuestas = "";
+            
+            //Genero reporte propuestas por estado
+            $sql_convocatorias = "
+                        SELECT
+                                e.nombre AS entidad,
+                                c.nombre AS cnombre,
+                                cp.nombre AS cpnombre,
+                                pro.modalidad_participa,	
+                                CASE jp.active
+                                      WHEN TRUE THEN 'Activa'
+                                      WHEN FALSE THEN 'Inactiva'
+
+                                END as estado_postulacion,
+                                count(jp.id) AS cantidad
+                        FROM Juradospostulados AS jp
+                            INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                            LEFT JOIN Convocatorias as c ON jp.convocatoria = c.id
+                            LEFT JOIN Entidades as e ON c.entidad =  e.id
+                            LEFT JOIN Convocatorias as cp ON c.convocatoria_padre_categoria = cp.id
+                        WHERE c.anio = ".$request->getPut('anio')." AND c.entidad='".$request->getPut('entidad')."' 
+                        GROUP BY 1,2,3,4,5
+                        ORDER  BY 1,2,3,4,5";
+            
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+            
+            foreach ($convocatorias as $convocatoria) {
+                $nombre_convocatoria=$convocatoria->cnombre;
+                if($convocatoria->cpnombre)
+                {
+                    $nombre_convocatoria=$convocatoria->cpnombre." - ".$convocatoria->cnombre;
+                }
+                
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . '<td>' . $nombre_convocatoria . '</td>';
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->modalidad_participa . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado_postulacion . "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->cantidad . "</td>";                
+                $html_propuestas = $html_propuestas . "</tr>";
+            }
+            
+                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="4" align="center"> Cantidad de jurados por convocatoria </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center"> Fecha de corte '.date("Y-m-d H:i:s").'</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">Año: '.$request->getPut('anio').'</td>
+                        <td colspan="2">Entidad: '.$entidad->descripcion.'</td>
+                    </tr>                                    
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Convocatoria</td>
+                        <td align="center">Modalidad Participa</td>
+                        <td align="center">Estado Postulación</td>                                              
+                        <td align="center">Total</td>                                              
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+                
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+                    
+            
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use ($app, $config, $logger) {
 
 //Instancio los objetos que se van a manejar
