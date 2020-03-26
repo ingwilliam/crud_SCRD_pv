@@ -457,3 +457,24 @@ CREATE TABLE public.entidadescontratistas
       REFERENCES public.usuarios (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION      
 );
+
+
+//marzo 25 del 2020
+
+CREATE VIEW viewconvocatorias  AS 
+(
+SELECT 
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,c.anio,c.entidad AS entidad 
+FROM convocatorias AS c
+INNER JOIN entidades AS e ON e.id=c.entidad
+WHERE c.active=TRUE AND c.modalidad<>2 AND c.estado=5 AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE
+) 
+UNION 
+(
+SELECT 
+	e.nombre AS nombre_entidad,cat.nombre AS convocatoria,c.nombre AS categoria,cat.id,c.anio,c.entidad AS entidad
+FROM convocatorias AS c
+INNER JOIN convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria
+INNER JOIN entidades AS e ON e.id=cat.entidad
+WHERE cat.active=TRUE AND c.modalidad<>2 AND c.estado=5 AND c.convocatoria_padre_categoria IS NOT NULL AND c.tiene_categorias=TRUE
+)
