@@ -614,11 +614,11 @@ $app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $lo
                                                 cd.id,
                                                 r.nombre	
                                         FROM Propuestasverificaciones AS pv
-                                        INNER JOIN Convocatoriasdocumentos AS cd ON cd.id=pv.convocatoriadocumento AND pv.verificacion=1 AND pv.estado=27
+                                        INNER JOIN Convocatoriasdocumentos AS cd ON cd.id=pv.convocatoriadocumento
                                         INNER JOIN Requisitos AS r ON r.id=cd.requisito
                                         LEFT JOIN Propuestasdocumentos AS pd ON pd.convocatoriadocumento = cd.id AND pd.propuesta=" . $propuesta->id . " AND pd.active = TRUE AND pd.cargue_subsanacion = TRUE 
                                         LEFT JOIN Propuestaslinks AS pl ON pl.convocatoriadocumento = cd.id AND pl.propuesta=" . $propuesta->id . " AND pl.active = TRUE AND pl.cargue_subsanacion = TRUE 
-                                        WHERE r.tipo_requisito IN ('Administrativos','Tecnicos') AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
+                                        WHERE  pv.verificacion=1 AND pv.estado=27 AND pv.propuesta=" . $propuesta->id . " AND r.tipo_requisito IN ('Administrativos','Tecnicos') AND cd.convocatoria=" . $id . " AND pd.convocatoriadocumento IS NULL AND pl.convocatoriadocumento IS NULL";
                     
                     $requisitos = $app->modelsManager->executeQuery($sql_requisitos);
 
