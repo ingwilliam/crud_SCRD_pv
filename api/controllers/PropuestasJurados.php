@@ -6703,9 +6703,9 @@ $app->get('/listar', function () use ($app, $config) {
                         ->execute();
                         //->getFirst();
 
-                      //  return json_encode($participantes);
+                      //  return json_encode($participantes);;;;
 
-                      if($participantes->count() > 0){
+                      if( $participantes->count() > 0){
 
                         foreach ($participantes as $value){
                             array_push($array, $value->id );
@@ -6722,7 +6722,6 @@ $app->get('/listar', function () use ($app, $config) {
                             "offset" =>  $request->get('start'),
                           ]
                         );
-
 
                          foreach ($propuestas as $propuesta){
 
@@ -6758,8 +6757,8 @@ $app->get('/listar', function () use ($app, $config) {
             //creo el array
             $json_data = array(
                 "draw" => intval($request->get("draw")),
-                "recordsTotal" => intval( $tpropuestas ->count()),
-                "recordsFiltered" => intval($tpropuestas->count()),
+                "recordsTotal" => intval( count($tpropuestas) ),
+                "recordsFiltered" => intval( count($tpropuestas) ),
                 "data" => $response   // total data array
             );
             //retorno el array en json
