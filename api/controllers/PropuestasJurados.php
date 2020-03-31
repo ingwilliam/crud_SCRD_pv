@@ -278,18 +278,9 @@ $app->get('/search', function () use ($app, $config) {
                       }
                          //Creo los array de los select del formulario
                          $array["categoria"]= $participante->propuestas->modalidad_participa;
-                         $array["tipo_documento"]= Tiposdocumentos::find("active=true");
-                         $array["sexo"]= Sexos::find("active=true");
-                         $array["orientacion_sexual"]= Orientacionessexuales::find("active=true");
-                         $array["identidad_genero"]= Identidadesgeneros::find("active=true");
-                         $array["grupo_etnico"]= Gruposetnicos::find("active=true");
-
                          $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
                          $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
                          $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
-
-                         $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");
-                         $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
                          //Retorno el array
                         return json_encode( $array );
@@ -4948,13 +4939,20 @@ $app->post('/download_file', function () use ($app, $config) {
 
 //Funcionalidad Postular hoja de vida
 // Accion de postular la hoja de vida del perfil jurado
-$app->get('/postular', function () use ($app, $config) {
+$app->get('/postular', function () use ($app, $config, $logger) {
 
   try {
 
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a inscribir la hoja de vida."',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
+        $logger->close();
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
@@ -5002,6 +5000,13 @@ $app->get('/postular', function () use ($app, $config) {
                        if( $participante->propuestas != null and $participante->propuestas->estado == 9 ){
 
                          if(  !$participante->propuestas->modalidad_participa ||  $participante->propuestas->modalidad_participa==''){
+
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al inscribir la hoja de vida, no se especifica modalidad en que participa."',
+                                           ['user' => $user_current,
+                                           'token' => $request->get('token')]
+                                         );
+                            $logger->close();
+
                             return "error_modalidad";
                          }
 
@@ -5011,10 +5016,15 @@ $app->get('/postular', function () use ($app, $config) {
                             //perfil = 17  perfil de jurado
                            ->where("Propuestajuradodocumento.propuesta = ".$participante->propuestas->id)
                            ->andWhere("Convocatoriasdocumentos.etapa = 'Registro'")
-                            ->andWhere("Propuestajuradodocumento.active = true")
+                           ->andWhere("Propuestajuradodocumento.active = true")
                            ->execute();
 
                          if( $documentos->count() == 0 ){
+                           $logger->error('"token":"{token}","user":"{user}","message":"Error al inscribir la hoja de vida, no se ha cargado documento administrativo."',
+                                          ['user' => $user_current,
+                                          'token' => $request->get('token')]
+                                        );
+                           $logger->close();
 
                            return "error_documento_administrativo";
                          }
@@ -5027,17 +5037,40 @@ $app->get('/postular', function () use ($app, $config) {
                          //  echo "educacionformal---->>".json_encode($educacionformal);
                             //echo "post---->>".json_encode($post);
                          if ($participante->propuestas->save() === false) {
-                                  //  return json_encode($user_current);
+
+                             //  return json_encode($user_current);
                              //Para auditoria en versión de pruebas
-                             foreach ($participante->propuestas->getMessages() as $message) {
+                             /*foreach ($participante->propuestas->getMessages() as $message) {
                                   echo $message;
                                 }
+                            */
+                           $logger->error('"token":"{token}","user":"{user}","message":"Error al modificar la propuesta. '.json_decode( $participante->propuestas->getMessages() ).'"',
+                                           ['user' => $user_current,
+                                           'token' => $request->get('token')]
+                                         );
+                           $logger->close();
 
+                           return  "error";
                          } else {
-                             return (String)$participante->propuestas->id;
+
+                           $logger->info(
+                             '"token":"{token}","user":"{user}","message":"Se incribió la hoja de vida."',
+                             ['user' => $user_current,
+                             'token' => $request->get('token')]
+                           );
+                           $logger->close();
+
+                           return (String)$participante->propuestas->id;
                          }
 
                        }else{
+
+                         $logger->error('"token":"{token}","user":"{user}","message":"Deshabilitado"',
+                                       ['user' => $user_current,
+                                       'token' => $request->get('token')]
+                                     );
+                         $logger->close();
+
                           return "deshabilitado";
                        }
 
@@ -5046,15 +5079,33 @@ $app->get('/postular', function () use ($app, $config) {
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
+
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
+
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo".$ex->getMessage();
         //Para auditoria en versión de pruebas
-        return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //return "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "",
+                      'token' => $request->get('token')]
+                    );
+        $logger->close();
+
+       return "error_metodo";
+
     }
 
 }
@@ -6101,13 +6152,20 @@ $app->get('/postulacion_perfiles_convocatoria', function () use ($app, $config) 
 );
 
 // Crea el registro de postulacion
-$app->post('/new_postulacion', function () use ($app, $config) {
+$app->post('/new_postulacion', function () use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
         $contador  =0;
+
+
+        $logger->info(
+          '"token":"{token}","user":"{user}","message":"Ingresa a crear una postulación."',
+          ['user' => '',
+          'token' => $request->get('token')]
+        );
 
 
         //Consulto si al menos hay un token
@@ -6216,15 +6274,27 @@ $app->post('/new_postulacion', function () use ($app, $config) {
 
                           //return "error";
                           //Para auditoria en versión de pruebas
-                          foreach ($juradopostulado->getMessages() as $message) {
+                        /*  foreach ($juradopostulado->getMessages() as $message) {
                             echo $message;
-                          }
+                          }*/
+
+                          $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la postulación. '.json_decode( $juradopostulado->getMessages() ).'"',
+                                         ['user' => $user_current, 'token' => $request->get('token')]
+                                       );
+                          $logger->close();
+
+                          return "error";
+
 
                         }
 
                         return $juradopostulado->id;
 
                        }else{
+                         $logger->error('"token":"{token}","user":"{user}","message":"Supera el maximo de postulaciones."', [
+                                     'user' => $user_current, 'token' => $request->get('token')]
+                                   );
+                         $logger->close();
                          return "error_limite";
                        }
 
@@ -6233,15 +6303,29 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                        }
 
             } else {
+              $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
+                            ['user' => "", 'token' => $request->get('token')]
+                          );
+              $logger->close();
                 return "acceso_denegado";
             }
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"Token caducó"', [
+                      'user' => "", 'token' => $request->get('token')]
+                    );
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //echo "error_metodo"
         //Para auditoria en versión de pruebas
-        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        //echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+
+        $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
+                      ['user' => "", 'token' => $request->get('token')]
+                    );
+        $logger->close();
+       return "error_metodo";
     }
 }
 );
@@ -6594,6 +6678,7 @@ $app->get('/listar', function () use ($app, $config) {
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
             $array = array();
+            $tpropuestas = array();
 
            if( $user_current["id"]){
 
@@ -6620,47 +6705,50 @@ $app->get('/listar', function () use ($app, $config) {
 
                       //  return json_encode($participantes);
 
-                      foreach ($participantes as $value){
-                          array_push($array, $value->id );
+                      if($participantes->count() > 0){
+
+                        foreach ($participantes as $value){
+                            array_push($array, $value->id );
+                        }
+
+                        $propuestas = Propuestas::find(
+                          [
+                            " participante IN ({participante:array})  ",
+                            "order" => 'id ASC',
+                            'bind' => [
+                                  'participante' => $array
+                              ],
+                            "limit" =>  $request->get('length'),
+                            "offset" =>  $request->get('start'),
+                          ]
+                        );
+
+
+                         foreach ($propuestas as $propuesta){
+
+                             array_push($response,[
+                               "id"=>$propuesta->id,
+                               "codigo"=>$propuesta->codigo,
+                               "id_convocatoria" => $propuesta->convocatoria,
+                               "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
+                               "modalidad_participa" => $propuesta->modalidad_participa,
+                               "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
+
+                               ] );
+                         }
+
+                         //resultado sin filtro
+                         $tpropuestas = Propuestas::find(
+                           [
+                             " participante IN ({participante:array})  ",
+                             'bind' => [
+                                   'participante' => $array
+                               ],
+                           ]
+                         );
+
                       }
 
-
-                       $propuestas = Propuestas::find(
-                         [
-                           " participante IN ({participante:array})  ",
-                           "order" => 'id ASC',
-                           'bind' => [
-                                 'participante' => $array
-                             ],
-                           "limit" =>  $request->get('length'),
-                           "offset" =>  $request->get('start'),
-                         ]
-                       );
-
-
-                       foreach ($propuestas as $propuesta){
-
-                           array_push($response,[
-                             "id"=>$propuesta->id,
-                             "codigo"=>$propuesta->codigo,
-                             "id_convocatoria" => $propuesta->convocatoria,
-                             "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
-                             "modalidad_participa" => $propuesta->modalidad_participa,
-                             "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
-
-                             ] );
-                       }
-
-
-                       //resultado sin filtro
-                       $tpropuestas = Propuestas::find(
-                         [
-                           " participante IN ({participante:array})  ",
-                           'bind' => [
-                                 'participante' => $array
-                             ],
-                         ]
-                       );
 
                      }
 
