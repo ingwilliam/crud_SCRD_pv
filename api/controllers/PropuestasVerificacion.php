@@ -732,7 +732,26 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                                 );
                 $array["administrativos"] = $documentos_administrativos;                
                 $array["tecnicos"] = $documentos_tecnicos;                
-                $array["modalidad"] = $convocatoria->modalidad;                
+                $array["modalidad"] = $convocatoria->modalidad;
+
+                //Consultamos las inhabilidades como contratistas                
+                $sql_contratistas = "
+                    SELECT 
+                            concat(p.numero_documento,' ',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS participante,
+                            concat(e.nombre,' ',ec.numero_documento,' ',ec.primer_nombre,' ',ec.segundo_nombre,' ',ec.primer_apellido,' ',ec.segundo_apellido) AS contratista
+                    FROM Participantes AS p
+                    INNER JOIN Entidadescontratistas AS ec ON REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM(p.numero_documento),'.','')
+                    INNER JOIN Entidades AS e ON e.id=ec.entidad
+                    WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.tipo_documento=1 AND ec.active=TRUE AND p.active=TRUE";
+
+                $contratistas = $app->modelsManager->executeQuery($sql_contratistas);
+                
+                $array_contratistas=array();
+                foreach ($contratistas as $contratista) {                    
+                    $array_contratistas[$contratista->participante][]=$contratista->contratista;
+                }
+                $array["contratistas"] = $array_contratistas;
+                
                 
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna la propuesta ('.$id.') en el metodo cargar_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);

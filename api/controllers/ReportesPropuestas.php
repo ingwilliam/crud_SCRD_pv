@@ -331,6 +331,7 @@ $app->get('/generar_reportes_entidades', function () use ($app, $config, $logger
                 $array_retorno["reporte_propuestas_estados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_estado.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_propuestas_estados_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                 $array_retorno["reporte_convocatorias_cerrar"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_cerrar.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cerrar_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                 $array_retorno["reporte_convocatorias_cantidad_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_total_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cantidad_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                $array_retorno["reporte_convocatorias_listado_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                 $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                 echo json_encode($array_retorno);
                                                                         
@@ -388,13 +389,15 @@ $app->get('/generar_reportes_contratistas', function () use ($app, $config, $log
                     0 => 'ec.primer_nombre',
                     1 => 'ec.segundo_nombre',
                     2 => 'ec.primer_apellido',
-                    3 => 'ec.segundo_apellido'                    
+                    3 => 'ec.segundo_apellido',                    
+                    4 => 'ec.numero_documento',                    
+                    5 => 'ec.active'                    
                 );
 
                 
                 //Condiciones para la consulta
                 $where .= " INNER JOIN Entidades AS e ON e.id=ec.entidad";
-                $where .= " WHERE ec.active=true";
+                $where .= " WHERE ec.active IN (true,false)";
                 
                 if($request->get('entidad')!=""){
                     $where .= " AND ec.entidad=".$request->get('entidad');                    
@@ -404,12 +407,13 @@ $app->get('/generar_reportes_contratistas', function () use ($app, $config, $log
                     $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                     $where .= " OR  UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR  UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
-                    $where .= " OR ( UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                    $where .= " OR  UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR ( UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Entidadescontratistas AS ec";
-                $sqlRec = "SELECT e.nombre AS entidad," . $columns[0] . " ," . $columns[1] . " ," . $columns[2] . " ," . $columns[3] . " , concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit(',ec.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button><button type=\"button\" class=\"btn btn-danger\" onclick=\"form_del(',ec.id,')\"><span class=\"glyphicon glyphicon-remove\"></span></button>') as acciones FROM Entidadescontratistas AS ec";
+                $sqlRec = "SELECT e.nombre AS entidad," . $columns[0] . " ," . $columns[1] . " ," . $columns[2] . " ," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . " , concat('<button title=\"',ec.id,'\" type=\"button\" class=\"btn btn-warning cargar_contratista\" data-toggle=\"modal\" data-target=\"#editar_contratista\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Entidadescontratistas AS ec";
 
                 //concatenate search sql if value exist
                 if (isset($where) && $where != '') {
