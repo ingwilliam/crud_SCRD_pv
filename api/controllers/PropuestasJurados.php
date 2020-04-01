@@ -6753,7 +6753,6 @@ $app->get('/listar', function () use ($app, $config) {
 
             }
 
-
             //creo el array
             $json_data = array(
                 "draw" => intval($request->get("draw")),
