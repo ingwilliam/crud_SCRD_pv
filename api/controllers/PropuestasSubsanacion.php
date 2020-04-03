@@ -497,9 +497,25 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                 
                 if($consultar==true)
                 {
+                    //Consulto el usuario actual
+                    $user_current = json_decode($token_actual->user_current, true);
+                    $user_current = Usuarios::findFirst($user_current["id"]);            
+                    //Creo array de entidades que puede acceder el usuario
+                    $array_usuarios_entidades="";
+                    foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
+                        $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
+                    }
+                    $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
+                    
+                    //Creo array de areas que puede acceder el usuario
+                    $array_usuarios_areas="";
+                    foreach ($user_current->getUsuariosareas() as $usuario_area) {
+                        $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
+                    }
+                    $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
                     
                     //Consulto todas las propuestas menos la del estado Por Subsanar y Subsanación Recibida
-                    $where .= " WHERE p.active=true AND p.estado IN ( 21 , 22 ) ";
+                    $where .= " WHERE p.active=true AND p.estado IN ( 21 , 22 ) AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
                     
                     
                     if($params["convocatoria"]!="")
@@ -524,7 +540,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades) "
                             . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
@@ -548,8 +564,8 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "FROM Propuestas AS p "
                             . "INNER JOIN Estados AS est ON est.id=p.estado "
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
-                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
-                            . "INNER JOIN Entidades AS e ON e.id=c.entidad "
+                            . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "                            
+                            . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades) "
                             . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
