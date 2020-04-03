@@ -478,3 +478,85 @@ INNER JOIN convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria
 INNER JOIN entidades AS e ON e.id=cat.entidad
 WHERE cat.active=TRUE AND c.estado IN (5,6) AND c.convocatoria_padre_categoria IS NOT NULL AND c.tiene_categorias=TRUE
 )
+
+//abril 02 del 2020
+CREATE VIEW viewparticipantes  AS 
+(
+SELECT
+	pro.convocatoria,
+	pro.codigo,
+	pro.nombre AS nombre_propuesta,
+	per.nombre AS tipo_participante,
+	par.representante,
+	par.tipo tipo_rol,
+	par.rol,
+	par.numero_documento,
+	par.primer_nombre,
+	par.segundo_nombre,
+	par.primer_apellido,
+	par.segundo_apellido,
+	td.id AS id_tipo_documento,
+	td.nombre AS tipo_documento,
+	par.fecha_nacimiento,
+	sex.nombre AS sexo,
+	par.direccion_residencia,
+	ciu.nombre AS ciudad_residencia,
+	loc.nombre AS localidad_residencia,
+	upz.nombre AS upz_residencia,
+	bar.nombre AS barrio_residencia,
+	par.estrato,
+	par.correo_electronico,
+	par.numero_telefono,
+	par.numero_celular
+FROM propuestas AS pro
+	INNER JOIN participantes AS par ON par.id=pro.participante
+	INNER JOIN usuariosperfiles AS usupar ON usupar.id=par.usuario_perfil
+	INNER JOIN perfiles AS per ON per.id=usupar.perfil
+	LEFT JOIN tiposdocumentos AS td ON td.id=par.tipo_documento
+	LEFT JOIN sexos AS sex ON sex.id=par.sexo
+	LEFT JOIN ciudades AS ciu ON ciu.id=par.ciudad_residencia
+	LEFT JOIN barrios AS bar ON bar.id=par.barrio_residencia
+	LEFT JOIN localidades AS loc ON loc.id=bar.localidad
+	LEFT JOIN upzs AS upz ON upz.id=bar.upz
+WHERE pro.estado NOT IN (20,7) AND par.active=TRUE
+)
+UNION
+(
+SELECT 
+	pro.convocatoria,
+	pro.codigo,
+	pro.nombre AS nombre_propuesta,
+	per.nombre AS tipo_participante,	
+	par.representante,
+	par.tipo AS tipo_rol,
+	par.rol,
+	par.numero_documento,
+	par.primer_nombre,
+	par.segundo_nombre,
+	par.primer_apellido,
+	par.segundo_apellido,
+	td.id AS id_tipo_documento,
+	td.nombre AS tipo_documento,
+	par.fecha_nacimiento,
+	sex.nombre AS sexo,
+	par.direccion_residencia,
+	ciu.nombre AS ciudad_residencia,
+	loc.nombre AS localidad_residencia,
+	upz.nombre AS upz_residencia,
+	bar.nombre AS barrio_residencia,
+	par.estrato,
+	par.correo_electronico,
+	par.numero_telefono,
+	par.numero_celular
+FROM propuestas AS pro
+	INNER JOIN participantes AS par ON par.participante_padre=pro.participante
+	INNER JOIN usuariosperfiles AS usupar ON usupar.id=par.usuario_perfil
+	INNER JOIN perfiles AS per ON per.id=usupar.perfil
+	LEFT JOIN tiposdocumentos AS td ON td.id=par.tipo_documento
+	LEFT JOIN sexos AS sex ON sex.id=par.sexo
+	LEFT JOIN ciudades AS ciu ON ciu.id=par.ciudad_residencia
+	LEFT JOIN barrios AS bar ON bar.id=par.barrio_residencia
+	LEFT JOIN localidades AS loc ON loc.id=bar.localidad
+	LEFT JOIN upzs AS upz ON upz.id=bar.upz
+WHERE pro.estado NOT IN (20,7) AND par.active=TRUE
+)

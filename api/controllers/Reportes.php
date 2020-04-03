@@ -217,66 +217,89 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 
-                //Genero reporte propuestas por estado
-                $sql_propuestas_estado = "
-                            SELECT 
-                                e.nombre,count(p.id) AS total 
-                            FROM Propuestas AS p 
-                            LEFT JOIN Estados AS e ON e.id=p.estado
-                            WHERE p.convocatoria=".$request->get('convocatoria')."
-                            GROUP BY 1";
+                //Consulto el usuario actual                
+                $user_entidad = Usuarios::findFirst($user_current["id"]);            
+                //Consulto si tiene relacionada la entidad
+                $ver_reportes=false;
+                foreach ($user_entidad->getUsuariosentidades() as $usuario_entidad) {
+                    if($usuario_entidad->entidad==$request->get('entidad'))
+                    {
+                        $ver_reportes=true;
+                    }                    
+                }
+                
+                if($ver_reportes)
+                {
+                    //Genero reporte propuestas por estado
+                    $sql_propuestas_estado = "
+                                SELECT 
+                                    e.nombre,count(p.id) AS total 
+                                FROM Propuestas AS p 
+                                LEFT JOIN Estados AS e ON e.id=p.estado
+                                WHERE p.convocatoria=".$request->get('convocatoria')."
+                                GROUP BY 1";
 
-                $propuestas_estado = $app->modelsManager->executeQuery($sql_propuestas_estado);
-                
-                $array_retorno=array();                
-                foreach ($propuestas_estado as $propuestas) {
-                    $array_propuestas_estado[]=array("device"=>$propuestas->nombre,"geekbench"=>$propuestas->total);
+                    $propuestas_estado = $app->modelsManager->executeQuery($sql_propuestas_estado);
+
+                    $array_retorno=array();                
+                    foreach ($propuestas_estado as $propuestas) {
+                        $array_propuestas_estado[]=array("device"=>$propuestas->nombre,"geekbench"=>$propuestas->total);
+                    }
+
+                    //Genero reporte propuestas por estado
+                    $sql_propuestas_participante = "
+                                SELECT 
+                                per.id,
+                                pro.creado_por,
+                                count(per.id) 
+                                FROM Perfiles AS per
+                                INNER JOIN Usuariosperfiles AS up ON up.perfil=per.id
+                                INNER JOIN Participantes AS par ON par.usuario_perfil=up.id
+                                INNER JOIN Propuestas AS pro ON pro.participante=par.id
+                                WHERE per.id IN (6,7,8) AND pro.convocatoria=".$request->get('convocatoria')." AND par.tipo='Participante'
+                                GROUP BY 1,2";
+
+                    $propuestas_participantes = $app->modelsManager->executeQuery($sql_propuestas_participante);
+
+                    $array_participantes=array();
+                    $pn_6=0;
+                    $pj_7=0;
+                    $agr_8=0;
+                    foreach ($propuestas_participantes as $propuestas) {
+                        if($propuestas->id==6)
+                        {
+                            $pn_6++;
+                        }
+                        if($propuestas->id==7)
+                        {
+                            $pj_7++;
+                        }
+                        if($propuestas->id==8)
+                        {
+                            $agr_8++;
+                        }
+                    }
+
+                    $array_propuestas_participantes[]=array("device"=>"Persona\nNatural","geekbench"=>$pn_6);
+                    $array_propuestas_participantes[]=array("device"=>"Persona\nJurídica","geekbench"=>$pj_7);
+                    $array_propuestas_participantes[]=array("device"=>"Agrupación","geekbench"=>$agr_8);
+
+                    //Seteo los varoles a retornar
+                    $array_retorno["reporte_propuestas_estados"]=$array_propuestas_estado;
+                    $array_retorno["reporte_propuestas_participantes"]=$array_propuestas_participantes;
+                    $params=array("token"=>$request->get('token'),"entidad"=>$request->get('entidad'),"anio"=>$request->get('anio'),"convocatoria"=>$request->get('convocatoria'));
+                    $array_retorno["reporte_convocatorias_listado_contratistas"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_contratistas.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."&convocatoria=".$request->get('convocatoria')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_contratistas'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["reporte_convocatorias_listado_participantes"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_participantes.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."&convocatoria=".$request->get('convocatoria')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_participantes'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
+                    echo json_encode($array_retorno);
                 }
-                
-                //Genero reporte propuestas por estado
-                $sql_propuestas_participante = "
-                            SELECT 
-                            per.id,
-                            pro.creado_por,
-                            count(per.id) 
-                            FROM Perfiles AS per
-                            INNER JOIN Usuariosperfiles AS up ON up.perfil=per.id
-                            INNER JOIN Participantes AS par ON par.usuario_perfil=up.id
-                            INNER JOIN Propuestas AS pro ON pro.participante=par.id
-                            WHERE per.id IN (6,7,8) AND pro.convocatoria=".$request->get('convocatoria')." AND par.tipo='Participante'
-                            GROUP BY 1,2";
-                
-                $propuestas_participantes = $app->modelsManager->executeQuery($sql_propuestas_participante);
-                
-                $array_participantes=array();
-                $pn_6=0;
-                $pj_7=0;
-                $agr_8=0;
-                foreach ($propuestas_participantes as $propuestas) {
-                    if($propuestas->id==6)
-                    {
-                        $pn_6++;
-                    }
-                    if($propuestas->id==7)
-                    {
-                        $pj_7++;
-                    }
-                    if($propuestas->id==8)
-                    {
-                        $agr_8++;
-                    }
+                else
+                {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado por entidad en el metodo generar_reportes  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
+                    $logger->close();
+                    echo "error_entidad";
                 }
-                
-                $array_propuestas_participantes[]=array("device"=>"Persona\nNatural","geekbench"=>$pn_6);
-                $array_propuestas_participantes[]=array("device"=>"Persona\nJurídica","geekbench"=>$pj_7);
-                $array_propuestas_participantes[]=array("device"=>"Agrupación","geekbench"=>$agr_8);
-                
-                //Seteo los varoles a retornar
-                $array_retorno["reporte_propuestas_estados"]=$array_propuestas_estado;
-                $array_retorno["reporte_propuestas_participantes"]=$array_propuestas_participantes;
-                $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
-                echo json_encode($array_retorno);
-                                                                        
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo generar_reportes  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
@@ -326,30 +349,51 @@ $app->get('/generar_reportes_entidades', function () use ($app, $config, $logger
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 
-                $params=array("token"=>$request->get('token'),"entidad"=>$request->get('entidad'),"anio"=>$request->get('anio'));
-                //Seteo los varoles a retornar
-                $array_retorno["reporte_propuestas_estados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_estado.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_propuestas_estados_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
-                $array_retorno["reporte_convocatorias_cerrar"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_cerrar.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cerrar_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
-                $array_retorno["reporte_convocatorias_cantidad_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_total_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cantidad_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
-                $array_retorno["reporte_convocatorias_listado_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
-                $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
-                echo json_encode($array_retorno);
-                                                                        
+                //Consulto el usuario actual                
+                $user_entidad = Usuarios::findFirst($user_current["id"]);            
+                //Consulto si tiene relacionada la entidad
+                $ver_reportes=false;
+                foreach ($user_entidad->getUsuariosentidades() as $usuario_entidad) {
+                    if($usuario_entidad->entidad==$request->get('entidad'))
+                    {
+                        $ver_reportes=true;
+                    }                    
+                }
+                
+                if($ver_reportes)
+                {
+                
+                    $params=array("token"=>$request->get('token'),"entidad"=>$request->get('entidad'),"anio"=>$request->get('anio'));
+                    //Seteo los varoles a retornar
+                    $array_retorno["reporte_propuestas_estados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_estado.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_propuestas_estados_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["reporte_convocatorias_cerrar"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_cerrar.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cerrar_excel'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["reporte_convocatorias_cantidad_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_total_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_cantidad_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["reporte_convocatorias_listado_jurados"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_jurados.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_jurados'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
+                    echo json_encode($array_retorno);
+                }
+                else
+                {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado por entidad en el metodo generar_reportes_entidades  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
+                    $logger->close();
+                    echo "error_entidad";
+                }                                                                        
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo generar_reportes  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo generar_reportes_entidades  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);            
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo generar_reportes_entidades con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => $user_current["username"], 'token' => $request->get('token')]);            
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo generar_reportes con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);        
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo generar_reportes_entidades con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);        
         $logger->close();
         echo "error_metodo ".$ex->getMessage();
     }
