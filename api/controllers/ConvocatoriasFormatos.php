@@ -1005,7 +1005,7 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
             //Abrimos nuestro archivo
             $archivo = fopen($request->getPut("srcData"), "r");
             //Lo recorremos            
-            while (($datos = fgetcsv($archivo, ",")) == true) {
+            while (($datos = fgetcsv($archivo,1000, "\t")) == true) {
                 $num = count($datos);
                 if ($num != 7) {
                     $error=1;
@@ -1015,13 +1015,13 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
                     if($linea==0)
                     {
                         for ($columna = 0; $columna < $num; $columna++) {
-                                $cabecera=$cabecera.$datos[$columna].",";                               
+                                $cabecera=$cabecera.$datos[$columna].";";                               
                         }
                     }
                     
                     if($linea==0)
                     {
-                        if($cabecera!="numero_documento,primer_nombre,segundo_nombre,primer_apellido,segundo_apellido,activo,observaciones,")
+                        if($cabecera!="numero_documento;primer_nombre;segundo_nombre;primer_apellido;segundo_apellido;activo;observaciones;")
                         {
                             $error=2;
                             break;
@@ -1046,12 +1046,12 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
                             $contratista->fecha_creacion = date("Y-m-d H:i:s");                                                    
                         }                        
                         $contratista->numero_documento=$datos[0];
-                        $contratista->primer_nombre=$datos[1];
-                        $contratista->segundo_nombre=$datos[2];
-                        $contratista->primer_apellido=$datos[3];
-                        $contratista->segundo_apellido=$datos[4];
+                        $contratista->primer_nombre=utf8_encode($datos[1]);
+                        $contratista->segundo_nombre=utf8_encode($datos[2]);
+                        $contratista->primer_apellido=utf8_encode($datos[3]);
+                        $contratista->segundo_apellido=utf8_encode($datos[4]);
                         $contratista->active = $datos[5]; 
-                        $contratista->observaciones = $datos[6]; 
+                        $contratista->observaciones = utf8_encode($datos[6]); 
                         if ($contratista->save() === false) {                        
                             $numero_documentos_error=$numero_documentos_error.",".$datos[0];
                         }                                                
