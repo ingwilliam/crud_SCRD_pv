@@ -524,7 +524,6 @@ $app->get('/notificado_key_notificacion', function () use ($app) {
           ]
         );
 
-
         if ($notificacion && $notificacion->active) {
 
             $participante = $notificacion->Juradospostulados->Propuestas->Participantes;
