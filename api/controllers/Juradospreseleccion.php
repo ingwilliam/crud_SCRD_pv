@@ -1505,7 +1505,7 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
             //  $rondas = $postulacion->propuestas->convocatorias->convocatoriasrondas;
 
                 //echo  json_encode($rondas);
-/*
+            /*
               foreach ($rondas as $ronda) {
 
                 if($ronda->active){
@@ -1565,7 +1565,7 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                   }
 
               }
-*/
+            */
               $ronda =  Convocatoriasrondas::findFirst(
                 [
                   " nombre_ronda like '%".$postulacion->propuestas->modalidad_participa."%'"
@@ -1586,7 +1586,6 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                   }
 
                 }
-
 
                 //de acuerdo con el orden, se crea al array de criterios
                 foreach ($grupo_criterios as $categoria => $orden) {
@@ -1616,7 +1615,6 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
                     }
 
                   }
-
 
                   $criterios[$orden]= $obj ;
               }
@@ -1865,6 +1863,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                   $convocatoria_padre = $juradospostulado->Convocatorias->Convocatorias;
 
+                  //para las convocatorias que tienen categorias y son los mismos jurados, se crea una vealuación por cada convocatoria
                   if( $convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias){
                     $convocatorias = $convocatoria_padre->Categorias;
 
@@ -1893,33 +1892,260 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                   foreach ($postulaciones as $key => $juradospostulado) {
 
-                    foreach ($criterios as $key => $criterio) {
+                    $evaluacion = Evaluacion::find(["postulado = ". $juradospostulado->id]);
 
-                      $evaluacion_criterio = new Evaluacion();
-                      $evaluacion_criterio->propuesta = $juradospostulado->propuesta;
-                      $evaluacion_criterio->criterio = $criterio->id;
-                      $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
-                      $evaluacion_criterio->creado_por = $user_current["id"];
-                      $evaluacion_criterio->fecha_creacion =  date("Y-m-d H:i:s");
-                      $evaluacion_criterio->postulado = $juradospostulado->id;
+                  //  echo json_encode($evaluacion);
 
-                      // The model failed to save, so rollback the transaction
-                      if ($evaluacion_criterio->save() === false) {
-                        //Para auditoria en versión de pruebas
-                        foreach ($evaluacion_criterio->getMessages() as $message) {
-                             echo $message;
-                           }
+                    if( count($evaluacion) <= 0 ){
 
-                        $this->db->rollback();
-                        return "error";
-                      }
+                        //return "no tiene evaluación";
 
-                      array_push($response,$evaluacion_criterio->id);
-                      $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+                      foreach ($criterios as $key => $criterio) {
 
+                        $evaluacion_criterio = new Evaluacion();
+                        $evaluacion_criterio->propuesta = $juradospostulado->propuesta;
+                        $evaluacion_criterio->criterio = $criterio->id;
+                        $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
+                        $evaluacion_criterio->creado_por = $user_current["id"];
+                        $evaluacion_criterio->fecha_creacion =  date("Y-m-d H:i:s");
+                        $evaluacion_criterio->postulado = $juradospostulado->id;
 
+                        // The model failed to save, so rollback the transaction
+                        if ($evaluacion_criterio->save() === false) {
+                          //Para auditoria en versión de pruebas
+                          foreach ($evaluacion_criterio->getMessages() as $message) {
+                               echo $message;
+                             }
+
+                          $this->db->rollback();
+                          return "error";
+                        }
+
+                        array_push($response,$evaluacion_criterio->id);
+                        $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+                      }//fin foreach
+
+                    }//fin if
+
+                    if( count($evaluacion) > 0 ){
+                    //  return "tiene evaluación";
+
+                      foreach ($criterios as $key => $criterio) {
+
+                        $evaluacion_criterio = Evaluacion::findFirst([
+                          " criterio = ".$criterio->id
+                          ." AND postulado = ".$juradospostulado->id
+                        ]);
+                        $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
+                        $evaluacion_criterio->actualizado_por = $user_current["id"];
+                        $evaluacion_criterio->fecha_actualizacion =  date("Y-m-d H:i:s");
+
+                        // The model failed to save, so rollback the transaction
+                        if ($evaluacion_criterio->save() === false) {
+                          //Para auditoria en versión de pruebas
+                          foreach ($evaluacion_criterio->getMessages() as $message) {
+                               echo $message;
+                             }
+
+                          $this->db->rollback();
+                          return "error";
+                        }
+
+                        array_push($response,$evaluacion_criterio->id);
+                        $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+                      }//fin foreach
+
+                    }//fin if
+
+                    $juradospostulado->total_evaluacion = $total_evaluacion;
+                    $juradospostulado->actualizado_por = $user_current["id"];
+                    $juradospostulado->fecha_actualizacion =  date("Y-m-d H:i:s");
+
+                    // The model failed to save, so rollback the transaction
+                    if ($juradospostulado->save() === false) {
+                      $this->db->rollback();
+                      return "error";
                     }
 
+                    $total_evaluacion = 0;
+
+                  }
+
+                  // Commit the transaction
+                  $this->db->commit();
+                  return json_encode($response);
+                }else{
+                  return "error";
+                }
+
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+    }
+}
+);
+
+// Crear registro
+$app->post('/confirmar_evaluacion', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        $total_evaluacion=0;
+        //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                /*
+                $propuesta = Propuestas::findFirst(
+                  [
+                    "participante=".$request->getPost('participante')
+                  ]
+                );
+
+                $juradospostulado = Juradospostulados::findFirst(
+                  [
+                    " propuesta = ".$propuesta->id
+                    ." AND convocatoria = ".$request->getPost('idc')
+                  ]
+                );
+                */
+
+                $juradospostulado = Juradospostulados::findFirst($request->get('postulacion'));
+
+                //12	jurados	Evaluado
+                //13	jurados	Seleccionado
+                if ( $juradospostulado->estado != 12 &&  $juradospostulado->estado != 13){
+
+                  $criterios = Convocatoriasrondascriterios::find(
+                    [
+                      "convocatoria_ronda=".$request->getPost('ronda')
+                      ." AND active = true"
+                    ]
+                  );
+
+                  // Start a transaction
+                  $this->db->begin();
+
+                  $convocatoria_padre = $juradospostulado->Convocatorias->Convocatorias;
+
+                  //para las convocatorias que tienen categorias y son los mismos jurados, se crea una vealuación por cada convocatoria
+                  if( $convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias){
+                    $convocatorias = $convocatoria_padre->Categorias;
+
+                    $conv = array();
+                    foreach ($convocatorias as $key => $value) {
+                      array_push($conv, $value->id);
+                    }
+
+                    $postulaciones = Juradospostulados::find(
+                      [
+                        'propuesta = '.$juradospostulado->propuesta
+                        .' AND convocatoria IN ({convocatorias:array})',
+                        'bind' => [
+                            'convocatorias' => $conv
+                        ]
+                      ]
+                    );
+
+                  }else{
+                    $convocatorias= array( $juradospostulado->Convocatorias );
+                    $postulaciones = array($juradospostulado);
+                  }
+
+                //  echo json_encode($convocatorias);
+                //  echo json_encode($postulaciones);
+
+                  foreach ($postulaciones as $key => $juradospostulado) {
+
+                    $evaluacion = Evaluacion::find(["postulado = ". $juradospostulado->id]);
+
+                    if( count($evaluacion) <= 0 ){
+
+                      foreach ($criterios as $key => $criterio) {
+
+                        $evaluacion_criterio = new Evaluacion();
+                        $evaluacion_criterio->propuesta = $juradospostulado->propuesta;
+                        $evaluacion_criterio->criterio = $criterio->id;
+                        $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
+                        $evaluacion_criterio->creado_por = $user_current["id"];
+                        $evaluacion_criterio->fecha_creacion =  date("Y-m-d H:i:s");
+                        $evaluacion_criterio->postulado = $juradospostulado->id;
+
+                        // The model failed to save, so rollback the transaction
+                        if ($evaluacion_criterio->save() === false) {
+                          //Para auditoria en versión de pruebas
+                          foreach ($evaluacion_criterio->getMessages() as $message) {
+                               echo $message;
+                             }
+
+                          $this->db->rollback();
+                          return "error";
+                        }
+
+                        array_push($response,$evaluacion_criterio->id);
+                        $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+
+                      }//fin foreach
+                    }//fin if
+
+                    if( count($evaluacion) > 0 ){
+                    //  return "tiene evaluación";
+
+                      foreach ($criterios as $key => $criterio) {
+
+                        $evaluacion_criterio = Evaluacion::findFirst([
+                          " criterio = ".$criterio->id
+                          ." AND postulado = ".$juradospostulado->id
+                        ]);
+                        $evaluacion_criterio->puntaje = $request->getPost( (string)$criterio->id );
+                        $evaluacion_criterio->actualizado_por = $user_current["id"];
+                        $evaluacion_criterio->fecha_actualizacion =  date("Y-m-d H:i:s");
+
+                        // The model failed to save, so rollback the transaction
+                        if ($evaluacion_criterio->save() === false) {
+                          //Para auditoria en versión de pruebas
+                          foreach ($evaluacion_criterio->getMessages() as $message) {
+                               echo $message;
+                             }
+
+                          $this->db->rollback();
+                          return "error";
+                        }
+
+                        array_push($response,$evaluacion_criterio->id);
+                        $total_evaluacion = $total_evaluacion+$evaluacion_criterio->puntaje;
+                      }//fin foreach
+
+                    }//fin if
 
                     $juradospostulado->total_evaluacion = $total_evaluacion;
                     $juradospostulado->estado = 12; //12	jurados	Evaluado
@@ -1935,8 +2161,6 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                       $total_evaluacion = 0;
 
                   }
-
-
 
                   // Commit the transaction
                   $this->db->commit();
@@ -1961,6 +2185,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
     }
 }
 );
+
 
 // Actualiza el estado de la postulacion
 $app->put('/seleccionar_perfil', function () use ($app, $config) {
@@ -2105,6 +2330,138 @@ $app->get('/convocatoria', function () use ($app, $config) {
 
       //Para auditoria en versión de pruebas
       return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+    }
+}
+);
+
+// Crea el registro de postulacion
+$app->post('/new_postulacion', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        $contador  =0;
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $post = $app->request->getPost();
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                 $participante = Participantes::findFirst(
+                   [
+                     " id = ".$request->getPut('participante')
+                   ]
+                 );
+
+                 if($participante){
+                   //9	jurados	Registrado
+                    if($participante->propuestas->estado == 9){
+                       return "error";
+                    }
+
+                    $postulaciones = $participante->propuestas->juradospostulados;
+
+                    //Calcula el numero de postulaciones del jurado
+                    //echo "cantidad-->".$postulaciones->count();
+                    foreach ($postulaciones as $postulacion) {
+
+                      //la convocatoria está activa y está publicada
+                       if( $postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active){
+                         $contador++;
+                       }
+
+                     }
+
+                     $nummax = Tablasmaestras::findFirst(
+                       [
+                       " nombre = 'numero_maximo_postulaciones_jurado'"
+                       ]
+                     );
+
+                    //Controla el límite de postulaciones
+                    //limite tabla maestra
+                    if( $contador < (int)$nummax->valor){
+
+                      $juradopostulado = new Juradospostulados();
+                      $juradopostulado->propuesta = $participante->propuestas->id;
+                      $juradopostulado->estado =  9; //estado de la propuesta del jurado, 9 jurados	Registrado
+                      $juradopostulado->creado_por = $user_current["id"];
+                      $juradopostulado->fecha_creacion = date("Y-m-d H:i:s");
+                      $juradopostulado->tipo_postulacion = 'Directa';
+                    //  $juradopostulado->perfil = $request->getPut('perfil');
+                      $juradopostulado->active =  true;
+
+                      $convocatoria = Convocatorias::findFirst($request->getPut('idregistro'));
+
+                      //caso 3,la convocatoria tiene categoria y las categorias tienen diferente cronograma
+                      if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias){
+
+                       // $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
+                        $juradopostulado->convocatoria = $convocatoria->id;
+
+                      }//caso 2,la convocatoria tiene categoria y las categorias tienen igual cronograma
+                      elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias) {
+
+                         $juradopostulado->convocatoria = $convocatoria->id;
+
+                      }//caso 1, la convocatoria  no tiene categoria
+                      elseif (!$convocatoria->tiene_categorias) {
+
+                        $juradopostulado->convocatoria = $request->getPut('idregistro');
+
+                      }//end elseif (!$convocatoria->tiene_categorias)
+
+                      //guardar registro
+                     if ($juradopostulado->save() === false) {
+
+                       //Para auditoria en versión de pruebas
+                       /*foreach ($juradopostulado->getMessages() as $message) {
+                         echo $message;
+                       }*/
+
+                       return "error";
+                     }
+
+                     return $juradopostulado->id;
+
+                    }else{
+
+                      return "error_limite";
+                    }
+                 }
+
+
+            } else {
+
+                return "acceso_denegado";
+            }
+        } else {
+
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //echo "error_metodo"
+        //Para auditoria en versión de pruebas
+        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+       return "error_metodo";
     }
 }
 );
