@@ -595,20 +595,17 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados</td>
+                        <td colspan="5" align="center">Listado de habilitados</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -729,20 +726,17 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados y rechazados</td>
+                        <td colspan="6" align="center">Listado de habilitados y rechazados</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
-                        <td>'.$nombre_categoria.'</td>
+                        <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -864,20 +858,17 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
+                        <td colspan="6" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
-                        <td>'.$nombre_categoria.'</td>
+                        <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -997,10 +988,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                         <td>'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
-                    </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -1111,20 +1099,17 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de participantes pre-inscritos</td>
+                        <td colspan="5" align="center">Listado de participantes pre-inscritos</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center" width="30"></td>
                         <td align="center" width="200">Usuario</td>
