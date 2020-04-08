@@ -671,6 +671,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                         $post["estado"] = 8;
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                        $post["fecha_inscripcion"] = date("Y-m-d H:i:s");
                         $post["habilitar"] = FALSE;
                         $propuesta->codigo = $codigo_propuesta;
 

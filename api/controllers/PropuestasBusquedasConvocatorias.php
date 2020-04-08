@@ -94,7 +94,8 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
             $where_convocatorias .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
             $where_convocatorias .= " INNER JOIN Estados AS es ON es.id=c.estado";
             $where_convocatorias .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";
-            $where_convocatorias .= " WHERE es.id IN (5, 6) AND c.active IN (true) ";
+            //$where_convocatorias .= " WHERE es.id IN (5, 6) AND c.active IN (true) ";
+            $where_convocatorias .= " WHERE es.id IN (5) AND c.active IN (true) ";
 
 
             //Condiciones para la consulta del select del buscador principal
@@ -183,8 +184,8 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
             }
 
             //Concateno el orden y el limit para el paginador
-            $sqlConvocatorias .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-            $sqlCategorias .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            $sqlConvocatorias .= " ORDER BY c.estado  DESC  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+            $sqlCategorias .= " ORDER BY c.estado  DESC  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
 
             //Concateno el group by de estados
             $sqlTotEstado .= " GROUP BY 1";

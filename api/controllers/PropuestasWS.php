@@ -674,7 +674,7 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Rechazada,Habilitada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (23,24)',
@@ -806,7 +806,7 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (21,22,23,24,31)',
@@ -937,8 +937,8 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
             }
              
             
-            //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //consulto las propuestas inscritas para crear el listado            
+            //Inscrita,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (8,21,22,23,24,31)',
@@ -1056,7 +1056,7 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Pre Inscrita
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (7)',
