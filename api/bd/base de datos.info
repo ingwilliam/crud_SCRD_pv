@@ -560,3 +560,49 @@ FROM propuestas AS pro
 	LEFT JOIN upzs AS upz ON upz.id=bar.upz
 WHERE pro.estado NOT IN (20,7) AND par.active=TRUE
 )
+
+
+//Abril 7 del 2020
+ALTER TABLE propuestas ADD fecha_inscripcion timestamp without time zone;
+UPDATE propuestas SET fecha_inscripcion=fecha_actualizacion WHERE estado <> 7;
+
+
+SELECT fecha_actualizacion,fecha_inscripcion FROM propuestas WHERE estado <> 7 AND fecha_actualizacion<>fecha_inscripcion;
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('convocatorias', 'Cancelada', true, 7, 7);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Recomendada como Ganadora', true, 7, 9);
+INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALUES('propuestas', 'Ganadora', true, 7, 10);
+
+CREATE VIEW viewconvocatorias  AS 
+(
+SELECT 
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,NULL AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active  
+FROM convocatorias AS c
+INNER JOIN entidades AS e ON e.id=c.entidad
+WHERE c.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE
+) 
+UNION 
+(
+SELECT 
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,cat.nombre AS categoria,c.id,cat.id AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active
+FROM convocatorias AS c
+INNER JOIN convocatorias AS cat ON cat.convocatoria_padre_categoria=c.id
+INNER JOIN entidades AS e ON e.id=cat.entidad
+WHERE cat.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=TRUE AND c.diferentes_categorias=FALSE
+)
+UNION 
+(
+SELECT 
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,cat.nombre AS categoria,c.id,cat.id AS id_categoria,cat.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,cat.estado,c.active
+FROM convocatorias AS c
+INNER JOIN convocatorias AS cat ON cat.convocatoria_padre_categoria=c.id
+INNER JOIN entidades AS e ON e.id=cat.entidad
+WHERE cat.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=TRUE AND c.diferentes_categorias=TRUE
+)
+
+
+
+
+
+CATEGORIA BECA FESTIVAL HIPHOP AL PARQUE – BOGOTÁ CIUDAD CREATIVA DE LA MÚSICA
+ESPACIAL BECA DE CIRCULACIÓN PARA AGENTES DEL SECTOR LITERARIO
+

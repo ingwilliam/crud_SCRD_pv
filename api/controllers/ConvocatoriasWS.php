@@ -534,7 +534,7 @@ $app->get('/all', function () use ($app) {
         $where_convocatorias .= " LEFT JOIN Enfoques AS en ON en.id=c.enfoque";
         $where_convocatorias .= " INNER JOIN Estados AS es ON es.id=c.estado";
         $where_convocatorias .= " LEFT JOIN Convocatorias AS cpad ON cpad.id=c.convocatoria_padre_categoria";
-        $where_convocatorias .= " WHERE c.modalidad <> 2 AND es.id IN (5, 6) AND c.active IN (true) ";
+        $where_convocatorias .= " WHERE c.modalidad <> 2 AND es.id IN (5, 6, 32) AND c.active IN (true) ";
 
 
         //Condiciones para la consulta del select del buscador principal
@@ -731,6 +731,136 @@ $app->get('/all', function () use ($app) {
             "recordsTotal" => intval($totalRecords["total"]),
             "recordsFiltered" => intval($totalRecords["total"]),
             "dataEstados" => $app->modelsManager->executeQuery($sqlTotEstado),
+            "data" => $json_convocatorias   // total data array            
+        );
+        //retorno el array en json
+        echo json_encode($json_data);
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode($ex->getMessage());
+    }
+}
+);
+
+$app->get('/all_view', function () use ($app) {
+    try {
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+
+        //Defino columnas para el orden desde la tabla html
+        $columns = array(
+            0 => 'view.anio',
+            1 => 'view.nombre_entidad',
+            2 => 'a.nombre',
+            3 => 'l.nombre',
+            4 => 'en.nombre',
+            5 => 'view.convocatoria',
+            6 => 'view.categoria',
+            7 => 'p.nombre',
+            8 => 'es.nombre'
+        );
+
+        //Inicio el where de convocatorias
+        $where .= " INNER JOIN Entidades AS e ON e.id=view.entidad";
+        $where .= " INNER JOIN Programas AS p ON p.id=view.programa";
+        $where .= " LEFT JOIN Areas AS a ON a.id=view.area";
+        $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=view.linea_estrategica";
+        $where .= " LEFT JOIN Enfoques AS en ON en.id=view.enfoque";
+        $where .= " INNER JOIN Estados AS es ON es.id=view.estado";        
+        $where .= " WHERE view.modalidad <> 2 AND es.id IN (5, 6, 32) AND view.active IN (true) ";
+
+
+        //Condiciones para la consulta del select del buscador principal        
+        $estado_actual="";
+        $array_json_param=json_decode($request->get("params"));
+        $estado_actual=$array_json_param->estado;                        
+        if($array_json_param->estado==52||$array_json_param->estado==51)
+        {
+            $array_json_param->estado=5;
+        }
+        if (!empty($request->get("params"))) {
+            foreach ($array_json_param AS $clave => $valor) {
+                if ($clave == "nombre" && $valor != "") {
+                    $where .= " AND ( UPPER(view.convocatoria) LIKE '%" . strtoupper($valor) . "%' ";
+                    $where .= " OR UPPER(view.categoria) LIKE '%" . strtoupper($valor) . "%' )";
+                }
+                
+                if ($valor != "" && $clave != "nombre") {
+                    $where = $where . " AND view." . $clave . " = " . $valor;
+                }                                          
+            }
+        }
+
+        //Defino el sql del total y el array de datos
+        $sqlTot = "SELECT count(*) as total FROM Viewconvocatorias AS view";
+        $sqlRec = "SELECT
+                        ". $columns[8] . " AS estado_convocatoria, 
+                        ". $columns[0] . " AS anio , 
+                        ". $columns[7] . " AS programa , 
+                        ". $columns[1] . " AS entidad , 
+                        ". $columns[2] . " AS area , 
+                        ". $columns[3] . " AS linea_estrategica , 
+                        ". $columns[4] . " AS enfoque , 
+                        ". $columns[5] . " AS convocatoria , 
+                        ". $columns[6] . " AS categoria ,                         
+                        view.id_diferente , 
+                        view.estado , 
+                        concat('<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"',view.id_diferente,'\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as ver_cronograma,
+                        concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(2,',view.id,')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>') as ver_convocatoria
+                    FROM Viewconvocatorias AS view";
+
+        //concatenate search sql if value exist
+        if (isset($where) && $where != '') {
+
+            $sqlTot .= $where;
+            $sqlRec .= $where;
+        }
+
+        //Concateno el orden y el limit para el paginador
+        $sqlRec .= " ORDER BY " . $columns[8] . " DESC LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+        
+        //ejecuto el total de registros actual
+        $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+        $array_convocatorias = $app->modelsManager->executeQuery($sqlRec);
+        
+        $json_convocatorias = array();
+        foreach ($array_convocatorias AS $clave => $valor) {
+            
+            if($valor->estado==5)
+            {
+                $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id_diferente . " AND tipo_evento = 12");
+                $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                if ($fecha_actual > $fecha_cierre) {            
+                    $valor->estado = 52;
+                    $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Publicada Cerrada</span>";
+                } else {
+                    $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id_diferente . " AND tipo_evento = 11");
+                    $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                    if ($fecha_actual < $fecha_apertura) {
+                        $valor->estado = 5;
+                        $valor->estado_convocatoria = "<span class=\"span_Publicada\">Publicada</span>";
+                    } else {               
+                        $valor->estado = 51;
+                        $valor->estado_convocatoria = "<span class=\"span_Abierta\">Publicada Abierta</span>";
+                    }
+                }
+            }
+            else {
+                $valor->estado_convocatoria = "<span class=\"span_" . $valor->estado_convocatoria . "\">" . $valor->estado_convocatoria . "</span>";
+            }            
+            
+            //Realizo el filtro de estados
+            $json_convocatorias[] = $valor;                        
+        }
+        
+        
+        //creo el array
+        $json_data = array(
+            "draw" => intval($request->get("draw")),
+            "recordsTotal" => intval($totalRecords["total"]),
+            "recordsFiltered" => intval($totalRecords["total"]),
             "data" => $json_convocatorias   // total data array            
         );
         //retorno el array en json

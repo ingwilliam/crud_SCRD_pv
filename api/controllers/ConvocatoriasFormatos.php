@@ -83,7 +83,7 @@ $app->post('/reporte_listado_entidades_convocatorias_estado_xls', function () us
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
                 SELECT c.convocatoria,c.categoria,es.nombre AS estado,COUNT(p.id) AS total FROM Viewconvocatorias AS c
-                INNER JOIN Propuestas AS p ON p.convocatoria= c.id
+                INNER JOIN Propuestas AS p ON p.convocatoria= c.id_categoria
                 INNER JOIN Estados AS es ON es.id= p.estado
                 WHERE c.modalidad<>2 AND c.anio='" . $anio . "' AND c.entidad=" . $entidad->id . "
                 GROUP BY 1,2,3
@@ -189,49 +189,24 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
 
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
-                        SELECT c.nombre AS convocatoria,es.nombre AS estado,COUNT(p.id) AS total FROM Convocatorias AS c
-                        INNER JOIN Propuestas AS p ON p.convocatoria= c.id
-                        INNER JOIN Estados AS es ON es.id= p.estado
-                        WHERE c.anio='" . $request->getPut('anio') . "' AND c.entidad=" . $request->getPut('entidad') . " AND c.active=TRUE AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE AND c.modalidad <> 2 AND c.estado IN (5, 6)
-                        GROUP BY 1,2
-                        ORDER BY 1,2,3";
-
+                SELECT c.convocatoria,c.categoria,es.nombre AS estado,COUNT(p.id) AS total FROM Viewconvocatorias AS c
+                INNER JOIN Propuestas AS p ON p.convocatoria= c.id_categoria
+                INNER JOIN Estados AS es ON es.id= p.estado
+                WHERE c.modalidad<>2 AND c.anio='" . $request->getPut('anio') . "' AND c.entidad=" . $request->getPut('entidad') . "
+                GROUP BY 1,2,3
+                ORDER BY 1,2,3,4";
+            
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $html_propuestas = "";
             foreach ($convocatorias as $convocatoria) {
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->convocatoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td></td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->categoria . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->total . "</td>";
                 $html_propuestas = $html_propuestas . "</tr>";
             }
-
-            //Genero reporte propuestas por estado
-            $sql_convocatorias_categorias = "
-                        SELECT cat.nombre AS convocatoria,c.nombre AS categoria,es.nombre AS estado,COUNT(p.id) AS total FROM Convocatorias AS c
-                        INNER JOIN Propuestas AS p ON p.convocatoria= c.id
-                        INNER JOIN convocatorias AS cat ON cat.id= c.convocatoria_padre_categoria
-                        INNER JOIN Estados AS es ON es.id= p.estado
-                        WHERE c.anio='" . $request->getPut('anio') . "' AND c.entidad=" . $request->getPut('entidad') . " AND c.active=TRUE AND c.convocatoria_padre_categoria IS NOT NULL AND c.tiene_categorias=TRUE AND c.modalidad <> 2 AND c.estado IN (5, 6)
-                        GROUP BY 1,2,3
-                        ORDER BY 1,2";
-
-            $convocatorias_categorias = $app->modelsManager->executeQuery($sql_convocatorias_categorias);
-
-            foreach ($convocatorias_categorias as $convocatoria_categoria) {
-                $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria_categoria->convocatoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria_categoria->categoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->total . "</td>";
-                $html_propuestas = $html_propuestas . "</tr>";
-            }
-
-
-
-
 
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
@@ -297,9 +272,9 @@ $app->post('/reporte_convocatorias_cerrar_xls', function () use ($app, $config, 
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
             SELECT vc.convocatoria,vc.categoria,cc.fecha_fin FROM Viewconvocatorias AS vc
-            INNER JOIN Convocatoriascronogramas AS cc ON cc.convocatoria=vc.id
+            INNER JOIN Convocatoriascronogramas AS cc ON cc.convocatoria=vc.id_diferente
             WHERE vc.anio='" . $anio . "' AND cc.tipo_evento=12 AND vc.entidad='" . $entidad->id . "'
-            ORDER BY cc.fecha_inicio";
+            ORDER BY cc.fecha_inicio, vc.convocatoria";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -402,9 +377,9 @@ $app->post('/reporte_listado_entidades_convocatorias_cerrar', function () use ($
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
                         SELECT vc.convocatoria,vc.categoria,cc.fecha_fin FROM Viewconvocatorias AS vc
-                        INNER JOIN Convocatoriascronogramas AS cc ON cc.convocatoria=vc.id
+                        INNER JOIN Convocatoriascronogramas AS cc ON cc.convocatoria=vc.id_diferente
                         WHERE vc.anio='" . $request->getPut('anio') . "' AND cc.tipo_evento=12 AND vc.entidad='" . $request->getPut('entidad') . "'
-                        ORDER BY cc.fecha_inicio";
+                        ORDER BY cc.fecha_inicio,vc.convocatoria";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
