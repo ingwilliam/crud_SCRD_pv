@@ -575,7 +575,7 @@ INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALU
 CREATE VIEW viewconvocatorias  AS 
 (
 SELECT 
-	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,NULL AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active  
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,c.id AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active  
 FROM convocatorias AS c
 INNER JOIN entidades AS e ON e.id=c.entidad
 WHERE c.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE
