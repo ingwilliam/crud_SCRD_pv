@@ -164,9 +164,7 @@ $app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
         
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual > 0) {
-            
-            
-            
+                                    
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
             
@@ -193,6 +191,83 @@ $app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
                         $app->modelsManager->executeQuery($phql, array(
                             'convocatoria_padre_categoria' => $convocatoria->id,
                             'estado' => 5,
+                            'habilitar_cronograma' => FALSE                    
+                        )); 
+                        echo $convocatoria->id;
+                    } 
+                }
+                else
+                {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Ya esta publicada la convocatoria en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo $convocatoria->id;
+                }                                                               
+            }
+            else
+            {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"No tiene permisos para publicar la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                echo "error_publicacion";                                
+            }                        
+            
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo publicar_convocatoria para publicar la convocatoria"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo publicar_convocatoria para publicar convocatoria' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->get('/cancelar_convocatoria', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+        
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+                                    
+            //Consulto el usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            $usuariosperfiles = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 15");
+            
+            if($usuariosperfiles->id)
+            {
+                $convocatoria = Convocatorias::findFirst($request->get('id'));                                                                
+                if($convocatoria->estado!=32)
+                {
+                    $convocatoria->actualizado_por = $user_current["id"];
+                    $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $convocatoria->estado = 32;                                    
+                    if ($convocatoria->save() === false) {
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al editar la convocatoria en el modulo publicar_convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                    
+                        echo "error";
+                    } else {
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se edita la convocatoria con exito en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
+                        $logger->close();
+                        
+                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $convocatoria->id,
+                            'estado' => 32,
                             'habilitar_cronograma' => FALSE                    
                         )); 
                         echo $convocatoria->id;
@@ -337,7 +412,7 @@ $app->get('/all', function () use ($app) {
             else
             {
                 //$sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " ,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<button type=\"button\" class=\"btn btn-danger\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Convocatorias AS c";
-                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " , concat('<button type=\"button\" class=\"btn btn-info\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as ver_convocatoria , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones, concat('<button type=\"button\" class=\"btn btn-danger convocatoria_publicar\" data-toggle=\"modal\" data-target=\"#modal_confirmar_publicar\" title=\"',c.id,'\"><span class=\"glyphicon glyphicon-globe\"></span></button>') as publicar FROM Convocatorias AS c";
+                $sqlRec = "SELECT " . $columns[0] . " ," . $columns[1] . " AS entidad," . $columns[2] . " AS area," . $columns[3] . " AS linea_estrategica," . $columns[4] . " AS enfoque," . $columns[5] . "," . $columns[6] . "," . $columns[7] . " AS programa ," . $columns[8] . " AS estado ," . $columns[9] . " , concat('<button type=\"button\" class=\"btn btn-info\" onclick=\"form_edit_page(2,',c.id,')\"><span class=\"glyphicon glyphicon-eye-open\"></span></button>') as ver_convocatoria , concat('<span class=\"span_',$columns[8],'\">',$columns[8],'</span>') as estado_convocatoria,concat('<input title=\"',c.id,'\" type=\"checkbox\" class=\"check_activar_',c.active,' activar_categoria\" />') as activar_registro, concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(1,',c.id,')\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones, concat('<button type=\"button\" class=\"btn btn-success convocatoria_publicar\" data-toggle=\"modal\" data-target=\"#modal_confirmar_publicar\" title=\"',c.id,'\"><span class=\"glyphicon glyphicon-globe\"></span></button>') as publicar, concat('<button type=\"button\" class=\"btn btn-danger convocatoria_cancelar\" data-toggle=\"modal\" data-target=\"#modal_confirmar_cancelar\" title=\"',c.id,'\" lang=\"',c.diferentes_categorias,'\"><span class=\"glyphicon glyphicon-globe\"></span></button>') as cancelar FROM Convocatorias AS c";
             }
 
             //concatenate search sql if value exist
@@ -356,7 +431,7 @@ $app->get('/all', function () use ($app) {
             else
             {
                 //Concateno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                $sqlRec .= " ORDER BY c.estado  DESC LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
             }
 
 
@@ -1080,7 +1155,35 @@ $app->get('/rondas', function () use ($app) {
 }
 );
 
-
+// Recupera todas las convocatorias y categorias
+$app->get('/select_convocatoria_categorias', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual>0) {
+           
+            $convocatorias = Convocatorias::find("id=".$request->get('id')." OR convocatoria_padre_categoria=".$request->get('id')."");
+            $json_convocatorias=array();
+            foreach ($convocatorias as $convocatoria) {
+                $json_convocatorias[] = array("id"=>$convocatoria->id,"nombre"=>$convocatoria->nombre);
+            }
+            
+            echo json_encode($json_convocatorias);
+        }
+        else
+        {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
 
 
 

@@ -10,7 +10,10 @@ use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Logger\Adapter\File as FileAdapter;
 use Phalcon\Logger\Formatter\Line;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
+    
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
 define('APP_PATH', BASE_PATH);
@@ -24,7 +27,7 @@ $loader = new Loader();
 $loader->registerDirs(
         [
             APP_PATH . '/models/',
-            APP_PATH . '/library/class/',
+            APP_PATH . '/library/class/',            
         ]
 );
 
@@ -592,20 +595,17 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados</td>
+                        <td colspan="5" align="center">Listado de habilitados</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -626,112 +626,6 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 $logger->close();
                 echo "error_propuesta";
             }
-        } else {
-            //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
-            $logger->close();
-            echo "error_token";
-        }
-    } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
-        $logger->close();
-        echo "error_metodo";
-    }
-});
-
-$app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($app, $config, $logger) {
-
-//Instancio los objetos que se van a manejar
-    $request = new Request();
-    $tokens = new Tokens();
-
-    try {
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
-
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
-            
-            //Consulto lo necesario
-            $user_current = json_decode($token_actual->user_current, true);
-            $entidad = Entidades::findFirst($request->getPut('entidad'));
-
-            //Genero reporte propuestas por estado
-            $sql_convocatorias = "
-                        SELECT c.nombre AS convocatoria,es.nombre AS estado,COUNT(p.id) AS total FROM Convocatorias AS c
-                        INNER JOIN Propuestas AS p ON p.convocatoria= c.id
-                        INNER JOIN Estados AS es ON es.id= p.estado
-                        WHERE c.anio='".$request->getPut('anio')."' AND c.entidad=".$request->getPut('entidad')." AND c.active=TRUE AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE AND c.modalidad <> 2 AND c.estado IN (5, 6)
-                        GROUP BY 1,2
-                        ORDER BY 1,2,3";
-            
-            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
-
-            $html_propuestas = "";
-            foreach ($convocatorias as $convocatoria) {
-                $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->convocatoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td></td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->total . "</td>";                
-                $html_propuestas = $html_propuestas . "</tr>";
-            }
-            
-            //Genero reporte propuestas por estado
-            $sql_convocatorias_categorias = "
-                        SELECT cat.nombre AS convocatoria,c.nombre AS categoria,es.nombre AS estado,COUNT(p.id) AS total FROM Convocatorias AS c
-                        INNER JOIN Propuestas AS p ON p.convocatoria= c.id
-                        INNER JOIN convocatorias AS cat ON cat.id= c.convocatoria_padre_categoria
-                        INNER JOIN Estados AS es ON es.id= p.estado
-                        WHERE c.anio='".$request->getPut('anio')."' AND c.entidad=".$request->getPut('entidad')." AND c.active=TRUE AND c.convocatoria_padre_categoria IS NOT NULL AND c.tiene_categorias=TRUE AND c.modalidad <> 2 AND c.estado IN (5, 6)
-                        GROUP BY 1,2,3
-                        ORDER BY 1,2";
-            
-            $convocatorias_categorias = $app->modelsManager->executeQuery($sql_convocatorias_categorias);
-            
-            foreach ($convocatorias_categorias as $convocatoria_categoria) {
-                $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria_categoria->convocatoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria_categoria->categoria . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->total . "</td>";                
-                $html_propuestas = $html_propuestas . "</tr>";
-            }
-            
-            
-            
-            
-                
-                $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
-                    <tr>
-                        <td colspan="4" align="center">Estado de propuestas</td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" align="center"> Fecha de corte '.date("Y-m-d H:i:s").'</td>
-                    </tr>
-                    <tr>
-                        <td colspan="2">Año: '.$request->getPut('anio').'</td>
-                        <td colspan="2">Entidad: '.$entidad->descripcion.'</td>
-                    </tr>                                    
-                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Convocatoria</td>
-                        <td align="center">Categoria</td>
-                        <td align="center">Estado de la propuesta</td>
-                        <td align="center">Total</td>                        
-                    </tr> 
-                    ' . $html_propuestas . '
-                </table>';
-                
-                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
-                $logger->close();
-                echo $html;
-                    
-            
         } else {
             //Registro la accion en el log de convocatorias           
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_propuesta_rechazados_habilitados al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
@@ -780,7 +674,7 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Rechazada,Habilitada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (23,24)',
@@ -832,20 +726,17 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados y rechazados</td>
+                        <td colspan="6" align="center">Listado de habilitados y rechazados</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
-                        <td>'.$nombre_categoria.'</td>
+                        <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -915,7 +806,7 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (21,22,23,24,31)',
@@ -967,20 +858,17 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
+                        <td colspan="6" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
-                        <td>'.$nombre_categoria.'</td>
+                        <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -1049,8 +937,8 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
             }
              
             
-            //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //consulto las propuestas inscritas para crear el listado            
+            //Inscrita,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (8,21,22,23,24,31)',
@@ -1100,10 +988,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                         <td>'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
-                    </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Código de inscripción</td>
                         <td align="center">Participante</td>
@@ -1171,7 +1056,7 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
              
             
             //consulto las propuestas inscritas para crear el listado
-            //Inscrita,Anulada,Por Subsanar,Subsanación Recibida,Rechazada,Habilitada,Subsanada
+            //Pre Inscrita
             $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
             $listado_propuestas_inscritas = Propuestas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND estado IN (7)',
@@ -1214,20 +1099,17 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de participantes pre-inscritos</td>
+                        <td colspan="5" align="center">Listado de participantes pre-inscritos</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
-                </table>
-                <br/><br/>
-                <table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center" width="30"></td>
                         <td align="center" width="200">Usuario</td>

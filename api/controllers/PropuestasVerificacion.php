@@ -621,15 +621,15 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 foreach ($consulta_documentos_administrativos as $documento) {                                                           
                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                         if ($documento->etapa == "Registro") {
-                            $documentos_administrativos[$documento->id]["id"] = $documento->id;
-                            $documentos_administrativos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;                            
-                            $documentos_administrativos[$documento->id]["orden"] = $documento->orden;
+                            $documentos_administrativos[$documento->orden]["id"] = $documento->id;
+                            $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;                            
+                            $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
                             
                             //Consulto las posible verificaciones
                             $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=".$request->get('verificacion'));                                
-                            $documentos_administrativos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
-                            $documentos_administrativos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
-                            $documentos_administrativos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
+                            $documentos_administrativos[$documento->orden]["verificacion_1_id"] = $verificacion_1->id;
+                            $documentos_administrativos[$documento->orden]["verificacion_1_estado"] = $verificacion_1->estado;
+                            $documentos_administrativos[$documento->orden]["verificacion_1_observacion"] = $verificacion_1->observacion;
                             
                             //Consulto todos los documentos cargados por el usuario
                             $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];                            
@@ -645,9 +645,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             ]));
                             
                             foreach ($consulta_archivos_propuesta as $archivo) {
-                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id"] = $archivo->id;                                
-                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
-                                $documentos_administrativos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
+                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
+                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                             }
                             
                             //Consulto todos los link cargados por el usuario
@@ -663,22 +663,22 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             ]));
                             
                             foreach ($consulta_links_propuesta as $link) {
-                                $documentos_administrativos[$documento->id]["links"][$link->id]["id"] = $link->id;                                
-                                $documentos_administrativos[$documento->id]["links"][$link->id]["link"] = $link->link;                                                                
+                                $documentos_administrativos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
+                                $documentos_administrativos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
                             }
                         }
                     }
 
                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
-                        $documentos_tecnicos[$documento->id]["id"] = $documento->id;
-                        $documentos_tecnicos[$documento->id]["requisito"] = $documento->getRequisitos()->nombre;
-                        $documentos_tecnicos[$documento->id]["orden"] = $documento->orden;
+                        $documentos_tecnicos[$documento->orden]["id"] = $documento->id;
+                        $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
+                        $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
                         
                         //Consulto las posible verificaciones
                         $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=".$request->get('verificacion'));                                
-                        $documentos_tecnicos[$documento->id]["verificacion_1_id"] = $verificacion_1->id;
-                        $documentos_tecnicos[$documento->id]["verificacion_1_estado"] = $verificacion_1->estado;
-                        $documentos_tecnicos[$documento->id]["verificacion_1_observacion"] = $verificacion_1->observacion;
+                        $documentos_tecnicos[$documento->orden]["verificacion_1_id"] = $verificacion_1->id;
+                        $documentos_tecnicos[$documento->orden]["verificacion_1_estado"] = $verificacion_1->estado;
+                        $documentos_tecnicos[$documento->orden]["verificacion_1_observacion"] = $verificacion_1->observacion;
                             
                         
                         $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id , 'cargue_subsanacion' => 'false'];
@@ -694,9 +694,9 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         ]));
 
                         foreach ($consulta_archivos_propuesta as $archivo) {
-                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id"] = $archivo->id;                                
-                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
-                            $documentos_tecnicos[$documento->id]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                         }
 
                         $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
@@ -712,8 +712,8 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         ]));
 
                         foreach ($consulta_links_propuesta as $link) {
-                            $documentos_tecnicos[$documento->id]["links"][$link->id]["id"] = $link->id;                                
-                            $documentos_tecnicos[$documento->id]["links"][$link->id]["link"] = $link->link;                                                                
+                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
+                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
                         }
                         
                     }
@@ -732,7 +732,26 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                                 );
                 $array["administrativos"] = $documentos_administrativos;                
                 $array["tecnicos"] = $documentos_tecnicos;                
-                $array["modalidad"] = $convocatoria->modalidad;                
+                $array["modalidad"] = $convocatoria->modalidad;
+
+                //Consultamos las inhabilidades como contratistas                
+                $sql_contratistas = "
+                    SELECT 
+                            concat(p.numero_documento,' ',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS participante,
+                            concat(e.nombre,' ',ec.numero_documento,' ',ec.primer_nombre,' ',ec.segundo_nombre,' ',ec.primer_apellido,' ',ec.segundo_apellido) AS contratista
+                    FROM Participantes AS p
+                    INNER JOIN Entidadescontratistas AS ec ON REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM(p.numero_documento),'.','')
+                    INNER JOIN Entidades AS e ON e.id=ec.entidad
+                    WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.tipo_documento<>7 AND ec.active=TRUE AND p.active=TRUE";
+
+                $contratistas = $app->modelsManager->executeQuery($sql_contratistas);
+                
+                $array_contratistas=array();
+                foreach ($contratistas as $contratista) {                    
+                    $array_contratistas[$contratista->participante][]=$contratista->contratista;
+                }
+                $array["contratistas"] = $array_contratistas;
+                
                 
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna la propuesta ('.$id.') en el metodo cargar_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -1028,9 +1047,6 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                 //Consulto la propuesta actual
                 $propuesta = Propuestas::findFirst("id=" . $request->getPost('propuesta') . "");
 
-                echo $propuesta->estado;
-                
-                
                 if (isset($propuesta->id)) {
                     
                     if($request->getPost('estado_actual_propuesta')=="rechazar")
@@ -1040,6 +1056,9 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     
                     if($request->getPost('estado_actual_propuesta')=="subsanar")
                     {
+                        $propuesta->estado=21;
+                        
+                        /*
                         //Valido que si la modalidad es diferente de LEP                        
                         if($propuesta->getConvocatorias()->modalidad!=6)
                         {
@@ -1051,7 +1070,8 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                             {
                                 $propuesta->estado=21;
                             }
-                        }                        
+                        } 
+                        */                       
                     }
                     
                     if($request->getPost('estado_actual_propuesta')=="habilitada")
