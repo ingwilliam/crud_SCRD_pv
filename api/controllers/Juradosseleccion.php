@@ -423,11 +423,14 @@ $app->put('/notificar', function () use ($app, $config) {
                     $html_solicitud_usuario= str_replace("**jurado_rol**",($request->getPut('option_suplente') ? "Principal":"Suplente"), $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**anio**",$postulacion->Propuestas->Convocatorias->anio, $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**nombre_convocatoria**",$postulacion->Convocatorias->nombre, $html_solicitud_usuario);
+                    //Total de propuestas que estan habilitadas para evaluar
+                    $tot_propuestas = count(Propuestas::find(" convocatoria = ".$postulacion->Convocatorias->id." AND estado = 24 "));
+                    $html_solicitud_usuario= str_replace("**total_propuestas**",$tot_propuestas , $html_solicitud_usuario);
+
                     $html_solicitud_usuario= str_replace("**fecha_inicio_evaluacion**",$request->getPut('fecha_inicio_evaluacion'), $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**fecha_fin_evaluacion**",$request->getPut('fecha_fin_evaluacion'), $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**fecha_deliberacion**",$request->getPut('fecha_deliberacion'), $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**valor_estimulo**",$request->getPut('valor_estimulo'), $html_solicitud_usuario);
-
 
                     $html_solicitud_usuario= str_replace("**nombre_funcionario**", $user_current["primer_nombre"]." ".$user_current["segundo_nombre"]." ".$user_current["primer_apellido"]." ".$user_current["segundo_apellido"] , $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**correo_funcionario**", $user_current["username"], $html_solicitud_usuario);
@@ -435,24 +438,29 @@ $app->put('/notificar', function () use ($app, $config) {
                     $html_solicitud_usuario= str_replace("**enlace_aceptar**", $config->sistema->url_admin."pages/jurados/notificacion.html?key=".$jurado_notificacion->key."&opc=a", $html_solicitud_usuario);
                     $html_solicitud_usuario= str_replace("**enlace_rechazar**", $config->sistema->url_admin."pages/jurados/notificacion.html?key=".$jurado_notificacion->key."&opc=r", $html_solicitud_usuario);
 
-                  /*  $mail = new PHPMailer();
+                    //servidor smtp ambiente de prueba
+                    /*$mail = new PHPMailer();
                     $mail->IsSMTP();
                     $mail->SMTPAuth = true;
                     $mail->Host = "smtp.gmail.com";
                     $mail->SMTPSecure = 'ssl';
-                    $mail->Username = "convocatorias@scrd.gov.co";
-                    $mail->Password = "fomento2017";
-                    $mail->Port = 465;
+                    $mail->Username = "cesar.augusto.britto@gmail.com";
+                    $mail->Password = "Guarracuco2016";
+                    $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
                     $mail->CharSet = "UTF-8";
                     $mail->IsHTML(true); // El correo se env  a como HTML
                     $mail->From = "convocatorias@scrd.gov.co";
+                    //$mail->From = "cesar.augusto.britto@gmail.com";
                     $mail->FromName = "Sistema de Convocatorias";
                     $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-                    $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+                    //$mail->AddAddress("cesar.augusto.britto@gmail.com");//direccion de prueba
+                    //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
                     //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
                     $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
-                    $mail->Body = $html_solicitud_usuario;*/
+                    $mail->Body = $html_solicitud_usuario;
+                    */
 
+                  /*Servidor SMTP producción*/
                     $mail = new PHPMailer();
                     $mail->IsSMTP();
                     $mail->Host = "smtp-relay.gmail.com";
@@ -527,18 +535,26 @@ $app->get('/notificado_key_notificacion', function () use ($app) {
         if ($notificacion && $notificacion->active) {
 
             $participante = $notificacion->Juradospostulados->Propuestas->Participantes;
+            $convocatoria = $notificacion->Juradospostulados->Propuestas->Convocatorias;
 
-            return json_encode( [ "participante"=>[
-              "participante"=> $participante->id,
-              "usuario"=> $participante->Usuariosperfiles->usuario,
-              "primer_nombre"=> $participante->primer_nombre,
-              "segundo_nombre"=> $participante->segundo_nombre,
-              "primer_apellido"=> $participante->primer_apellido,
-              "segundo_apellido"=> $participante->segundo_apellido,
-              "tipo_documento"=> $participante->Tiposdocumentos->nombre,
-              "numero_documento"=> $participante->numero_documento,
-
-            ], "notificacion"=>["estado"=>Estados::findFirst($notificacion->estado)->nombre ] ] );
+            return json_encode(
+              [ "participante"=>[
+                  "participante"=> $participante->id,
+                  "usuario"=> $participante->Usuariosperfiles->usuario,
+                  "primer_nombre"=> $participante->primer_nombre,
+                  "segundo_nombre"=> $participante->segundo_nombre,
+                  "primer_apellido"=> $participante->primer_apellido,
+                  "segundo_apellido"=> $participante->segundo_apellido,
+                  "tipo_documento"=> $participante->Tiposdocumentos->nombre,
+                  "numero_documento"=> $participante->numero_documento,
+                  ],
+                "notificacion"=>[
+                  "convocatoria_banco"=>$convocatoria->nombre,
+                  "vigencia"=>$convocatoria->anio,
+                  "estado"=>Estados::findFirst($notificacion->estado)->nombre
+                  ]
+              ]
+            );
 
         } else {
             return "error";
@@ -569,7 +585,6 @@ $app->put('/aceptar_notificacion', function () use ($app, $config) {
           $notificacion->estado = 15; //15	jurado_notificaciones	Aceptada
           $notificacion->fecha_actualizacion = date("Y-m-d H:i:s");
           $notificacion->fecha_aceptacion = date("Y-m-d H:i:s");
-        //  $notificacion->actualizado_por = $request->put('usuario');
 
           if ( $notificacion->save() === false ) {
             //Para auditoria en versión de pruebas
@@ -578,6 +593,8 @@ $app->put('/aceptar_notificacion', function () use ($app, $config) {
                }
 
             return "error";
+          }else{
+            return "exito";
           }
 
         }else{
