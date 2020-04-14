@@ -396,13 +396,73 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     
                     if($params["convocatoria"]!="")
                     {
-                        $convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
-                        
-                        //Valido si la convocatoria tiene categorias y tiene diferentes requisitos con el fin de buscar la fecha de cierre
-                        $id_convocatoria=$convocatoria->id;                
-                        $seudonimo=$convocatoria->seudonimo;
+                        //Elimino las 2 lineas debido a que en el if de las lineas 312
+                        //350 ya se valida, este if es solo para colocar en el where
+                        //$convocatoria= Convocatorias::findFirst("id=".$params["convocatoria"]." AND active=TRUE");
+                        //$id_convocatoria=$convocatoria->id;                
+                        //$seudonimo=$convocatoria->seudonimo;
                         
                         $where .= " AND p.convocatoria=$id_convocatoria ";
+                        
+                        //Consulto las propuestas en estado 22 Subsanación Recibida
+                        //y tambien que se pasaron de la fecha_fin_subsanacion
+                        //con el fin de rechazarla
+                        
+                        $where_subsanacion = ['convocatoria' => $id_convocatoria, 'estado' => 22];                        
+                        $propuestas_no_subsanaron = Propuestas::find(([
+                                    'conditions' => 'convocatoria=:convocatoria: AND estado=:estado: AND NOW()>fecha_fin_subsanacion',
+                                    'bind' => $where_subsanacion
+                        ]));
+                                                                        
+                        foreach ($propuestas_no_subsanaron as $propuesta_rechazar) { 
+                            
+                            //Consulto los documentos que enviaron a subsanar
+                            $where_subsanacion = ['propuesta' => $propuesta_rechazar->id, 'active' => true, 'estado' => 27];
+                            $documentos_subsanar = Propuestasverificaciones::find(([
+                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND estado=:estado:',
+                                        'bind' => $where_subsanacion
+                            ]));
+                            
+                            foreach ($documentos_subsanar as $propuesta_verificar_subsanar) {
+                                
+                                //Consulto si existe el registro
+                                $consulto_propuesta_verificacion= Propuestasverificaciones::findFirst("propuesta=".$propuesta_verificar_subsanar->propuesta." AND convocatoriadocumento=".$propuesta_verificar_subsanar->convocatoriadocumento." AND verificacion=2");
+            
+                                //si no existe lo creo
+                                if (!isset($consulto_propuesta_verificacion->id)) {
+                                    $propuesta_verificar_rechazar = new Propuestasverificaciones();
+                                    $propuesta_verificar_rechazar->propuesta = $propuesta_verificar_subsanar->propuesta;
+                                    $propuesta_verificar_rechazar->convocatoriadocumento = $propuesta_verificar_subsanar->convocatoriadocumento;
+                                    $propuesta_verificar_rechazar->verificacion = 2;
+                                    $propuesta_verificar_rechazar->estado = 30;
+                                    $propuesta_verificar_rechazar->observacion = "El participante no subsanó la documentación solicitada.";
+                                    $propuesta_verificar_rechazar->active = true;                                
+                                    $propuesta_verificar_rechazar->creado_por = $user_current->id;
+                                    $propuesta_verificar_rechazar->fecha_creacion = date("Y-m-d H:i:s");
+                                    if ($propuesta_verificar_rechazar->save() === false) {
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Se presento error en el metodo buscar_propuestas al crear la propuesta verificacion 2 en la propuesta (' . $propuesta_verificar_subsanar->id . ')"', ['user' => $user_current->username, 'token' => $request->get('token')]);
+                                        $logger->close();                                    
+                                    } else {
+                                        //Registro la accion en el log de convocatorias
+                                        $logger->info('"token":"{token}","user":"{user}","message":"El metodo buscar_propuestas guardo con exito la verificacion 2 de la propuesta (' . $propuesta_verificar_subsanar->id . ')"', ['user' => $user_current->username, 'token' => $request->get('token')]);
+                                        $logger->close();                                   
+                                    } 
+                                }                                                               
+                            }
+                            
+                            //Agrego el estado de rechazado a la propuesto
+                            $propuesta_rechazar->estado=23;
+                            if ($propuesta_rechazar->save() === false) {
+                                $logger->error('"token":"{token}","user":"{user}","message":"Se presento error en el metodo buscar_propuestas al rechazar la propuesta verificacion 2 en la propuesta (' . $propuesta_verificar_subsanar->id . ')"', ['user' => $user_current->username, 'token' => $request->get('token')]);
+                                $logger->close();                                    
+                            } else {
+                                //Registro la accion en el log de convocatorias
+                                $logger->info('"token":"{token}","user":"{user}","message":"El metodo buscar_propuestas guardo con exito la propuesta a rechzar en la verificacion 2 de la propuesta (' . $propuesta_verificar_subsanar->id . ')"', ['user' => $user_current->username, 'token' => $request->get('token')]);
+                                $logger->close();                                   
+                            }                             
+                            
+                        }                                                
+                        
                     }
                     
                     
