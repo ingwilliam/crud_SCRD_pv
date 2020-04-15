@@ -617,6 +617,7 @@ CREATE TABLE public.encuestas
   programa integer NOT NULL,
   anio integer NOT NULL,
   active boolean DEFAULT true,
+  tipo TEXT,
   nombre TEXT,
   descripcion TEXT,
   fecha_actualizacion timestamp without time zone,
@@ -649,7 +650,7 @@ CREATE TABLE public.encuestasparametros
   creado_por integer NOT NULL,
   actualizado_por integer,
   CONSTRAINT encuestasparametros_pkey PRIMARY KEY (id),
-  CONSTRAINT encuestasparametros_encuesta_fkey FOREIGN KEY (encuestas)
+  CONSTRAINT encuestasparametros_encuesta_fkey FOREIGN KEY (encuesta)
       REFERENCES public.encuestas (id) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT encuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
