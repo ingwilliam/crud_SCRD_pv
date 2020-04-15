@@ -698,15 +698,20 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                     $nombre_representante=$propuesta->codigo;
                 }
                 
-                $observaciones = $propuesta->getPropuestasverificaciones([
-                                "observacion <> '' AND verificacion IN (1,2)"                                
-                    ]);
                 $text_observacion="";
-                foreach ($observaciones as $observacion) {
-                    $text_observacion=$observacion->observacion." , ".$text_observacion;
-                }
                 
-                $text_observacion = substr($text_observacion, 0, -2);
+                if($propuesta->estado==23)
+                {
+                    $observaciones = $propuesta->getPropuestasverificaciones([
+                                "observacion <> '' AND verificacion IN (1,2) AND estado IN (26,30)"                                
+                    ]);
+
+                    foreach ($observaciones as $observacion) {
+                        $text_observacion=$observacion->observacion." , ".$text_observacion;
+                    }
+
+                    $text_observacion = substr($text_observacion, 0, -2);
+                }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
