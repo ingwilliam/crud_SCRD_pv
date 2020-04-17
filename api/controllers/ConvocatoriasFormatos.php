@@ -1800,7 +1800,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
                             par.numero_telefono
                         FROM Propuestas AS p 
                             INNER JOIN Participantes AS par ON par.id=p.participante
-                            INNER JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
                         WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";
             
@@ -1903,7 +1903,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
                             par.numero_telefono
                         FROM Propuestas AS p 
                             INNER JOIN Participantes AS par ON par.id=p.participante
-                            INNER JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
                         WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";            
 
