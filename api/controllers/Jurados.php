@@ -243,7 +243,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
         }
     } catch (Exception $ex) {
 
-        // echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+         //echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
         //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
@@ -359,8 +359,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     } catch (Exception $ex) {
 
        //Para auditoria en versión de pruebas
-       // echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
-       echo "error_metodo";
+       echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
+       //echo "error_metodo";
     }
 }
 );
@@ -368,7 +368,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 //Busca el registro
 $app->get('/search', function () use ($app, $config) {
     try {
-        //Instancio los objetos que se van a manejar
+        //Instancio los objetos que se van a manejar$('#estrato').hide();
         $request = new Request();
         $tokens = new Tokens();
         $participante = new Participantes();
@@ -433,6 +433,7 @@ $app->get('/search', function () use ($app, $config) {
 
             //se crea la respuesta
             $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
+            $array["pais_residencia_id"] = $participante->Ciudadesresidencia->Departamentos->Paises->id;
             $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
             $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
             $array["participante"] = $participante;
