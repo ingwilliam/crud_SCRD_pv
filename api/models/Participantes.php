@@ -113,6 +113,10 @@ class Participantes extends Model
      if ($this->barrio_residencia == "") {
        $this->barrio_residencia = null;
      }
+     
+     if ($this->estrato == "") {
+       $this->estrato = null;
+     }
 
      return true;
    }
