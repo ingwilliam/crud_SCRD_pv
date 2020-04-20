@@ -233,10 +233,7 @@ $app->get('/all_propuestas', function () use ($app) {
                             ]
                         );
 
-
-
                         if( $evaluador ) {
-
 
                             $fase = ( $ronda->estado == 25 ? 'Evaluación': 'Deliberación');
 
