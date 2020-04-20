@@ -670,11 +670,18 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     
                     
                     $conditions = ['convocatoria' => $id_convocatoria, 'active' => true];
-                    $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
+                    if($id_convocatorias_documentos=="")
+                    {
+                        $consulta_documentos_administrativos=array();
+                    }
+                    else
+                    {
+                        $consulta_documentos_administrativos = Convocatoriasdocumentos::find(([
                                 'conditions' => 'id IN ('.$id_convocatorias_documentos.') AND convocatoria=:convocatoria: AND active=:active:',
                                 'bind' => $conditions,
                                 'order' => 'orden ASC',
                     ]));
+                    }                                        
                 }
                 
                 
