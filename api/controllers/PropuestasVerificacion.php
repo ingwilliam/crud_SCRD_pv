@@ -1143,12 +1143,25 @@ $app->post('/guardar_confirmacion', function () use ($app, $config,$logger) {
                     
                     if($request->getPost('estado_actual_propuesta')=="habilitada")
                     {
-                        $propuesta->estado=24;
+                        //Valido que sea diferente a 21 que es por subsanar
+                        //Debido que no puedo colocar una propuesta habilitada 
+                        //Sin que haya subsanado
+                        if($propuesta->estado!=21)
+                        {
+                            $propuesta->estado=24;
+                        }
                     }
                     
                     if($request->getPost('estado_actual_propuesta')=="cumple")
                     {
-                        $propuesta->estado=8;
+                        if($request->getPost('verificacion')=="2")
+                        {
+                            $propuesta->estado=24;
+                        }
+                        else
+                        {
+                            $propuesta->estado=8;
+                        }                                                                        
                     }
                     
                     //Solo la verificacion tecnica puede pasar la propuesta a estado 

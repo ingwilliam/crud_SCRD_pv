@@ -835,8 +835,20 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                     $nombre_representante=$propuesta->codigo;
                 }
                 
+                //Traemos solo los comentarios de rechazada
+                if($propuesta->estado==23)
+                {
+                    $verificacion_estado=" AND estado IN (26)";
+                }
+                
+                //Traemos solo los comentarios de por subsanar
+                if($propuesta->estado==21)
+                {
+                    $verificacion_estado=" AND estado IN (27)";
+                }
+                                
                 $observaciones = $propuesta->getPropuestasverificaciones([
-                                "observacion <> '' AND verificacion=1"                                
+                                "observacion <> '' AND verificacion=1".$verificacion_estado
                     ]);
                 $text_observacion="";
                 foreach ($observaciones as $observacion) {
