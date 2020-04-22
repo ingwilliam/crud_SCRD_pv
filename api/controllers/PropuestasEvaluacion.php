@@ -202,7 +202,7 @@ $app->get('/all_propuestas', function () use ($app) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
-            if( $user_current["id"]){
+            if( $user_current["id"] ){
 
                 if( $request->get('ronda') ){
 
@@ -223,7 +223,7 @@ $app->get('/all_propuestas', function () use ($app) {
                     $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
 
 
-                    if( $postulacion && $ronda ){
+                    if( isset($postulacion->id) && isset($ronda->id) ){
 
                         //valida si el usuario pertenece al grupo de evaluación de la ronda
                         $evaluador = Evaluadores::findFirst(
@@ -233,27 +233,118 @@ $app->get('/all_propuestas', function () use ($app) {
                             ]
                         );
 
-
-
                         if( $evaluador ) {
 
 
-                            $fase = ( $ronda->estado == 25 ? 'Evaluación': 'Deliberación');
+                          /**
+                          * Cesar Augusto Britto, 18-04-2020
+                          * Agregar propuestas a evaluar
+                          */
 
-                            $evaluacionpropuestas =  Evaluacionpropuestas::find(
+                          /*
+                          * Si es la primera ronda trae los datos desde la tabla propuesta,
+                          * en caso contrario lo trae de la tabla evaluacionpropuestas
+                          */
+
+                          //Array de rondas de la convocatoria
+                          $rondas = Convocatoriasrondas::find(
+                            [
+                              " convocatoria = ".$ronda->convocatoria
+                              ." AND active = true ",
+                              'order'=>'id ASC',
+                            ]
+                          );
+
+                          //si es la primera ronda y ronda estado habilitada, es decir en fase de evaluación
+                          if( ($rondas[0])->id == $ronda->id  && $ronda->getEstado_nombre() == "Habilitada"){
+
+                            //propuestas incluidas por el evaluador
+                            $propuestas_evaluacion = Evaluacionpropuestas::find(
+                              [
+                                  "ronda =".$ronda->id
+                                  ." AND fase = 'Evaluación' "
+                                  ." AND evaluador = ".$evaluador->id
+                              ]
+                            );
+
+                            $array_propuestas =  array(-1);
+                            foreach ($propuestas_evaluacion as $key => $evaluacion) {
+                              array_push($array_propuestas, $evaluacion->propuesta);
+                            }
+
+                            //24	propuestas	Habilitada
+                            $estado_propuesta= Estados::findFirst("tipo_estado = 'propuestas' AND nombre = 'Habilitada'");
+                            //propuestas a incluir por parte del evaluador
+                            $propuestas_incluir = Propuestas::find(
+                              [
+                                " convocatoria = ".$ronda->convocatoria
+                                .' AND estado = '.$estado_propuesta->id
+                                .' AND id NOT IN ({propuestas:array})',
+                                'bind' => [
+                                    'propuestas' => $array_propuestas
+                                ]
+                              ]
+                            );
+
+                            // se guarda cada propuesta a incluir en la evaluación
+
+                            foreach ($propuestas_incluir as $key => $propuesta) {
+                                    $evaluacion_propuesta = new Evaluacionpropuestas();
+                                    $evaluacion_propuesta->propuesta = $propuesta->id;
+                                    $evaluacion_propuesta->ronda =  $ronda->id;
+                                    $evaluacion_propuesta->evaluador = $evaluador->id;
+                                    $evaluacion_propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'"))->id;
+                                    //ronda_estado = habilitada
+                                    $evaluacion_propuesta->fase = 'Evaluación';
+                                    $evaluacion_propuesta->fecha_creacion =  date("Y-m-d H:i:s");
+                                    $evaluacion_propuesta->creado_por = $user_current["id"];
+                                    $evaluacion_propuesta->active =  true;
+
+                                    if ( $evaluacion_propuesta->save() === false ) {
+
+                                      //Para auditoria en versión de pruebas
+                                      foreach ($evaluacion_propuesta->getMessages() as $message) {
+                                           echo $message;
+                                         }
+
+                                      return "error";
+                                    }
+                            }//fin foreach
+
+                          }
+
+                          /**
+                          * Listar las propuestas que estan registradas para evaluar
+                          */
+                          //fase de evaluación o de deliberación
+                          $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                                          ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+
+                          $evaluacionpropuestas =  Evaluacionpropuestas::find(
                                 [
                                     'ronda = '.$ronda->id
                                     .' AND evaluador = '.$evaluador->id
-                                    .' AND fase = "'.$fase.'"'.( $request->get('estado') ? ' AND estado = '.$request->get('estado') : '' ),
+                                    .' AND fase = "'.$fase.'"'
+                                    .( $request->get('estado') ? ' AND estado = '.$request->get('estado') : '' ),
                                     'order'=>'propuesta ASC',
                                     'limit' =>  $request->get('length'),
                                     'offset' =>  $request->get('start'),
                                 ]
                              );
 
-                            if( $evaluacionpropuestas->count() > 0 ){
+                             $allevaluacionpropuestas =  Evaluacionpropuestas::find(
+                                   [
+                                       'ronda = '.$ronda->id
+                                       .' AND evaluador = '.$evaluador->id
+                                       .' AND fase = "'.$fase.'"'
+                                       .( $request->get('estado') ? ' AND estado = '.$request->get('estado') : '' ),
+                                       'order'=>'propuesta ASC',
+                                   ]
+                                );
 
-                                foreach ( $evaluacionpropuestas as $evaluacionpropuesta) {
+                          if( $evaluacionpropuestas->count() > 0 ){
+
+                              foreach ( $evaluacionpropuestas as $evaluacionpropuesta) {
 
                                     array_push($response, [
                                         "id_evaluacion"=>$evaluacionpropuesta->id,
@@ -268,8 +359,12 @@ $app->get('/all_propuestas', function () use ($app) {
 
                             }
 
+                        }else{
+                          return "error_evaluador";
                         }
 
+                    }else{
+                      return "error";
                     }
 
                 }
@@ -282,8 +377,8 @@ $app->get('/all_propuestas', function () use ($app) {
             //creo el array
             $json_data = array(
             "draw" => intval($request->get("draw")),
-            "recordsTotal" => intval( count($response) ),
-            "recordsFiltered" => intval( count($response) ),
+            "recordsTotal" => intval( count($allevaluacionpropuestas) ),
+            "recordsFiltered" => intval( count($allevaluacionpropuestas) ),
             "data" => $response   // total data array
             );
             //retorno el array en json
@@ -477,7 +572,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
                         }
 
 
-                        $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"evaluacion"=>$evaluacionpropuesta,"criterios"=>$criterios];
+                        $response[$ronda->numero_ronda]= ["ronda"=>$ronda,"ronda_nombre_estado"=>$ronda->getEstado_nombre(),"evaluacion"=>$evaluacionpropuesta,"evaluacion_nombre_estado"=>$evaluacionpropuesta->getEstado_nombre() ,"criterios"=>$criterios];
 
                     }
 
@@ -541,27 +636,30 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
                     if( $ronda ){
 
+                      /**
+                      * Cesar Britto, 20-04-2020
+                      * Se modifica para el manejo de los estados
+                      */
                         //Si la ronda esta evaluada no se permite la actualización de la evaluación
-                        if( $ronda->estado == 27 ){
+                        if( $ronda->getEstado_nombre() == "Evaluada" ){
 
                             return 'deshabilitado';
                         }
 
                         //En la fase de evaluación
-                        if( $ronda->estado == 25 && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
+                        if( $ronda->getEstado_nombre() == "Habilitada" && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Evaluación';
                         }
 
                         //En la fase de deliberación
-                        if( $ronda->estado == 26 && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
+                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Deliberación';
                         }
 
-
                         //Si la evaluación esta habilitada para modificarse
-                        //28	evaluacion_propuesta	Sin evaluar
-                        //29	evaluacion_propuesta	En evaluación
-                        if(  $evaluacion->fase == $fase && ($evaluacion->estado === 28 || $evaluacion->estado === 29) ){
+                        //evaluacion_propuesta	Sin evaluar
+                        //evaluacion_propuesta	En evaluación
+                        if(  $evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación") ){
 
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
@@ -621,7 +719,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                             $evaluacion->total = $total_evaluacion;
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
-                            $evaluacion->estado=29;//29	evaluacion_propuesta	En evaluación
+                            /**
+                            * Cesar Britto, 20-04-2020
+                            * Se modifica para el manejo de los estados
+                            */
+                            //evaluacion_propuesta	En evaluación
+                            $evaluacion->estado=(Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación'") )->id;
 
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
@@ -637,27 +740,19 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                             // Commit the transaction
                             $this->db->commit();
 
-
                             return (string)$evaluacion->id;
-
-                            //echo $evaluacion->id;
 
                         }else{
                             return 'deshabilitado';
                         }
 
-
-
                     }else{
                         return "error";
                     }
 
-
                 }else{
                     return "error";
                 }
-
-
 
             } else {
                 return "acceso_denegado";
@@ -743,26 +838,26 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                     if( $ronda ){
 
                         //Si la ronda está evaluada no se permite la actualización de la evaluación
-                        if( $ronda->estado == 27 ){
+                        if( $ronda->getEstado_nombre() == "Evaluada" ){
 
                             return 'deshabilitado';
                         }
 
 
                         //En la fase de evaluación
-                        if( $ronda->estado == 25 && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
+                        if( $ronda->getEstado_nombre() == "Habilitada" && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Evaluación';
                         }
 
                         //En la fase de deliberación
-                        if( $ronda->estado == 26 && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
+                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Deliberación';
                         }
 
                         //Si la evaluación esta habilitada para modificarse
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
-                        if(  $evaluacion->fase == $fase && ($evaluacion->estado === 28 || $evaluacion->estado === 29) ){
+                        if(  $evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación") ){
 
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
@@ -793,7 +888,8 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
 
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
-                            $evaluacion->estado=30;//30	evaluacion_propuesta	Evaluada
+                            //propuestas_evaluacion	Evaluada
+                            $evaluacion->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Evaluada' "))->id;
 
                             if ($evaluacion->save() === false) {
                                 //Para auditoria en versión de pruebas
