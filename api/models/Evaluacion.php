@@ -4,6 +4,8 @@ use Phalcon\Mvc\Model;
 class Evaluacion extends Model
 {
     public $id;
+    /*Cesar Britto, 20-04-2020*/
+    public $estado_nombre;
 
     public function initialize()
     {
@@ -20,5 +22,11 @@ class Evaluacion extends Model
             'Convocatoriasrondascriterios',
             'id'
         );
+    }
+
+    /*Cesar Britto, 20-04-2020*/
+    public function getEstado_nombre()
+    {
+          return (Estados::findFirst(" id = ". $this->estado) )->nombre;
     }
 }

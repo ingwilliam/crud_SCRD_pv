@@ -1061,6 +1061,7 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
                     ]
                   );
 
+                  //Se habiita la ronda para ser evaluada convocatorias_rondas	Habilitada
                   $estado =  Estados::findFirst(
                     [
                       " tipo_estado = 'convocatorias_rondas' "
