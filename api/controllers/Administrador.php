@@ -524,6 +524,10 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a href="../requisitos/list.html">Requisitos</a>
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
                                 </li>
+                                <li>
+                                    <a href="../encuestas/list.html">Encuestas</a>                                    
+                                    <a id="menu_encuesta_param" style="display: none" href="menu_encuesta_param">Encuestas</a>
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

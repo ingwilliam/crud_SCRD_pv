@@ -141,20 +141,20 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $ronda = Convocatoriasrondas::findFirst(json_decode($id));
                 $ronda->actualizado_por = $user_current["id"];
                 $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
-                
-                //si la ronda tiene estado null se puede editar, en caso contrario 
+
+                //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
                 if($ronda->estado === 'null'){
-                    
+
                     if ($ronda->save($put) === false) {
                         echo "error";
                     } else {
                         echo $id;
-                    }                    
+                    }
                 }else{
                     return 'deshabilitado';
                 }
-                
+
             } else {
                 echo "acceso_denegado";
             }
@@ -191,8 +191,8 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             if ($permiso_escritura == "ok") {
                 // Consultar el registro
                 $ronda = Convocatoriasrondas::findFirst(json_decode($id));
-                
-                
+
+
                 //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
                 if($ronda->estado === 'null'){
@@ -206,18 +206,18 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
                         $ronda->active=true;
                         $retorna="Si";
                     }
-                    
+
                     if ($ronda->save() === false) {
                         echo "error";
                     } else {
                         echo $retorna;
                     }
-                    
+
                 }else{
                     return 'deshabilitado';
                 }
-                
-               
+
+
             } else {
                 echo "acceso_denegado";
             }
@@ -353,28 +353,29 @@ $app->get('/select_rondas', function () use ($app) {
         $response =  array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual != false ) {
-            
+
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )
             {
-                
+
                 $rondas =  Convocatoriasrondas::find(
-                    [ ' convocatoria = '.$request->get('convocatoria'),
-                      'order'=>'numero_ronda'  
-                    ]                    
+                    [ ' convocatoria = '.$request->get('convocatoria')
+                      .' AND active = true ',
+                      ' order'=>'numero_ronda'
+                    ]
                  );
-              
+
                 foreach ( $rondas as $ronda) {
                     array_push($response, ["id"=> $ronda->id, "nombre"=> $ronda->nombre_ronda ] );
                 }
-                
+
             }
-            
+
             return json_encode($response);
-            
+
         } else {
             return "error_token";
         }
@@ -384,7 +385,7 @@ $app->get('/select_rondas', function () use ($app) {
     }
 }
 );
-    
+
 
 
 try {

@@ -26,7 +26,14 @@ class Programas extends Model
             'id',
             'Convocatorias',
             'programa'
-        );                        
+        );   
+        
+        //Se define la relación con 1 a N con Encuestas
+        $this->hasMany(
+            'id',
+            'Encuestas',
+            'programa'
+        );
     }  
     
     

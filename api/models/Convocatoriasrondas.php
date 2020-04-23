@@ -4,6 +4,8 @@ use Phalcon\Mvc\Model;
 class Convocatoriasrondas extends Model
 {
     public $id;
+    /*Cesar Britto, 20-04-2020*/
+    public $estado_nombre;
 
     public function initialize()
     {
@@ -24,7 +26,7 @@ class Convocatoriasrondas extends Model
             'convocatoria_ronda'
         );
 
-        //Se define relacion de N a 1 
+        //Se define relacion de N a 1
         $this->belongsTo(
             'grupoevaluador',
             'Gruposevaluadores',
@@ -33,6 +35,13 @@ class Convocatoriasrondas extends Model
 
 
     }
+
+    /*Cesar Britto, 20-04-2020*/
+    public function getEstado_nombre()
+    {
+      return (Estados::findFirst(" id = ". $this->estado) )->nombre;
+    }
+
 
 
 }
