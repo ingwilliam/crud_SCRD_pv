@@ -320,8 +320,6 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
 
       if( $user_current["id"]){
 
-      //  $total_evaluacion = Tablasmaestras::findFirst([" nombre = 'puntaje_minimo_jurado_seleccionar' "]);
-
         //busca los que se postularon
         if( $request->get('convocatoria')){
 
@@ -381,26 +379,24 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
 
           }
 
+        }
+
       }
 
-     }
+        //creo el array
+        $json_data = array(
+            "draw" => intval($request->get("draw")),
+            "recordsTotal" => intval( count($response) ),
+            "recordsFiltered" => intval( count($response) ),
+            "data" => $response   // total data array
+        );
+        //retorno el array en json
+       return json_encode($json_data);
 
-           //return json_encode($juradospostulados);
+      } else {
+          return "error_token";
+      }
 
-          //creo el array
-          $json_data = array(
-              "draw" => intval($request->get("draw")),
-              "recordsTotal" => intval( count($response) ),
-              "recordsFiltered" => intval( count($response) ),
-              "data" => $response   // total data array
-          );
-          //retorno el array en json
-         return json_encode($json_data);
-
-
-        } else {
-            return "error_token";
-        }
     } catch (Exception $ex) {
         //retorno el array en json null
         return "error_metodo".$ex->getMessage();
@@ -1028,15 +1024,17 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
+              // Start a transaction
+              $this->db->begin();
+
               $grupoevaluador =  Gruposevaluadores::findFirst($id);
 
               //18	grupos_evaluacion	Sin confirmar
-              if($grupoevaluador->estado == 18){
+              if( $grupoevaluador->estado == 18 ){
 
                 $grupoevaluador->estado = 19 ; //19	grupos_evaluacion	Confirmado
                 $grupoevaluador->fecha_actualizacion =  date("Y-m-d H:i:s");
                 $grupoevaluador->actualizado_por = $user_current["id"];
-
 
                 if ( $grupoevaluador->save() === false ) {
 
@@ -1045,11 +1043,56 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
                        echo $message;
                      }
 
+                  $this->db->rollback();
+
                   return "error";
                 }else{
 
-                  return $grupoevaluador->id;
+                  /**
+                  * Cesar Britto, 25-04-2020
+                  * Se agrega para establecer el estado Habiliatada de la ronda
+                  * para proceder a evaluar las propuestas
+                  */
+
+                  //se actualiza el grupo de evaluación de la ronda
+                  $rondas  = Convocatoriasrondas::find(
+                    [
+                      ' grupoevaluador = '.$grupoevaluador->id
+                    ]
+                  );
+
+                  //Se habiita la ronda para ser evaluada convocatorias_rondas	Habilitada
+                  $estado =  Estados::findFirst(
+                    [
+                      " tipo_estado = 'convocatorias_rondas' "
+                      ." AND nombre = 'Habilitada' "
+                    ]
+                  );
+
+                  foreach ( $rondas as $key => $ronda ) {
+
+                     $ronda->estado = $estado->id;
+
+                     if ( $ronda->save() === false ) {
+
+                       //Para auditoria en versión de pruebas
+                       foreach ( $ronda->getMessages() as $message) {
+                            echo $message;
+                          }
+
+                       $this->db->rollback();
+
+                       return "error";
+                     }
+
+                  }//fin foreach
+
                 }
+
+                // Commit the transaction
+                $this->db->commit();
+
+                return (String)$grupoevaluador->id;
 
               }else{
                 return "deshabilitado";

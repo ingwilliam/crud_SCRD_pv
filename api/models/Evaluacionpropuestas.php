@@ -4,6 +4,8 @@ use Phalcon\Mvc\Model;
 class Evaluacionpropuestas extends Model
 {
     public $id;
+    /*Cesar Britto, 20-04-2020*/
+    public $estado_nombre;
 
     public function initialize()
     {
@@ -13,7 +15,7 @@ class Evaluacionpropuestas extends Model
             'Propuestas',
             'id'
         );
-             
+
         //hasMany 	Defines a 1-n relationship
         $this->hasMany(
             'id',
@@ -21,5 +23,11 @@ class Evaluacionpropuestas extends Model
             'evaluacionpropuesta'
             );
 
+    }
+
+    /*Cesar Britto, 20-04-2020*/
+    public function getEstado_nombre()
+    {
+          return (Estados::findFirst(" id = ". $this->estado) )->nombre;
     }
 }

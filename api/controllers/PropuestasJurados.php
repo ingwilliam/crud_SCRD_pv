@@ -6319,7 +6319,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
     } catch (Exception $ex) {
         //echo "error_metodo"
         //Para auditoria en versión de pruebas
-        //echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
 
         $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
                       ['user' => "", 'token' => $request->get('token')]
