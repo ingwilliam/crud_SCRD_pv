@@ -94,6 +94,11 @@ $app->get('/all', function () use ($app) {
             $tabla_maestra= Tablasmaestras::findFirst("active=true AND nombre='".$request->get('anexos')."'");                        
             $tipo_documento = str_replace(",", "','", "'".$tabla_maestra->valor."'");
             
+            //Solo para el modulo de documentos
+            if( $request->get('anexos') == "documentacion" ){
+                $tipo_documento = str_replace ( ",'Resolución'", '', $tipo_documento);                
+            }
+            
             //Array para consultar las posibles categorias de la convocatoria
             $conditions = ['convocatoria_padre_categoria' => $request->get("convocatoria"), 'active' => true];
             $categorias = Convocatorias::find([
