@@ -10,6 +10,8 @@ use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Mvc\Model\Query;
 use Phalcon\Db\RawValue;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -43,6 +45,15 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -145,14 +156,22 @@ $app->get('/select_categorias', function () use ($app) {
 );
 
 //Retorna información de id y nombre de las categorias de la convocatoria
-$app->get('/select_estado', function () use ($app) {
+$app->get('/select_estado', function () use ($app, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $response =  array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"select_estado, $request->get()->'. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"select_estado, $token_actual->'. json_encode($token_actual).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ($token_actual != false ) {

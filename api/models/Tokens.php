@@ -9,7 +9,7 @@ class Tokens extends Model {
     function verificar_token($token) {
         try {
             //Fecha actual
-            $fecha_actual = date("Y-m-d H:i:s");                        
+            $fecha_actual = date("Y-m-d H:i:s");
             //Consulto y elimino todos los tokens que ya no se encuentren vigentes
             $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
             $tokens_eliminar->delete();
