@@ -164,26 +164,27 @@ $app->get('/select_estado', function () use ($app, $logger) {
         $response =  array();
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"select_estado, $request->get()->'. json_encode($request->get()).'"',
+        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::request->get()->'. json_encode($request->get()).'"',
                       ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"select_estado, $token_actual->'. json_encode($token_actual).'"',
+        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::token_actual->'. json_encode($token_actual).'"',
                       ['user' => '', 'token' => $request->get('token')]);
-
+        $logger->close();
+      
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        //if ($token_actual != false ) {
+        if ( $token_actual > 0 ) {
 
             //Si existe consulto la convocatoria
             if( $request->get('tipo_estado') )
             {
-
                 $estados =  Estados::find( "tipo_estado = '".$request->get('tipo_estado')."'" );
 
                 if( $estados ){
-
 
                     foreach ( $estados as $estado) {
                         array_push($response, ["id"=> $estado->id, "nombre"=> $estado->nombre ] );
@@ -196,11 +197,19 @@ $app->get('/select_estado', function () use ($app, $logger) {
 
             return json_encode($response);
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"/select_estado Error token"',
+                        ['user' => '', 'token' => $request->get('token')]);
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"/select_estado::ex->'. json_encode($ex).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+        return "error_metodo";
+
     }
 }
 );
