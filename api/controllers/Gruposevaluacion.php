@@ -36,7 +36,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,"port" => $config->database->port,
+        "host" => $config->database->host, "port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -50,62 +50,57 @@ $app = new Micro($di);
 $app->get('/init', function () use ($app, $config) {
     try {
 
-      //Instancio los objetos que se van a manejar
-      $request = new Request();
-      $tokens = new Tokens();
-      $array=array();
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $array = array();
 
-      //Consulto si al menos hay un token
-      $token_actual = $tokens->verificar_token($request->get('token'));
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
 
-      //Si el token existe y esta activo entra a realizar la tabla
-      if ($token_actual > 0) {
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
 
-        //se establecen los valores del usuario
-        $user_current = json_decode($token_actual->user_current, true);
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
 
-        if( $user_current["id"]){
+            if ($user_current["id"]) {
 
-            //Datos select entidades
-           $array["entidades"] = Entidades::find("active = true");
+                //Datos select entidades
+                $array["entidades"] = Entidades::find("active = true");
 
-           //Datos select año
-           for($i = date("Y"); $i >= 2016; $i--){
-               $array["anios"][] = $i;
-           }
+                //Datos select año
+                for ($i = date("Y"); $i >= 2016; $i--) {
+                    $array["anios"][] = $i;
+                }
 
-           //Datos select tipos jurados
-           //busca los valores de tipos de jurados registrados en tablas maestras
-           $tipos_jurado  =  Tablasmaestras::findFirst(
-               [
-                 "nombre ='tipos_jurado' "
-                 ." AND active = true"
-                ]
-             );
+                //Datos select tipos jurados
+                //busca los valores de tipos de jurados registrados en tablas maestras
+                $tipos_jurado = Tablasmaestras::findFirst(
+                                [
+                                    "nombre ='tipos_jurado' "
+                                    . " AND active = true"
+                                ]
+                );
 
-           $array["tipos_jurado"] = array();
+                $array["tipos_jurado"] = array();
 
-           foreach ( explode(",", $tipos_jurado->valor)  as  $tipo) {
-             array_push( $array["tipos_jurado"], ["id"=> $tipo, "nombre"=> $tipo]);
-           }
+                foreach (explode(",", $tipos_jurado->valor) as $tipo) {
+                    array_push($array["tipos_jurado"], ["id" => $tipo, "nombre" => $tipo]);
+                }
 
-          //Retorno el array
-         return json_encode( $array );
-
+                //Retorno el array
+                return json_encode($array);
+            }
+        } else {
+            return "error_token";
         }
-
-      } else {
-          return "error_token";
-      }
-
-
     } catch (Exception $ex) {
 
-      //return "error_metodo";
-      //Para auditoria en versión de pruebas
-      return "error_metodo: ". $ex->getMessage().json_encode($ex->getTrace());
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo: " . $ex->getMessage() . json_encode($ex->getTrace());
     }
-
 });
 
 //Retorna información de id y nombre de las convocatorias
@@ -114,38 +109,35 @@ $app->get('/select_convocatorias', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $convocatorias =  array();
+        $convocatorias = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
             //Si existe consulto la convocatoria
-            if( $request->get('entidad') && $request->get('anio') )
-            {
+            if ($request->get('entidad') && $request->get('anio')) {
 
-               $rs= Convocatorias::find(
-                  [
-                      " entidad = ".$request->get('entidad')
-                      ." AND anio = ".$request->get('anio')
-                      ." AND estado = 5 "
-                      ." AND modalidad != 2 " //2	Jurados
-                      ." AND active = true "
-                      ." AND convocatoria_padre_categoria is NULL"
-                  ]
+                $rs = Convocatorias::find(
+                                [
+                                    " entidad = " . $request->get('entidad')
+                                    . " AND anio = " . $request->get('anio')
+                                    . " AND estado = 5 "
+                                    . " AND modalidad != 2 " //2	Jurados
+                                    . " AND active = true "
+                                    . " AND convocatoria_padre_categoria is NULL"
+                                ]
                 );
 
                 //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-              //foreach ( $rs as $key => $value) {
+                //foreach ( $rs as $key => $value) {
                 //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
                 //}
 
-                foreach ( $rs as $convocatoria) {
-                  array_push($convocatorias, ["id"=> $convocatoria->id, "nombre"=> $convocatoria->nombre ] );
+                foreach ($rs as $convocatoria) {
+                    array_push($convocatorias, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
                 }
-
-
             }
 
             return json_encode($convocatorias);
@@ -154,7 +146,7 @@ $app->get('/select_convocatorias', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -165,40 +157,36 @@ $app->get('/select_categorias', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
             //Si existe consulto la convocatoria
-            if( $request->get('convocatoria') )
-            {
+            if ($request->get('convocatoria')) {
 
-              $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
+                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
-              if( $convocatoria->tiene_categorias){
-                $categorias = Convocatorias::find(
-                   [
-                       " convocatoria_padre_categoria = ".$convocatoria->id
-                       ." AND active = true "
-                   ]
-                 );
-
-              }
-
-
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-              //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
-
-                foreach ( $categorias as $categoria) {
-                  array_push($response, ["id"=> $categoria->id, "nombre"=> $categoria->nombre ] );
+                if ($convocatoria->tiene_categorias) {
+                    $categorias = Convocatorias::find(
+                                    [
+                                        " convocatoria_padre_categoria = " . $convocatoria->id
+                                        . " AND active = true "
+                                    ]
+                    );
                 }
 
 
+                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+                //foreach ( $rs as $key => $value) {
+                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
+                //}
+
+                foreach ($categorias as $categoria) {
+                    array_push($response, ["id" => $categoria->id, "nombre" => $categoria->nombre]);
+                }
             }
 
             return json_encode($response);
@@ -207,7 +195,7 @@ $app->get('/select_categorias', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -218,35 +206,44 @@ $app->get('/select_rondas', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
             //Si existe consulto la convocatoria
-            if( $request->get('convocatoria') ){
+            if ($request->get('convocatoria')) {
 
-              $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
-
-              $rondas = Convocatoriasrondas::query()
-                    ->where("Convocatoriasrondas.grupoevaluador IS NULL")
-                    ->andWhere( "Convocatoriasrondas.active = true ")
-                    ->andWhere( "Convocatoriasrondas.convocatoria = ".$convocatoria->id)
-                    ->orderBy("Convocatoriasrondas.numero_ronda")
-                    ->execute();
-
-              if( $rondas ){
-
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
-                foreach ( $rondas as $ronda) {
-                  array_push($response, ["id"=> $ronda->id, "nombre"=> $ronda->nombre_ronda ] );
+                /*
+                 * 22-04-2020
+                 * WILMER GUSTAVO MOGOLLÓN DUQUE
+                 * Se agrega un if para definir el código de la convocatoria que se relaciona con la ronda.
+                 */
+                if ($request->get('categoria')) {
+                    $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                } else {
+                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                 }
 
-              }
 
+
+                $rondas = Convocatoriasrondas::query()
+                        ->where("Convocatoriasrondas.grupoevaluador IS NULL")
+                        ->andWhere("Convocatoriasrondas.active = true ")
+                        ->andWhere("Convocatoriasrondas.convocatoria = " . $convocatoria->id)
+                        ->orderBy("Convocatoriasrondas.numero_ronda")
+                        ->execute();
+
+                if ($rondas) {
+
+                    //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+                    //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
+                    foreach ($rondas as $ronda) {
+                        array_push($response, ["id" => $ronda->id, "nombre" => $ronda->nombre_ronda]);
+                    }
+                }
             }
 
             return json_encode($response);
@@ -255,7 +252,7 @@ $app->get('/select_rondas', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -266,26 +263,26 @@ $app->get('/select_grupos', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
-              $grupos =  Tablasmaestras::findFirst(
-                [
-                  "nombre = 'grupos_evaluacion'"
-                ]
-              );
+            $grupos = Tablasmaestras::findFirst(
+                            [
+                                "nombre = 'grupos_evaluacion'"
+                            ]
+            );
 
-              if( $grupos ){
+            if ($grupos) {
 
-                    //Se construye un array con la información de id y nombre de cada grupo para establecer el componente select
-                      foreach ( explode(",", $grupos->valor) as $grupo) {
-                      array_push($response, ["id"=> $grupo, "nombre"=> $grupo ] );
-                    }
-              }
+                //Se construye un array con la información de id y nombre de cada grupo para establecer el componente select
+                foreach (explode(",", $grupos->valor) as $grupo) {
+                    array_push($response, ["id" => $grupo, "nombre" => $grupo]);
+                }
+            }
 
             return json_encode($response);
         } else {
@@ -293,7 +290,7 @@ $app->get('/select_grupos', function () use ($app) {
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -301,105 +298,137 @@ $app->get('/select_grupos', function () use ($app) {
 //Retorna información de los grupos de evaluación
 $app->get('/all_grupos_evaluacion', function () use ($app) {
 
-  try {
+    try {
 
-    //Instancio los objetos que se van a manejar
-    $request = new Request();
-    $tokens = new Tokens();
-    //  $juradospostulados =  array();
-    //Consulto si al menos hay un token
-    $token_actual = $tokens->verificar_token($request->get('token'));
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //  $juradospostulados =  array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
 
-    //Si el token existe y esta activo entra a realizar la tabla
-    if ($token_actual != false ) {
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual != false) {
 
-      //se establecen los valores del usuario
-      $user_current = json_decode($token_actual->user_current, true);
-      $response = array();
-      $idgrupos = array();
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
+            $idgrupos = array();
 
-      if( $user_current["id"]){
+            if ($user_current["id"]) {
 
-        //busca los que se postularon
-        if( $request->get('convocatoria')){
+                //busca los que se postularon
+                if ($request->get('convocatoria')) {
 
-          $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
+                    //Instancio los objetos que se van a manejar
+                    $request = new Request();
+                    $tokens = new Tokens();
+                    //  $juradospostulados =  array();
+                    //Consulto si al menos hay un token
+                    $token_actual = $tokens->verificar_token($request->get('token'));
 
-          //id de los gruposevaluacion que estan relacionados con la convocatoria
-          $result = $this->modelsManager->createQuery('SELECT distinct Convocatoriasrondas.grupoevaluador'
-                                                     .' FROM	Convocatoriasrondas '
-                                                     .' WHERE Convocatoriasrondas.convocatoria ='.$convocatoria->id
-                                                     .' AND Convocatoriasrondas.grupoevaluador IS NOT NULL')->execute();
-          //return json_encode($idgrupos);
-          //return print_r($idgrupos);
-          if($result->count() > 0 ){
+                    //Si el token existe y esta activo entra a realizar la tabla
+                    if ($token_actual != false) {
 
-            foreach ($result as $row) {
-                      array_push($idgrupos, $row->grupoevaluador);
+                        //se establecen los valores del usuario
+                        $user_current = json_decode($token_actual->user_current, true);
+                        $response = array();
+                        $idgrupos = array();
+
+                        if ($user_current["id"]) {
+
+                            //  $total_evaluacion = Tablasmaestras::findFirst([" nombre = 'puntaje_minimo_jurado_seleccionar' "]);
+                            //busca los que se postularon
+                            if ($request->get('convocatoria')) {
+
+                                /*
+                                 * 22-04-2020
+                                 * WILMER GUSTAVO MOGOLLÓN DUQUE
+                                 * Se agrega un if para definir el código de la convocatoria que se relaciona con la ronda.
+                                 */
+                                if ($request->get('categoria')) {
+                                    $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                                } else {
+                                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                                }
+
+//                                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                                //id de los gruposevaluacion que estan relacionados con la convocatoria
+                                $result = $this->modelsManager->createQuery('SELECT distinct Convocatoriasrondas.grupoevaluador'
+                                                . ' FROM	Convocatoriasrondas '
+                                                . ' WHERE Convocatoriasrondas.convocatoria =' . $convocatoria->id
+                                                . ' AND Convocatoriasrondas.grupoevaluador IS NOT NULL')->execute();
+                                //return json_encode($idgrupos);
+                                //return print_r($idgrupos);
+                                if ($result->count() > 0) {
+
+                                    foreach ($result as $row) {
+                                        array_push($idgrupos, $row->grupoevaluador);
+                                    }
+
+                                    $gruposevaluadores = Gruposevaluadores::find(
+                                                    [
+                                                        'id IN ({idgrupos:array})',
+                                                        'bind' => [
+                                                            'idgrupos' => $idgrupos
+                                                        ],
+                                                        'order' => 'id',
+                                                        'limit' => $request->get('length'),
+                                                        'offset' => $request->get('start')
+                                                    ]
+                                    );
+
+                                    foreach ($gruposevaluadores as $grupoevaluador) {
+
+                                        $suplentes = Evaluadores::query()
+                                                ->join("Juradospostulados", "Evaluadores.juradopostulado = Juradospostulados.id")
+                                                ->where("Evaluadores.grupoevaluador = " . $grupoevaluador->id)
+                                                ->andWhere("Juradospostulados.rol = 'Suplente' ")
+                                                ->execute();
+
+                                        $principales = Evaluadores::query()
+                                                ->join("Juradospostulados", "Evaluadores.juradopostulado = Juradospostulados.id")
+                                                ->where("Evaluadores.grupoevaluador = " . $grupoevaluador->id)
+                                                ->andWhere("Juradospostulados.rol = 'Principal' ")
+                                                ->execute();
+
+                                        $estado = Estados::findFirst('id = ' . $grupoevaluador->estado);
+
+                                        array_push($response, [
+                                            "id" => $grupoevaluador->id,
+                                            "nombre_grupo" => $grupoevaluador->nombre,
+                                            "nombre_estado" => $estado->nombre,
+                                            "numero_principales" => $principales->count(),
+                                            "numero_suplentes" => $suplentes->count(),
+                                            "numero_total" => ( $principales->count() + $suplentes->count() ),
+                                            "estado" => $grupoevaluador->estado
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+
+                        //return json_encode($juradospostulados);
+                        //creo el array
+                        $json_data = array(
+                            "draw" => intval($request->get("draw")),
+                            "recordsTotal" => intval(count($response)),
+                            "recordsFiltered" => intval(count($response)),
+                            "data" => $response   // total data array
+                        );
+
+                    }
+                }
             }
 
-            $gruposevaluadores = Gruposevaluadores::find(
-              [
-                'id IN ({idgrupos:array})',
-                'bind' => [
-                            'idgrupos' => $idgrupos
-                        ],
-                 'order' => 'id',
-                 'limit' => $request->get('length') ,
-                 'offset' => $request->get('start')
-              ]
-            );
-
-            foreach ($gruposevaluadores as $grupoevaluador) {
-
-              $suplentes = Evaluadores::query()
-                    ->join("Juradospostulados","Evaluadores.juradopostulado = Juradospostulados.id")
-                    ->where("Evaluadores.grupoevaluador = ".$grupoevaluador->id)
-                    ->andWhere("Juradospostulados.rol = 'Suplente' ")
-                    ->execute();
-
-              $principales = Evaluadores::query()
-                    ->join("Juradospostulados","Evaluadores.juradopostulado = Juradospostulados.id")
-                    ->where("Evaluadores.grupoevaluador = ".$grupoevaluador->id)
-                    ->andWhere("Juradospostulados.rol = 'Principal' ")
-                    ->execute();
-
-              $estado = Estados::findFirst('id = '. $grupoevaluador->estado);
-
-              array_push( $response, [
-                        "id" =>  $grupoevaluador->id,
-                        "nombre_grupo" =>  $grupoevaluador->nombre,
-                        "nombre_estado"=> $estado->nombre,
-                        "numero_principales" =>  $principales->count(),
-                        "numero_suplentes" => $suplentes->count(),
-                        "numero_total" => ( $principales->count()+$suplentes->count() ),
-                        "estado" => $grupoevaluador->estado
-                        ] );
-            }
-
-          }
-
+            //retorno el array en json
+            return json_encode($json_data);
+        } else {
+            return "error_token";
         }
-
-      }
-
-        //creo el array
-        $json_data = array(
-            "draw" => intval($request->get("draw")),
-            "recordsTotal" => intval( count($response) ),
-            "recordsFiltered" => intval( count($response) ),
-            "data" => $response   // total data array
-        );
-        //retorno el array en json
-       return json_encode($json_data);
-
-      } else {
-          return "error_token";
-      }
-
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -410,80 +439,89 @@ $app->get('/jurados_aceptaron', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-      //  $juradospostulados =  array();
+        //  $juradospostulados =  array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
-          //se establecen los valores del usuario
-          $user_current = json_decode($token_actual->user_current, true);
-          $response = array();
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
 
-          if( $user_current["id"] ){
+            if ($user_current["id"]) {
 
-             //busca los que se postularon
-             if( $request->get('convocatoria') ){
+                //busca los que se postularon
+                if ($request->get('convocatoria')) {
 
-               $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
+                    /*
+                     * 22-04-2020
+                     * WILMER GUSTAVO MOGOLLÓN DUQUE
+                     * Se agrega un if para definir el código de la convocatoria o la categoría que se relaciona con los jurados.
+                     */
 
-               $juradospostulados = Juradospostulados::query()
-                     ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
-                     ->where("Juradosnotificaciones.active = true ")
-                     ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-                     ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
-                     ->limit(  $request->get('start'), $request->get('length') )
-                     ->execute();
 
-               if( $juradospostulados->count() > 0 ){
+                    if ($request->get('categoria')) {
+                        $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                    } else {
+                        $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                    }
 
-                 foreach ($juradospostulados as $juradopostulado) {
+//               $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
 
-                    // return json_encode($notificacion_activa->estado);
-                    array_push( $response, [
-                      "postulado" => ( $juradopostulado->tipo_postulacion == 'Inscrita' ? true : false ),
-                      "id" =>  $juradopostulado->propuestas->participantes->id,
-                      "tipo_documento" =>  $juradopostulado->propuestas->participantes->tiposdocumentos->nombre,
-                      "numero_documento" =>  $juradopostulado->propuestas->participantes->numero_documento,
-                      "nombres" =>  $juradopostulado->propuestas->participantes->primer_nombre." ".$juradopostulado->propuestas->participantes->segundo_nombre,
-                      "apellidos" =>  $juradopostulado->propuestas->participantes->primer_apellido." ".$juradopostulado->propuestas->participantes->segundo_apellido,
-                      "id_postulacion"=>$juradopostulado->id,
-                      "puntaje" =>  $juradopostulado->total_evaluacion,
-                      "aplica_perfil" =>  $juradopostulado->aplica_perfil,
-                      "estado_postulacion" =>  $juradopostulado->estado,
-                      "codigo_propuesta" =>  $juradopostulado->propuestas->codigo,
-                      "rol"=> $juradopostulado->rol
+                    $juradospostulados = Juradospostulados::query()
+                            ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
+                            ->where("Juradosnotificaciones.active = true ")
+                            ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
+//                     ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
+                            ->andWhere("Juradospostulados.convocatoria = " . $convocatoria->id) //Se modifica para que sea dinámica
+                            ->limit($request->get('start'), $request->get('length'))
+                            ->execute();
 
-                      ] );
-                 }
+                    if ($juradospostulados->count() > 0) {
 
-               }
+                        foreach ($juradospostulados as $juradopostulado) {
 
-               //creo el array
-               $json_data = array(
-                   "draw" => intval($request->get("draw")),
-                   "recordsTotal" => intval( count($response) ),
-                   "recordsFiltered" => intval( count($response) ),
-                   "data" => $response   // total data array
-               );
-               //retorno el array en json
-              return json_encode($json_data);
+                            // return json_encode($notificacion_activa->estado);
+                            array_push($response, [
+                                "postulado" => ( $juradopostulado->tipo_postulacion == 'Inscrita' ? true : false ),
+                                "id" => $juradopostulado->propuestas->participantes->id,
+                                "tipo_documento" => $juradopostulado->propuestas->participantes->tiposdocumentos->nombre,
+                                "numero_documento" => $juradopostulado->propuestas->participantes->numero_documento,
+                                "nombres" => $juradopostulado->propuestas->participantes->primer_nombre . " " . $juradopostulado->propuestas->participantes->segundo_nombre,
+                                "apellidos" => $juradopostulado->propuestas->participantes->primer_apellido . " " . $juradopostulado->propuestas->participantes->segundo_apellido,
+                                "id_postulacion" => $juradopostulado->id,
+                                "puntaje" => $juradopostulado->total_evaluacion,
+                                "aplica_perfil" => $juradopostulado->aplica_perfil,
+                                "estado_postulacion" => $juradopostulado->estado,
+                                "codigo_propuesta" => $juradopostulado->propuestas->codigo,
+                                "rol" => $juradopostulado->rol
+                            ]);
+                        }
+                    }
 
-             }else{
-                 return "error";
-             }
-
-           }else{
-               return "error";
-           }
-
+                    //creo el array
+                    $json_data = array(
+                        "draw" => intval($request->get("draw")),
+                        "recordsTotal" => intval(count($response)),
+                        "recordsFiltered" => intval(count($response)),
+                        "data" => $response   // total data array
+                    );
+                    //retorno el array en json
+                    return json_encode($json_data);
+                } else {
+                    return "error";
+                }
+            } else {
+                return "error";
+            }
         } else {
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -495,12 +533,11 @@ $app->put('/new', function () use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
         //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -516,101 +553,92 @@ $app->put('/new', function () use ($app, $config) {
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-              // Start a transaction
-              $this->db->begin();
+                // Start a transaction
+                $this->db->begin();
 
-              $grupoevaluador = new Gruposevaluadores();
-              $grupoevaluador->nombre = $request->getPut('grupos');
-              $grupoevaluador->fecha_creacion =  date("Y-m-d H:i:s");
-              $grupoevaluador->creado_por = $user_current["id"];
-              $grupoevaluador->active = true;
-              $grupoevaluador->estado = 18;//18	grupos_evaluacion	Sin confirmar
+                $grupoevaluador = new Gruposevaluadores();
+                $grupoevaluador->nombre = $request->getPut('grupos');
+                $grupoevaluador->fecha_creacion = date("Y-m-d H:i:s");
+                $grupoevaluador->creado_por = $user_current["id"];
+                $grupoevaluador->active = true;
+                $grupoevaluador->estado = 18; //18	grupos_evaluacion	Sin confirmar
 
-              if ( $grupoevaluador->save() === false ) {
-
-                //Para auditoria en versión de pruebas
-                foreach ($grupoevaluador->getMessages() as $message) {
-                     echo $message;
-                   }
-
-                $this->db->rollback();
-                return "error";
-              }else{
-
-                //se crea los evaluadores del grupo
-                foreach( $request->getPut('seleccionados') as $juradopostulado ){
-
-                  $evaluador = new Evaluadores();
-                  $evaluador->grupoevaluador = $grupoevaluador->id;
-                  $evaluador->juradopostulado = $juradopostulado;
-                  $evaluador->fecha_creacion =  date("Y-m-d H:i:s");
-                  $evaluador->creado_por = $user_current["id"];
-                  $evaluador->active = true;
-
-                  if ( $evaluador->save() === false ) {
+                if ($grupoevaluador->save() === false) {
 
                     //Para auditoria en versión de pruebas
-                    foreach ($evaluador->getMessages() as $message) {
-                         echo $message;
-                       }
+                    foreach ($grupoevaluador->getMessages() as $message) {
+                        echo $message;
+                    }
 
                     $this->db->rollback();
                     return "error";
+                } else {
 
-                  }else{
+                    //se crea los evaluadores del grupo
+                    foreach ($request->getPut('seleccionados') as $juradopostulado) {
 
-                    //se actualiza el grupo de evaluación de la ronda
-                    $rondas  = Convocatoriasrondas::find(
-                      [
-                        ' id IN ({rondas:array})',
-                        'bind' => [
-                            'rondas' => $request->getPut('rondas')
-                            ]
-                      ]
-                    );
+                        $evaluador = new Evaluadores();
+                        $evaluador->grupoevaluador = $grupoevaluador->id;
+                        $evaluador->juradopostulado = $juradopostulado;
+                        $evaluador->fecha_creacion = date("Y-m-d H:i:s");
+                        $evaluador->creado_por = $user_current["id"];
+                        $evaluador->active = true;
 
-                    foreach ( $rondas as $key => $ronda ) {
+                        if ($evaluador->save() === false) {
 
-                       $ronda->grupoevaluador = $grupoevaluador->id;
-
-                       if ( $ronda->save() === false ) {
-
-                         //Para auditoria en versión de pruebas
-                         foreach ( $ronda->getMessages() as $message) {
-                              echo $message;
+                            //Para auditoria en versión de pruebas
+                            foreach ($evaluador->getMessages() as $message) {
+                                echo $message;
                             }
 
-                         $this->db->rollback();
-                         return "error";
-                       }
+                            $this->db->rollback();
+                            return "error";
+                        } else {
 
-                    }//fin foreach
+                            //se actualiza el grupo de evaluación de la ronda
+                            $rondas = Convocatoriasrondas::find(
+                                            [
+                                                ' id IN ({rondas:array})',
+                                                'bind' => [
+                                                    'rondas' => $request->getPut('rondas')
+                                                ]
+                                            ]
+                            );
 
+                            foreach ($rondas as $key => $ronda) {
 
-                  }
+                                $ronda->grupoevaluador = $grupoevaluador->id;
 
+                                if ($ronda->save() === false) {
+
+                                    //Para auditoria en versión de pruebas
+                                    foreach ($ronda->getMessages() as $message) {
+                                        echo $message;
+                                    }
+
+                                    $this->db->rollback();
+                                    return "error";
+                                }
+                            }//fin foreach
+                        }
+                    }
                 }
 
-              }
 
+                // Commit the transaction
+                $this->db->commit();
 
-              // Commit the transaction
-              $this->db->commit();
-
-              return $grupoevaluador->id;
-
+                return $grupoevaluador->id;
             } else {
                 return "acceso_denegado";
             }
-
         } else {
             return "error_token";
         }
-
     } catch (Exception $ex) {
         //return "error_metodo";
         //Para auditoria en versión de pruebas
-        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
 
@@ -620,62 +648,58 @@ $app->get('/select_rondas_editar', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
             //Si existe consulto el grupo
-            if( $request->get('grupo') && $request->get('convocatoria') ){
+            if ($request->get('grupo') && $request->get('convocatoria')) {
 
-              $convocatoria =  Convocatorias::findFirst( $request->get('convocatoria') );
+                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
-              $grupoevaluador =  Gruposevaluadores::findFirst( $request->get('grupo') );
+                $grupoevaluador = Gruposevaluadores::findFirst($request->get('grupo'));
 
-            //  return json_encode( $grupoevaluador->Convocatoriasrondas );
+                //  return json_encode( $grupoevaluador->Convocatoriasrondas );
 
 
-              $rondas = Convocatoriasrondas::query()
-                    ->where("Convocatoriasrondas.grupoevaluador IS NULL")
-                    ->andWhere( "Convocatoriasrondas.active = true ")
-                    ->andWhere( "Convocatoriasrondas.convocatoria = ".$convocatoria->id)
-                    ->orderBy("Convocatoriasrondas.numero_ronda")
-                    ->execute();
+                $rondas = Convocatoriasrondas::query()
+                        ->where("Convocatoriasrondas.grupoevaluador IS NULL")
+                        ->andWhere("Convocatoriasrondas.active = true ")
+                        ->andWhere("Convocatoriasrondas.convocatoria = " . $convocatoria->id)
+                        ->orderBy("Convocatoriasrondas.numero_ronda")
+                        ->execute();
 
-                    //rondas sin grupo
-              if( $rondas ){
+                //rondas sin grupo
+                if ($rondas) {
 
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
-                foreach ( $rondas as $ronda) {
-                  array_push($response, ["id"=> $ronda->id, "nombre"=> $ronda->nombre_ronda, "grupo"=>$ronda->grupoevaluador ] );
+                    //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+                    //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
+                    foreach ($rondas as $ronda) {
+                        array_push($response, ["id" => $ronda->id, "nombre" => $ronda->nombre_ronda, "grupo" => $ronda->grupoevaluador]);
+                    }
                 }
 
-              }
+                //rondas del grupo
+                if ($grupoevaluador->Convocatoriasrondas) {
 
-              //rondas del grupo
-              if( $grupoevaluador->Convocatoriasrondas ){
-
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
-                foreach ( $grupoevaluador->Convocatoriasrondas as $ronda) {
-                  array_push($response, ["id"=> $ronda->id, "nombre"=> $ronda->nombre_ronda, "grupo"=>$ronda->grupoevaluador ]  );
+                    //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
+                    //foreach (  $convocatoria->Convocatoriasrondas as $ronda) {
+                    foreach ($grupoevaluador->Convocatoriasrondas as $ronda) {
+                        array_push($response, ["id" => $ronda->id, "nombre" => $ronda->nombre_ronda, "grupo" => $ronda->grupoevaluador]);
+                    }
                 }
-
-              }
-
             }
 
             return json_encode($response);
-
         } else {
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -686,23 +710,22 @@ $app->get('/grupo/{id:[0-9]+}', function ($id) use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
-            $grupoevaluador =  Gruposevaluadores::findFirst( $id);
+            $grupoevaluador = Gruposevaluadores::findFirst($id);
 
             return json_encode($grupoevaluador);
-
         } else {
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -713,99 +736,94 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-      //  $juradospostulados =  array();
+        //  $juradospostulados =  array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if ($token_actual != false) {
 
-          //se establecen los valores del usuario
-          $user_current = json_decode($token_actual->user_current, true);
-          $response = array();
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+            $response = array();
 
-           if( $user_current["id"] ){
-
-
-             //busca los que se postularon
-             if( $request->get('convocatoria') ){
-
-               $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
-
-            /*   $juradospostulados = Juradospostulados::query()
-                     ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
-                     ->where("Juradosnotificaciones.active = true ")
-                     ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-                     ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
-                     ->execute();
-              */
-
-                 $result =  $this->modelsManager->createBuilder()
-                                        //->columns(['Juradospostulados.*', 'Evaluadores.id as id_evaluador'])
-                                        //->columns(['Juradospostulados.*, Evaluadores.id as id_evaluador'])
-                                        ->columns(['Juradospostulados.*',  'Evaluadores.id as id_evaluador'])
-                                        ->from('Juradospostulados')
-                                        ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
-                                        ->leftJoin("Evaluadores","Juradospostulados.id = Evaluadores.juradopostulado AND Evaluadores.grupoevaluador = ".$request->get('grupo')  )
-                                        ->Where("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-                                        ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
-                                        ->orderBy('Juradospostulados.id')
-                                        ->getQuery()
-                                        ->execute();
-
-                //return json_encode( $result );
-
-               if( $result->count() > 0 ){
-
-                 foreach ($result as $row) {
-
-                       //echo json_encode( $result );
-
-                    // return json_encode($notificacion_activa->estado);
-                    array_push( $response, [
-                      "postulado" => ( $row->juradospostulados->tipo_postulacion == 'Inscrita' ? true : false ),
-                      "id" =>   $row->juradospostulados->propuestas->participantes->id,
-                      "tipo_documento" => $row->juradospostulados->propuestas->participantes->tiposdocumentos->nombre,
-                      "numero_documento" =>  $row->juradospostulados->propuestas->participantes->numero_documento,
-                      "nombres" =>  $row->juradospostulados->propuestas->participantes->primer_nombre." ".$juradopostulado->propuestas->participantes->segundo_nombre,
-                      "apellidos" =>  $row->juradospostulados->propuestas->participantes->primer_apellido." ".$juradopostulado->propuestas->participantes->segundo_apellido,
-                      "id_postulacion"=> $row->juradospostulados->id,
-                      "puntaje" =>  $row->juradospostulados->total_evaluacion,
-                      "aplica_perfil" =>  $row->juradospostulados->aplica_perfil,
-                      "estado_postulacion" =>  $row->juradospostulados->estado,
-                      "codigo_propuesta" =>  $row->juradospostulados->propuestas->codigo,
-                      "rol"=> $row->juradospostulados->rol,
-                      "id_evaluador"=> $row->id_evaluador
-
-                      ] );
-                 }
-
-               }
+            if ($user_current["id"]) {
 
 
-                         //creo el array
-                         $json_data = array(
-                             "draw" => intval($request->get("draw")),
-                             "recordsTotal" => intval( count($response) ),
-                             "recordsFiltered" => intval( count($response) ),
-                             "data" => $response   // total data array
-                         );
-                         //retorno el array en json
-                        return json_encode($json_data);
-             }else{
-                 return "error";
-             }
+                //busca los que se postularon
+                if ($request->get('convocatoria')) {
 
-           }else{
-               return "error";
-           }
+                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
+                    /*   $juradospostulados = Juradospostulados::query()
+                      ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
+                      ->where("Juradosnotificaciones.active = true ")
+                      ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
+                      ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
+                      ->execute();
+                     */
+
+                    $result = $this->modelsManager->createBuilder()
+                            //->columns(['Juradospostulados.*', 'Evaluadores.id as id_evaluador'])
+                            //->columns(['Juradospostulados.*, Evaluadores.id as id_evaluador'])
+                            ->columns(['Juradospostulados.*', 'Evaluadores.id as id_evaluador'])
+                            ->from('Juradospostulados')
+                            ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
+                            ->leftJoin("Evaluadores", "Juradospostulados.id = Evaluadores.juradopostulado AND Evaluadores.grupoevaluador = " . $request->get('grupo'))
+                            ->Where("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
+                            ->andWhere("Juradospostulados.convocatoria = " . $request->get('convocatoria'))
+                            ->orderBy('Juradospostulados.id')
+                            ->getQuery()
+                            ->execute();
+
+                    //return json_encode( $result );
+
+                    if ($result->count() > 0) {
+
+                        foreach ($result as $row) {
+
+                            //echo json_encode( $result );
+                            // return json_encode($notificacion_activa->estado);
+                            array_push($response, [
+                                "postulado" => ( $row->juradospostulados->tipo_postulacion == 'Inscrita' ? true : false ),
+                                "id" => $row->juradospostulados->propuestas->participantes->id,
+                                "tipo_documento" => $row->juradospostulados->propuestas->participantes->tiposdocumentos->nombre,
+                                "numero_documento" => $row->juradospostulados->propuestas->participantes->numero_documento,
+                                "nombres" => $row->juradospostulados->propuestas->participantes->primer_nombre . " " . $juradopostulado->propuestas->participantes->segundo_nombre,
+                                "apellidos" => $row->juradospostulados->propuestas->participantes->primer_apellido . " " . $juradopostulado->propuestas->participantes->segundo_apellido,
+                                "id_postulacion" => $row->juradospostulados->id,
+                                "puntaje" => $row->juradospostulados->total_evaluacion,
+                                "aplica_perfil" => $row->juradospostulados->aplica_perfil,
+                                "estado_postulacion" => $row->juradospostulados->estado,
+                                "codigo_propuesta" => $row->juradospostulados->propuestas->codigo,
+                                "rol" => $row->juradospostulados->rol,
+                                "id_evaluador" => $row->id_evaluador
+                            ]);
+                        }
+                    }
+
+
+                    //creo el array
+                    $json_data = array(
+                        "draw" => intval($request->get("draw")),
+                        "recordsTotal" => intval(count($response)),
+                        "recordsFiltered" => intval(count($response)),
+                        "data" => $response   // total data array
+                    );
+                    //retorno el array en json
+                    return json_encode($json_data);
+                } else {
+                    return "error";
+                }
+            } else {
+                return "error";
+            }
         } else {
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
@@ -817,12 +835,11 @@ $app->put('/grupo/{id:[0-9]+}', function ($id) use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
         //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -836,161 +853,146 @@ $app->put('/grupo/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_close($ch);
 
             //return json_encode($request->getPut());
-
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-              $grupoevaluador =  Gruposevaluadores::findFirst($id);
+                $grupoevaluador = Gruposevaluadores::findFirst($id);
 
-              //18	grupos_evaluacion	Sin confirmar
-              if($grupoevaluador->estado == 18){
+                //18	grupos_evaluacion	Sin confirmar
+                if ($grupoevaluador->estado == 18) {
 
-                // Start a transaction
-                $this->db->begin();
+                    // Start a transaction
+                    $this->db->begin();
 
-                $grupoevaluador->fecha_actualizacion =  date("Y-m-d H:i:s");
-                $grupoevaluador->actualizado_por = $user_current["id"];
+                    $grupoevaluador->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $grupoevaluador->actualizado_por = $user_current["id"];
 
-                if ( $grupoevaluador->save() === false ) {
-
-                  //Para auditoria en versión de pruebas
-                  foreach ($grupoevaluador->getMessages() as $message) {
-                       echo $message;
-                     }
-
-                  $this->db->rollback();
-                  return "error";
-                }else{
-
-                  //evaluadores no seleccionados a eliminar
-                  $evaluadores_eliminar = Evaluadores::find(
-                    [
-                      " juradopostulado NOT IN ({seleccionados:array})"
-                      ." AND grupoevaluador = ".$grupoevaluador->id,
-                      'bind' => [
-                          'seleccionados' => $request->getPut('seleccionados_editar')
-                          ]
-                    ]
-                  );
-
-                  //Elimiar los evaluadores no seleccionados
-                  if($evaluadores_eliminar->count() > 0 ){
-
-                    foreach ($evaluadores_eliminar as $evaluador) {
-
-                      if ( $evaluador->delete() === false ) {
-
-                          foreach ($evaluador->getMessages() as $message) {
-                              echo $message;
-                          }
-
-                          $this->db->rollback();
-                          return "error";
-
-                      }
-
-                    }
-
-                  }
-
-
-                  //Crear los nuevos evaluadores
-                  foreach( $request->getPut('seleccionados_editar') as $juradopostulado ){
-
-                    $evaluador = Evaluadores::findFirst(
-                      [
-                          ' juradopostulado = '.$juradopostulado
-                          .' AND grupoevaluador = '.$grupoevaluador->id
-                      ]
-                    );
-
-                    if( $evaluador === false ){
-                      $evaluador = new Evaluadores();
-                      $evaluador->grupoevaluador = $grupoevaluador->id;
-                      $evaluador->juradopostulado = $juradopostulado;
-                      $evaluador->fecha_creacion =  date("Y-m-d H:i:s");
-                      $evaluador->creado_por = $user_current["id"];
-                      $evaluador->active = true;
-
-                      if ( $evaluador->save() === false ) {
+                    if ($grupoevaluador->save() === false) {
 
                         //Para auditoria en versión de pruebas
-                        foreach ($evaluador->getMessages() as $message) {
-                             echo $message;
-                           }
+                        foreach ($grupoevaluador->getMessages() as $message) {
+                            echo $message;
+                        }
 
                         $this->db->rollback();
                         return "error";
+                    } else {
 
-                      }
+                        //evaluadores no seleccionados a eliminar
+                        $evaluadores_eliminar = Evaluadores::find(
+                                        [
+                                            " juradopostulado NOT IN ({seleccionados:array})"
+                                            . " AND grupoevaluador = " . $grupoevaluador->id,
+                                            'bind' => [
+                                                'seleccionados' => $request->getPut('seleccionados_editar')
+                                            ]
+                                        ]
+                        );
 
+                        //Elimiar los evaluadores no seleccionados
+                        if ($evaluadores_eliminar->count() > 0) {
+
+                            foreach ($evaluadores_eliminar as $evaluador) {
+
+                                if ($evaluador->delete() === false) {
+
+                                    foreach ($evaluador->getMessages() as $message) {
+                                        echo $message;
+                                    }
+
+                                    $this->db->rollback();
+                                    return "error";
+                                }
+                            }
+                        }
+
+
+                        //Crear los nuevos evaluadores
+                        foreach ($request->getPut('seleccionados_editar') as $juradopostulado) {
+
+                            $evaluador = Evaluadores::findFirst(
+                                            [
+                                                ' juradopostulado = ' . $juradopostulado
+                                                . ' AND grupoevaluador = ' . $grupoevaluador->id
+                                            ]
+                            );
+
+                            if ($evaluador === false) {
+                                $evaluador = new Evaluadores();
+                                $evaluador->grupoevaluador = $grupoevaluador->id;
+                                $evaluador->juradopostulado = $juradopostulado;
+                                $evaluador->fecha_creacion = date("Y-m-d H:i:s");
+                                $evaluador->creado_por = $user_current["id"];
+                                $evaluador->active = true;
+
+                                if ($evaluador->save() === false) {
+
+                                    //Para auditoria en versión de pruebas
+                                    foreach ($evaluador->getMessages() as $message) {
+                                        echo $message;
+                                    }
+
+                                    $this->db->rollback();
+                                    return "error";
+                                }
+                            }
+                        }//fin foreach
+                        //se actualiza el grupo de evaluación de la ronda no seleccionada
+                        $rondas = Convocatoriasrondas::find(
+                                        [
+                                            ' id NOT IN ({rondas:array})'
+                                            . ' AND convocatoria = ' . $request->getPut('convocatoria'),
+                                            'bind' => [
+                                                'rondas' => $request->getPut('rondas_editar')
+                                            ]
+                                        ]
+                        );
+
+
+                        //se actualiza el grupo de evaluación de la ronda seelccionada
+                        $rondas = Convocatoriasrondas::find(
+                                        [
+                                            ' id IN ({rondas:array})',
+                                            'bind' => [
+                                                'rondas' => $request->getPut('rondas_editar')
+                                            ]
+                                        ]
+                        );
+
+                        foreach ($rondas as $key => $ronda) {
+
+                            $ronda->grupoevaluador = $grupoevaluador->id;
+
+                            if ($ronda->save() === false) {
+
+                                //Para auditoria en versión de pruebas
+                                foreach ($ronda->getMessages() as $message) {
+                                    echo $message;
+                                }
+
+                                $this->db->rollback();
+                                return "error";
+                            }
+                        }//fin foreach
                     }
 
-                  }//fin foreach
 
-
-                  //se actualiza el grupo de evaluación de la ronda no seleccionada
-                  $rondas  = Convocatoriasrondas::find(
-                    [
-                      ' id NOT IN ({rondas:array})'
-                      .' AND convocatoria = '.$request->getPut('convocatoria'),
-                      'bind' => [
-                          'rondas' => $request->getPut('rondas_editar')
-                          ]
-                    ]
-                  );
-
-
-                  //se actualiza el grupo de evaluación de la ronda seelccionada
-                  $rondas  = Convocatoriasrondas::find(
-                    [
-                      ' id IN ({rondas:array})',
-                      'bind' => [
-                          'rondas' => $request->getPut('rondas_editar')
-                          ]
-                    ]
-                  );
-
-                  foreach ( $rondas as $key => $ronda ) {
-
-                     $ronda->grupoevaluador = $grupoevaluador->id;
-
-                     if ( $ronda->save() === false ) {
-
-                       //Para auditoria en versión de pruebas
-                       foreach ( $ronda->getMessages() as $message) {
-                            echo $message;
-                          }
-
-                       $this->db->rollback();
-                       return "error";
-                     }
-
-                  }//fin foreach
-
+                    // Commit the transaction
+                    $this->db->commit();
+                    return $grupoevaluador->id;
+                } else {
+                    return "deshabilitado";
                 }
-
-
-                              // Commit the transaction
-                              $this->db->commit();
-                                return $grupoevaluador->id;
-
-              }else{
-                return "deshabilitado";
-              }
-
             } else {
                 return "acceso_denegado";
             }
-
         } else {
             return "error_token";
         }
-
     } catch (Exception $ex) {
         //return "error_metodo";
         //Para auditoria en versión de pruebas
-        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
 
@@ -1001,12 +1003,11 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
         //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -1020,96 +1021,88 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_close($ch);
 
             //return json_encode($request->getPut());
-
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-              // Start a transaction
-              $this->db->begin();
+                // Start a transaction
+                $this->db->begin();
 
-              $grupoevaluador =  Gruposevaluadores::findFirst($id);
+                $grupoevaluador = Gruposevaluadores::findFirst($id);
 
-              //18	grupos_evaluacion	Sin confirmar
-              if( $grupoevaluador->estado == 18 ){
+                //18	grupos_evaluacion	Sin confirmar
+                if ($grupoevaluador->estado == 18) {
 
-                $grupoevaluador->estado = 19 ; //19	grupos_evaluacion	Confirmado
-                $grupoevaluador->fecha_actualizacion =  date("Y-m-d H:i:s");
-                $grupoevaluador->actualizado_por = $user_current["id"];
+                    $grupoevaluador->estado = 19; //19	grupos_evaluacion	Confirmado
+                    $grupoevaluador->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $grupoevaluador->actualizado_por = $user_current["id"];
 
-                if ( $grupoevaluador->save() === false ) {
+                    if ($grupoevaluador->save() === false) {
 
-                  //Para auditoria en versión de pruebas
-                  foreach ($grupoevaluador->getMessages() as $message) {
-                       echo $message;
-                     }
-
-                  $this->db->rollback();
-
-                  return "error";
-                }else{
-
-                  /**
-                  * Cesar Britto, 25-04-2020
-                  * Se agrega para establecer el estado Habiliatada de la ronda
-                  * para proceder a evaluar las propuestas
-                  */
-
-                  //se actualiza el grupo de evaluación de la ronda
-                  $rondas  = Convocatoriasrondas::find(
-                    [
-                      ' grupoevaluador = '.$grupoevaluador->id
-                    ]
-                  );
-
-                  //Se habiita la ronda para ser evaluada convocatorias_rondas	Habilitada
-                  $estado =  Estados::findFirst(
-                    [
-                      " tipo_estado = 'convocatorias_rondas' "
-                      ." AND nombre = 'Habilitada' "
-                    ]
-                  );
-
-                  foreach ( $rondas as $key => $ronda ) {
-
-                     $ronda->estado = $estado->id;
-
-                     if ( $ronda->save() === false ) {
-
-                       //Para auditoria en versión de pruebas
-                       foreach ( $ronda->getMessages() as $message) {
+                        //Para auditoria en versión de pruebas
+                        foreach ($grupoevaluador->getMessages() as $message) {
                             echo $message;
-                          }
+                        }
 
-                       $this->db->rollback();
+                        $this->db->rollback();
 
-                       return "error";
-                     }
+                        return "error";
+                    } else {
 
-                  }//fin foreach
+                        /**
+                         * Cesar Britto, 25-04-2020
+                         * Se agrega para establecer el estado Habiliatada de la ronda
+                         * para proceder a evaluar las propuestas
+                         */
+                        //se actualiza el grupo de evaluación de la ronda
+                        $rondas = Convocatoriasrondas::find(
+                                        [
+                                            ' grupoevaluador = ' . $grupoevaluador->id
+                                        ]
+                        );
 
+                        //Se habiita la ronda para ser evaluada convocatorias_rondas	Habilitada
+                        $estado = Estados::findFirst(
+                                        [
+                                            " tipo_estado = 'convocatorias_rondas' "
+                                            . " AND nombre = 'Habilitada' "
+                                        ]
+                        );
+
+                        foreach ($rondas as $key => $ronda) {
+
+                            $ronda->estado = $estado->id;
+
+                            if ($ronda->save() === false) {
+
+                                //Para auditoria en versión de pruebas
+                                foreach ($ronda->getMessages() as $message) {
+                                    echo $message;
+                                }
+
+                                $this->db->rollback();
+
+                                return "error";
+                            }
+                        }//fin foreach
+                    }
+
+                    // Commit the transaction
+                    $this->db->commit();
+
+                    return (String) $grupoevaluador->id;
+                } else {
+                    return "deshabilitado";
                 }
-
-                // Commit the transaction
-                $this->db->commit();
-
-                return (String)$grupoevaluador->id;
-
-              }else{
-                return "deshabilitado";
-              }
-
             } else {
                 return "acceso_denegado";
             }
-
         } else {
             return "error_token";
         }
-
     } catch (Exception $ex) {
         //return "error_metodo";
         //Para auditoria en versión de pruebas
-        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
 

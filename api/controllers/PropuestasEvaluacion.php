@@ -68,7 +68,7 @@ $app->get('/select_convocatorias', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //Si existe consulto la convocatoria
             if( $request->get('entidad') && $request->get('anio') )
@@ -116,7 +116,7 @@ $app->get('/select_categorias', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )
@@ -176,8 +176,8 @@ $app->get('/select_estado', function () use ($app, $logger) {
         $logger->close();
 
         //Si el token existe y esta activo entra a realizar la tabla
-        //if ($token_actual != false ) {
-        if ( $token_actual > 0 ) {
+        //if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Si existe consulto la convocatoria
             if( $request->get('tipo_estado') )
@@ -225,7 +225,7 @@ $app->get('/all_propuestas', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -436,7 +436,7 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -538,7 +538,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -639,7 +639,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -812,7 +812,7 @@ $app->post('/download_file', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             echo $chemistry_alfresco->download($request->getPost('cod'));
         } else {
             echo "error_token";
@@ -840,7 +840,7 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -974,7 +974,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/evaluadores', function ($id) use ($
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -1029,7 +1029,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -1106,7 +1106,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1288,7 +1288,7 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();

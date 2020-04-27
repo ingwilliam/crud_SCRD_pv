@@ -66,7 +66,7 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $array = Participantes::find("active = true");
             echo json_encode($array);
         } else {
@@ -93,7 +93,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -211,7 +211,7 @@ $app->get('/search', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
             $user_current = json_decode($token_actual->user_current, true);
@@ -296,7 +296,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -426,7 +426,7 @@ $app->get('/crear_propuesta_pn', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -586,7 +586,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a editar el participante hijo pn en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -684,7 +684,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -868,7 +868,7 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
@@ -898,7 +898,7 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                      $validacion= "id<>".$post["id"]." AND ";
                     }
 
-                    $representante = Participantes::findFirst($validacion." participante_padre=".$post["participante"]." AND representante = true AND active = true");
+                    $representante = Participantes::findFirst($validacion." participante_padre=".$post["participante"]." AND representante = true AND active IN (TRUE,FALSE)");
                     if($representante->id>0)
                     {
                         $validar_representante=false;
@@ -984,7 +984,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1019,6 +1019,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     7 => 'p.id',
                 );
 
+                $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
                 $where .= " WHERE p.id <> " . $propuesta->participante . " AND p.participante_padre = " . $propuesta->participante . " AND tipo='" . $request->get('tipo') . "'";
                 //Condiciones para la consulta
 
@@ -1033,7 +1034,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1089,7 +1090,7 @@ $app->get('/editar_integrante', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Si existe consulto la convocatoria
             if ($request->get('id')) {
                 $participante = Participantes::findFirst($request->get('id'));
@@ -1131,6 +1132,59 @@ $app->get('/editar_integrante', function () use ($app, $config) {
 );
 
 
+// Eliminar registro
+$app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $user = Participantes::findFirst(json_decode($id));
+                if($request->getPut('active')=='false')
+                {
+                    $user->active = FALSE;
+                }
+                if($request->getPut('active')=='true')
+                {
+                    $user->active = true;
+                }
+                
+                if ($user->save($user) === false) {
+                    echo "error";
+                } else {
+                    echo "ok";
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+
+            exit;
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
+
+
 try {
     // Gestionar la consulta
     $app->handle();
@@ -1138,3 +1192,4 @@ try {
     echo 'Excepción: ', $e->getMessage();
 }
 ?>
+

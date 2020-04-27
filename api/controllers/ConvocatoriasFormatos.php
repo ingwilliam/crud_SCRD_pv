@@ -72,7 +72,7 @@ $app->post('/reporte_listado_entidades_convocatorias_estado_xls', function () us
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_estado_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -181,7 +181,7 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_estado para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -261,7 +261,7 @@ $app->post('/reporte_convocatorias_cerrar_xls', function () use ($app, $config, 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_convocatorias_cerrar_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -366,7 +366,7 @@ $app->post('/reporte_listado_entidades_convocatorias_cerrar', function () use ($
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_cerrar para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -446,7 +446,7 @@ $app->post('/reporte_listado_entidades_convocatorias_total_jurados', function ()
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_total_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -543,7 +543,7 @@ $app->post('/reporte_listado_entidades_convocatorias_total_jurados_xls', functio
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_total_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -670,7 +670,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_jurados', function 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -768,7 +768,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_jurados_xls', funct
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -892,7 +892,7 @@ $app->put('/editar_contratista/{id:[0-9]+}', function ($id) use ($app, $config) 
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -940,7 +940,7 @@ $app->get('/buscar_contratista/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $pais = Entidadescontratistas::findFirst($id);
             if (isset($pais->id)) {
                 echo json_encode($pais);
@@ -970,7 +970,7 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_contratistas_csv para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             
             $user_current = json_decode($token_actual->user_current, true);
             
@@ -1081,7 +1081,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -1245,7 +1245,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -1441,7 +1441,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -1595,7 +1595,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -1781,7 +1781,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
@@ -1800,7 +1800,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
                             par.numero_telefono
                         FROM Propuestas AS p 
                             INNER JOIN Participantes AS par ON par.id=p.participante
-                            INNER JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
                         WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";
             
@@ -1884,7 +1884,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -1903,7 +1903,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
                             par.numero_telefono
                         FROM Propuestas AS p 
                             INNER JOIN Participantes AS par ON par.id=p.participante
-                            INNER JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
                         WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";            
 

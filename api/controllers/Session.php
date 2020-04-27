@@ -137,7 +137,7 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
             $user_current = json_decode($token_actual->user_current, true);
@@ -242,7 +242,7 @@ $app->post('/recordar_usuario', function () use ($app, $config, $logger) {
 );
 
 $app->get('/validar_actualizacion_codigo/{id:[0-9]+}', function ($id) use ($app, $config) {
-    echo "WMX2 11 febrero 2020";
+    echo "Wilmer 11 febrero 2020";    
 });
 
 // Verifica el usuario
@@ -440,7 +440,7 @@ $app->post('/permiso_lectura', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $user_current = json_decode($token_actual->user_current, true);
 
             //Consultar todos los permisos
@@ -475,7 +475,7 @@ $app->post('/cerrar_session', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             if ($token_actual->delete() != false) {
                 echo "ok";
             } else {
@@ -502,7 +502,7 @@ $app->post('/permiso_escritura', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $user_current = json_decode($token_actual->user_current, true);
 
             //Consultar todos los permisos
@@ -537,7 +537,7 @@ $app->post('/permiso_eliminar', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $user_current = json_decode($token_actual->user_current, true);
 
             //Consultar todos los permisos
