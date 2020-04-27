@@ -10,6 +10,8 @@ use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Mvc\Model\Query;
 use Phalcon\Db\RawValue;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -43,6 +45,15 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -145,26 +156,35 @@ $app->get('/select_categorias', function () use ($app) {
 );
 
 //Retorna información de id y nombre de las categorias de la convocatoria
-$app->get('/select_estado', function () use ($app) {
+$app->get('/select_estado', function () use ($app, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $response =  array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::request->get()->'. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::token_actual->'. json_encode($token_actual).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        //if ($token_actual != false ) {
+        if ( $token_actual > 0 ) {
 
             //Si existe consulto la convocatoria
             if( $request->get('tipo_estado') )
             {
-
                 $estados =  Estados::find( "tipo_estado = '".$request->get('tipo_estado')."'" );
 
                 if( $estados ){
-
 
                     foreach ( $estados as $estado) {
                         array_push($response, ["id"=> $estado->id, "nombre"=> $estado->nombre ] );
@@ -177,11 +197,19 @@ $app->get('/select_estado', function () use ($app) {
 
             return json_encode($response);
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"/select_estado Error token"',
+                        ['user' => '', 'token' => $request->get('token')]);
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"/select_estado::ex->'. json_encode($ex).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+        return "error_metodo";
+
     }
 }
 );
@@ -1024,6 +1052,8 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                 $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado_2**","<span id='nombre_jurado_2'></span>" , $html_jurado_notificacion_impedimento);
                 $html_jurado_notificacion_impedimento = str_replace("**tipo_documento**","<span id='tipo_documento'></span>", $html_jurado_notificacion_impedimento);
                 $html_jurado_notificacion_impedimento = str_replace("**numero_documento**", "<span id='numero_documento'></span>", $html_jurado_notificacion_impedimento);
+                $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", "<span id='notificacion_codigo_propuesta'></span>", $html_jurado_notificacion_impedimento);
+                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", "<span id='notificacion_nombre_propuesta'></span>", $html_jurado_notificacion_impedimento);
                 $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**", "<span id='correo_jurado'></span>", $html_jurado_notificacion_impedimento);
                 $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**","<span id='motivo_impedimento'></span>", $html_jurado_notificacion_impedimento);
 
@@ -1033,8 +1063,12 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                              "numero_documento" =>$participante->numero_documento,
                              "nombre_jurado"=> $participante->primer_nombre." ".$participante->segundo_nombre." ".$participante->primer_apellido." ".$participante->segundo_apellido,
                              "correo_jurado" =>$participante->correo_electronico,
+                             "codigo_propuesta"=>$evaluacionpropuesta->Propuestas->codigo,
+                             "nombre_propuesta"=>$evaluacionpropuesta->Propuestas->nombre,
                              "notificacion"=>$html_jurado_notificacion_impedimento,
-                             "evaluacion"=>$evaluacionpropuesta
+                             "motivo_impedimento"=>$evaluacionpropuesta->observacion,
+                             "evaluacion"=>$evaluacionpropuesta,
+                             //"evaluacion_estado_nombre"=>(Estados::findFirst('id ='.$evaluacionpropuesta->estado))->nombre
                             ];
 
                 return json_encode($response);
@@ -1054,8 +1088,6 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
         return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
     }
 });
-
-
 
 
 /**
@@ -1100,18 +1132,20 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                     if( $ronda ){
 
                         //Si la ronda está evaluada no se permite la actualización de la evaluación
-                        if( $ronda->estado == 27 ){
+                        if( $ronda->getEstado_nombre() == 'Evaluada' ){
 
                             return 'deshabilitado';
                         }
 
                         //En la fase de evaluación
-                        if( $ronda->estado == 25 && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
+                        //rondas	Habilitada
+                        if( $ronda->getEstado_nombre() == 'Habilitada' && ( $ronda->fecha_fin_evaluacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Evaluación';
                         }
 
                         //En la fase de deliberación
-                        if( $ronda->estado == 26 && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
+                        //rondas	En deliberación
+                        if( $ronda->getEstado_nombre() == 'En deliberación' && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") ) ){
                             $fase = 'Deliberación';
                         }
 
@@ -1119,7 +1153,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
                         //30	evaluacion_propuesta	Evaluada
-                        if(  $evaluacion->fase == $fase && ( $evaluacion->estado === 28 || $evaluacion->estado === 29 || $evaluacion->estado === 30 ) ){
+                        if(  $evaluacion->fase == $fase && ( $evaluacion->getEstado_nombre() == 'Sin evaluar' || $evaluacion->getEstado_nombre() == 'En evaluación' || $evaluacion->getEstado_nombre() == 'Evaluada' ) ){
 
                           $evaluador = Evaluadores::findFirst('id = '.$evaluacion->evaluador);
 
@@ -1131,7 +1165,8 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $evaluacion->observacion = $request->getPut('observacion_impedimento');
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
-                            $evaluacion->estado=31;//31	evaluacion_propuesta	Impedimento
+                            //propuestas_evaluacion	Impedimento
+                            $evaluacion->estado=(Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' "))->id;
 
                             // Start a transaction
                             $this->db->begin();
@@ -1152,29 +1187,50 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                               $html_jurado_notificacion_impedimento = Tablasmaestras::find("active=true AND nombre='html_jurado_notificacion_impedimento'")[0]->valor;
                               $html_jurado_notificacion_impedimento = str_replace("**fecha_creacion**", date("d/m/Y"), $html_jurado_notificacion_impedimento);
                               $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado**",$participante->primer_nombre." ".$participante->primer_apellido , $html_jurado_notificacion_impedimento);
+                              $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado_2**",$participante->primer_nombre." ".$participante->primer_apellido  , $html_jurado_notificacion_impedimento);
                               $html_jurado_notificacion_impedimento = str_replace("**tipo_documento**", $participante->Tiposdocumentos->nombre, $html_jurado_notificacion_impedimento);
                               $html_jurado_notificacion_impedimento = str_replace("**numero_documento**", $participante->numero_documento, $html_jurado_notificacion_impedimento);
+                              $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", $evaluacionpropuesta->Propuestas->codigo, $html_jurado_notificacion_impedimento);
+                              $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacionpropuesta->Propuestas->nombre, $html_jurado_notificacion_impedimento);
                               $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**",$participante->correo_electronico, $html_jurado_notificacion_impedimento);
                               $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**",$request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
 
+                              //servidor smtp ambiente de prueba
                               $mail = new PHPMailer();
                               $mail->IsSMTP();
                               $mail->SMTPAuth = true;
                               $mail->Host = "smtp.gmail.com";
                               $mail->SMTPSecure = 'ssl';
-                              $mail->Username = "convocatorias@scrd.gov.co";
-                              $mail->Password = "fomento2017";
-                              $mail->Port = 465;
+                              $mail->Username = "cesar.augusto.britto@gmail.com";
+                              $mail->Password = "Guarracuco2016";
+                              $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
                               $mail->CharSet = "UTF-8";
                               $mail->IsHTML(true); // El correo se env  a como HTML
                               $mail->From = "convocatorias@scrd.gov.co";
+                              //$mail->From = "cesar.augusto.britto@gmail.com";
                               $mail->FromName = "Sistema de Convocatorias";
-                              $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado
+                              $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
+                              //$mail->AddAddress("cesar.augusto.britto@gmail.com");//direccion de prueba
                               //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                              $mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
-                              $mail->Subject = "Declaración de impedimento - Convocatoria".$ronda->Convocatorias->nombre;
+                              //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
+                              $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
                               $mail->Body = $html_jurado_notificacion_impedimento;
 
+
+                              /*Servidor SMTP producción*/
+                              /*  $mail = new PHPMailer();
+                                $mail->IsSMTP();
+                                $mail->Host = "smtp-relay.gmail.com";
+                                $mail->Port = 25;
+                                $mail->CharSet = "UTF-8";
+                                $mail->IsHTML(true); // El correo se env  a como HTML
+                                $mail->From = "convocatorias@scrd.gov.co";
+                                $mail->FromName = "Sistema de Convocatorias";
+                                $mail->AddAddress($participante->correo_electronico);
+                                $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+                                $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
+                                $mail->Body = $html_solicitud_usuario;
+                                */
                                   // Env  a el correo.
                               if ( $mail->Send() ) {
 
@@ -1217,6 +1273,55 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 }
 );
 
+/**
+*Confirmar Top individual
+*/
+
+$app->post('/confirmar_top_individual', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase= '';
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPost('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ($token_actual > 0) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ( $permiso_escritura == "ok" ) {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+              
+
+            } else {
+                return "acceso_denegado";
+            }
+
+        } else {
+            return "error_token";
+        }
+
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+    }
+}
+);
 
 try {
     // Gestionar la consulta
