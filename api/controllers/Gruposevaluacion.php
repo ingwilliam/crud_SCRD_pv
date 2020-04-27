@@ -59,7 +59,7 @@ $app->get('/init', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -537,7 +537,7 @@ $app->put('/new', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -839,7 +839,7 @@ $app->put('/grupo/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -1007,7 +1007,7 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $user_current = json_decode($token_actual->user_current, true);
 

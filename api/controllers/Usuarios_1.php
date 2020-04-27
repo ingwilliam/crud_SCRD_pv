@@ -56,7 +56,7 @@ $app->get('/all', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'td.nombre',
@@ -135,7 +135,7 @@ $app->post('/new', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -197,7 +197,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -272,7 +272,7 @@ $app->put('/edit_perfil/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Cargo el usuario que esta en el metodo put
             $usuario = $app->request->getPut();
             
@@ -317,7 +317,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -363,7 +363,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $usuario = Usuarios::findFirst($id);
             $usuario->password = "undefined";
             if (isset($usuario->id)) {
@@ -391,7 +391,7 @@ $app->get('/mi_perfil', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
             $usuario = Usuarios::findFirst($user_current["id"]);

@@ -75,7 +75,7 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_documentacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -300,7 +300,7 @@ $app->get('/buscar_documentacion_subsanacion', function () use ($app, $config, $
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_documentacion_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -427,7 +427,7 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -580,7 +580,7 @@ $app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $lo
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo validar_requisitos_subsanacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -672,7 +672,7 @@ $app->get('/buscar_archivos', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_archivos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -748,7 +748,7 @@ $app->get('/buscar_link', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -825,7 +825,7 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -910,7 +910,7 @@ $app->post('/guardar_link', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -981,7 +981,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config, $logger) 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1042,7 +1042,7 @@ $app->delete('/delete_link/{id:[0-9]+}', function ($id) use ($app, $config, $log
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1101,7 +1101,7 @@ $app->post('/download_file', function () use ($app, $config, $logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
