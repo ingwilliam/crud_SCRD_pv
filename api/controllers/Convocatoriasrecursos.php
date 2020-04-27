@@ -53,7 +53,7 @@ $app->get('/select_convocatoria', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
         
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
+        if (isset($token_actual->id)) {
             
             $convocatoria= Convocatorias::findFirst($request->get('convocatoria'));
             
@@ -118,7 +118,7 @@ $app->get('/all', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
@@ -180,7 +180,7 @@ $app->post('/new', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -228,7 +228,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -275,7 +275,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -329,7 +329,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $area = Convocatoriasrecursos::findFirst($id);
             if (isset($area->id)) {
                 echo json_encode($area);
