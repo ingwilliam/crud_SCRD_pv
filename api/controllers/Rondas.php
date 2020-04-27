@@ -59,7 +59,7 @@ $app->post('/new', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -121,7 +121,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -176,7 +176,7 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -240,7 +240,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $ronda = Convocatoriasrondas::findFirst($id);
             if (isset($ronda->id)) {
                 echo json_encode($ronda);
@@ -269,7 +269,7 @@ $app->get('/all_convocatoria', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
 
           //validar si tiene $categorias
@@ -355,7 +355,7 @@ $app->get('/select_rondas', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )

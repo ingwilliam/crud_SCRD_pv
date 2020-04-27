@@ -74,7 +74,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_propuesta_inscrita para generar reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
@@ -535,7 +535,7 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('id'));
@@ -655,7 +655,7 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_habilitados para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('id'));
@@ -792,7 +792,7 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_propuesta_rechazados_subsanar para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('id'));
@@ -936,7 +936,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_inscrita para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('id'));
@@ -1054,7 +1054,7 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_pre_inscrita para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('id'));
@@ -1176,7 +1176,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_propuesta_inscrita para generar reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
