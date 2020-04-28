@@ -71,7 +71,7 @@ $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -138,7 +138,7 @@ $app->get('/select_categorias', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -203,7 +203,7 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
     try {
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -336,7 +336,7 @@ $app->get('/generar_reportes_entidades', function () use ($app, $config, $logger
     try {
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -415,7 +415,7 @@ $app->get('/generar_reportes_contratistas', function () use ($app, $config, $log
     try {
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();

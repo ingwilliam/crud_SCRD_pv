@@ -70,7 +70,7 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
@@ -339,7 +339,7 @@ $app->get('/formulario_convocatorias', function () use ($app, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -396,7 +396,7 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config, 
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -463,7 +463,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);

@@ -54,7 +54,7 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $select = Convocatoriasparticipantes::find(['convocatoria = '.$request->get('convocatoria').' AND tipo_participante IN ('.$request->get('tipo_participante').')','order' => 'orden']);
 
@@ -79,7 +79,7 @@ $app->get('/select_form_convocatoria', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $select = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$request->get('convocatoria')." WHERE Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");
             echo json_encode($select);
@@ -103,7 +103,7 @@ $app->get('/all', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
@@ -164,7 +164,7 @@ $app->post('/new', function () use ($app, $config) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -253,7 +253,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -303,7 +303,7 @@ $app->delete('/delete', function () use ($app, $config) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -355,7 +355,7 @@ $app->delete('/delete_perfil_jurado/{id:[0-9]+}', function ($id) use ($app, $con
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -410,7 +410,7 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $convocatoriasparticipantes = Convocatoriasparticipantes::findFirst($id);
             if (isset($convocatoriasparticipantes->id)) {
                 echo json_encode($convocatoriasparticipantes);

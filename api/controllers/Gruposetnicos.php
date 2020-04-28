@@ -53,7 +53,7 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
         
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual>0) {
+        if (isset($token_actual->id)) {
            
             $robots = Gruposetnicos::find("active=true");
             echo json_encode($robots);

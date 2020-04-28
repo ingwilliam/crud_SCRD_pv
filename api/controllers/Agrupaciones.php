@@ -67,7 +67,7 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $array = Participantes::find("active = true");
             echo json_encode($array);
         } else {
@@ -95,7 +95,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
         
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -228,7 +228,7 @@ $app->get('/search', function () use ($app, $config,$logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));        
         
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -293,7 +293,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -413,7 +413,7 @@ $app->get('/crear_propuesta_agr', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -575,7 +575,7 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a buscar el participante agr hijo agr en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
         
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();

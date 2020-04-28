@@ -54,7 +54,7 @@ $app->post('/menu', function () use ($app,$config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Extraemos el usuario del token
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -85,7 +85,7 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Búsqueda de propuestas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_propuestas = $app->modelsManager->executeQuery($phql);
-            
+
             //Consultar todos los permiso de los reportes
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
@@ -552,6 +552,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
+                                    <!--<a style="" href="../convocatorias/list_publicas.html">Ajustar convocatorias publicadas</a>-->
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
@@ -560,7 +561,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Documentación</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/resoluciones.html?id=<?php echo $request->getPost('id');?>">Resoluciones</a>
-                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>                                    
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/listados_convocatorias.html?id=<?php echo $request->getPost('id');?>">Listados</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/avisos_convocatorias.html?id=<?php echo $request->getPost('id');?>">Avisos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/parametros_convocatorias.html?id=<?php echo $request->getPost('id');?>">Formulario de la propuesta</a>
                                     <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
@@ -592,7 +593,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
-                        
+
                         <?php
                         if(count($permisos_reportes)>0)
                         {
@@ -601,9 +602,9 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i> Reportes<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a style="" href="../reportes/propuestas.html">Convocatorias</a>                                    
-                                    <a style="" href="../reportes/entidades.html">Entidades</a>                                    
-                                    <a style="" href="../reportes/contratistas.html">Contratistas</a>                                    
+                                    <a style="" href="../reportes/propuestas.html">Convocatorias</a>
+                                    <a style="" href="../reportes/entidades.html">Entidades</a>
+                                    <a style="" href="../reportes/contratistas.html">Contratistas</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -728,6 +729,7 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
 
                         if( count($evaluar_propuestas) > 0 )
+                        //if( count($permisos_jurados) > 0 )
                         {
                             ?>
                                     <a style="" href="../administracionpropuestas/evaluacion_propuestas.html">Evaluar propuestas</a>
@@ -810,7 +812,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_new;?>" href="../propuestasjurados/listar_hojas.html">Mis hojas de vida</a>
                                 </li>
                                 <!--li>
-                                    <a style="<?php echo $style_new;?>" href="../propuestasjurados/postulaciones.html">Mis postulaciones</a>
+                                    <a style="<?php //echo $style_new;?>" href="../propuestasjurados/postulaciones.html">Mis postulaciones</a>
                                 </li-->
                             </ul>
                             <!-- /.nav-second-level -->
