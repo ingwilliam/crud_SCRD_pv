@@ -584,6 +584,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
+                                    
+                                    <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
                                 </li>
