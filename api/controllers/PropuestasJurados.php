@@ -561,8 +561,18 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                         // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
 
-                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
-                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_ciudad_1=Ciudades::findFirst(["id=".$educacionformal->ciudad] );
+
+                           
+                         $educacionformal->ciudad =  $array_ciudad_1->nombre;
+                        
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_educacion_formal_1= Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion);
+                         
+                          $educacionformal->nivel_educacion = $array_educacion_formal_1->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
                          array_push($response,$educacionformal);
@@ -661,8 +671,12 @@ $app->get('/all_educacion_formal/active', function () use ($app, $config) {
 
                         // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
 
-                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
-                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_ciudad_1= Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
+                        $educacionformal->ciudad =  $array_ciudad_1->nombre;
+                         
+                          $educacionformal->nivel_educacion = $array_ciudad_1->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
                          array_push($response,$educacionformal);
@@ -6725,13 +6739,22 @@ $app->get('/listar', function () use ($app, $config) {
 
                          foreach ($propuestas as $propuesta){
 
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_convocatoria_1= Convocatorias::findFirst("id = ".$propuesta->convocatoria );
+                            
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_estado_1= Estados::findFirst("id = ".$propuesta->estado );
+                        
+                             
                              array_push($response,[
                                "id"=>$propuesta->id,
                                "codigo"=>$propuesta->codigo,
                                "id_convocatoria" => $propuesta->convocatoria,
-                               "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
+                               "convocatoria" => $array_convocatoria_1->nombre ,
                                "modalidad_participa" => $propuesta->modalidad_participa,
-                               "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
+                               "estado"=> $array_estado_1->nombre
 
                                ] );
                          }
