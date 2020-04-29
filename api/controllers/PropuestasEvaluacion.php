@@ -1,7 +1,9 @@
 <?php
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+//
+error_reporting(E_ALL);
+//
+ini_set('display_errors', '1');
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -38,7 +40,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,
+        "host" => $config->database->host,"port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -55,68 +57,95 @@ $formatter->setDateFormat('Y-m-d H:i:s');
 $logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
 $logger->setFormatter($formatter);
 
+
 $app = new Micro($di);
 
 //Retorna información de id y nombre de las convocatorias
-$app->get('/select_convocatorias', function () use ($app) {
+$app->get('/select_convocatorias', function () use ($app,$logger) {
+
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $response =  array();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+      //Instancio los objetos que se van a manejar
+      $request = new Request();
+      $tokens = new Tokens();
+      $response =  array();
 
-            //Si existe consulto la convocatoria
-            if( $request->get('entidad') && $request->get('anio') )
-            {
+      //Registro la accion en el log de convocatorias
+      $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias '. json_encode($request->get()).'"',
+                    ['user' => '', 'token' => $request->get('token')]);
+      $logger->close();
 
-               $rs= Convocatorias::find(
-                  [
-                      " entidad = ".$request->get('entidad')
-                      ." AND anio = ".$request->get('anio')
-                      ." AND estado = 5 " //5	convocatorias	Publicada
-                      ." AND modalidad != 2 " //2	Jurados
-                      ." AND active = true "
-                      ." AND convocatoria_padre_categoria is NULL",
-                      'order'=>'nombre'
-                  ]
-                );
+      //Consulto si al menos hay un token
+      $token_actual = $tokens->verificar_token($request->get('token'));
 
-                foreach ( $rs as $convocatoria) {
-                    array_push($response, ["id"=> $convocatoria->id, "nombre"=> $convocatoria->nombre ] );
-                }
+      //Si el token existe y esta activo entra a realizar la tabla
+      if ( isset($token_actual->id) ) {
 
+          //Si existe consulto la convocatoria
+          if( $request->get('entidad') && $request->get('anio') )
+          {
 
-            }
+             $rs= Convocatorias::find(
+                [
+                    " entidad = ".$request->get('entidad')
+                    ." AND anio = ".$request->get('anio')
+                    ." AND estado = 5 " //5	convocatorias	Publicada
+                    ." AND modalidad != 2 " //2	Jurados
+                    ." AND active = true "
+                    ." AND convocatoria_padre_categoria is NULL",
+                    'order'=>'nombre'
+                ]
+              );
 
-            return json_encode($response);
+              foreach ( $rs as $convocatoria) {
+                  array_push($response, ["id"=> $convocatoria->id, "nombre"=> $convocatoria->nombre ] );
+              }
 
-        } else {
-            return "error_token";
-        }
+          }
+
+          return json_encode($response);
+
+      } else {
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias Error token"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        return "error_token";
+      }
+
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias error_metodo '. json_encode($ex).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        return "error_metodo";
     }
 }
 );
 
 //Retorna información de id y nombre de las categorias de la convocatoria
-$app->get('/select_categorias', function () use ($app) {
+$app->get('/select_categorias', function () use ($app,$logger) {
+
     try {
+
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $response =  array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_categorias '. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+
+        if ( isset($token_actual->id) ) {
 
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )
@@ -131,7 +160,6 @@ $app->get('/select_categorias', function () use ($app) {
                        ' convocatoria_padre_categoria = '.$convocatoria->id
                        .' AND active = true ',
                        'order'=>'nombre'
-
                    ]
                  );
 
@@ -146,11 +174,20 @@ $app->get('/select_categorias', function () use ($app) {
 
             return json_encode($response);
         } else {
+          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_categorias Error token"',
+                        ['user' => '', 'token' => $request->get('token')]);
+          $logger->close();
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        //return "error_metodo".$ex->getMessage();
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_categorias error_metodo '. json_encode($ex).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        return "error_metodo";
     }
 }
 );
@@ -164,14 +201,14 @@ $app->get('/select_estado', function () use ($app, $logger) {
         $response =  array();
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::request->get()->'. json_encode($request->get()).'"',
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_estado '. json_encode($request->get()).'"',
                       ['user' => '', 'token' => $request->get('token')]);
         $logger->close();
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"/select_estado::token_actual->'. json_encode($token_actual).'"',
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_estado::token_actual->'. json_encode($token_actual).'"',
                       ['user' => '', 'token' => $request->get('token')]);
         $logger->close();
 
@@ -197,7 +234,7 @@ $app->get('/select_estado', function () use ($app, $logger) {
 
             return json_encode($response);
         } else {
-          $logger->error('"token":"{token}","user":"{user}","message":"/select_estado Error token"',
+          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_estado error_token"',
                         ['user' => '', 'token' => $request->get('token')]);
           $logger->close();
             return "error_token";
@@ -205,7 +242,7 @@ $app->get('/select_estado', function () use ($app, $logger) {
     } catch (Exception $ex) {
 
         //return "error_metodo".$ex->getMessage();
-        $logger->error('"token":"{token}","user":"{user}","message":"/select_estado::ex->'. json_encode($ex).'"',
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_estado error_metodo'. json_encode($ex).'"',
                       ['user' => '', 'token' => $request->get('token')]);
         $logger->close();
         return "error_metodo";
@@ -215,17 +252,25 @@ $app->get('/select_estado', function () use ($app, $logger) {
 );
 
 //Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
-$app->get('/all_propuestas', function () use ($app) {
+$app->get('/all_propuestas', function () use ($app, $logger) {
     try {
+
+
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $response =  array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas '. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id)  ) {
 
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -261,8 +306,7 @@ $app->get('/all_propuestas', function () use ($app) {
                             ]
                         );
 
-                        if( $evaluador ) {
-
+                        if( isset($evaluador->id) ) {
 
                           /**
                           * Cesar Augusto Britto, 18-04-2020
@@ -285,7 +329,7 @@ $app->get('/all_propuestas', function () use ($app) {
 
                           /*Ajuste de william supervisado por wilmer*/
                           /*2020-04-28*/
-                          
+
                           $ronda_actual = $rondas[0];
                           //si es la primera ronda y ronda estado habilitada, es decir en fase de evaluación
                           if( $ronda_actual->id == $ronda->id  && $ronda->getEstado_nombre() == "Habilitada"){
@@ -337,10 +381,16 @@ $app->get('/all_propuestas', function () use ($app) {
 
                                     if ( $evaluacion_propuesta->save() === false ) {
 
+
                                       //Para auditoria en versión de pruebas
-                                      foreach ($evaluacion_propuesta->getMessages() as $message) {
+                                      /*foreach ($evaluacion_propuesta->getMessages() as $message) {
                                            echo $message;
-                                         }
+                                         }*/
+                                      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al crear la evaluación. '
+                                                      .json_decode( $evaluacion_propuesta->getMessages() ).'"',
+                                                      ['user' => $user_current, 'token' => $request->get('token')]
+                                                    );
+                                      $logger->close();
 
                                       return "error";
                                     }
@@ -384,7 +434,7 @@ $app->get('/all_propuestas', function () use ($app) {
                                     /*Ajuste de william supervisado por wilmer*/
                                     /*2020-04-28*/
                                     $array_estado_actual_2=Estados::findFirst('id = '.$evaluacionpropuesta->estado );
-                                                                        
+
                                     array_push($response, [
                                         "id_evaluacion"=>$evaluacionpropuesta->id,
                                         "total_evaluacion"=> $evaluacionpropuesta->total,
@@ -399,19 +449,25 @@ $app->get('/all_propuestas', function () use ($app) {
                             }
 
                         }else{
+                          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_evaluador"',
+                                        ['user' => $user_current, 'token' => $request->get('token')]
+                                      );
+                          $logger->close();
                           return "error_evaluador";
                         }
 
                     }else{
+                      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
+                                    ['user' => $user_current, 'token' => $request->get('token')]
+                                  );
+                      $logger->close();
+
                       return "error";
                     }
 
                 }
 
             }
-
-
-           // return json_encode($response);
 
             //creo el array
             $json_data = array(
@@ -424,11 +480,17 @@ $app->get('/all_propuestas', function () use ($app) {
             return json_encode($json_data);
 
         } else {
-            return "error_token";
+          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_token"',
+                        ['user' => '', 'token' => $request->get('token')]);
+          $logger->close();
+          return "error_token";
         }
     } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo '. json_encode($ex).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+        return "error_metodo";
     }
 }
 );
@@ -447,7 +509,7 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
@@ -549,7 +611,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id)  ) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -650,7 +712,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -763,7 +825,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                             * Se modifica para el manejo de los estados
                             */
                             //evaluacion_propuesta	En evaluación
-                                    
+
                             /*Ajuste de william supervisado por wilmer*/
                             /*2020-04-28*/
                             $array_estado_actual_3=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación'");
@@ -827,7 +889,7 @@ $app->post('/download_file', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
             echo $chemistry_alfresco->download($request->getPost('cod'));
         } else {
             echo "error_token";
@@ -855,7 +917,7 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -932,11 +994,11 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
                             //propuestas_evaluacion	Evaluada
-                            
+
                             /*Ajuste de william supervisado por wilmer*/
                             /*2020-04-28*/
                             $array_estado_actual_4=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Evaluada' ");
-                            
+
                             $evaluacion->estado = $array_estado_actual_4->id;
 
                             if ($evaluacion->save() === false) {
@@ -994,7 +1056,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/evaluadores', function ($id) use ($
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -1049,7 +1111,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -1126,7 +1188,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1186,11 +1248,11 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
                             //propuestas_evaluacion	Impedimento
-                            
+
                             /*Ajuste de william supervisado por wilmer*/
                             /*2020-04-28*/
                             $array_estado_actual_5=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
-                            
+
                             $evaluacion->estado=$array_estado_actual_5->id;
 
                             // Start a transaction
@@ -1221,6 +1283,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                               $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**",$request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
 
                               //servidor smtp ambiente de prueba
+                              /*
                               $mail = new PHPMailer();
                               $mail->IsSMTP();
                               $mail->SMTPAuth = true;
@@ -1240,10 +1303,10 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                               //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
                               $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
                               $mail->Body = $html_jurado_notificacion_impedimento;
-
+                              */
 
                               /*Servidor SMTP producción*/
-                              /*  $mail = new PHPMailer();
+                               $mail = new PHPMailer();
                                 $mail->IsSMTP();
                                 $mail->Host = "smtp-relay.gmail.com";
                                 $mail->Port = 25;
@@ -1255,7 +1318,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                                 $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
                                 $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
                                 $mail->Body = $html_solicitud_usuario;
-                                */
+
                                   // Env  a el correo.
                               if ( $mail->Send() ) {
 
@@ -1313,7 +1376,7 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1329,7 +1392,7 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
-              
+
 
             } else {
                 return "acceso_denegado";
