@@ -14,7 +14,7 @@ class Tokens extends Model {
             $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
             $tokens_eliminar->delete();
             //Consulto si el token existe y que este en el periodo de session
-            $tokens = Tokens::findFirst("'" . $fecha_actual . "' BETWEEN date_create AND date_limit AND token = '" . $token . "'");
+            $tokens = Tokens::findFirst("'" . $fecha_actual . "' BETWEEN date_create AND date_limit AND token = '" . $token . "'");            
             //Verifico si existe para retornar
             if (isset($tokens->id)) {
                 return $tokens;
