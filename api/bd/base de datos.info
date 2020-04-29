@@ -575,7 +575,7 @@ INSERT INTO public.estados (tipo_estado, nombre, active, creado_por, orden) VALU
 CREATE VIEW viewconvocatorias  AS 
 (
 SELECT 
-	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,NULL AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active  
+	e.nombre AS nombre_entidad,c.nombre AS convocatoria,'' AS categoria,c.id,c.id AS id_categoria,c.id AS id_diferente,c.anio,c.entidad AS entidad,c.modalidad,c.diferentes_categorias,c.programa,c.area,c.linea_estrategica,c.enfoque,c.estado,c.active  
 FROM convocatorias AS c
 INNER JOIN entidades AS e ON e.id=c.entidad
 WHERE c.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categoria IS NULL AND c.tiene_categorias=FALSE
@@ -605,4 +605,84 @@ WHERE cat.active=TRUE AND c.estado IN (5,6,32) AND c.convocatoria_padre_categori
 
 CATEGORIA BECA FESTIVAL HIPHOP AL PARQUE – BOGOTÁ CIUDAD CREATIVA DE LA MÚSICA
 ESPACIAL BECA DE CIRCULACIÓN PARA AGENTES DEL SECTOR LITERARIO
+
+
+#AJUSTES BANCO DE JURADOS ABRIL 14 DEL 2020 CESAR BRITTO
+ALTER TABLE convocatoriasrondas ADD estado Integer DEFAULT NULL;
+
+
+CREATE TABLE public.encuestas
+(
+  id serial NOT NULL,
+  programa integer NOT NULL,
+  anio integer NOT NULL,
+  active boolean DEFAULT true,
+  tipo TEXT,
+  nombre TEXT,
+  descripcion TEXT,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT encuestas_pkey PRIMARY KEY (id),
+  CONSTRAINT encuestas_programa_fkey FOREIGN KEY (programa)
+      REFERENCES public.programas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT encuestas_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+  ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE public.encuestasparametros
+(
+  id serial NOT NULL,
+  label text,
+  valores text,
+  tipo_parametro text,
+  campo text,
+  orden integer,
+  obligatorio boolean DEFAULT false,
+  mensaje text,
+  encuesta integer NOT NULL,
+  active boolean DEFAULT true,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT encuestasparametros_pkey PRIMARY KEY (id),
+  CONSTRAINT encuestasparametros_encuesta_fkey FOREIGN KEY (encuesta)
+      REFERENCES public.encuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT encuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE public.encuestaspropuestasparametros
+(
+  id serial NOT NULL,
+  propuesta integer NOT NULL,
+  encuestaparametro integer NOT NULL,
+  valor text,
+  fecha_actualizacion timestamp without time zone,
+  fecha_creacion timestamp without time zone,
+  creado_por integer NOT NULL,
+  actualizado_por integer,
+  CONSTRAINT encuestaspropuestasparametros_pkey PRIMARY KEY (id),
+  CONSTRAINT encuestaspropuestasparametros_encuestaparametro_fkey FOREIGN KEY (encuestaparametro)
+      REFERENCES public.encuestasparametros (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT encuestaspropuestasparametros_creado_por_fkey FOREIGN KEY (creado_por)
+      REFERENCES public.usuarios (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
+  CONSTRAINT encuestaspropuestasparametros_propuesta_fkey FOREIGN KEY (propuesta)
+      REFERENCES public.propuestas (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+
+
+
+
+
 

@@ -67,7 +67,7 @@ $app->get('/select', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             $array = Participantes::find("active = true");
             echo json_encode($array);
         } else {
@@ -101,7 +101,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
       $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -243,7 +243,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
         }
     } catch (Exception $ex) {
 
-        // echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+         //echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
         //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
@@ -265,7 +265,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -359,8 +359,8 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
     } catch (Exception $ex) {
 
        //Para auditoria en versión de pruebas
-       // echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
-       echo "error_metodo";
+       echo "error_metodo". $ex->getMessage().json_encode($ex->getTrace());
+       //echo "error_metodo";
     }
 }
 );
@@ -368,7 +368,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 //Busca el registro
 $app->get('/search', function () use ($app, $config) {
     try {
-        //Instancio los objetos que se van a manejar
+        //Instancio los objetos que se van a manejar$('#estrato').hide();
         $request = new Request();
         $tokens = new Tokens();
         $participante = new Participantes();
@@ -377,7 +377,7 @@ $app->get('/search', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $array = Array();
@@ -433,6 +433,7 @@ $app->get('/search', function () use ($app, $config) {
 
             //se crea la respuesta
             $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
+            $array["pais_residencia_id"] = $participante->Ciudadesresidencia->Departamentos->Paises->id;
             $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
             $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
             $array["participante"] = $participante;
@@ -465,7 +466,7 @@ $app->get('/searchTipoParticipante/{tipo:[0-9]+}', function ($tipo) use ($app, $
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -522,7 +523,7 @@ $app->post('/new_participante', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();

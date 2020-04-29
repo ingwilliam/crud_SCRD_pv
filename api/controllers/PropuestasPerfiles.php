@@ -70,7 +70,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);

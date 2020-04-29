@@ -28,6 +28,10 @@ class Evaluacionpropuestas extends Model
     /*Cesar Britto, 20-04-2020*/
     public function getEstado_nombre()
     {
-          return (Estados::findFirst(" id = ". $this->estado) )->nombre;
+        /*Ajuste de william supervisado por wilmer*/
+        /*2020-04-28*/
+        $array_estado_actual_1=Estados::findFirst(" id = ". $this->estado);
+        
+          return $array_estado_actual_1->nombre;
     }
 }

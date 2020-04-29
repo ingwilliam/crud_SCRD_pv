@@ -71,7 +71,7 @@ $app->get('/search', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -326,7 +326,7 @@ $app->post('/edit_participante', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -437,7 +437,7 @@ $app->get('/search_educacion_formal', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -516,7 +516,7 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -561,8 +561,18 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                         // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
 
-                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
-                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_ciudad_1=Ciudades::findFirst(["id=".$educacionformal->ciudad] );
+
+                           
+                         $educacionformal->ciudad =  $array_ciudad_1->nombre;
+                        
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_educacion_formal_1= Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion);
+                         
+                          $educacionformal->nivel_educacion = $array_educacion_formal_1->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
                          array_push($response,$educacionformal);
@@ -617,7 +627,7 @@ $app->get('/all_educacion_formal/active', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -661,8 +671,12 @@ $app->get('/all_educacion_formal/active', function () use ($app, $config) {
 
                         // $ciudad =  Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
 
-                         $educacionformal->ciudad =  (Ciudades::findFirst( ["id=".$educacionformal->ciudad]  ))->nombre;
-                          $educacionformal->nivel_educacion = (Niveleseducativos::findFirst("id = ".$educacionformal->nivel_educacion) )->nombre;
+                        /*Ajuste de william supervisado por wilmer*/
+                        /*2020-04-28*/
+                        $array_ciudad_1= Ciudades::findFirst( ["id=".$educacionformal->ciudad]  );
+                        $educacionformal->ciudad =  $array_ciudad_1->nombre;
+                         
+                          $educacionformal->nivel_educacion = $array_ciudad_1->nombre;
                          $educacionformal->creado_por = null;
                          $educacionformal->actualizado_por = null;
                          array_push($response,$educacionformal);
@@ -716,7 +730,7 @@ $app->get('/select_nucleobasico', function () use ($app) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual != false ) {
+        if (isset($token_actual->id)) {
 
             //Si existe consulto la convocatoria
             if($request->get('id'))
@@ -771,7 +785,7 @@ $app->post('/new_educacion_formal', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -996,7 +1010,7 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
         //echo "token--->".json_encode($token_actual);
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1205,7 +1219,7 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1303,7 +1317,7 @@ $app->get('/search_educacion_no_formal', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -1386,7 +1400,7 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -1486,7 +1500,7 @@ $app->get('/all_educacion_no_formal/active', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -1591,7 +1605,7 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config, $logger) 
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1810,7 +1824,7 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -1984,7 +1998,7 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -2082,7 +2096,7 @@ $app->get('/search_experiencia_laboral', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -2166,7 +2180,7 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -2270,7 +2284,7 @@ $app->get('/all_experiencia_laboral/active', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -2376,7 +2390,7 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config, $logger) 
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -2570,7 +2584,7 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -2746,7 +2760,7 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -2845,7 +2859,7 @@ $app->get('/search_experiencia_jurado', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -2920,7 +2934,7 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -3022,7 +3036,7 @@ $app->get('/all_experiencia_jurado/active', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -3127,7 +3141,7 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -3316,7 +3330,7 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -3491,7 +3505,7 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -3591,7 +3605,7 @@ $app->get('/search_reconocimiento', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -3663,7 +3677,7 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -3769,7 +3783,7 @@ $app->get('/all_reconocimiento/active', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -3873,7 +3887,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4016,7 +4030,7 @@ $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4150,7 +4164,7 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4250,7 +4264,7 @@ $app->get('/search_publicacion', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -4324,7 +4338,7 @@ $app->get('/all_publicacion', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -4434,7 +4448,7 @@ $app->get('/all_publicacion/active', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -4541,7 +4555,7 @@ $app->post('/new_publicacion', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4688,7 +4702,7 @@ $app->post('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4823,7 +4837,7 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -4923,7 +4937,7 @@ $app->post('/download_file', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             echo $chemistry_alfresco->download($request->getPost('cod'));
         } else {
             echo "error_token";
@@ -4958,7 +4972,7 @@ $app->get('/postular', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -5126,7 +5140,7 @@ $app->get('/propuesta', function () use ($app, $config) {
       $token_actual = $tokens->verificar_token($request->get('token'));
 
       //Si el token existe y esta activo entra a realizar la tabla
-      if ($token_actual > 0) {
+      if (isset($token_actual->id)) {
 
           //Realizo una peticion curl por post para verificar si tiene permisos de escritura
           $ch = curl_init();
@@ -5209,7 +5223,7 @@ $app->get('/search_documento', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -5281,7 +5295,7 @@ $app->get('/all_documento', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -5384,7 +5398,7 @@ $app->get('/all_documento/active', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
              $response = array();
@@ -5491,7 +5505,7 @@ $app->post('/new_documento', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -5637,7 +5651,7 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -5771,7 +5785,7 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -5877,7 +5891,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -6092,7 +6106,7 @@ $app->get('/postulacion_perfiles_convocatoria', function () use ($app, $config) 
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -6172,7 +6186,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -6319,7 +6333,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
     } catch (Exception $ex) {
         //echo "error_metodo"
         //Para auditoria en versión de pruebas
-        //echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
+        echo "error_metodo ". $ex->getMessage().$ex->getTraceAsString ();
 
         $logger->error('"token":"{token}","user":"{user}","message":"Error método ' . $ex->getMessage() . '"',
                       ['user' => "", 'token' => $request->get('token')]
@@ -6342,7 +6356,7 @@ $app->get('/search_postulacion', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -6474,7 +6488,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
@@ -6606,7 +6620,7 @@ $app->get('/download_condiciones', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
            $condiciones= Tablasmaestras::findFirst("active=true AND nombre='Condiciones de participación jurados'");
 
@@ -6639,7 +6653,7 @@ $app->get('/select_categoria', function () use ($app, $config) {
 
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
 
             $categorias = Tablasmaestras::findFirst([" active=true  AND nombre = 'jurado_categoria_participa'"]);
 
@@ -6673,7 +6687,7 @@ $app->get('/listar', function () use ($app, $config) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //se establecen los valores del usuario
             $user_current = json_decode($token_actual->user_current, true);
             $response = array();
@@ -6725,13 +6739,22 @@ $app->get('/listar', function () use ($app, $config) {
 
                          foreach ($propuestas as $propuesta){
 
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_convocatoria_1= Convocatorias::findFirst("id = ".$propuesta->convocatoria );
+                            
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_estado_1= Estados::findFirst("id = ".$propuesta->estado );
+                        
+                             
                              array_push($response,[
                                "id"=>$propuesta->id,
                                "codigo"=>$propuesta->codigo,
                                "id_convocatoria" => $propuesta->convocatoria,
-                               "convocatoria" => (Convocatorias::findFirst("id = ".$propuesta->convocatoria ))->nombre ,
+                               "convocatoria" => $array_convocatoria_1->nombre ,
                                "modalidad_participa" => $propuesta->modalidad_participa,
-                               "estado"=> (Estados::findFirst("id = ".$propuesta->estado ))->nombre
+                               "estado"=> $array_estado_1->nombre
 
                                ] );
                          }

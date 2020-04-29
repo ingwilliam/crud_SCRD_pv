@@ -65,10 +65,15 @@ $app = new Micro($di);
 $app->get('/select_convocatorias', function () use ($app,$logger) {
     try {
 
+<<<<<<< HEAD
       //Registro la accion en el log de convocatorias
       $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias '. json_encode($request->get()).'"',
                     ['user' => '', 'token' => $request->get('token')]);
       $logger->close();
+=======
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+>>>>>>> fbf8da750acf02447adbedcf4cabec37e55500be
 
       //Instancio los objetos que se van a manejar
       $request = new Request();
@@ -140,7 +145,11 @@ $app->get('/select_categorias', function () use ($app,$logger) {
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
+<<<<<<< HEAD
         if ( isset($token_actual->id) ) {
+=======
+        if (isset($token_actual->id)) {
+>>>>>>> fbf8da750acf02447adbedcf4cabec37e55500be
 
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )
@@ -208,8 +217,8 @@ $app->get('/select_estado', function () use ($app, $logger) {
         $logger->close();
 
         //Si el token existe y esta activo entra a realizar la tabla
-        //if ($token_actual != false ) {
-        if ( isset($token_actual->id)  ) {
+        //if (isset($token_actual->id)) {
+        if ( isset($token_actual->id) ) {
 
             //Si existe consulto la convocatoria
             if( $request->get('tipo_estado') )
@@ -320,8 +329,12 @@ $app->get('/all_propuestas', function () use ($app) {
                             ]
                           );
 
+                          /*Ajuste de william supervisado por wilmer*/
+                          /*2020-04-28*/
+
+                          $ronda_actual = $rondas[0];
                           //si es la primera ronda y ronda estado habilitada, es decir en fase de evaluación
-                          if( ($rondas[0])->id == $ronda->id  && $ronda->getEstado_nombre() == "Habilitada"){
+                          if( $ronda_actual->id == $ronda->id  && $ronda->getEstado_nombre() == "Habilitada"){
 
                             //propuestas incluidas por el evaluador
                             $propuestas_evaluacion = Evaluacionpropuestas::find(
@@ -358,7 +371,10 @@ $app->get('/all_propuestas', function () use ($app) {
                                     $evaluacion_propuesta->propuesta = $propuesta->id;
                                     $evaluacion_propuesta->ronda =  $ronda->id;
                                     $evaluacion_propuesta->evaluador = $evaluador->id;
-                                    $evaluacion_propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'"))->id;
+                                    /*Ajuste de william supervisado por wilmer*/
+                                    /*2020-04-28*/
+                                    $array_estado_actual=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'");
+                                    $evaluacion_propuesta->estado = $array_estado_actual->id;
                                     //ronda_estado = habilitada
                                     $evaluacion_propuesta->fase = 'Evaluación';
                                     $evaluacion_propuesta->fecha_creacion =  date("Y-m-d H:i:s");
@@ -417,10 +433,14 @@ $app->get('/all_propuestas', function () use ($app) {
 
                               foreach ( $evaluacionpropuestas as $evaluacionpropuesta) {
 
+                                    /*Ajuste de william supervisado por wilmer*/
+                                    /*2020-04-28*/
+                                    $array_estado_actual_2=Estados::findFirst('id = '.$evaluacionpropuesta->estado );
+
                                     array_push($response, [
                                         "id_evaluacion"=>$evaluacionpropuesta->id,
                                         "total_evaluacion"=> $evaluacionpropuesta->total,
-                                        "estado_evaluacion"=>(Estados::findFirst('id = '.$evaluacionpropuesta->estado ))->nombre ,
+                                        "estado_evaluacion"=>$array_estado_actual_2->nombre ,
                                         "id_propuesta"=> $evaluacionpropuesta->Propuestas->id,
                                         "codigo_propuesta"=> $evaluacionpropuesta->Propuestas->codigo,
                                         "nombre_propuesta"=> $evaluacionpropuesta->Propuestas->nombre,
@@ -807,7 +827,11 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                             * Se modifica para el manejo de los estados
                             */
                             //evaluacion_propuesta	En evaluación
-                            $evaluacion->estado=(Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación'") )->id;
+
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_estado_actual_3=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación'");
+                            $evaluacion->estado=$array_estado_actual_3->id;
 
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
@@ -972,7 +996,12 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
                             //propuestas_evaluacion	Evaluada
-                            $evaluacion->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Evaluada' "))->id;
+
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_estado_actual_4=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Evaluada' ");
+
+                            $evaluacion->estado = $array_estado_actual_4->id;
 
                             if ($evaluacion->save() === false) {
                                 //Para auditoria en versión de pruebas
@@ -1221,7 +1250,12 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $evaluacion->actualizado_por = $user_current["id"];
                             $evaluacion->fecha_actualizacion =  date("Y-m-d H:i:s");
                             //propuestas_evaluacion	Impedimento
-                            $evaluacion->estado=(Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' "))->id;
+
+                            /*Ajuste de william supervisado por wilmer*/
+                            /*2020-04-28*/
+                            $array_estado_actual_5=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
+
+                            $evaluacion->estado=$array_estado_actual_5->id;
 
                             // Start a transaction
                             $this->db->begin();

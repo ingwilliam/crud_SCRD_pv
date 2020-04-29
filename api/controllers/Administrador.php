@@ -54,7 +54,7 @@ $app->post('/menu', function () use ($app,$config) {
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if ($token_actual > 0) {
+        if (isset($token_actual->id)) {
             //Extraemos el usuario del token
             $user_current = json_decode($token_actual->user_current, true);
 
@@ -524,6 +524,10 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a href="../requisitos/list.html">Requisitos</a>
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
                                 </li>
+                                <li>
+                                    <a href="../encuestas/list.html">Encuestas</a>                                    
+                                    <a id="menu_encuesta_param" style="display: none" href="menu_encuesta_param">Encuestas</a>
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -548,6 +552,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 <li>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
+                                    <!--<a style="" href="../convocatorias/list_publicas.html">Ajustar convocatorias publicadas</a>-->
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
@@ -579,6 +584,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
+                                    
+                                    <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
                                 </li>
