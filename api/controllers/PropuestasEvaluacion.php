@@ -1,7 +1,9 @@
 <?php
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+//
+error_reporting(E_ALL);
+//
+ini_set('display_errors', '1');
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -55,30 +57,24 @@ $formatter->setDateFormat('Y-m-d H:i:s');
 $logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
 $logger->setFormatter($formatter);
 
-$di->set('profiler', function () {
-    return new ProfilerDb();
-}, true);
 
 $app = new Micro($di);
 
 //Retorna información de id y nombre de las convocatorias
 $app->get('/select_convocatorias', function () use ($app,$logger) {
-    try {
 
-<<<<<<< HEAD
-      //Registro la accion en el log de convocatorias
-      $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias '. json_encode($request->get()).'"',
-                    ['user' => '', 'token' => $request->get('token')]);
-      $logger->close();
-=======
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
->>>>>>> fbf8da750acf02447adbedcf4cabec37e55500be
+    try {
 
       //Instancio los objetos que se van a manejar
       $request = new Request();
       $tokens = new Tokens();
       $response =  array();
+
+      //Registro la accion en el log de convocatorias
+      $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias '. json_encode($request->get()).'"',
+                    ['user' => '', 'token' => $request->get('token')]);
+      $logger->close();
+
       //Consulto si al menos hay un token
       $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -116,6 +112,7 @@ $app->get('/select_convocatorias', function () use ($app,$logger) {
 
         return "error_token";
       }
+
     } catch (Exception $ex) {
         //retorno el array en json null
         //return "error_metodo".$ex->getMessage();
@@ -130,26 +127,25 @@ $app->get('/select_convocatorias', function () use ($app,$logger) {
 
 //Retorna información de id y nombre de las categorias de la convocatoria
 $app->get('/select_categorias', function () use ($app,$logger) {
+
     try {
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response =  array();
 
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_categorias '. json_encode($request->get()).'"',
                       ['user' => '', 'token' => $request->get('token')]);
         $logger->close();
 
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $response =  array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
-<<<<<<< HEAD
+
         if ( isset($token_actual->id) ) {
-=======
-        if (isset($token_actual->id)) {
->>>>>>> fbf8da750acf02447adbedcf4cabec37e55500be
 
             //Si existe consulto la convocatoria
             if( $request->get('convocatoria') )
@@ -256,18 +252,20 @@ $app->get('/select_estado', function () use ($app, $logger) {
 );
 
 //Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
-$app->get('/all_propuestas', function () use ($app) {
+$app->get('/all_propuestas', function () use ($app, $logger) {
     try {
 
-      //Registro la accion en el log de convocatorias
-      $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas '. json_encode($request->get()).'"',
-                    ['user' => '', 'token' => $request->get('token')]);
-      $logger->close();
 
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $response =  array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas '. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
