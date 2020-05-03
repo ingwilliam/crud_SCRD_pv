@@ -255,7 +255,6 @@ $app->get('/select_estado', function () use ($app, $logger) {
 $app->get('/all_propuestas', function () use ($app, $logger) {
     try {
 
-
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
@@ -1362,18 +1361,22 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 );
 
 /**
-*Confirmar Top individual
+*Confirmar Top individual por ronda
 */
-
-$app->post('/confirmar_top_individual', function () use ($app, $config) {
+$app->put('/confirmar_top_individual/ronda/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
         $fase= '';
 
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} '. json_encode($request->getPut()).'"',
+                      ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if ( isset($token_actual->id) ) {
@@ -1382,7 +1385,7 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
@@ -1392,7 +1395,159 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
 
                 $user_current = json_decode($token_actual->user_current, true);
 
+                if( $user_current["id"] ){
 
+                      $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id );
+
+                      $query='SELECT
+                                  j.*
+                              FROM
+                                  Juradospostulados as j
+                                  INNER JOIN Propuestas as p
+                                  on j.propuesta = p.id
+                                  INNER JOIN Participantes as par
+                                  on p.participante = par.id
+                                  INNER JOIN Usuariosperfiles as up
+                                  on par.usuario_perfil = up.id and up.usuario = '.$user_current["id"]
+                                  ." WHERE j.convocatoria = ".$ronda->convocatoria;
+
+                      $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
+
+                      if( isset($postulacion->id) && isset($ronda->id) ){
+
+                        //valida si el usuario pertenece al grupo de evaluación de la ronda
+                        $evaluador = Evaluadores::findFirst(
+                            [
+                                'juradopostulado = '.$postulacion->id
+                                .' AND grupoevaluador = '.$ronda->grupoevaluador
+                            ]
+                        );
+
+                        if( isset($evaluador->id) ) {
+
+                          /**
+                          * Listar las propuestas que estan registradas para evaluar
+                          */
+                          //fase de evaluación o de deliberación
+                          $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                                          ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+
+
+                          //Estados Sin evaluar En evaluación
+                          $estados = Estados:: find([
+                            "tipo_estado = 'propuestas_evaluacion'"
+                            ." AND nombre IN ('Sin evaluar','En evaluación') "
+
+                          ]);
+                          $estados_array = array();
+                          foreach ($estados as $key => $estado) {
+                            array_push($estados_array, $estado->id );
+                          }
+
+                          $nohabilitadas =  Evaluacionpropuestas::find(
+                                [
+                                    'ronda = '.$ronda->id
+                                    .' AND evaluador = '.$evaluador->id
+                                    .' AND fase = "'.$fase.'"'
+                                    .' AND estado IN ({estados:array})',
+                                    'bind' => [
+                                        'estados' => $estados_array
+                                    ]
+                                ]
+                             );
+
+                         if( $nohabilitadas->count() > 0 ){
+                           $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} error_validacion"',
+                                         ['user' => $user_current, 'token' => $request->getPut('token')]
+                                       );
+                           $logger->close();
+
+                           return "error_validacion";
+
+                         }else{
+
+                           //Estados Evaluada Impedimento
+                           $estados = Estados:: find([
+                             "tipo_estado = 'propuestas_evaluacion'"
+                             ." AND nombre IN ('Evaluada') "
+
+                           ]);
+                           $estados_array = array();
+                           foreach ($estados as $key => $estado) {
+                             array_push($estados_array, $estado->id );
+                           }
+
+                           $habilitadas =  Evaluacionpropuestas::find(
+                                 [
+                                     'ronda = '.$ronda->id
+                                     .' AND evaluador = '.$evaluador->id
+                                     .' AND fase = "'.$fase.'"'
+                                     .' AND estado IN ({estados:array})',
+                                     'bind' => [
+                                         'estados' => $estados_array
+                                     ]
+                                 ]
+                              );
+
+                              //estado Confirmada
+                              $estado_confimada = Estados::findFirst(
+                                [
+                                  "tipo_estado = 'propuestas_evaluacion'"
+                                  ." AND nombre ='Confirmada'"
+
+                                ]
+                              );
+
+                              // Start a transaction
+                              $this->db->begin();
+
+                              foreach ($habilitadas as $key => $evaluacion_propuesta) {
+                                $evaluacion_propuesta->estado = $estado_confimada->id;
+                                $evaluacion_propuesta->fecha_actualizacion =  date("Y-m-d H:i:s");
+                                $evaluacion_propuesta->actualizado_por = $user_current["id"];
+
+                                if ( $evaluacion_propuesta->save() === false ) {
+                                  //Para auditoria en versión de pruebas
+                                  /*foreach ($evaluacion_propuesta->getMessages() as $message) {
+                                      echo $message;
+                                  }*/
+
+                                 $this->db->rollback();
+
+                                  $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al actualizar la evaluación. '
+                                                  .json_decode( $evaluacion_propuesta->getMessages() ).'"',
+                                                  ['user' => $user_current, 'token' => $request->getPut('token')]
+                                                );
+                                  $logger->close();
+
+                                  return "error";
+                                }
+
+
+                              }
+
+                              $this->db->commit();
+                              $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} Exito al actualizar la evaluación. ',
+                                              ['user' => $user_current, 'token' => $request->getPut('token')]
+                                            );
+                              $logger->close();
+                              return "exito";
+
+                         }
+
+                        }else{
+                          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_evaluador"',
+                                        ['user' => $user_current, 'token' => $request->getPut('token')]
+                                      );
+                          $logger->close();
+                          return "error_evaluador";
+                        }
+
+                      }
+
+
+
+                }
 
             } else {
                 return "acceso_denegado";
@@ -1408,8 +1563,7 @@ $app->post('/confirmar_top_individual', function () use ($app, $config) {
         return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
 
     }
-}
-);
+});
 
 try {
     // Gestionar la consulta
