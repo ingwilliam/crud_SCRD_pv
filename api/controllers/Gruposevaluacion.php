@@ -352,7 +352,7 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
                                     $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                                 }
 
-//                                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                                //$convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                                 //id de los gruposevaluacion que estan relacionados con la convocatoria
                                 $result = $this->modelsManager->createQuery('SELECT distinct Convocatoriasrondas.grupoevaluador'
                                                 . ' FROM	Convocatoriasrondas '
@@ -467,13 +467,13 @@ $app->get('/jurados_aceptaron', function () use ($app) {
                         $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                     }
 
-//               $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
+                    //$convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
 
                     $juradospostulados = Juradospostulados::query()
                             ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
                             ->where("Juradosnotificaciones.active = true ")
                             ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-//                     ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
+                            //->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
                             ->andWhere("Juradospostulados.convocatoria = " . $convocatoria->id) //Se modifica para que sea dinámica
                             ->limit($request->get('start'), $request->get('length'))
                             ->execute();
@@ -717,32 +717,6 @@ $app->get('/select_rondas_editar', function () use ($app) {
 }
 );
 
-//Retorna información sobre el grupo de evaluación
-$app->get('/grupo/{id:[0-9]+}', function ($id) use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $response = array();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo
-        if ($token_actual != false) {
-
-            $grupoevaluador = Gruposevaluadores::findFirst($id);
-
-            return json_encode($grupoevaluador);
-        } else {
-            return "error_token";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo" . $ex->getMessage();
-    }
-}
-);
-
 //Retorna información de los jurados que aceptaron la notificacion y los que son evaluadores
 $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
     try {
@@ -843,6 +817,32 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
             } else {
                 return "error";
             }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        return "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+//Retorna información sobre el grupo de evaluación
+$app->get('/grupo/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if ($token_actual != false) {
+
+            $grupoevaluador = Gruposevaluadores::findFirst($id);
+
+            return json_encode($grupoevaluador);
         } else {
             return "error_token";
         }
@@ -1131,7 +1131,70 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
+/*
+* Retorna la información sobre el evaluador de la ronda
+*/
+$app->get('/evaluador/ronda/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
 
+        //Si el token existe y esta activo
+        if ( isset($token_actual->id) ) {
+          //se establecen los valores del usuario
+          $user_current = json_decode($token_actual->user_current, true);
+
+          $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id );
+
+          if( isset($ronda->id) ){
+            $query='SELECT
+                        j.*
+                    FROM
+                        Juradospostulados as j
+                        INNER JOIN Propuestas as p
+                        on j.propuesta = p.id
+                        INNER JOIN Participantes as par
+                        on p.participante = par.id
+                        INNER JOIN Usuariosperfiles as up
+                        on par.usuario_perfil = up.id and up.usuario = '.$user_current["id"]
+                        ." WHERE j.convocatoria = ".$ronda->convocatoria;
+
+            $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
+
+            if( isset($postulacion->id) ){
+
+              //valida si el usuario pertenece al grupo de evaluación de la ronda
+              $evaluador = Evaluadores::findFirst(
+                  [
+                      'juradopostulado = '.$postulacion->id
+                      .' AND grupoevaluador = '.$ronda->grupoevaluador
+                  ]
+              );
+
+              return json_encode($evaluador);
+
+            }else{
+                return 'error';
+              }
+
+          }else{
+            return 'error';
+          }
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        return "error_metodo" . $ex->getMessage();
+        //return "error_metodo";
+    }
+}
+);
 
 
 try {
