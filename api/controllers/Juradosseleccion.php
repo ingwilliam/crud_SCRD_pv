@@ -341,7 +341,7 @@ $app->put('/notificar', function () use ($app, $config) {
             if ($permiso_escritura == "ok") {
 
                 $postulacion = Juradospostulados::findFirst($request->getPut('postulacion'));
-//              return $request->getPut('option_suplente');
+                //return $request->getPut('option_suplente');
 
                 if ($postulacion) {
 
