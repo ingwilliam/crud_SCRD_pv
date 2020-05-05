@@ -532,6 +532,12 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                         
                     }
                     
+                    if($propuesta->nombre=="")
+                    {
+                        $array_retorno[] = array('id' => "FPropuesta", 'nombre' => "FPropuesta");
+                    }
+                    
+                    
                     //Registro la accion en el log de convocatorias
                     $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();

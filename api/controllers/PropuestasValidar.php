@@ -688,51 +688,76 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 foreach ($consulta_documentos_administrativos as $documento) {                                                           
                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                         if ($documento->etapa == "Registro") {
-                            $documentos_administrativos[$documento->orden]["id"] = $documento->id;
-                            $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;                            
-                            $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
                             
-                            //Consulto las posible verificaciones
                             $verificacion_1= Propuestasverificaciones::findFirst("propuesta=".$propuesta->id." AND active=TRUE AND convocatoriadocumento=".$documento->id." AND verificacion=".$request->get('verificacion'));                                
-                            $documentos_administrativos[$documento->orden]["verificacion_1_id"] = $verificacion_1->id;
-                            $documentos_administrativos[$documento->orden]["verificacion_1_estado"] = $verificacion_1->estado;
-                            $documentos_administrativos[$documento->orden]["verificacion_1_observacion"] = $verificacion_1->observacion;
                             
-                            //Consulto todos los documentos cargados por el usuario
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];                            
-                            if($request->get('verificacion')==2)
+                            $cargar_array=false;
+                            if($request->get('verificacion')=="1")
                             {
-                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                                $cargar_array=true;
                             }
                             
-                            $consulta_archivos_propuesta = Propuestasdocumentos::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
-                                        'bind' => $conditions,
-                                        'order' => 'fecha_creacion ASC',
-                            ]));
-                            
-                            foreach ($consulta_archivos_propuesta as $archivo) {
-                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
-                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
-                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
-                            }
-                            
-                            //Consulto todos los link cargados por el usuario
-                            $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
-                            if($request->get('verificacion')==2)
+                            if($request->get('verificacion')=="2")
                             {
-                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
-                            }                            
-                            $consulta_links_propuesta = Propuestaslinks::find(([
-                                        'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
-                                        'bind' => $conditions,
-                                        'order' => 'fecha_creacion ASC',
-                            ]));
-                            
-                            foreach ($consulta_links_propuesta as $link) {
-                                $documentos_administrativos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
-                                $documentos_administrativos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
+                                //Solo muestro los documentos, los cuales causaron el rechazo
+                                //30 = verificacion_2	No Cumple
+                                if($verificacion_1->estado==30)
+                                {
+                                    $cargar_array=true;
+                                }
                             }
+                            
+                            //Realizo esta validacion debido a que solo mostramos
+                            //la verificacion que fueron rechazadas en la verificacion 2
+                            //siempre se muestra todos los de la verificacion 1
+                            if($cargar_array)
+                            {
+                                $documentos_administrativos[$documento->orden]["id"] = $documento->id;
+                                $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;                            
+                                $documentos_administrativos[$documento->orden]["orden"] = $documento->orden;
+
+                                $documentos_administrativos[$documento->orden]["verificacion_1_id"] = $verificacion_1->id;
+                                $documentos_administrativos[$documento->orden]["verificacion_1_estado"] = $verificacion_1->estado;
+                                $documentos_administrativos[$documento->orden]["verificacion_1_observacion"] = $verificacion_1->observacion;
+
+                                //Consulto todos los documentos cargados por el usuario
+                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];                            
+                                if($request->get('verificacion')==2)
+                                {
+                                    $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                                }
+
+                                $consulta_archivos_propuesta = Propuestasdocumentos::find(([
+                                            'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
+                                            'bind' => $conditions,
+                                            'order' => 'fecha_creacion ASC',
+                                ]));
+
+                                foreach ($consulta_archivos_propuesta as $archivo) {
+                                    $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
+                                    $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
+                                    $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                                }
+
+                                //Consulto todos los link cargados por el usuario
+                                $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
+                                if($request->get('verificacion')==2)
+                                {
+                                    $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'true'];
+                                }                            
+                                $consulta_links_propuesta = Propuestaslinks::find(([
+                                            'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento: AND cargue_subsanacion=:cargue_subsanacion:',
+                                            'bind' => $conditions,
+                                            'order' => 'fecha_creacion ASC',
+                                ]));
+
+                                foreach ($consulta_links_propuesta as $link) {
+                                    $documentos_administrativos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
+                                    $documentos_administrativos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
+                                }
+                            }
+                            
+                            
                         }
                     }
 
