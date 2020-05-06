@@ -612,6 +612,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i> Reportes<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
+                                    <a style="" href="../reportes/generales.html">Generales</a>
                                     <a style="" href="../reportes/propuestas.html">Convocatorias</a>
                                     <a style="" href="../reportes/entidades.html">Entidades</a>
                                     <a style="" href="../reportes/contratistas.html">Contratistas</a>
