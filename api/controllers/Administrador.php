@@ -551,8 +551,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
-                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
-                                    <!--<a style="" href="../convocatorias/list_publicas.html">Ajustar convocatorias publicadas</a>-->
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>                                    
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
@@ -568,7 +567,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
-                        </li>
+                        </li>                        
                         <?php
                         }
                         ?>
