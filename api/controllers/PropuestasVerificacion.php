@@ -402,13 +402,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         //$id_convocatoria=$convocatoria->id;                
                         //$seudonimo=$convocatoria->seudonimo;
                         
-                        $where .= " AND p.convocatoria=$id_convocatoria ";
+                        $where .= " AND p.convocatoria=".$params["convocatoria"]." ";
                         
                         //Consulto las propuestas en estado 22 Subsanación Recibida
                         //y tambien que se pasaron de la fecha_fin_subsanacion
                         //con el fin de rechazarla
                         
-                        $where_subsanacion = ['convocatoria' => $id_convocatoria, 'estado' => 22];                        
+                        $where_subsanacion = ['convocatoria' => $params["convocatoria"], 'estado' => 22];                        
                         $propuestas_no_subsanaron = Propuestas::find(([
                                     'conditions' => 'convocatoria=:convocatoria: AND estado=:estado: AND NOW()>fecha_fin_subsanacion',
                                     'bind' => $where_subsanacion
