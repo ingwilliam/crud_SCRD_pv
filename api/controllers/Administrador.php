@@ -125,6 +125,14 @@ $app->post('/menu', function () use ($app,$config) {
 
             $hoja_de_vida = $app->modelsManager->executeQuery($phql);
 
+            //Cesar Britto, 2020-03-11
+            //Consultar todos los permiso del menu Hoja de vida
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                . " WHERE m.nombre='Deliberación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $deliberacion = $app->modelsManager->executeQuery($phql);
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
@@ -525,7 +533,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
                                 </li>
                                 <li>
-                                    <a href="../encuestas/list.html">Encuestas</a>                                    
+                                    <a href="../encuestas/list.html">Encuestas</a>
                                     <a id="menu_encuesta_param" style="display: none" href="menu_encuesta_param">Encuestas</a>
                                 </li>
                             </ul>
@@ -551,8 +559,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a style="<?php echo $style_new;?>" href="../convocatorias/list.html">Buscar convocatoria</a>
-                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>
-                                    <!--<a style="" href="../convocatorias/list_publicas.html">Ajustar convocatorias publicadas</a>-->
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/create.html">Crear convocatoria</a>                                    
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/update.html?id=<?php echo $request->getPost('id');?>">Información General</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/categorias.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
@@ -568,7 +575,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
-                        </li>
+                        </li>                        
                         <?php
                         }
                         ?>
@@ -584,7 +591,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
-                                    
+
                                     <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
@@ -604,6 +611,7 @@ $app->post('/menu', function () use ($app,$config) {
                             <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i> Reportes<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
+                                    <a style="" href="../reportes/generales.html">Generales</a>
                                     <a style="" href="../reportes/propuestas.html">Convocatorias</a>
                                     <a style="" href="../reportes/entidades.html">Entidades</a>
                                     <a style="" href="../reportes/contratistas.html">Contratistas</a>
@@ -824,6 +832,33 @@ $app->post('/menu', function () use ($app,$config) {
                         ?>
                         <!--FIN Mis hojas de vida-->
 
+                        <!--Cesar Britto-->
+                        <!--Deliberación-->
+                        <?php
+                        if( count($deliberacion) > 0 )
+                        {
+
+                            $style_update="display: none";
+                            $style_new="";
+                            /*if($request->getPost('id')!="")
+                            {
+                                $style_update="";
+                                $style_new="display: none";
+                            }*/
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-folder-o fa-fw"></i>Deliberación<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../deliberacion/deliberacion.html">Deliberar</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        <!--Fin Deliberación-->
 
                     </ul>
                 </div>

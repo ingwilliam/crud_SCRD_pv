@@ -55,63 +55,66 @@ $logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
-// Recupera todos las areas seleccionados de un usuario determinado
-$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
-
+//Busca el registro
+$app->get('/load_search', function () use ($app,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    //Consulto el token y consulto el usuario actual
+    $token_actual = $tokens->verificar_token($request->get('token'));
+    $user_current = json_decode($token_actual->user_current, true);
+    
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
+        
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Convocatorias AS p LEFT JOIN Usuariosareas AS up ON p.id = up.area AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
-
-                $areas_usuario = $app->modelsManager->executeQuery($phql);
-
-                echo json_encode($areas_usuario);
-            } else {
-                echo "acceso_denegado";
+            $array=array();
+            for($i = date("Y")+1; $i >= 2016; $i--){
+                $array["anios"][] = $i;
             }
+            $array["entidades"]= Entidades::find("active = true");
+            $array["areas"]= Areas::find("active = true");
+            $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
+            $array["programas"]= Programas::find("active = true");
+            $array["enfoques"]=Enfoques::find("active = true");
+            $array["estados_convocatorias"] = Estados::find(
+                                                            array(
+                                                                "tipo_estado = 'convocatorias' AND active = true AND id IN (1,2,3,4,5,6)",
+                                                                "order" => "orden"
+                                                            )
+                                                            );
+            echo json_encode($array);
         } else {
             echo "error";
         }
     } catch (Exception $ex) {
+        
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método load_search, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+        $logger->close();        
         echo "error_metodo";
     }
 }
 );
 
 // Recupera todos los registros
-$app->get('/all', function () use ($app) {
+$app->get('/all', function () use ($app,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+    $user_current = json_decode($token_actual->user_current, true);
+    $usuario_actual=$user_current["username"];
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Consulto el usuario actual
-            $user_current = json_decode($token_actual->user_current, true);
+            //Consulto el usuario actual            
             $user_current = Usuarios::findFirst($user_current["id"]);            
             //Creo array de entidades que puede acceder el usuario
             $array_usuarios_entidades="";
@@ -194,7 +197,6 @@ $app->get('/all', function () use ($app) {
                 }
             }
 
-
             //Defino el sql del total y el array de datos
             $sqlTot = "SELECT count(*) as total FROM Convocatorias AS c";            
 
@@ -242,11 +244,65 @@ $app->get('/all', function () use ($app) {
             echo json_encode("error_token");
         }
     } catch (Exception $ex) {
-        //retorno el array en json null
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método all, ' . $ex->getMessage() . '"', ['user' => $usuario_actual, 'token' => $request->get('token')]);
+        $logger->close();             
         echo json_encode($ex->getMessage());
     }
 }
 );
+
+
+
+
+
+
+
+
+
+// Recupera todos las areas seleccionados de un usuario determinado
+$app->get('/select_user/{id:[0-9]+}', function ($id) use ($app, $config) {
+
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                $phql = 'SELECT p.id,p.nombre,up.id AS checked FROM Convocatorias AS p LEFT JOIN Usuariosareas AS up ON p.id = up.area AND up.usuario=' . $id . ' WHERE p.active = true ORDER BY p.nombre';
+
+                $areas_usuario = $app->modelsManager->executeQuery($phql);
+
+                echo json_encode($areas_usuario);
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
+
+
 
 // Crear registro
 $app->post('/new', function () use ($app, $config) {
@@ -737,43 +793,7 @@ $app->get('/search', function () use ($app) {
 }
 );
 
-//Busca el registro
-$app->get('/load_search', function () use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
-            $array=array();
-            for($i = date("Y")+1; $i >= 2016; $i--){
-                $array["anios"][] = $i;
-            }
-            $array["entidades"]= Entidades::find("active = true");
-            $array["areas"]= Areas::find("active = true");
-            $array["lineas_estrategicas"]= Lineasestrategicas::find("active = true");
-            $array["programas"]= Programas::find("active = true");
-            $array["enfoques"]=Enfoques::find("active = true");
-            $array["estados_convocatorias"] = Estados::find(
-                                                            array(
-                                                                "tipo_estado = 'convocatorias' AND active = true AND id IN (1,2,3,4,5,6)",
-                                                                "order" => "orden"
-                                                            )
-                                                            );
-            echo json_encode($array);
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        echo "error_metodo";
-    }
-}
-);
 
 //Modulo buscador
 $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger){
