@@ -600,7 +600,6 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
@@ -612,7 +611,7 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
+        
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
@@ -626,6 +625,10 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
                 {
                     unset($put["numero_estimulos"]);
                 }
+                if($put["cantidad_perfil_jurado"]=="")
+                {
+                    unset($put["cantidad_perfil_jurado"]);
+                }                
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
