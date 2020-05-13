@@ -144,7 +144,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                 //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
-                if($ronda->estado === 'null'){
+                if($ronda->estado === null){// Se quitan comillas al null
 
                     if ($ronda->save($put) === false) {
                         echo "error";
