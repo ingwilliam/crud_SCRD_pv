@@ -1583,12 +1583,14 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
               /* Cesar Britto, 2020-05-11, se ajusta la consulta */
               $ronda =  Convocatoriasrondas::findFirst(
                 [
-                  " nombre_ronda like '".$postulacion->propuestas->modalidad_participa."'"
+                  " nombre_ronda like '%".$postulacion->propuestas->modalidad_participa."%'"
+                  /* Cesar Britto, 2020-05-12, se ajusta la consulta agregando el id de la convocatoria de jurado */
+                  ." AND convocatoria = ".$postulacion->propuestas->convocatoria
                 ]
               );
 
-              if($ronda->active){
-                //se construye el array de grupos d ecriterios
+              if( $ronda->active ){
+                //se construye el array de grupos de criterios
                 $grupo_criterios = array();
                 //se cronstruye el array de criterios
                 $criterios = array();
