@@ -190,27 +190,30 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el registro
-                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
+                $ronda = Convocatoriasrondas::findFirst('id = '.$id );
 
+                //echo json_encode($ronda);
 
                 //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
-                if($ronda->estado === 'null'){
-                    if($ronda->active==true)
-                    {
+                /**
+                *Cesar Britto, 2020-05-12
+                * Se ajusta la validación
+                */
+                if( $ronda->estado == null ){
+
+                    if( $ronda->active == true ){
                         $ronda->active=false;
                         $retorna="No";
-                    }
-                    else
-                    {
+                    }else{
                         $ronda->active=true;
                         $retorna="Si";
                     }
 
                     if ($ronda->save() === false) {
-                        echo "error";
+                        return "error";
                     } else {
-                        echo $retorna;
+                        return (String)$retorna;
                     }
 
                 }else{
@@ -219,13 +222,14 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
 
 
             } else {
-                echo "acceso_denegado";
+                return "acceso_denegado";
             }
         } else {
-            echo "error";
+            return "error";
         }
     } catch (Exception $ex) {
-        echo "error_metodo".$ex->getMessage();
+      //return "error_metodo".$ex->getMessage();
+        return "error_metodo";
     }
 });
 
