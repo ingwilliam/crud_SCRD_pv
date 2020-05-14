@@ -240,6 +240,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                  $juradospostulados = Juradospostulados::find(
                    [
                      " convocatoria = ".$request->get('categoria')
+                     ." AND active = true"
                    ]
                  );
 
@@ -247,18 +248,21 @@ $app->get('/all_preseleccionados', function () use ($app) {
                  $juradospostulados = Juradospostulados::find(
                    [
                      " convocatoria = ".$request->get('categoria')
+                     ." AND active = true"
                    ]
                  );
                } elseif($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && !$request->get('categoria')) {
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true"
                     ]
                   );
                 }else{
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true"
                     ]
                   );
                 }
@@ -1892,7 +1896,8 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                     $postulaciones = Juradospostulados::find(
                       [
                         'propuesta = '.$juradospostulado->propuesta
-                        .' AND convocatoria IN ({convocatorias:array})',
+                        .' AND convocatoria IN ({convocatorias:array})'
+                        .' AND active = true ',
                         'bind' => [
                             'convocatorias' => $conv
                         ]
@@ -2086,7 +2091,8 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                     $postulaciones = Juradospostulados::find(
                       [
                         'propuesta = '.$juradospostulado->propuesta
-                        .' AND convocatoria IN ({convocatorias:array})',
+                        .' AND convocatoria IN ({convocatorias:array})'
+                        .' AND active = true ',
                         'bind' => [
                             'convocatorias' => $conv
                         ]
