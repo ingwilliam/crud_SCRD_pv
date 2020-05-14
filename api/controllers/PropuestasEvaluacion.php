@@ -781,7 +781,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                                  );
 
                                 //Si no existe el criterioevaluacion se crea
-                                if( !$evaluacioncriterio ){
+                                if( !isset($evaluacioncriterio->id) ){
                                     $evaluacioncriterio = new Evaluacioncriterios();
                                     $evaluacioncriterio->evaluacionpropuesta = $evaluacion->id;
                                     $evaluacioncriterio->criterio = $criterio->id;
@@ -799,7 +799,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                                 $evaluacioncriterio->observacion = $request->getPost('observacion_'.$criterio->id);
 
                                 // The model failed to save, so rollback the transaction
-                                if ($evaluacioncriterio->save() === false) {
+                                if ( $evaluacioncriterio->save() === false ) {
                                     //Para auditoria en versión de pruebas
                                     foreach ($evaluacioncriterio->getMessages() as $message) {
                                         echo $message;
