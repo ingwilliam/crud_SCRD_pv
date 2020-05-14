@@ -78,6 +78,14 @@ $app->post('/menu', function () use ($app,$config) {
                     . "WHERE m.nombre='Convocatorias' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
+            
+            //Consultar todos los permiso de la convocatorias publicadas
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Convocatoriaspublicas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_convocatorias_publicas = $app->modelsManager->executeQuery($phql);
+            
 
             //Consultar todos los permiso de la propuestas
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
@@ -576,6 +584,37 @@ $app->post('/menu', function () use ($app,$config) {
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>                        
+                        <?php
+                        }
+                        ?>
+                        
+                        <?php
+                        if(count($permisos_convocatorias_publicas)>0)
+                        {
+
+                        $style_update="display: none";
+                        $style_new="";
+                        if($request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
+                        ?>                        
+                        <li>
+                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Convocatorias <span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/list_publicas.html">Convocatorias publicadas</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/update_publicas.html?id=<?php echo $request->getPost('id');?>">Información General</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/categorias_publicas.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma_publicas.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Técnicos</a>                                    
+                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
                         <?php
                         }
                         ?>

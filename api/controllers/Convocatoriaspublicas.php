@@ -66,9 +66,6 @@ $app->get('/load_search', function () use ($app,$logger) {
     $user_current = json_decode($token_actual->user_current, true);
     
     try {
-        //Consulto si al menos hay un token
-        
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
             $array=array();
@@ -88,6 +85,9 @@ $app->get('/load_search', function () use ($app,$logger) {
                                                             );
             echo json_encode($array);
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método load_search, token caduco"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();        
             echo "error";
         }
     } catch (Exception $ex) {
@@ -240,7 +240,9 @@ $app->get('/all', function () use ($app,$logger) {
             //retorno el array en json
             echo json_encode($json_data);
         } else {
-            //retorno el array en json null
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método all, token caduco"', ['user' => $usuario_actual, 'token' => $request->get('token')]);
+            $logger->close();
             echo json_encode("error_token");
         }
     } catch (Exception $ex) {
@@ -251,6 +253,269 @@ $app->get('/all', function () use ($app,$logger) {
     }
 }
 );
+
+$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        
+        //Consulto el usuario actual
+        $user_current = json_decode($token_actual->user_current, true);
+        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {                
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $convocatoria = Convocatorias::findFirst(json_decode($id));
+                $convocatoria->actualizado_por = $user_current["id"];
+                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                
+                if($put["value_CKEDITOR"]!=""){
+                    $put[$put["variable"]]=$put["value_CKEDITOR"];
+                }                
+                
+                if($put["tiene_categorias"]=="false")
+                {
+                    $put["diferentes_categorias"]=FALSE;
+                    $put["mismos_jurados_categorias"]=FALSE;
+                }
+
+                if($put["numero_estimulos"]=="")
+                {
+                    unset($put["numero_estimulos"]);
+                }
+                if($put["localidad"]=="")
+                {
+                    unset($put["localidad"]);
+                }
+                if($put["upz"]=="")
+                {
+                    unset($put["upz"]);
+                }
+                if($put["barrio"]=="")
+                {
+                    unset($put["barrio"]);
+                }
+                if ($convocatoria->save($put) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit, error al editar la convocatoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                
+                    echo "error";
+                } else {
+                    
+                    if($put["tiene_categorias"]=="true")
+                    {                    
+                        //Modifico el estado para todas las categorias
+                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque:,modalidad=:modalidad: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'estado' => $put["estado"],
+                            'anio' => $put["anio"],
+                            'programa' => $put["programa"],
+                            'entidad' => $put["entidad"],
+                            'area' => $put["area"],
+                            'linea_estrategica' => $put["linea_estrategica"],
+                            'modalidad' => $put["modalidad"],
+                            'enfoque' => $put["enfoque"]
+                        )); 
+                        
+                    }
+                    
+                    if($put["estado"]==5)
+                    {
+                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $app->modelsManager->executeQuery($phql, array(
+                            'convocatoria_padre_categoria' => $id,
+                            'habilitar_cronograma' => FALSE                    
+                        ));
+                    }
+                    
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Convocatoriaspublicas en el método edit, edito con éxito la convocatoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                        
+                    echo $id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();         
+            
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();                 
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();         
+        echo "error_metodo";
+    }
+}
+);
+
+// Eliminar registro
+$app->delete('/delete_categoria/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
+    
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);
+        
+    try {        
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $user = Convocatorias::findFirst(json_decode($id));
+                $user->active = $request->getPut('active');
+                if ($user->save($user) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método delete_categoria, error al editar la categoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                    
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Inactivo en el controlador Convocatoriaspublicas en el método delete_categoria, edito con éxito la categoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
+                    echo "ok";
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método delete_categoria, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();         
+            
+                echo "acceso_denegado";
+            }           
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método delete_categoria, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close(); 
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método delete_categoria, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();         
+        echo "error_metodo";
+    }
+});
+
+
+// Editar registro
+$app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
+       
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);
+    
+    try {        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $convocatoria = Convocatorias::findFirst(json_decode($id));
+                $convocatoria->actualizado_por = $user_current["id"];
+                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                if($put["numero_estimulos"]=="")
+                {
+                    unset($put["numero_estimulos"]);
+                }
+                if ($convocatoria->save($put) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit_categoria, error al editar la categoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                    
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Convocatoriaspublicas en el método edit_categoria, edito con éxito la categoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
+                    echo $id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit_categoria, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();         
+            
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit_categoria, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close(); 
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit_categoria, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();         
+        echo "error_metodo";
+    }
+}
+);
+
+
+
+
 
 
 
@@ -433,160 +698,7 @@ $app->post('/new_categoria', function () use ($app, $config) {
 }
 );
 
-// Editar registro
-$app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
-                $put = $app->request->getPut();
-                // Consultar el usuario que se esta editando
-                $convocatoria = Convocatorias::findFirst(json_decode($id));
-                $convocatoria->actualizado_por = $user_current["id"];
-                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                if($put["numero_estimulos"]=="")
-                {
-                    unset($put["numero_estimulos"]);
-                }
-                if ($convocatoria->save($put) === false) {
-                    echo "error";
-                } else {
-                    echo $id;
-                }
-            } else {
-                echo "acceso_denegado";
-            }
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo".$ex->getMessage();
-    }
-}
-);
-
-// Editar registro
-$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
-                $put = $app->request->getPut();
-                // Consultar el usuario que se esta editando
-                $convocatoria = Convocatorias::findFirst(json_decode($id));
-                $convocatoria->actualizado_por = $user_current["id"];
-                $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                
-                if($put["value_CKEDITOR"]!=""){
-                    $put[$put["variable"]]=$put["value_CKEDITOR"];
-                }                
-                
-                if($put["tiene_categorias"]=="false")
-                {
-                    $put["diferentes_categorias"]=FALSE;
-                    $put["mismos_jurados_categorias"]=FALSE;
-                }
-
-                if($put["numero_estimulos"]=="")
-                {
-                    unset($put["numero_estimulos"]);
-                }
-                if($put["localidad"]=="")
-                {
-                    unset($put["localidad"]);
-                }
-                if($put["upz"]=="")
-                {
-                    unset($put["upz"]);
-                }
-                if($put["barrio"]=="")
-                {
-                    unset($put["barrio"]);
-                }
-                if ($convocatoria->save($put) === false) {
-                    echo "error";
-                } else {
-                    
-                    if($put["tiene_categorias"]=="true")
-                    {                    
-                        //Modifico el estado para todas las categorias
-                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque:,modalidad=:modalidad: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
-                        $app->modelsManager->executeQuery($phql, array(
-                            'convocatoria_padre_categoria' => $id,
-                            'estado' => $put["estado"],
-                            'anio' => $put["anio"],
-                            'programa' => $put["programa"],
-                            'entidad' => $put["entidad"],
-                            'area' => $put["area"],
-                            'linea_estrategica' => $put["linea_estrategica"],
-                            'modalidad' => $put["modalidad"],
-                            'enfoque' => $put["enfoque"]
-                        )); 
-                        
-                    }
-                    
-                    if($put["estado"]==5)
-                    {
-                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
-                        $app->modelsManager->executeQuery($phql, array(
-                            'convocatoria_padre_categoria' => $id,
-                            'habilitar_cronograma' => FALSE                    
-                        ));
-                    }
-                        
-                    echo $id;
-                }
-            } else {
-                echo "acceso_denegado";
-            }
-        } else {
-            echo "error_token";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo".$ex->getMessage();
-    }
-}
-);
 
 // Eliminar registro
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
@@ -614,50 +726,6 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
                 // Consultar el usuario que se esta editando
                 $user = Convocatorias::findFirst(json_decode($id));
                 $user->active = false;
-                if ($user->save($user) === false) {
-                    echo "error";
-                } else {
-                    echo "ok";
-                }
-            } else {
-                echo "acceso_denegado";
-            }
-
-            exit;
-        } else {
-            echo "error";
-        }
-    } catch (Exception $ex) {
-        echo "error_metodo";
-    }
-});
-
-// Eliminar registro
-$app->delete('/delete_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
-
-        //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
-
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
-
-            //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                // Consultar el usuario que se esta editando
-                $user = Convocatorias::findFirst(json_decode($id));
-                $user->active = $request->getPut('active');
                 if ($user->save($user) === false) {
                     echo "error";
                 } else {
