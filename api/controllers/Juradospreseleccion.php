@@ -239,7 +239,8 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                  $juradospostulados = Juradospostulados::find(
                    [
-                     " convocatoria = ".$request->get('categoria')
+                     " convocatoria = ".$request->get('categoria'),
+                     " active =".true
                    ]
                  );
 
@@ -247,18 +248,21 @@ $app->get('/all_preseleccionados', function () use ($app) {
                  $juradospostulados = Juradospostulados::find(
                    [
                      " convocatoria = ".$request->get('categoria')
+                     ." AND active = true ",
                    ]
                  );
                } elseif($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && !$request->get('categoria')) {
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true ",
                     ]
                   );
                 }else{
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true ",
                     ]
                   );
                 }
