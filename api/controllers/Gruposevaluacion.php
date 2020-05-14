@@ -416,7 +416,6 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
                             "recordsFiltered" => intval(count($response)),
                             "data" => $response   // total data array
                         );
-
                     }
                 }
             }
@@ -658,7 +657,21 @@ $app->get('/select_rondas_editar', function () use ($app) {
             //Si existe consulto el grupo
             if ($request->get('grupo') && $request->get('convocatoria')) {
 
-                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                /*
+                 * 22-04-2020
+                 * WILMER GUSTAVO MOGOLLÓN DUQUE
+                 * Se agrega un if para definir el código de la convocatoria o la categoría que se relaciona.
+                 */
+
+
+                if ($request->get('categoria')) {
+                    $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                } else {
+                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                }
+
+
+//                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
                 $grupoevaluador = Gruposevaluadores::findFirst($request->get('grupo'));
 
@@ -727,7 +740,19 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
                 //busca los que se postularon
                 if ($request->get('convocatoria')) {
 
-                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+
+                    /*
+                     * 23-04-2020
+                     * WILMER GUSTAVO MOGOLLÓN DUQUE
+                     * Se agrega un if para definir el código de la convocatoria o la categoría que se relaciona con los jurados.
+                     */
+
+                    if ($request->get('categoria')) {
+                        $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                    } else {
+                        $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                    }
+
 
                     /*   $juradospostulados = Juradospostulados::query()
                       ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
@@ -745,7 +770,7 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
                             ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
                             ->leftJoin("Evaluadores", "Juradospostulados.id = Evaluadores.juradopostulado AND Evaluadores.grupoevaluador = " . $request->get('grupo'))
                             ->Where("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-                            ->andWhere("Juradospostulados.convocatoria = " . $request->get('convocatoria'))
+                            ->andWhere("Juradospostulados.convocatoria = " . $convocatoria->id)//Se modifica para hacer la consulta con categorías tambien
                             ->orderBy('Juradospostulados.id')
                             ->getQuery()
                             ->execute();

@@ -91,7 +91,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $titulo_reporte="CERTIFICADO DE PRE-INSCRIPCIÓN";
                 }
                 
-                if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31) {
+                if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31|| $estado == 33|| $estado == 34) {
                     $array_administrativos = array();
                     $array_tecnicos = array();
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
@@ -601,6 +601,9 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                         <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
+                        <td colspan="5" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                    </tr>
+                    <tr>
                         <td>Convocatoria</td>
                         <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
@@ -735,6 +738,9 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                     </tr>
                     <tr>
                         <td colspan="6" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
@@ -881,6 +887,9 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                         <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
+                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                    </tr>
+                    <tr>
                         <td>Convocatoria</td>
                         <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
@@ -999,6 +1008,9 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                     </tr>
                     <tr>
                         <td colspan="4" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
@@ -1120,6 +1132,9 @@ $app->post('/reporte_listado_pre_inscrita', function () use ($app, $config, $log
                     </tr>
                     <tr>
                         <td colspan="5" align="center">'.$entidad.'</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>

@@ -507,11 +507,13 @@ SELECT
 	par.estrato,
 	par.correo_electronico,
 	par.numero_telefono,
-	par.numero_celular
+	par.numero_celular,
+	es.nombre AS estado_propuesta
 FROM propuestas AS pro
 	INNER JOIN participantes AS par ON par.id=pro.participante
 	INNER JOIN usuariosperfiles AS usupar ON usupar.id=par.usuario_perfil
 	INNER JOIN perfiles AS per ON per.id=usupar.perfil
+	INNER JOIN estados AS es ON es.id=pro.estado
 	LEFT JOIN tiposdocumentos AS td ON td.id=par.tipo_documento
 	LEFT JOIN sexos AS sex ON sex.id=par.sexo
 	LEFT JOIN ciudades AS ciu ON ciu.id=par.ciudad_residencia
@@ -547,11 +549,13 @@ SELECT
 	par.estrato,
 	par.correo_electronico,
 	par.numero_telefono,
-	par.numero_celular
+	par.numero_celular,
+	es.nombre AS estado_propuesta
 FROM propuestas AS pro
 	INNER JOIN participantes AS par ON par.participante_padre=pro.participante
 	INNER JOIN usuariosperfiles AS usupar ON usupar.id=par.usuario_perfil
 	INNER JOIN perfiles AS per ON per.id=usupar.perfil
+	INNER JOIN estados AS es ON es.id=pro.estado
 	LEFT JOIN tiposdocumentos AS td ON td.id=par.tipo_documento
 	LEFT JOIN sexos AS sex ON sex.id=par.sexo
 	LEFT JOIN ciudades AS ciu ON ciu.id=par.ciudad_residencia

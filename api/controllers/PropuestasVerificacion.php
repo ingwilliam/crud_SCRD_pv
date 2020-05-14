@@ -402,13 +402,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         //$id_convocatoria=$convocatoria->id;                
                         //$seudonimo=$convocatoria->seudonimo;
                         
-                        $where .= " AND p.convocatoria=$id_convocatoria ";
+                        $where .= " AND p.convocatoria=".$params["convocatoria"]." ";
                         
                         //Consulto las propuestas en estado 22 Subsanación Recibida
                         //y tambien que se pasaron de la fecha_fin_subsanacion
                         //con el fin de rechazarla
                         
-                        $where_subsanacion = ['convocatoria' => $id_convocatoria, 'estado' => 22];                        
+                        $where_subsanacion = ['convocatoria' => $params["convocatoria"], 'estado' => 22];                        
                         $propuestas_no_subsanaron = Propuestas::find(([
                                     'conditions' => 'convocatoria=:convocatoria: AND estado=:estado: AND NOW()>fecha_fin_subsanacion',
                                     'bind' => $where_subsanacion
@@ -608,6 +608,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $convocatoria= Convocatorias::findFirst("id=".$propuesta->convocatoria." AND active=TRUE");                
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
+                $anio_convocatoria = $propuesta->getConvocatorias()->anio;
                 $nombre_categoria = "";
                 $seudonimo=$convocatoria->seudonimo;
                 $id_convocatoria = $convocatoria->id; 
@@ -622,6 +623,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
                     $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;
                     $nombre_categoria = $propuesta->getConvocatorias()->nombre;
+                    $anio_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->anio;
                 }
 
                 //Creo el nombre del participante y valido si tiene seudonimos
@@ -801,6 +803,21 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $array["tecnicos"] = $documentos_tecnicos;                
                 $array["modalidad"] = $convocatoria->modalidad;
 
+                //Consulto solo los integrantes de la propuesta
+                $sql_integrantes = "
+                    SELECT 
+                            REPLACE(TRIM(p.numero_documento),'.','') AS numero_documento
+                    FROM Participantes AS p                                        
+                    WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.tipo_documento<>7 AND p.active=TRUE";
+
+                $integrantes = $app->modelsManager->executeQuery($sql_integrantes);
+                
+                $cedulas_integrantes="";
+                foreach ($integrantes as $integrante) {                    
+                    $cedulas_integrantes=$cedulas_integrantes."'".$integrante->numero_documento."',";
+                }
+                $cedulas_integrantes = substr($cedulas_integrantes, 0, -1);
+                
                 //Consultamos las inhabilidades como contratistas                
                 $sql_contratistas = "
                     SELECT 
@@ -819,6 +836,120 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 }
                 $array["contratistas"] = $array_contratistas;
                 
+                //Variables html
+                $html_propuestas = "";
+                $html_propuestas_ganadoras = "";                
+                $html_propuestas_jurados_seleccionados = "";                        
+            
+                //Genero reporte de jurados seleccionados
+                $sql_jurados_seleccionado = "
+                            SELECT 
+                                    cp.nombre AS convocatoria,
+                                    c.nombre AS categoria,	
+                                    par.tipo AS rol_participante,	
+                                    jp.rol AS rol_jurado,
+                                    par.numero_documento,
+                                    concat(par.primer_nombre, ' ' ,par.segundo_nombre, ' ' ,par.primer_apellido, ' ' ,par.segundo_apellido ) AS participante,
+                                    pro.codigo AS codigo_propuesta,
+                                    e.nombre AS estado_de_la_postulacion
+                            FROM Juradospostulados as jp
+                                INNER JOIN Evaluadores ev ON jp.id=ev.juradopostulado 
+                                    INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                                    INNER join Participantes par on pro.participante = par.id
+                                    INNER JOIN Convocatorias AS c ON jp.convocatoria = c.id
+                                    LEFT JOIN Convocatorias as cp ON c.convocatoria_padre_categoria = cp.id
+                                    LEFT JOIN Estados e ON jp.estado=e.id
+                            WHERE 	
+                                    jp.active=true AND
+                                ev.active = true AND	                            
+                                REPLACE(TRIM(par.numero_documento),'.','') IN ($cedulas_integrantes)
+                            ";
+
+                $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
+
+                foreach ($jurados_seleccionados as $jurado) {                    
+                    if($jurado->convocatoria=="")
+                    {
+                        $jurado->convocatoria=$jurado->categoria;
+                        $jurado->categoria="";
+                    }
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr class='tr_jurados_seleccionados'>";
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . "</td>";
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->categoria . '</td>';                
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';                
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->participante . '</td>';                                
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado</td>';                
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
+                }
+                
+                //Genero reporte personas naturales
+                $sql_pn = "
+                            SELECT 
+                                    vwp.convocatoria,
+                                    vwp.codigo,
+                                    vwp.nombre_propuesta,
+                                    vwp.tipo_participante,
+                                    vwp.representante,
+                                    vwp.tipo_rol,
+                                    vwp.rol,
+                                    vwp.primer_nombre,
+                                    vwp.segundo_nombre,
+                                    vwp.primer_apellido,
+                                    vwp.segundo_apellido,
+                                    vwp.estado_propuesta                                
+                            FROM Viewparticipantes AS vwp                                
+                            WHERE vwp.codigo <> '".$propuesta->codigo."' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(TRIM(vwp.numero_documento),'.','') IN ($cedulas_integrantes)
+                            ";
+
+                $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
+
+
+                foreach ($personas_naturales as $pn) {
+                    
+                    //Consulto la convocatoria
+                    $convocatoria_pn = Convocatorias::findFirst($pn->convocatoria);
+
+                    //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                    $nombre_convocatoria_pn = $convocatoria_pn->nombre;
+                    $nombre_categoria_pn = "";
+                    $anio_convocatoria_pn = $convocatoria_pn->anio;
+                    if ($convocatoria_pn->convocatoria_padre_categoria > 0) {                
+                        $nombre_convocatoria_pn = $convocatoria_pn->getConvocatorias()->nombre;
+                        $nombre_categoria_pn = $convocatoria_pn->nombre;                                
+                        $anio_convocatoria_pn = $convocatoria_pn->getConvocatorias()->anio;
+                    }
+
+                    if($anio_convocatoria_pn==$anio_convocatoria)
+                    {                
+                        if($pn->estado_propuesta=="Ganadora")
+                        {
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr class='tr_propuestas_ganadoras'>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria_pn . "</td>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_categoria_pn . "</td>";                
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " ". $pn->segundo_nombre . " ". $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";                
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . "</td>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->estado_propuesta . "</td>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
+                        }
+                        else
+                        {
+                            $html_propuestas = $html_propuestas . "<tr class='tr_propuestas'>";
+                            $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria_pn . "</td>";
+                            $html_propuestas = $html_propuestas . "<td>" . $nombre_categoria_pn . "</td>";                
+                            $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";
+                            $html_propuestas = $html_propuestas . "<td>" . $pn->primer_nombre . " ". $pn->segundo_nombre . " ". $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";                
+                            $html_propuestas = $html_propuestas . "<td>" . $pn->codigo . "</td>";
+                            $html_propuestas = $html_propuestas . "<td>" . $pn->estado_propuesta . "</td>";
+                            $html_propuestas = $html_propuestas . "</tr>";
+                        }                
+                    }
+                }
+                
+                //$array["html_propuestas"] = $html_propuestas;
+                $array["html_propuestas"] = "";
+                $array["html_propuestas_ganadoras"] = $html_propuestas_ganadoras;
+                $array["html_propuestas_jurados_seleccionados"] = $html_propuestas_jurados_seleccionados;
                 
                 //Registro la accion en el log de convocatorias
                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna la propuesta ('.$id.') en el metodo cargar_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
