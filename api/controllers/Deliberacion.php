@@ -251,246 +251,213 @@ $app->get('/select_estado', function () use ($app, $logger) {
 
 //Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
 $app->get('/all_propuestas', function () use ($app, $logger) {
-    try {
 
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $response =  array();
+  try {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    $response =  array();
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas '. json_encode($request->get()).'"',
+    //Registro la accion en el log de convocatorias
+    $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/all_propuestas '. json_encode($request->get()).'"',
                       ['user' => '', 'token' => $request->get('token')]);
-        $logger->close();
+    $logger->close();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Si el token existe y esta activo entra a realizar la tabla
-        if ( isset($token_actual->id)  ) {
+    //Si el token existe y esta activo entra a realizar la tabla
+    if ( isset($token_actual->id)  ) {
 
-            //se establecen los valores del usuario
-            $user_current = json_decode($token_actual->user_current, true);
+      //se establecen los valores del usuario
+      $user_current = json_decode($token_actual->user_current, true);
 
-            if( $user_current["id"] ){
+      if( $user_current["id"] ){
 
-                if( $request->get('ronda') ){
+        if( $request->get('ronda') ){
 
-                    $ronda =  Convocatoriasrondas::findFirst( 'id = '.$request->get('ronda') );
+          $ronda =  Convocatoriasrondas::findFirst( 'id = '.$request->get('ronda') );
 
-                    $query='SELECT
-                                j.*
-                            FROM
-                                Juradospostulados as j
-                                INNER JOIN Propuestas as p
-                                on j.propuesta = p.id
-                                INNER JOIN Participantes as par
-                                on p.participante = par.id
-                                INNER JOIN Usuariosperfiles as up
-                                on par.usuario_perfil = up.id and up.usuario = '.$user_current["id"]
-                                ." WHERE j.convocatoria = ".$ronda->convocatoria;
+          if( isset($ronda->id) ){
 
-                    $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
+            /**
+            * Listar las propuestas que estan registradas para evaluar
+            */
+            //fase de evaluación o de deliberación
+            $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                              ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
 
+            //Propuestas habilitadas
+            //Estado propuestas	Habilitada
+            $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
 
-                    if( isset($postulacion->id) && isset($ronda->id) ){
+            //todas las propuestas
+            $allpropuestas = Propuestas::find(
+                        [
+                           ' convocatoria = '.$ronda->convocatoria
+                           .' AND estado = '.$estado_habilitada->id,
+                           'order'=>'id ASC',
+                        ]
+                      );
 
-                        //valida si el usuario pertenece al grupo de evaluación de la ronda
-                        $evaluador = Evaluadores::findFirst(
-                            [
-                                'juradopostulado = '.$postulacion->id
-                                .' AND grupoevaluador = '.$ronda->grupoevaluador
-                            ]
-                        );
+            $response = array();
+            // propuestas_evaluacion	Confirmada
+            $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
 
-                        if( isset($evaluador->id) ) {
+            $query = " SELECT
+                                  distinct p.id,p.codigo,p.nombre,
+                                  (	SELECT
+                                      sum(total) AS total
+                                    FROM
+                                      Evaluacionpropuestas e
+                                   WHERE
+                                      e.propuesta = p.id AND e.estado = ".$estado_confirmada->id;
+            $query .= " ) AS suma,
+                                  (	SELECT
+                                      count(e.id) AS cantidad
+                                    FROM
+                                      Evaluacionpropuestas e
+                                    WHERE
+                                        e.propuesta = p.id AND e.estado = ".$estado_confirmada->id;
+            $query .=" ) AS cantidad,
+                                  (	SELECT
+                                      avg(total) AS promedio
+                                    FROM
+                                      Evaluacionpropuestas e
+                                    WHERE
+                                    e.propuesta = p.id AND e.estado = ".$estado_confirmada->id;
+            $query .=" ) AS promedio
+                              FROM
+                                Propuestas AS p
+                                INNER JOIN
+                                   Evaluacionpropuestas as ep2
+                                ON p.id = ep2.propuesta
+                              WHERE
+                                p.convocatoria  = ".$ronda->convocatoria." AND p.estado = ".$estado_habilitada->id;
+            $query .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' ";
+            $query .="  ORDER BY promedio DESC limit ".$request->get('length');
+            $query .=" offset ".$request->get('start');
 
-                          /**
-                          * Cesar Augusto Britto, 18-04-2020
-                          * Agregar propuestas a evaluar
-                          */
+            $resultset =  $this->modelsManager->executeQuery($query);
 
-                          /*
-                          * Si es la primera ronda trae los datos desde la tabla propuesta,
-                          * en caso contrario lo trae de la tabla evaluacionpropuestas
-                          */
+            //Se redondea a 3 cifras el promedio
+            foreach ($resultset as $key => $row) {
+                      $row->promedio = round($row->promedio, 3);
+                      array_push($response, $row );
+            }
 
-                          //Array de rondas de la convocatoria
-                          $rondas = Convocatoriasrondas::find(
-                            [
-                              " convocatoria = ".$ronda->convocatoria
-                              ." AND active = true ",
-                              'order'=>'id ASC',
-                            ]
-                          );
-
-                          /*Ajuste de william supervisado por wilmer*/
-                          /*2020-04-28*/
-
-                          $ronda_actual = $rondas[0];
-                          //si es la primera ronda y ronda estado habilitada, es decir en fase de evaluación
-                          if( $ronda_actual->id == $ronda->id  && $ronda->getEstado_nombre() == "Habilitada"){
-
-                            //propuestas incluidas por el evaluador
-                            $propuestas_evaluacion = Evaluacionpropuestas::find(
-                              [
-                                  "ronda =".$ronda->id
-                                  ." AND fase = 'Evaluación' "
-                                  ." AND evaluador = ".$evaluador->id
-                              ]
-                            );
-
-                            $array_propuestas =  array(-1);
-                            foreach ($propuestas_evaluacion as $key => $evaluacion) {
-                              array_push($array_propuestas, $evaluacion->propuesta);
-                            }
-
-                            //24	propuestas	Habilitada
-                            $estado_propuesta= Estados::findFirst("tipo_estado = 'propuestas' AND nombre = 'Habilitada'");
-                            //propuestas a incluir por parte del evaluador
-                            $propuestas_incluir = Propuestas::find(
-                              [
-                                " convocatoria = ".$ronda->convocatoria
-                                .' AND estado = '.$estado_propuesta->id
-                                .' AND id NOT IN ({propuestas:array})',
-                                'bind' => [
-                                    'propuestas' => $array_propuestas
-                                ]
-                              ]
-                            );
-
-                            // se guarda cada propuesta a incluir en la evaluación
-
-                            foreach ($propuestas_incluir as $key => $propuesta) {
-                                    $evaluacion_propuesta = new Evaluacionpropuestas();
-                                    $evaluacion_propuesta->propuesta = $propuesta->id;
-                                    $evaluacion_propuesta->ronda =  $ronda->id;
-                                    $evaluacion_propuesta->evaluador = $evaluador->id;
-                                    /*Ajuste de william supervisado por wilmer*/
-                                    /*2020-04-28*/
-                                    $array_estado_actual=Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'");
-                                    $evaluacion_propuesta->estado = $array_estado_actual->id;
-                                    //ronda_estado = habilitada
-                                    $evaluacion_propuesta->fase = 'Evaluación';
-                                    $evaluacion_propuesta->fecha_creacion =  date("Y-m-d H:i:s");
-                                    $evaluacion_propuesta->creado_por = $user_current["id"];
-                                    $evaluacion_propuesta->active =  true;
-
-                                    if ( $evaluacion_propuesta->save() === false ) {
-
-
-                                      //Para auditoria en versión de pruebas
-                                      /*foreach ($evaluacion_propuesta->getMessages() as $message) {
-                                           echo $message;
-                                         }*/
-                                      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al crear la evaluación. '
-                                                      .json_decode( $evaluacion_propuesta->getMessages() ).'"',
-                                                      ['user' => $user_current, 'token' => $request->get('token')]
-                                                    );
-                                      $logger->close();
-
-                                      return "error";
-                                    }
-                            }//fin foreach
-
-                          }
-
-                          /**
-                          * Listar las propuestas que estan registradas para evaluar
-                          */
-                          //fase de evaluación o de deliberación
-                          $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
-                                          ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
-
-                          $evaluacionpropuestas =  Evaluacionpropuestas::find(
-                                [
-                                    'ronda = '.$ronda->id
-                                    .' AND evaluador = '.$evaluador->id
-                                    .' AND fase = "'.$fase.'"'
-                                    .( $request->get('estado') ? ' AND estado = '.$request->get('estado') : '' ),
-                                    'order'=>'propuesta ASC',
-                                    'limit' =>  $request->get('length'),
-                                    'offset' =>  $request->get('start'),
-                                ]
-                             );
-
-                             $allevaluacionpropuestas =  Evaluacionpropuestas::find(
-                                   [
-                                       'ronda = '.$ronda->id
-                                       .' AND evaluador = '.$evaluador->id
-                                       .' AND fase = "'.$fase.'"'
-                                       .( $request->get('estado') ? ' AND estado = '.$request->get('estado') : '' ),
-                                       'order'=>'propuesta ASC',
-                                   ]
-                                );
-
-                          if( $evaluacionpropuestas->count() > 0 ){
-
-                              foreach ( $evaluacionpropuestas as $evaluacionpropuesta) {
-
-                                    /*Ajuste de william supervisado por wilmer*/
-                                    /*2020-04-28*/
-                                    $array_estado_actual_2=Estados::findFirst('id = '.$evaluacionpropuesta->estado );
-
-                                    array_push($response, [
-                                        "id_evaluacion"=>$evaluacionpropuesta->id,
-                                        "total_evaluacion"=> $evaluacionpropuesta->total,
-                                        "estado_evaluacion"=>$array_estado_actual_2->nombre ,
-                                        "id_propuesta"=> $evaluacionpropuesta->Propuestas->id,
-                                        "codigo_propuesta"=> $evaluacionpropuesta->Propuestas->codigo,
-                                        "nombre_propuesta"=> $evaluacionpropuesta->Propuestas->nombre,
-                                    ] );
-
-                                }
-
-                            }
-
-                        }else{
-                          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_evaluador"',
-                                        ['user' => $user_current, 'token' => $request->get('token')]
-                                      );
-                          $logger->close();
-                          return "error_evaluador";
-                        }
-
-                    }else{
+          }else{
                       $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
                                     ['user' => $user_current, 'token' => $request->get('token')]
                                   );
                       $logger->close();
 
                       return "error";
-                    }
+          }
 
-                }
-
-            }
-
-            //creo el array
-            $json_data = array(
-            "draw" => intval($request->get("draw")),
-            "recordsTotal" => intval( count($allevaluacionpropuestas) ),
-            "recordsFiltered" => intval( count($allevaluacionpropuestas) ),
-            "data" => $response   // total data array
-            );
-            //retorno el array en json
-            return json_encode($json_data);
-
-        } else {
-          $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_token"',
-                        ['user' => '', 'token' => $request->get('token')]);
-          $logger->close();
-          return "error_token";
         }
-    } catch (Exception $ex) {
-        //return "error_metodo".$ex->getMessage();
-        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo '. json_encode($ex).'"',
-                      ['user' => '', 'token' => $request->get('token')]);
-        $logger->close();
-        return "error_metodo";
     }
-}
-);
+
+    //creo el array
+    $json_data = array(
+    "draw" => intval($request->get("draw")),
+    "recordsTotal" => intval( count($allpropuestas) ),
+    "recordsFiltered" => intval( count($allpropuestas) ),
+    "data" => $response   // total data array
+    );
+    //retorno el array en json
+    return json_encode($json_data);
+
+    } else {
+      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_token"',
+                    ['user' => '', 'token' => $request->get('token')]);
+      $logger->close();
+      return "error_token";
+    }
+  } catch (Exception $ex) {
+    return "error_metodo".$ex->getMessage();
+    $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo '. json_encode($ex).'"',
+                  ['user' => '', 'token' => $request->get('token')]);
+    $logger->close();
+    //return "error_metodo";
+  }
+});
+
+
+//Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
+$app->get('/all_evaluaciones/propuesta/{id:[0-9]+}', function ($id) use ($app, $logger) {
+
+  try {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    $response =  array();
+
+    //Registro la accion en el log de convocatorias
+    $logger->info('"token":"{token}","user":"{user}","message":"/all_evaluaciones/propuesta/{id:[0-9]+}/ronda/{ronda:[0-9]+} '. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+    $logger->close();
+
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+
+    //Si el token existe y esta activo entra a realizar la tabla
+    if ( isset($token_actual->id)  ) {
+
+      $ronda =  Convocatoriasrondas::findFirst( 'id = '.$request->get("ronda") );
+
+      if( isset($ronda->id) ){
+
+        //fase de evaluación o de deliberación
+        $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                          ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+
+        $evaluaciones =  Evaluacionpropuestas::find(" propuesta = ".$id." AND ronda = ".$ronda->id." AND fase = '".$fase."'");
+
+        foreach ($evaluaciones as $key => $evaluacion) {
+
+          $evaluador = Evaluadores::findFirst('id = '.$evaluacion->evaluador );
+          $juradopostulado = Juradospostulados::findFirst(' id = '.$evaluador->juradopostulado);
+          $participante = $juradopostulado->Propuestas->Participantes;
+          array_push($response,[
+                                  "jurado_codigo"=> $juradopostulado->Propuestas->codigo,
+                                  "jurado_nombre"=>$participante->primer_nombre
+                                                    ." ".$participante->segundo_nombre
+                                                    ." ".$participante->primer_apellido
+                                                    ." ".$participante->segundo_apellido,
+                                  "evaluacion_total"=>$evaluacion->total,
+                                  "evaluacion_estado"=>(Estados::findFirst(' id = '.$evaluacion->estado))->nombre,
+                                  "evaluacion_fase"=>$evaluacion->fase
+                                ]
+                              );
+
+        }
+
+        return json_encode($response);
+      }
+
+    }
+
+  }catch (Exception $ex) {
+    return "error_metodo".$ex->getMessage();
+    $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo '. json_encode($ex).'"',
+                  ['user' => '', 'token' => $request->get('token')]);
+    $logger->close();
+    //return "error_metodo";
+  }
+
+});
+
+
+
+
+
+
+
+
+
+
+
 
 /**
 *Retorna información de la propuesta que el usuario que inicio sesion
@@ -614,6 +581,7 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
             $response = array();
 
             if( $user_current["id"]){
+
 
                 $evaluacionpropuesta = Evaluacionpropuestas::findFirst( ' id = '.$id );
 
@@ -781,7 +749,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                                  );
 
                                 //Si no existe el criterioevaluacion se crea
-                                if( !isset($evaluacioncriterio->id) ){
+                                if( !$evaluacioncriterio ){
                                     $evaluacioncriterio = new Evaluacioncriterios();
                                     $evaluacioncriterio->evaluacionpropuesta = $evaluacion->id;
                                     $evaluacioncriterio->criterio = $criterio->id;
@@ -799,7 +767,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                                 $evaluacioncriterio->observacion = $request->getPost('observacion_'.$criterio->id);
 
                                 // The model failed to save, so rollback the transaction
-                                if ( $evaluacioncriterio->save() === false ) {
+                                if ($evaluacioncriterio->save() === false) {
                                     //Para auditoria en versión de pruebas
                                     foreach ($evaluacioncriterio->getMessages() as $message) {
                                         echo $message;
@@ -1561,6 +1529,13 @@ $app->put('/confirmar_top_individual/ronda/{id:[0-9]+}', function ($id) use ($ap
 
     }
 });
+
+function build_sorter($clave) {
+    return function ($a, $b) use ($clave) {
+        return strnatcmp($b[$clave], $a[$clave]);
+    };
+}
+
 
 try {
     // Gestionar la consulta

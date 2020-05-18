@@ -239,7 +239,8 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                  $juradospostulados = Juradospostulados::find(
                    [
-                     " convocatoria = ".$request->get('categoria')
+                     " convocatoria = ".$request->get('categoria'),
+                     " active =".true
                    ]
                  );
 
@@ -247,18 +248,21 @@ $app->get('/all_preseleccionados', function () use ($app) {
                  $juradospostulados = Juradospostulados::find(
                    [
                      " convocatoria = ".$request->get('categoria')
+                     ." AND active = true ",
                    ]
                  );
                } elseif($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && !$request->get('categoria')) {
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true ",
                     ]
                   );
                 }else{
                   $juradospostulados = Juradospostulados::find(
                     [
                       " convocatoria = ".$request->get('convocatoria')
+                      ." AND active = true ",
                     ]
                   );
                 }
@@ -1566,14 +1570,31 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
 
               }
             */
+
+             /* Cesar Britto, 2020-05-11,
+             * Se agrega para validar de que modalidad_participa no sea vacio ó nulo,
+             * si se da el caso retorna error
+             */
+              if( $postulacion->propuestas->modalidad_participa == '' || $postulacion->propuestas->modalidad_participa == null){
+                return "error_modalidad_participa";
+              }
+
+              /**
+              * modalidad_participa
+              * 'Experto sin título universitario'
+              * 'Experto con título universitario'
+              */
+              /* Cesar Britto, 2020-05-11, se ajusta la consulta */
               $ronda =  Convocatoriasrondas::findFirst(
                 [
                   " nombre_ronda like '%".$postulacion->propuestas->modalidad_participa."%'"
+                  /* Cesar Britto, 2020-05-12, se ajusta la consulta agregando el id de la convocatoria de jurado */
+                  ." AND convocatoria = ".$postulacion->propuestas->convocatoria
                 ]
               );
 
-              if($ronda->active){
-                //se construye el array de grupos d ecriterios
+              if( $ronda->active ){
+                //se construye el array de grupos de criterios
                 $grupo_criterios = array();
                 //se cronstruye el array de criterios
                 $criterios = array();
@@ -1634,10 +1655,10 @@ $app->get('/criterios_evaluacion', function () use ($app, $config) {
         }
     } catch (Exception $ex) {
 
-      //  echo "error_metodo";
-
       //Para auditoria en versión de pruebas
-      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+      //return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+
+      return "error_metodo";
     }
 }
 );

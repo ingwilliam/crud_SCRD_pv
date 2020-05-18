@@ -352,7 +352,7 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
                                     $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                                 }
 
-//                                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                                //$convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                                 //id de los gruposevaluacion que estan relacionados con la convocatoria
                                 $result = $this->modelsManager->createQuery('SELECT distinct Convocatoriasrondas.grupoevaluador'
                                                 . ' FROM	Convocatoriasrondas '
@@ -416,7 +416,6 @@ $app->get('/all_grupos_evaluacion', function () use ($app) {
                             "recordsFiltered" => intval(count($response)),
                             "data" => $response   // total data array
                         );
-
                     }
                 }
             }
@@ -468,13 +467,13 @@ $app->get('/jurados_aceptaron', function () use ($app) {
                         $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
                     }
 
-//               $convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
+                    //$convocatoria =  Convocatorias::findFirst($request->get('convocatoria'));
 
                     $juradospostulados = Juradospostulados::query()
                             ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
                             ->where("Juradosnotificaciones.active = true ")
                             ->andWhere("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-//                     ->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
+                            //->andWhere("Juradospostulados.convocatoria = ".$request->get('convocatoria') )
                             ->andWhere("Juradospostulados.convocatoria = " . $convocatoria->id) //Se modifica para que sea dinámica
                             ->limit($request->get('start'), $request->get('length'))
                             ->execute();
@@ -658,7 +657,21 @@ $app->get('/select_rondas_editar', function () use ($app) {
             //Si existe consulto el grupo
             if ($request->get('grupo') && $request->get('convocatoria')) {
 
-                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                /*
+                 * 22-04-2020
+                 * WILMER GUSTAVO MOGOLLÓN DUQUE
+                 * Se agrega un if para definir el código de la convocatoria o la categoría que se relaciona.
+                 */
+
+
+                if ($request->get('categoria')) {
+                    $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                } else {
+                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                }
+
+
+//                $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
                 $grupoevaluador = Gruposevaluadores::findFirst($request->get('grupo'));
 
@@ -704,32 +717,6 @@ $app->get('/select_rondas_editar', function () use ($app) {
 }
 );
 
-//Retorna información sobre el grupo de evaluación
-$app->get('/grupo/{id:[0-9]+}', function ($id) use ($app) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        $response = array();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
-
-        //Si el token existe y esta activo
-        if ($token_actual != false) {
-
-            $grupoevaluador = Gruposevaluadores::findFirst($id);
-
-            return json_encode($grupoevaluador);
-        } else {
-            return "error_token";
-        }
-    } catch (Exception $ex) {
-        //retorno el array en json null
-        return "error_metodo" . $ex->getMessage();
-    }
-}
-);
-
 //Retorna información de los jurados que aceptaron la notificacion y los que son evaluadores
 $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
     try {
@@ -753,7 +740,19 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
                 //busca los que se postularon
                 if ($request->get('convocatoria')) {
 
-                    $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+
+                    /*
+                     * 23-04-2020
+                     * WILMER GUSTAVO MOGOLLÓN DUQUE
+                     * Se agrega un if para definir el código de la convocatoria o la categoría que se relaciona con los jurados.
+                     */
+
+                    if ($request->get('categoria')) {
+                        $convocatoria = Convocatorias::findFirst($request->get('categoria'));
+                    } else {
+                        $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
+                    }
+
 
                     /*   $juradospostulados = Juradospostulados::query()
                       ->join("Juradosnotificaciones","Juradospostulados.id = Juradosnotificaciones.juradospostulado")
@@ -771,7 +770,7 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
                             ->join("Juradosnotificaciones", "Juradospostulados.id = Juradosnotificaciones.juradospostulado")
                             ->leftJoin("Evaluadores", "Juradospostulados.id = Evaluadores.juradopostulado AND Evaluadores.grupoevaluador = " . $request->get('grupo'))
                             ->Where("Juradosnotificaciones.estado = 15 ")//15	jurado_notificaciones	Aceptada
-                            ->andWhere("Juradospostulados.convocatoria = " . $request->get('convocatoria'))
+                            ->andWhere("Juradospostulados.convocatoria = " . $convocatoria->id)//Se modifica para hacer la consulta con categorías tambien
                             ->orderBy('Juradospostulados.id')
                             ->getQuery()
                             ->execute();
@@ -818,6 +817,32 @@ $app->get('/jurados_aceptaron_and_evaluadores', function () use ($app) {
             } else {
                 return "error";
             }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        return "error_metodo" . $ex->getMessage();
+    }
+}
+);
+
+//Retorna información sobre el grupo de evaluación
+$app->get('/grupo/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if ($token_actual != false) {
+
+            $grupoevaluador = Gruposevaluadores::findFirst($id);
+
+            return json_encode($grupoevaluador);
         } else {
             return "error_token";
         }
@@ -1106,7 +1131,70 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
     }
 });
 
+/*
+* Retorna la información sobre el evaluador de la ronda
+*/
+$app->get('/evaluador/ronda/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
 
+        //Si el token existe y esta activo
+        if ( isset($token_actual->id) ) {
+          //se establecen los valores del usuario
+          $user_current = json_decode($token_actual->user_current, true);
+
+          $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id );
+
+          if( isset($ronda->id) ){
+            $query='SELECT
+                        j.*
+                    FROM
+                        Juradospostulados as j
+                        INNER JOIN Propuestas as p
+                        on j.propuesta = p.id
+                        INNER JOIN Participantes as par
+                        on p.participante = par.id
+                        INNER JOIN Usuariosperfiles as up
+                        on par.usuario_perfil = up.id and up.usuario = '.$user_current["id"]
+                        ." WHERE j.convocatoria = ".$ronda->convocatoria;
+
+            $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
+
+            if( isset($postulacion->id) ){
+
+              //valida si el usuario pertenece al grupo de evaluación de la ronda
+              $evaluador = Evaluadores::findFirst(
+                  [
+                      'juradopostulado = '.$postulacion->id
+                      .' AND grupoevaluador = '.$ronda->grupoevaluador
+                  ]
+              );
+
+              return json_encode($evaluador);
+
+            }else{
+                return 'error';
+              }
+
+          }else{
+            return 'error';
+          }
+
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        return "error_metodo" . $ex->getMessage();
+        //return "error_metodo";
+    }
+}
+);
 
 
 try {
