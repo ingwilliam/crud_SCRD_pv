@@ -388,10 +388,8 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
                     }
                     $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
-                    
-                    
-                    $where .= " WHERE p.active=true AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
-                    
+                                                            
+                    $where .= " WHERE p.active=true AND p.estado NOT IN (7,20)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";                    
                     
                     if($params["convocatoria"]!="")
                     {
@@ -463,7 +461,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
 
                     //Concateno el orden y el limit para el paginador
-                    $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                    $sqlRec .= " ORDER BY p.codigo LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
                     
                     //ejecuto el total de registros actual
                     $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
