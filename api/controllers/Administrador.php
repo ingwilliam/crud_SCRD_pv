@@ -86,6 +86,13 @@ $app->post('/menu', function () use ($app,$config) {
 
             $permisos_convocatorias_publicas = $app->modelsManager->executeQuery($phql);
             
+            //Consultar todos los permiso de la editar participantes
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Ajustes Junta y Agrupación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_convocatorias_ajustes_junta_agrupacion = $app->modelsManager->executeQuery($phql);
+            
 
             //Consultar todos los permiso de la propuestas
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
@@ -132,14 +139,6 @@ $app->post('/menu', function () use ($app,$config) {
                 . " WHERE m.nombre='Hoja de vida' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $hoja_de_vida = $app->modelsManager->executeQuery($phql);
-
-            //Cesar Britto, 2020-03-11
-            //Consultar todos los permiso del menu Hoja de vida
-            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
-                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                . " WHERE m.nombre='Deliberación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-
-            $deliberacion = $app->modelsManager->executeQuery($phql);
 
             ?>
 
@@ -541,7 +540,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="display: none" href="../requisitos/form.html">Requisitos</a>
                                 </li>
                                 <li>
-                                    <a href="../encuestas/list.html">Encuestas</a>
+                                    <a href="../encuestas/list.html">Encuestas</a>                                    
                                     <a id="menu_encuesta_param" style="display: none" href="menu_encuesta_param">Encuestas</a>
                                 </li>
                             </ul>
@@ -618,6 +617,23 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
+                        
+                        <?php
+                        if(count($permisos_convocatorias_ajustes_junta_agrupacion)>1000)
+                        {                        
+                        ?>                        
+                        <li>
+                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Juntas Directivas y/o Agrupaciones <span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="" href="../administracionpropuestas/listar_juntas_agrupaciones.html">Juntas Directivas y/o Agrupaciones</a>                                    
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
 
                         <?php
                         if(count($permisos_propuestas)>0)
@@ -630,7 +646,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/busqueda_propuestas.html">Búsqueda de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/verificacion_propuestas.html">Verificación de propuestas</a>
-
+                                    
                                     <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
@@ -871,33 +887,6 @@ $app->post('/menu', function () use ($app,$config) {
                         ?>
                         <!--FIN Mis hojas de vida-->
 
-                        <!--Cesar Britto-->
-                        <!--Deliberación-->
-                        <?php
-                        if( count($deliberacion) > 0 )
-                        {
-
-                            $style_update="display: none";
-                            $style_new="";
-                            /*if($request->getPost('id')!="")
-                            {
-                                $style_update="";
-                                $style_new="display: none";
-                            }*/
-                        ?>
-                        <li>
-                            <a href="#"><i class="fa fa-folder-o fa-fw"></i>Deliberación<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a style="<?php echo $style_new;?>" href="../deliberacion/deliberacion.html">Deliberar</a>
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                        <?php
-                        }
-                        ?>
-                        <!--Fin Deliberación-->
 
                     </ul>
                 </div>

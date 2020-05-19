@@ -291,6 +291,21 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
                     $array_retorno["reporte_convocatorias_listado_contratistas"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_contratistas.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."&convocatoria=".$request->get('convocatoria')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_contratistas'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                     $array_retorno["reporte_convocatorias_listado_participantes"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_participantes.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."&convocatoria=".$request->get('convocatoria')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_participantes'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                     $array_retorno["reporte_convocatorias_listado_no_inscritas"]="<a target='_blank' href='".$config->sistema->url_report."listado_entidades_convocatorias_listado_no_inscritas.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."&convocatoria=".$request->get('convocatoria')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_convocatorias_listado_no_inscritas'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
+                    
+                    
+                    $rondas_evaluacion= Convocatoriasrondas::find("active=true AND convocatoria=".$request->get('convocatoria'));
+                    
+                    $option='<option value="">:: Seleccionar ::</option>';
+                    foreach ($rondas_evaluacion as $ronda) {
+                        $option=$option.'<option value="'.$ronda->id.'">'.$ronda->nombre_ronda.'</option>';
+                    }
+                    
+                    $select_ronda='<select id="ronda" class="form-control" >';                    
+                    $select_ronda=$select_ronda.$option;
+                    $select_ronda=$select_ronda.'</select> ';
+                    
+                    $array_retorno["reporte_planillas_evaluacion"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Ronda</label>'.$select_ronda.'</div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_planillas" class="btn btn-default">Generar reporte</button></div></div>';                
+                    
                     $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                     echo json_encode($array_retorno);
                 }
