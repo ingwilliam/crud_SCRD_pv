@@ -362,7 +362,7 @@ $app->get('/autocompletar', function () use ($app, $config) {
             
             if($request->get('q')!="")
             {            
-                foreach (Barrios::find("active=true AND UPPER(nombre) LIKE '%".strtoupper($request->get('q'))."%'") as $value) {
+                foreach (Barrios::find("active=true AND UPPER(TRANSLATE(nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$request->get('q')."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')") as $value) {
                     $array_barrios[] = array("id" => $value->id, "label" => $value->nombre . " - " . $value->getLocalidades()->nombre . " - " . $value->getLocalidades()->getCiudades()->nombre, "value" => $value->nombre);
                 }
             }                        
