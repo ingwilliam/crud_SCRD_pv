@@ -74,27 +74,28 @@ $app->get('/init', function () use ($app, $config) {
                                     . " AND estado =  5" //publicada
                                 ]
                 );
-                
-                
+
+
 
                 $array["convocatorias_jurados"] = array();
                 foreach ($convocatorias_jurados as $key => $convocatoria) {
                     array_push($array["convocatorias_jurados"], ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
                 }
-                
+
                 /*
                  * 20-05-2020
                  * Wilmer Gustavo Mogollón Duque
                  * Se agrega array para listar área de conocimiento
                  */
-                
+
                 //Busca las áreas de conocimiento
-                $area_conocimientos = Areasconocimientos::find();
-                
+                $area_conocimientos = Categoriajurado::find("active=true AND tipo='formal' AND id=nodo");
+
                 $array["area_conocimientos"] = array();
                 foreach ($area_conocimientos as $key => $area_conocimiento) {
                     array_push($array["area_conocimientos"], ["id" => $area_conocimiento->id, "nombre" => $area_conocimiento->nombre]);
                 }
+
 
                 $array["entidades"] = Entidades::find("active = true");
 
@@ -231,8 +232,8 @@ $app->get('/all_preseleccionados', function () use ($app) {
             $response = array();
 
             if ($user_current["id"]) {
-                
-                
+
+
                 /*
                  * 19-05-2020
                  * Wilmer Gustavo Mogollón Duque
@@ -348,8 +349,10 @@ $app->get('/all_preseleccionados', function () use ($app) {
                             //--id convocatoria seleccionada
                             . '        c.id = ' . $conv . ' OR c.convocatoria_padre_categoria = ' . $conv . '
                                                                  )
-                            AND pro.estado=10
+                            AND pro.estado in (10,11,12,13)
                           ';
+
+
                     /*
                      * 19-05-2020
                      * Wilmer Gustavo Mogollón Duque
@@ -427,8 +430,25 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                   						inner join Propuestajuradopublicacion pjp
                                   						on p.id = pjp.propuesta
                                   					group by 1
-                                  					)
+                                                                )
                                         ";
+                        }
+
+                        /*
+                         * Wilmer Mogollón
+                         */
+
+
+                        if ($value["name"] === 'area_conocimiento' && $value["value"] != "") {
+                            //--Titulo universiatrio
+                            $query = $query . " AND pro.id in ( 
+                                                                  
+                                                                select p.id
+                                                                  from Propuestas p inner join Educacionformal ef on p.id=ef.propuesta 
+                                                                  where ef.area_conocimiento = " . strtolower($value["value"]) . "
+                                                                  group by 1
+                                          )
+                                      ";
                         }
                     }//fin for
                     //se ejecuta la consulta
