@@ -57,11 +57,18 @@ $app->get('/select', function () use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
             
-            $phql = "SELECT * FROM Departamentos AS d WHERE d.active = true AND d.pais = $pais ORDER BY nombre";
+            if($pais>0)
+            {
+                $phql = "SELECT * FROM Departamentos AS d WHERE d.active = true AND d.pais = $pais ORDER BY nombre";
 
-            $robots = $app->modelsManager->executeQuery($phql);
+                $robots = $app->modelsManager->executeQuery($phql);
 
-            echo json_encode($robots);
+                echo json_encode($robots);
+            }
+            else
+            {
+                echo json_encode(array());
+            }
         } else {
             echo "error";
         }
