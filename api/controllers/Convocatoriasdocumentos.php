@@ -289,6 +289,74 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
 }
 );
 
+// Editar registro
+$app->put('/edit_publico/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
+    
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);    
+    try {        
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {                
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $convocatoriadocumento = Convocatoriasdocumentos::findFirst(json_decode($id));                                
+                $put["archivos_permitidos"] = json_encode($put["archivos_permitidos"]);
+                $convocatoriadocumento->actualizado_por = $user_current["id"];
+                $convocatoriadocumento->fecha_actualizacion = date("Y-m-d H:i:s");
+                if ($convocatoriadocumento->save($put) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasdocumentos en el método edit, error al editar el documento"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                    
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Convocatoriasdocumentos en el método edit, edito con éxito el documento"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
+                    echo $id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasdocumentos en el método edit, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();   
+                
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasdocumentos en el método edit, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();                 
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasdocumentos en el método edit, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();   
+        
+        echo "error_metodo";
+    }
+}
+);
+
 // Eliminar registro de los perfiles de las convocatorias
 $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
     
