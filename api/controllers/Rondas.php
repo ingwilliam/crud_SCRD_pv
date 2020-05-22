@@ -2,8 +2,8 @@
 /*
 *Cesar britto
 */
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -80,9 +80,13 @@ $app->post('/new', function () use ($app, $config) {
                 $ronda = new Convocatoriasrondas();
                 $ronda->creado_por = $user_current["id"];
                 $ronda->fecha_creacion = date("Y-m-d H:i:s");
+                /**
+                * Cesar Britto,21-05-2020
+                * se ajusta para guardar la fecha de fin de evaluación con las horas
+                */
+                $post['fecha_fin_evaluacion'] =   $post['fecha_fin_evaluacion'].' 23:59:59';
                 $ronda->active = true;
                 $ronda->grupoevaluador = null;
-
 
                 if ($ronda->save($post) === false) {
 
@@ -140,6 +144,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 // Consultar el usuario que se esta editando
                 $ronda = Convocatoriasrondas::findFirst(json_decode($id));
                 $ronda->actualizado_por = $user_current["id"];
+                /**
+                * Cesar Britto,21-05-2020
+                * se ajusta para guardar la fecha de fin de evaluación con las horas
+                */
+                $put['fecha_fin_evaluacion'] =   $put['fecha_fin_evaluacion'].' 23:59:59';
                 $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
 
                 //si la ronda tiene estado null se puede editar, en caso contrario
