@@ -619,14 +619,22 @@ $app->post('/menu', function () use ($app,$config) {
                         ?>
                         
                         <?php
-                        if(count($permisos_convocatorias_ajustes_junta_agrupacion)>1000)
+                        if(count($permisos_convocatorias_ajustes_junta_agrupacion)>0)
                         {                        
                         ?>                        
                         <li>
-                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Juntas Directivas y/o Agrupaciones <span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Propuestas <span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a style="" href="../administracionpropuestas/listar_juntas_agrupaciones.html">Juntas Directivas y/o Agrupaciones</a>                                    
+                                    <?php
+                                    if($request->getPost('m')!="")
+                                    {
+                                    ?>
+                                    <a style="" href="../administracionpropuestas/integrantes.html?m=<?php echo $request->getPost('m');?>">Integrantes</a>                                    
+                                    <?php
+                                    }
+                                    ?>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

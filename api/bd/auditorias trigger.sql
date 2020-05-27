@@ -144,5 +144,15 @@ delete
 update
     on
     public.convocatoriasdocumentos for each row execute procedure auditoria.func_logged_actions();            
+
+-- creación de los disparadores de convocatorias
+create trigger trg_logged_participantes after
+insert
+    or
+delete
+    or
+update
+    on
+    public.participantes for each row execute procedure auditoria.func_logged_actions(); 
     
     
