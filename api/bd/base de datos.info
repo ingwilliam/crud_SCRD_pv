@@ -685,6 +685,10 @@ CREATE TABLE public.encuestaspropuestasparametros
 );
 
 
+#AJUSTES INTEGRANTES MAYO 27
+ALTER TABLE participantes ADD por_que_actualiza TEXT;
+
+
 
 
 
