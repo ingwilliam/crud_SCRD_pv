@@ -658,6 +658,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
+                                    
+                                    <a style="" href="../administracionpropuestas/registro_ganadores.html">Registro de ganadores</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
