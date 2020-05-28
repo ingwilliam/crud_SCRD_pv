@@ -156,3 +156,15 @@ update
     public.participantes for each row execute procedure auditoria.func_logged_actions(); 
     
     
+create trigger trg_logged_propuestas after
+insert
+    or
+delete
+    or
+update
+    on
+    public.propuestas for each row execute procedure auditoria.func_logged_actions();
+    
+    
+    
+    
