@@ -1151,6 +1151,12 @@ $app->get('/evaluador/ronda/{id:[0-9]+}', function ($id) use ($app) {
           $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id );
 
           if( isset($ronda->id) ){
+              /*
+               * 28-05-2020
+               * Wilmer Gustavo Mogollón Duque
+               * Se ajusta la consulta para evitar que se presenten errores
+               */
+            $estado_postulacion= Estados::findFirst("tipo_estado='jurados' and nombre='Evaluado'");
             $query='SELECT
                         j.*
                     FROM
@@ -1161,9 +1167,13 @@ $app->get('/evaluador/ronda/{id:[0-9]+}', function ($id) use ($app) {
                         on p.participante = par.id
                         INNER JOIN Usuariosperfiles as up
                         on par.usuario_perfil = up.id and up.usuario = '.$user_current["id"]
-                        ." WHERE j.convocatoria = ".$ronda->convocatoria;
+                        ." WHERE j.convocatoria = ".$ronda->convocatoria
+                        ." AND j.active = true"
+                        ." AND j.estado =" .$estado_postulacion->id;
 
             $postulacion =  $this->modelsManager->executeQuery($query)->getFirst();
+            
+//            echo json_encode($postulacion);
 
             if( isset($postulacion->id) ){
 
@@ -1175,6 +1185,7 @@ $app->get('/evaluador/ronda/{id:[0-9]+}', function ($id) use ($app) {
                   ]
               );
 
+//              echo json_encode($evaluador);
               return json_encode($evaluador);
 
             }else{
