@@ -478,6 +478,10 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config, $log
                 {
                     unset($put["numero_estimulos"]);
                 }
+                if($put["cantidad_perfil_jurado"]=="")
+                {
+                    unset($put["cantidad_perfil_jurado"]);
+                }
                 if ($convocatoria->save($put) === false) {
                     //Registro la accion en el log de convocatorias           
                     $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriaspublicas en el método edit_categoria, error al editar la categoria"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
