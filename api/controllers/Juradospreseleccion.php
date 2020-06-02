@@ -246,6 +246,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                     $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
+
                     //la convocatoria tiene categorias y son diferentes?, caso 3
                     if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias && $request->get('categoria')) {
 
@@ -253,7 +254,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('categoria'),
                                             " active =" . true,
-                                            "order" => "aplica_perfil desc, total_evaluacion desc"
+                                            "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
                                         ]
                         );
                     } elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && $request->get('categoria')) {
@@ -261,7 +262,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('categoria')
                                             . " AND active = true ",
-                                            "order" => "aplica_perfil desc, total_evaluacion desc"
+                                            "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
                                         ]
                         );
                     } elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && !$request->get('categoria')) {
@@ -269,7 +270,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('convocatoria')
                                             . " AND active = true ",
-                                            "order" => "aplica_perfil desc, total_evaluacion desc"
+                                            "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
                                         ]
                         );
                     } else {
@@ -277,7 +278,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('convocatoria')
                                             . " AND active = true ",
-                                            "order" => "aplica_perfil desc, total_evaluacion desc"
+                                            "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
                                         ]
                         );
                     }
@@ -286,6 +287,10 @@ $app->get('/all_preseleccionados', function () use ($app) {
                     if ($juradospostulados->count() > 0) {
 
                         foreach ($juradospostulados as $juradopostulado) {
+
+                            if ($juradopostulado->total_evaluacion == null) {
+                                $juradopostulado->total_evaluacion = 0;
+                            }
 
                             array_push($response, [
                                 "postulado" => ( $juradopostulado->tipo_postulacion == 'Inscrita' ? true : false ),
@@ -324,6 +329,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
   	                   on pro.participante = part.id
   	                   inner join Usuariosperfiles as uper
   	                   on part.usuario_perfil = uper.id
+                           
   	               WHERE
   	                   uper.perfil=17'
                             // -- busca los que se postularon a la convocatoria de jurados
@@ -1709,7 +1715,13 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
                 //La convocatoria a la cual esta postulado tiene padre? si, es una categoria ;
                 // La convocatoria padre tiene categorias iguales?
                 //La convocatoria padre mismos_jurados_categoria?
-                if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                /*
+                 * 01-06-2020
+                 * Wilmer Mogollón
+                 * Se ajusta el if eliminando una restricción
+                 */
+                //if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                if ($convocatoria_padre && $convocatoria_padre->mismos_jurados_categorias) {
 
                     // Start a transaction
                     $this->db->begin();
@@ -1826,7 +1838,13 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                     $convocatoria_padre = $juradospostulado->Convocatorias->Convocatorias;
 
                     //para las convocatorias que tienen categorias y son los mismos jurados, se crea una vealuación por cada convocatoria
-                    if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                    /*
+                     * 01-06-2020
+                     * Wilmer Mogollón
+                     * Se ajusta el if eliminando una restricción
+                     */
+//                    if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                    if ($convocatoria_padre && $convocatoria_padre->mismos_jurados_categorias) {
                         $convocatorias = $convocatoria_padre->Categorias;
 
                         $conv = array();
@@ -2012,7 +2030,13 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                     $convocatoria_padre = $juradospostulado->Convocatorias->Convocatorias;
 
                     //para las convocatorias que tienen categorias y son los mismos jurados, se crea una vealuación por cada convocatoria
-                    if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                    /*
+                     * 01-06-2020
+                     * Wilmer Mogollón
+                     * Se ajusta el if eliminando una restricción
+                     */
+//                    if ($convocatoria_padre && !$convocatoria_padre->diferentes_categorias && $convocatoria_padre->mismos_jurados_categorias) {
+                    if ($convocatoria_padre && $convocatoria_padre->mismos_jurados_categorias) {
                         $convocatorias = $convocatoria_padre->Categorias;
 
                         $conv = array();
