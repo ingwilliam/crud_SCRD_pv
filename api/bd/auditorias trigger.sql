@@ -165,6 +165,17 @@ update
     on
     public.propuestas for each row execute procedure auditoria.func_logged_actions();
     
+-- creación de los disparadores de criterios
+
+create trigger trg_logged_convocatoriasrondascriterios after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriasrondascriterios for each row execute procedure auditoria.func_logged_actions();    
+    
     
     
     

@@ -609,6 +609,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma_publicas.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
                                     <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Técnicos</a>                                    
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion_publicas.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
                                     <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
                                 </li>
                             </ul>
