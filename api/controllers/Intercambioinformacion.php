@@ -58,7 +58,7 @@ $logger->setFormatter($formatter);
 $app = new Micro($di);
 
 
-$app->post('/total_propuestas_barrios', function () use ($app, $config, $logger) {
+$app->post('/total_propuestas_inscritas', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();    
 
@@ -77,9 +77,51 @@ $app->post('/total_propuestas_barrios', function () use ($app, $config, $logger)
                 //Valido si la clave es igual al token del usuario
                 if ($this->security->checkHash($this->request->getPost('password'), $usuario_validar->password)) {
                     //Genero reporte
-                    $sql = "
+                    
+                    if($this->request->getPost('agrupar')=='localidad')
+                    {
+                        $sql = "
                         SELECT 
                             NOW() AS fecha_consulta,
+                            c.anio,
+                            e.nombre AS entidad,                            
+                            UPPER(l.nombre) AS localidad,                            
+                            COUNt(p.id) AS total_propuestas 
+                        FROM Propuestas AS p 
+                            INNER JOIN Convocatorias AS c ON c.id=p.convocatoria
+                            INNER JOIN Entidades AS e ON e.id=c.entidad
+                            LEFT JOIN Localidades AS l ON l.id=p.localidad                                                        
+                        WHERE p.estado NOT IN (7,20) AND c.anio<>'2016'
+                        GROUP BY 1,2,3,4
+                        ORDER BY 3,5 DESC";
+                    }
+                    
+                    if($this->request->getPost('agrupar')=='upz')
+                    {
+                        $sql = "
+                        SELECT 
+                            NOW() AS fecha_consulta,
+                            c.anio,
+                            e.nombre AS entidad,
+                            UPPER(l.nombre) AS localidad,
+                            UPPER(u.nombre) AS upz,                            
+                            COUNt(p.id) AS total_propuestas 
+                        FROM Propuestas AS p 
+                            INNER JOIN Convocatorias AS c ON c.id=p.convocatoria
+                            INNER JOIN Entidades AS e ON e.id=c.entidad
+                            LEFT JOIN Localidades AS l ON l.id=p.localidad
+                            LEFT JOIN Upzs AS u ON u.id=p.upz                            
+                        WHERE p.estado NOT IN (7,20) AND c.anio<>'2016'
+                        GROUP BY 1,2,3,4,5
+                        ORDER BY 3,6 DESC";
+                    }
+                    
+                    if($this->request->getPost('agrupar')=='barrio')
+                    {
+                        $sql = "
+                        SELECT 
+                            NOW() AS fecha_consulta,
+                            c.anio,
                             e.nombre AS entidad,
                             UPPER(l.nombre) AS localidad,
                             UPPER(u.nombre) AS upz,
@@ -91,8 +133,10 @@ $app->post('/total_propuestas_barrios', function () use ($app, $config, $logger)
                             LEFT JOIN Localidades AS l ON l.id=p.localidad
                             LEFT JOIN Upzs AS u ON u.id=p.upz
                             LEFT JOIN Barrios AS b ON b.id=p.barrio
-                        GROUP BY 1,2,3,4,5
-                        ORDER BY 2,6 DESC";
+                        WHERE p.estado NOT IN (7,20) AND c.anio<>'2016'
+                        GROUP BY 1,2,3,4,5,6
+                        ORDER BY 3,7 DESC";
+                    }                                        
 
                     $array = $app->modelsManager->executeQuery($sql);
 

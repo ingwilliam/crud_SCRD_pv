@@ -262,12 +262,20 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                         $i = 1;
                         $html_integrantes = "";
                         foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
                             $html_integrantes = $html_integrantes . "<tr>";
                             $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $value_representante . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getCiudadesresidencia()->nombre . "</td>";                            
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
                             $html_integrantes = $html_integrantes . "</tr>";
                             $i++;
@@ -333,10 +341,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 <table>    
     <tr>
         <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">¿Representante?</td>    
         <td align="center" bgcolor="#BDBDBD">Tipo de documento</td>    
         <td align="center" bgcolor="#BDBDBD">Número de documento de identificación</td>    
         <td align="center" bgcolor="#BDBDBD">Nombres</td>        
         <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
+        <td align="center" bgcolor="#BDBDBD">Ciudad de residencia</td>        
         <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
     </tr> 
     ' . $html_integrantes . '
@@ -358,12 +368,20 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                         $i = 1;
                         $html_integrantes = "";
                         foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
                             $html_integrantes = $html_integrantes . "<tr>";
                             $html_integrantes = $html_integrantes . "<td>" . $i . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $value_representante . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->numero_documento . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getCiudadesresidencia()->nombre . "</td>";                            
                             $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
                             $html_integrantes = $html_integrantes . "</tr>";
                             $i++;
@@ -388,10 +406,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 <table>    
     <tr>
         <td align="center" bgcolor="#BDBDBD">N°</td>
+        <td align="center" bgcolor="#BDBDBD">¿Representante?</td>    
         <td align="center" bgcolor="#BDBDBD">Tipo de documento</td>    
         <td align="center" bgcolor="#BDBDBD">Número de documento de identificación</td>    
         <td align="center" bgcolor="#BDBDBD">Nombres</td>        
         <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
+        <td align="center" bgcolor="#BDBDBD">Ciudad de residencia</td> 
         <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
     </tr> 
     ' . $html_integrantes . '
@@ -1213,7 +1233,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
                     $array_administrativos = array();                    
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
                         //if ($propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestadocumento->cargue_subsanacion == true) {
-                        if ($propuestadocumento->cargue_subsanacion == true) {
+                        if ($propuestadocumento->cargue_subsanacion == true AND $propuestadocumento->active == true) {
                             $array_administrativos[$propuestadocumento->id]["requisito"] = $propuestadocumento->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos[$propuestadocumento->id]["nombre"] = $propuestadocumento->nombre;
                         }                        
@@ -1222,7 +1242,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
                     $array_administrativos_link = array();                    
                     foreach ($propuesta->Propuestaslinks as $propuestalink) {
                         //if ($propuestalink->getConvocatoriasdocumentos()->getRequisitos()->tipo_requisito == "Administrativos" AND $propuestalink->cargue_subsanacion == true) {
-                        if ($propuestalink->cargue_subsanacion == true) {
+                        if ($propuestalink->cargue_subsanacion == true AND $propuestalink->active == true) {
                             $array_administrativos_link[$propuestalink->id]["requisito"] = $propuestalink->getConvocatoriasdocumentos()->getRequisitos()->nombre;
                             $array_administrativos_link[$propuestalink->id]["link"] = $propuestalink->link;
                         }                        

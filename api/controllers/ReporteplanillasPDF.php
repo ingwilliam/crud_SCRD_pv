@@ -75,7 +75,7 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                   Propuestas p
                   inner join Evaluacionpropuestas ep ON p.id = ep.propuesta
               WHERE
-              ep.ronda = ' . $ronda;
+              ep.ronda = ' . $ronda.' LIMIT 2';
 
         $rs = $this->modelsManager->createQuery($phql)->execute();
 
@@ -95,17 +95,17 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
 
             $participantes = Participantes::findFirst('id = ' . $row->p->participante);
 
-            echo "<b>Código propuesta: " . $row->p->codigo . "<br>";
-            echo "<b>Nombre Participante: " . $participantes->primer_nombre . " "
+            echo "<b>Código propuesta:</b>" . $row->p->codigo . "<br/>";
+            echo "<b>Nombre Participante:</b>" . $participantes->primer_nombre . " "
             . $participantes->segundo_nombre . " "
             . $participantes->primer_apellido . " "
-            . $participantes->primer_apellido . "<br>";
-            echo "<b>Nombre Propuesta: " . $row->p->nombre . "<br>";
+            . $participantes->primer_apellido . "<br/>";
+            echo "<b>Nombre Propuesta:</b>" . $row->p->nombre . "<br/><br/>";
+            
+            echo "<b>CRITERIOS DE EVALUACIÓN</b><br/><br/>";
 
 
             foreach ($evaluacionpropuestas as $evaluacionpropuesta) {
-
-                echo "Total evaluación: " . $evaluacionpropuesta->total . "</b></br></br>";
 
                 //criterios de la ronda
 
@@ -117,13 +117,13 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                                 ]
                 );
 
-                echo "<table style='border: 1px solid black;'>
-                        <tr >
-                          <td style='border: 1px solid black;background-color:#00FF00'>Criterio</td>
-                          <td style='border: 1px solid black;background-color:#00FF00'>Puntaje máximo</td>
-                          <td style='border: 1px solid black;background-color:#00FF00'>Calificación</td>
-                          <td style='border: 1px solid black;background-color:#00FF00'>Observación</td>
-                        </tr>";
+                echo '<table border="1" cellpadding="2" cellspacing="2">
+                        <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                          <td>Criterio</td>
+                          <td>Puntaje máximo</td>
+                          <td>Calificación</td>
+                          <td>Observación</td>
+                        </tr>';
 
                 foreach ($criterios as $criterio) {
 
@@ -135,25 +135,30 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                                     ]
                     );
 
-                    echo "<tr>
-                            <td style='border: 1px solid black;'>" . $criterio->descripcion_criterio . "</td>
-                            <td style='border: 1px solid black;'>" . $criterio->puntaje_maximo . "</td>
-                            <td style='border: 1px solid black;'>" . $evaluacioncriterio->puntaje . "</td>
-                            <td style='border: 1px solid black;'>" . $evaluacioncriterio->observacion . "</td>
-                          </tr>";
+                    echo '<tr>
+                            <td>' . $criterio->descripcion_criterio . '</td>
+                            <td>' . $criterio->puntaje_maximo . '</td>
+                            <td>' . $evaluacioncriterio->puntaje . '</td>
+                            <td>' . $evaluacioncriterio->observacion . '</td>
+                          </tr>';
                 }
 
-                echo "</table>";
+                echo '</table>';
 
                 $evaluador = Evaluadores::findFirst('id = ' . $evaluacionpropuesta->evaluador);
                 $juradopostulado = Juradospostulados::findFirst('id = ' . $evaluador->juradopostulado);
 
-                echo "</br></br>";
-                echo "<b>Código del jurado :" . $juradopostulado->Propuestas->codigo;
-                echo "<br>Nombre del jurado:" . $juradopostulado->Propuestas->Participantes->primer_nombre . " " . $juradopostulado->Propuestas->Participantes->segundo_nombre . " " . $juradopostulado->Propuestas->Participantes->primer_apellido . " " . $juradopostulado->Propuestas->Participantes->segundo_apellido;
-                echo "</b></br></br>";
-                echo "<hr>";
+                echo "<b>Total evaluación:</b>" . $evaluacionpropuesta->total;                
+                echo "<br/>";
+                echo "<b>Código del jurado:</b>" . $juradopostulado->Propuestas->codigo;
+                echo "<br/>";
+                echo "<b>Nombre del jurado:</b>" . $juradopostulado->Propuestas->Participantes->primer_nombre . " " . $juradopostulado->Propuestas->Participantes->segundo_nombre . " " . $juradopostulado->Propuestas->Participantes->primer_apellido . " " . $juradopostulado->Propuestas->Participantes->segundo_apellido;
+                echo "<br/><br/>";                
+                echo "<hr/>";
+                echo "<br/><br/>";
             }
+            
+            echo "<br/><br/>";
         }
     } catch (Exception $ex) {
         //return "error_metodo";
