@@ -685,6 +685,17 @@ CREATE TABLE public.encuestaspropuestasparametros
 );
 
 
+#AJUSTES INTEGRANTES MAYO 27
+ALTER TABLE participantes ADD por_que_actualiza TEXT;
+
+#AJUSTES INTEGRANTES MAYO 28
+ALTER TABLE propuestas ADD numero_resolucion TEXT;
+ALTER TABLE propuestas ADD fecha_resolucion date;
+ALTER TABLE propuestas ADD monto_asignado TEXT;
+ALTER TABLE propuestas ADD codigo_presupuestal TEXT;
+ALTER TABLE propuestas ADD codigo_proyecto_inversion TEXT;
+ALTER TABLE propuestas ADD cdp TEXT;
+ALTER TABLE propuestas ADD crp TEXT;
 
 
 

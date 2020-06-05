@@ -73,7 +73,7 @@ END;
 $function$
 ;
 
--- Creación de los disparadores
+-- Creación de los disparadores de jurados
 
 create trigger trg_logged_actions_convocatoriasrondas after
 insert or delete or update
@@ -98,3 +98,84 @@ on public.evaluacionpropuestas for each row execute procedure auditoria.func_log
 create trigger trg_logged_actions_evaluacioncriterios after
 insert or delete or update
 on public.evaluacioncriterios for each row execute procedure auditoria.func_logged_actions();
+
+-- creación de los disparadores de convocatorias
+create trigger trg_logged_convocatorias after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatorias for each row execute procedure auditoria.func_logged_actions();
+    
+create trigger trg_logged_convocatoriasrecursos after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriasrecursos for each row execute procedure auditoria.func_logged_actions();
+    
+create trigger trg_logged_convocatoriasparticipantes after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriasparticipantes for each row execute procedure auditoria.func_logged_actions();
+    
+create trigger trg_logged_convocatoriascronogramas after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriascronogramas for each row execute procedure auditoria.func_logged_actions();
+    
+create trigger trg_logged_convocatoriasdocumentos after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriasdocumentos for each row execute procedure auditoria.func_logged_actions();            
+
+-- creación de los disparadores de convocatorias
+create trigger trg_logged_participantes after
+insert
+    or
+delete
+    or
+update
+    on
+    public.participantes for each row execute procedure auditoria.func_logged_actions(); 
+    
+    
+create trigger trg_logged_propuestas after
+insert
+    or
+delete
+    or
+update
+    on
+    public.propuestas for each row execute procedure auditoria.func_logged_actions();
+    
+-- creación de los disparadores de criterios
+
+create trigger trg_logged_convocatoriasrondascriterios after
+insert
+    or
+delete
+    or
+update
+    on
+    public.convocatoriasrondascriterios for each row execute procedure auditoria.func_logged_actions();    
+    
+    
+    
+    

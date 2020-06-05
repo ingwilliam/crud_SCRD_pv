@@ -808,8 +808,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     SELECT 
                             REPLACE(TRIM(p.numero_documento),'.','') AS numero_documento
                     FROM Participantes AS p                                        
-                    WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.tipo_documento<>7 AND p.active=TRUE";
-
+                    WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.active=TRUE";                
                 $integrantes = $app->modelsManager->executeQuery($sql_integrantes);
                 
                 $cedulas_integrantes="";

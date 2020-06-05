@@ -63,9 +63,7 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
     $tokens = new Tokens();
 
     try {
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Solicita acceso al sistema para iniciar sesión"', ['user' => $this->request->getPost('username'), 'token' => '']);
-
+        
         //Consulto el usuario por username del parametro get        
         $usuario_validar = Usuarios::findFirst("UPPER(username) = '" . strtoupper($this->request->getPost('username')) . "'");
 
@@ -102,20 +100,20 @@ $app->post('/iniciar_session', function () use ($app, $config, $logger) {
                 echo json_encode($token_actual);
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"El password es incorrecto"', ['user' => $this->request->getPost('username'), 'token' => '']);
+                $logger->error('"token":"{token}","user":"{user}","message":"La contraseña que ingreso el usuario es incorrecto"', ['user' => $this->request->getPost('username'), 'token' => '']);
                 $logger->close();
                 echo "error_clave";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"El usuario no se encuentra registrado"', ['user' => $this->request->getPost('username'), 'token' => '']);
+            $logger->error('"token":"{token}","user":"{user}","message":"El correo electrónico no se encuentra registrado en la plataforma"', ['user' => $this->request->getPost('username'), 'token' => '']);
             $logger->close();
             echo "error_usuario";
 
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_participante "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Session en el método iniciar_session, "' . $ex->getMessage() . '"', ['user' => $this->request->getPost('username'), 'token' => '']);
         $logger->close();
         echo "error_metodo";
     }
@@ -130,9 +128,7 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
     $tokens = new Tokens();
 
     try {
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a consultar_usuario "', ['user' => $this->request->getPost('username'), 'token' => '']);
-
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -145,15 +141,15 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
             if (isset($user_current["id"])) {
 
                 //Registro la accion en el log de convocatorias
-                $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo consultar_usuario"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a la interfaz de bienvenida"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
 
                 echo json_encode($user_current);
                 exit;
             }
             else {
-                   //Registro la accion en el log de convocatorias
-                   $logger->error('"token":"{token}","user":"{user}","message":"Error el usuario no existe en la base de datos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                   //Registro la accion en el log de convocatorias                   
+                   $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Session en el método consultar_usuario, el usuario no exite"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                    $logger->close();
                    echo "error";
                    exit;
@@ -161,15 +157,15 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
         }
         else
         {
-            //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            //Registro la accion en el log de convocatorias            
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Session en el método consultar_usuario, token caduco"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo consultar_usuario "' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
-        $logger->close();
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Session en el método consultar_usuario, "' . $ex->getMessage() . '"', ['user' => '', 'token' => '']);
+        $logger->close();        
         echo "error_metodo";
     }
 }
@@ -367,12 +363,12 @@ $app->post('/verificar_token', function () use ($app, $config) {
         //Fecha actual
         $fecha_actual = date("Y-m-d H:i:s");
         //Recupero el valor por post
-        $token = $this->request->getPost('token');
+        $token = $this->request->getPost('token');        
         //Consulto y elimino todos los tokens que ya no se encuentren vigentes
         $tokens_eliminar = Tokens::find("date_limit<='" . $fecha_actual . "'");
         $tokens_eliminar->delete();
         //Consulto si el token existe y que este en el periodo de session
-        $tokens = Tokens::findFirst("'" . $fecha_actual . "' BETWEEN date_create AND date_limit AND token = '" . $token . "'");
+        $tokens = Tokens::findFirst("'" . $fecha_actual . "' BETWEEN date_create AND date_limit AND token = '" . $token["token"] . "'");
         //Verifico si existe para retornar
         if (isset($tokens->id)) {
             echo "ok";

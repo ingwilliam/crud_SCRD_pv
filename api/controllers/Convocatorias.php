@@ -600,7 +600,6 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
@@ -612,7 +611,7 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-
+        
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
@@ -626,6 +625,10 @@ $app->put('/edit_categoria/{id:[0-9]+}', function ($id) use ($app, $config) {
                 {
                     unset($put["numero_estimulos"]);
                 }
+                if($put["cantidad_perfil_jurado"]=="")
+                {
+                    unset($put["cantidad_perfil_jurado"]);
+                }                
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
@@ -995,18 +998,17 @@ $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-
-    try {
-
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
-
+        
+    try {        
+        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-
+        
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            $user_current = json_decode($token_actual->user_current, true);
+            
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
@@ -1034,28 +1036,29 @@ $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger
                                                                 "tipo_estado = 'propuestas' AND active = true",
                                                                 "order" => "orden"
                                                             )
-                                                            );
-
-            $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información en el metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
-
+                                                            );            
+            
+            $logger->info('"token":"{token}","user":"{user}","message":"El controller Convocatorias retorna en el método modulo_buscador_propuestas, creo el buscador para las propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();
+            
             echo json_encode($array);
 
             } else {
-                //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatorias en el método modulo_buscador_propuestas, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->get('token')]);               
                 $logger->close();
                 echo "acceso_denegado";
             }
 
         } else {
-            //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
+            //Registro la accion en el log de convocatorias                       
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatorias en el método modulo_buscador_propuestas, token caduco"', ['user' => "", 'token' => $request->get('token')]);            
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo modulo_buscador_propuestas para cargar el formulario de busqueda' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatorias en el método modulo_buscador_propuestas, ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }

@@ -111,12 +111,15 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                     $variable_dias_subsanacion="dias_subsanacion_pdsc";
                 }
                 
+                //Clase para festivos
+                $dias_festivos = new Festivos();
+                
+                //Consulto los dias habiles de las condiciones generales
                 $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$variable_dias_subsanacion."'");
                 $dias = $tabla_maestra[0]->valor;
                 
                 //Genero el periodo de fechas para subsanar
                 $datestart= strtotime(date("Y-m-d"));
-                $datesuma = 15 * 86400;
                 $diasemana = date('N',$datestart);
                 $totaldias = $diasemana+$dias;
                 $findesemana = intval( $totaldias/5) *2 ; 
@@ -124,6 +127,22 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 if ($diasabado==6) $findesemana++;
                 if ($diasabado==0) $findesemana=$findesemana-2;                
                 $total = (($dias+$findesemana) * 86400)+$datestart ; 
+                
+                //Cuento si hay festivos en el periodo de la subsanacion
+                $sumar_dias_fectivos=$dias_festivos->festivos_trascurridos(date('Y-m-d'),date('Y-m-d', $total));
+                
+                //Si hay sumo los dias del subsanacion de tablas maestras + los festivos
+                if($sumar_dias_fectivos>0)
+                {
+                    $dias=$sumar_dias_fectivos+$dias;
+                    $totaldias = $diasemana+$dias;
+                    $findesemana = intval( $totaldias/5) *2 ; 
+                    $diasabado = $totaldias % 5 ; 
+                    if ($diasabado==6) $findesemana++;
+                    if ($diasabado==0) $findesemana=$findesemana-2;                
+                    $total = (($dias+$findesemana) * 86400)+$datestart ; 
+
+                }
                 
                 $fechafinal = "desde <b>" .date('Y-m-d')."</b> hasta el <b>".date('Y-m-d', $total)." 17:00:00</b>";
                 
@@ -221,12 +240,15 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
                         $variable_dias_subsanacion="dias_subsanacion_pdsc";
                     }
 
+                    //Clase para festivos
+                    $dias_festivos = new Festivos();
+                    
+                    //Consulto los dias habiles de las condiciones generales
                     $tabla_maestra= Tablasmaestras::find("active=true AND nombre='".$variable_dias_subsanacion."'");
                     $dias = $tabla_maestra[0]->valor;                                        
                     
                     //Genero el periodo de fechas para subsanar
-                    $datestart= strtotime(date("Y-m-d"));
-                    $datesuma = 15 * 86400;
+                    $datestart= strtotime(date("Y-m-d"));                    
                     $diasemana = date('N',$datestart);
                     $totaldias = $diasemana+$dias;
                     $findesemana = intval( $totaldias/5) *2 ; 
@@ -235,12 +257,26 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
                     if ($diasabado==0) $findesemana=$findesemana-2;                
                     $total = (($dias+$findesemana) * 86400)+$datestart ; 
 
+                    //Cuento si hay festivos en el periodo de la subsanacion
+                    $sumar_dias_fectivos=$dias_festivos->festivos_trascurridos(date('Y-m-d'),date('Y-m-d', $total));                    
+                    
+                    //Si hay sumo los dias del subsanacion de tablas maestras + los festivos
+                    if($sumar_dias_fectivos>0)
+                    {
+                        $dias=$sumar_dias_fectivos+$dias;
+                        $totaldias = $diasemana+$dias;
+                        $findesemana = intval( $totaldias/5) *2 ; 
+                        $diasabado = $totaldias % 5 ; 
+                        if ($diasabado==6) $findesemana++;
+                        if ($diasabado==0) $findesemana=$findesemana-2;                
+                        $total = (($dias+$findesemana) * 86400)+$datestart ; 
+
+                    }                    
+                    
                     $fechafinal = "desde <b>" .date('Y-m-d')."</b> hasta el <b>".date('Y-m-d', $total)." 17:00:00</b>";
                     $html_subsanacion = str_replace("**fecha_inicio_propuesta**", date('Y-m-d'), $html_subsanacion);
                     $html_subsanacion = str_replace("**fecha_fin_propuesta**", date('Y-m-d', $total)." 17:00:00", $html_subsanacion);
                     
-                    
-
                     $mail = new PHPMailer();
                     $mail->IsSMTP();
                     $mail->Host = "smtp-relay.gmail.com";
