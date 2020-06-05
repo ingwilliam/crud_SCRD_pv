@@ -8,6 +8,8 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Postgresql as DbAdapter;
 use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -40,6 +42,15 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -170,15 +181,19 @@ $app->get('/all', function () use ($app) {
 );
 
 // Crear registro
-$app->post('/new', function () use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->post('/new', function () use ($app, $config,$logger) {
+    
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
 
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);
+    
+    try {                
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
@@ -193,39 +208,61 @@ $app->post('/new', function () use ($app, $config) {
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
                 $post = $app->request->getPost();
                 $area = new Convocatoriasrecursos();
                 $area->creado_por = $user_current["id"];
                 $area->fecha_creacion = date("Y-m-d H:i:s");
                 $area->active = true;
                 if ($area->save($post) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método new, error al crear la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                    
                     echo "error";
                 } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Creo en el controlador Convocatoriasrecursos en el método new, creo con éxito la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
                     echo $area->id;
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método new, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();  
+                
                 echo "acceso_denegado";
             }
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método new, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();                 
+            
             echo "error_token";
         }
     } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método new, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();    
+        
         echo "error_metodo";
     }
 }
 );
 
 // Editar registro
-$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
+    
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);    
+    
+    try {        
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
@@ -240,39 +277,62 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
             curl_close($ch);
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
+            if ($permiso_escritura == "ok") {                
                 $put = $app->request->getPut();
                 // Consultar el usuario que se esta editando
                 $convocatoriasrecursos = Convocatoriasrecursos::findFirst(json_decode($id));
                 $convocatoriasrecursos->actualizado_por = $user_current["id"];
                 $convocatoriasrecursos->fecha_actualizacion = date("Y-m-d H:i:s");
                 if ($convocatoriasrecursos->save($put) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método edit, error al editar la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();  
+                    
                     echo "error";
                 } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Convocatoriasrecursos en el método edit, edito con éxito la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
                     echo $id;
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método edit, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();  
+                
                 echo "acceso_denegado";
             }
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método edit, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();   
+            
             echo "error_token";
         }
     } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método edit, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();    
+        
         echo "error_metodo";
     }
 }
 );
 
 // Eliminar registro
-$app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPut('token'));
+        
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);    
+    
     try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
@@ -301,19 +361,37 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
                     $retorna="Si";
                 }                
                 if ($user->save($user) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método delete, error al eliminar la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
                     echo "error";
                 } else {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Convocatoriasrecursos en el método delete, elimino con éxito la convocatoria recurso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    
                     echo $retorna;
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método delete, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();  
+                
                 echo "acceso_denegado";
             }
-
-            exit;
         } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método delete, token caduco"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();   
+            
             echo "error_token";
         }
     } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Convocatoriasrecursos en el método delete, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        $logger->close();
+        
         echo "error_metodo";
     }
 });

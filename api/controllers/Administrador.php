@@ -79,6 +79,21 @@ $app->post('/menu', function () use ($app,$config) {
 
             $permisos_convocatorias = $app->modelsManager->executeQuery($phql);
 
+            //Consultar todos los permiso de la convocatorias publicadas
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Convocatoriaspublicas' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_convocatorias_publicas = $app->modelsManager->executeQuery($phql);
+
+            //Consultar todos los permiso de la editar participantes
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                    . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                    . "WHERE m.nombre='Ajustes Junta y Agrupación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $permisos_convocatorias_ajustes_junta_agrupacion = $app->modelsManager->executeQuery($phql);
+
+
             //Consultar todos los permiso de la propuestas
             $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
                     . "INNER JOIN Modulos AS m ON m.id=mpp.modulo "
@@ -124,14 +139,6 @@ $app->post('/menu', function () use ($app,$config) {
                 . " WHERE m.nombre='Hoja de vida' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $hoja_de_vida = $app->modelsManager->executeQuery($phql);
-
-            //Cesar Britto, 2020-03-11
-            //Consultar todos los permiso del menu Hoja de vida
-            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
-                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
-                . " WHERE m.nombre='Deliberación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
-
-            $deliberacion = $app->modelsManager->executeQuery($phql);
 
             ?>
 
@@ -581,6 +588,63 @@ $app->post('/menu', function () use ($app,$config) {
                         ?>
 
                         <?php
+                        if(count($permisos_convocatorias_publicas)>0)
+                        {
+
+                        $style_update="display: none";
+                        $style_new="";
+                        if($request->getPost('id')!="")
+                        {
+                            $style_update="";
+                            $style_new="display: none";
+                        }
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Convocatorias <span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../convocatorias/list_publicas.html">Convocatorias publicadas</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/update_publicas.html?id=<?php echo $request->getPost('id');?>">Información General</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/categorias_publicas.html?id=<?php echo $request->getPost('id');?>">Categorías</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/cronograma_publicas.html?id=<?php echo $request->getPost('id');?>">Cronograma</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_administrativos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Administrativos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/documentos_tecnicos_publicas.html?id=<?php echo $request->getPost('id');?>">Doc. Técnicos</a>
+                                    <a style="<?php echo $style_update;?>" href="../convocatorias/rondas_evaluacion_publicas.html?id=<?php echo $request->getPost('id');?>">Rondas de evaluación</a>
+                                    <a style="<?php echo $style_update;?>" href="<?php echo $config->sitio->url;?>publicar.html?id=<?php echo $request->getPost('id');?>" target="_blank">Ver Convocatoria</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+
+                        <?php
+                        if(count($permisos_convocatorias_ajustes_junta_agrupacion)>0)
+                        {
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa fa-edit fa-fw"></i> Ajustar Propuestas <span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="" href="../administracionpropuestas/listar_juntas_agrupaciones.html">Juntas Directivas y/o Agrupaciones</a>
+                                    <?php
+                                    if($request->getPost('m')!="")
+                                    {
+                                    ?>
+                                    <a style="" href="../administracionpropuestas/integrantes.html?m=<?php echo $request->getPost('m');?>">Integrantes</a>
+                                    <?php
+                                    }
+                                    ?>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+
+                        <?php
                         if(count($permisos_propuestas)>0)
                         {
                         ?>
@@ -595,6 +659,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/validar_propuestas.html">Validar propuestas rechazadas</a>
 
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
+
+                                    <a style="" href="../administracionpropuestas/registro_ganadores.html">Registro de ganadores</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->

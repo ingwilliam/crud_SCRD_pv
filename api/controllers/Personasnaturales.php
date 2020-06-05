@@ -84,13 +84,14 @@ $app->post('/new', function () use ($app, $config, $logger) {
     $request = new Request();
     $tokens = new Tokens();
 
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->getPost('token'));
+    
+    //Consulto el usuario actual
+    $user_current = json_decode($token_actual->user_current, true);    
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear perfil persona natural"', ['user' => '', 'token' => $request->get('token')]);
-
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
@@ -105,9 +106,7 @@ $app->post('/new', function () use ($app, $config, $logger) {
             curl_close($ch);
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
+            if ($permiso_escritura == "ok") {                
 
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
@@ -130,10 +129,20 @@ $app->post('/new', function () use ($app, $config, $logger) {
                 //Consulto si existe partipantes que tengan el mismo numero y tipo de documento que sean diferentes a su perfil de persona natutal o jurado
                 $participante_verificado = Participantes::find($not_in_usuario_perfil."numero_documento='" . $post["numero_documento"] . "' AND tipo_documento =" . $post["tipo_documento"]." AND tipo='Inicial'");
                 if (count($participante_verificado) > 0) {
-                    //Registro la accion en el log de convocatorias
-                    $logger->error('"token":"{token}","user":"{user}","message":"El participante ya existe en la base de datos ' . $post["tipo_documento"] . ' ' . $post["numero_documento"] . '"', ['user' => "", 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "participante_existente";
+                    
+                    $correos="";
+                    foreach ($participante_verificado as $participante_correo) {
+                        $correos = $correos . $participante_correo->correo_electronico . " ,";
+                    }
+                    $correos = substr($correos, 0, -1);
+                    
+                    
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, el participante '.$post["numero_documento"].' ya existe en la base de datos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();                 
+                    $array_respuesta["error"]=6;
+                    $array_respuesta["mensaje"]="Error el participante que intenta ingresar ya se encuentra registrado en la base de datos con el correo electrónico (".$correos."), comuníquese con la mesa de ayuda convocatorias@scrd.gov.co";
+                    echo json_encode($array_respuesta);                      
                 } else {
 
                     //Consulto si existe el usuario perfil
@@ -145,10 +154,11 @@ $app->post('/new', function () use ($app, $config, $logger) {
                         $usuario_perfil->usuario = $user_current["id"];
                         $usuario_perfil->perfil = 6;
                         if ($usuario_perfil->save($usuario_perfil) === false) {
-                            //Registro la accion en el log de convocatorias
-                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el perfil del usuario como persona natural"', ['user' => "", 'token' => $request->get('token')]);
-                            $logger->close();
-                            echo "error_usuario_perfil";
+                            //Registro la accion en el log de convocatorias           
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, al crear el perfil como persona natural"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();                 
+                            $array_respuesta["error"]=5;
+                            echo json_encode($array_respuesta);                                                        
                         }
                     }
 
@@ -168,53 +178,63 @@ $app->post('/new', function () use ($app, $config, $logger) {
                     }
 
                     if ($participante->save($post) === false) {
-                        //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona natural"', ['user' => "", 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error";
+                        //Registro la accion en el log de convocatorias           
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, al crear o editar"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                 
+                        $array_respuesta["error"]=4;
+                        echo json_encode($array_respuesta);                        
                     } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se crea la persona natural con éxito"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo $participante->id;
+                        //Registro la accion en el log de convocatorias           
+                        $logger->info('"token":"{token}","user":"{user}","message":"Se creo y/o edito la persona natural con éxito"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                        
+                        $logger->close();                 
+                        $array_respuesta["error"]=0;
+                        $array_respuesta["respuesta"]=$participante->id;
+                        echo json_encode($array_respuesta);                          
                     }
                 }
             } else {
-                //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"', ['user' => "", 'token' => $request->get('token')]);
-                $logger->close();
-                echo "acceso_denegado";
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, acceso denegado"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();                 
+                $array_respuesta["error"]=3;
+                echo json_encode($array_respuesta);                            
             }
         } else {
-            //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
-            $logger->close();
-            echo "error_token";
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, token caduco"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();                 
+            $array_respuesta["error"]=2;
+            echo json_encode($array_respuesta);
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
         $logger->close();
-        echo "error_metodo";
+        $array_respuesta["error"]=1;
+        echo json_encode($array_respuesta);        
     }
 }
 );
 
 //Busca el registro
-$app->get('/search', function () use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->get('/search', function () use ($app, $config,$logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
 
-        //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->get('token'));
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+            
+    //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
+    $user_current = json_decode($token_actual->user_current, true);
+            
+    //Inicio el array
+    $array_respuesta=array();
+    
+    try {        
 
         //Si el token existe y esta activo entra a realizar la tabla
-        if (isset($token_actual->id)) {
-
-            //Validar si existe un participante como persona natural, con id usuario innner usuario_perfil
-            $user_current = json_decode($token_actual->user_current, true);
+        if (isset($token_actual->id)) {            
 
             //Busco si tiene el perfil de persona natural
             $eliminar_id=false;
@@ -248,12 +268,23 @@ $app->get('/search', function () use ($app, $config) {
             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
             $array["barrio_residencia_name"] = "";
             $array["ciudad_nacimiento_name"] = "";
-            $array["ciudad_residencia_name"] = "";
+            $array["ciudad_residencia_id"] = "";
+            $array["departamento_residencia_id"] = "";
+
+            $array["pais_residencia_id"] = "";
+            $array["departamentos"]=array();
+            $array["ciudades"]=array();
             if(isset($participante->id))
             {
                 $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
                 $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
-                $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+                $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
+                $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;
+                $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
+            
             }
 
             //Elimino el id si se importa de jurados
@@ -265,16 +296,29 @@ $app->get('/search', function () use ($app, $config) {
             $array["participante"] = $participante;
 
             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
-            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
-
+            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);            
+            
+            //Registro la accion en el log de convocatorias           
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingreso al formulario de persona natural"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();
+            
             //Retorno el array
-            echo json_encode($array);
+            $array_respuesta["error"]=0;
+            $array_respuesta["respuesta"]=$array;
+            echo json_encode($array_respuesta);
         } else {
-            echo "error_token";
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método search, token caduco"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();                 
+            $array_respuesta["error"]=2;
+            echo json_encode($array_respuesta);
         }
     } catch (Exception $ex) {
-        //retorno el array en json null
-        echo $ex->getMessage();
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método search, ' . $ex->getMessage() . '"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+        $logger->close();
+        $array_respuesta["error"]=1;
+        echo json_encode($array_respuesta);
     }
 }
 );
@@ -355,8 +399,17 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
                             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
                             $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;
-                            $array["ciudad_nacimiento_name"] = $participante_hijo_propuesta->getCiudadesnacimiento()->nombre;
-                            $array["ciudad_residencia_name"] = $participante_hijo_propuesta->getCiudadesresidencia()->nombre;
+                            $array["ciudad_nacimiento_name"] = $participante_hijo_propuesta->getCiudadesnacimiento()->nombre;                            
+                            
+                            $array["ciudad_residencia_id"] = $propuesta->getParticipantes()->ciudad_residencia;
+                            $array["departamento_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->id;
+                            $array["pais_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+
+                            $array["departamentos"]= Departamentos::find("active=true AND pais='".$propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+                            $array["ciudades"]= Ciudades::find("active=true AND departamento='".$propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->id."'");
+                            
+                            
+                            
                             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
                             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
@@ -1113,7 +1166,14 @@ $app->get('/editar_integrante', function () use ($app, $config) {
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
             $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
             $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
-            $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
+            
+            $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
+            $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;
+            $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+
+            $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+            $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
+                            
 
             //Creo los tipos de documentos para anexar
             $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");

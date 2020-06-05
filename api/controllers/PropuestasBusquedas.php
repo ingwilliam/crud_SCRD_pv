@@ -427,7 +427,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "INNER JOIN Participantes AS par ON par.id=p.participante "
                             . "INNER JOIN Convocatorias AS c ON c.id=p.convocatoria "
                             . "INNER JOIN Entidades AS e ON e.id=c.entidad  AND e.id IN ($array_usuarios_entidades)"
-                            . "INNER JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
+                            . "LEFT JOIN Convocatorias AS cat ON cat.id=c.convocatoria_padre_categoria "
                             . "INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil "
                             . "INNER JOIN Perfiles AS per ON per.id=up.perfil ";
 

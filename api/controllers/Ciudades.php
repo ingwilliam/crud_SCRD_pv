@@ -56,11 +56,19 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            $phql = "SELECT * FROM Ciudades AS ciu WHERE ciu.active = true AND ciu.departamento = $departamento  ORDER BY nombre";
+            
+            if($departamento>0)
+            {            
+                $phql = "SELECT * FROM Ciudades AS ciu WHERE ciu.active = true AND ciu.departamento = $departamento  ORDER BY nombre";
 
-            $robots = $app->modelsManager->executeQuery($phql);
+                $robots = $app->modelsManager->executeQuery($phql);
 
-            echo json_encode($robots);
+                echo json_encode($robots);
+            }
+            else
+            {
+                echo json_encode(array());
+            }
         } else {
             echo "error";
         }
@@ -331,7 +339,7 @@ $app->get('/autocompletar', function () use ($app, $config) {
             
             if($request->get('q')!="")
             {            
-                foreach (Ciudades::find("active=true AND UPPER(nombre) LIKE '%".strtoupper($request->get('q'))."%'") as $value) {
+                foreach (Ciudades::find("active=true AND UPPER(TRANSLATE(nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$request->get('q')."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')") as $value) {
                     $array_ciudades[] = array("id" => $value->id, "label" => $value->nombre . " - " . $value->getDepartamentos()->nombre . " - " . $value->getDepartamentos()->getPaises()->nombre, "value" => $value->nombre);
                 }
             }                        
