@@ -140,6 +140,14 @@ $app->post('/menu', function () use ($app,$config) {
 
             $hoja_de_vida = $app->modelsManager->executeQuery($phql);
 
+            //Cesar Britto, 2020-03-11
+            //Consultar todos los permiso del menu Hoja de vida
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                . " WHERE m.nombre='Deliberación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $deliberacion = $app->modelsManager->executeQuery($phql);
+
             ?>
 
             <!-- Metis Menu Plugin JavaScript -->
