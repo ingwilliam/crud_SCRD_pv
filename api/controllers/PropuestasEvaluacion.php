@@ -713,12 +713,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                 //Se consulta la evalaucaión
                 $evaluacion = Evaluacionpropuestas::findFirst(" id = " . $request->getPost('evaluacion'));
 
-                if ($evaluacion) {
+                if( isset( $evaluacion->id ) ){
 
                     $ronda = Convocatoriasrondas::findFirst('id = ' . $evaluacion->ronda);
 
-                    if ($ronda) {
-
+                    if( isset( $ronda->id ) ){
+                      
                         /**
                          * Cesar Britto, 20-04-2020
                          * Se modifica para el manejo de los estados
@@ -735,7 +735,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         }
 
                         //En la fase de deliberación
-                        if ($ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") )) {
+                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") ) ){
                             $fase = 'Deliberación';
                         }
 
@@ -929,7 +929,7 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                         }
 
                         //En la fase de deliberación
-                        if ($ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d H:i:s") )) {
+                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") ) ){
                             $fase = 'Deliberación';
                         }
 

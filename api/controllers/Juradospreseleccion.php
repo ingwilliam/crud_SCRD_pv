@@ -246,7 +246,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                     $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
-
+                    
                     //la convocatoria tiene categorias y son diferentes?, caso 3
                     if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias && $request->get('categoria')) {
 
