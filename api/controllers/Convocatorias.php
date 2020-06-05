@@ -115,10 +115,10 @@ $app->get('/verificar_estado', function () use ($app, $config) {
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
             /* Perfiles de los usuarios
-             * 11 Crear convocatorias, 
-             * 12 Visto bueno a las convocatorias, 
-             * 13 Verificar convocatorias, 
-             * 14 Aprobar convocatorias, 
+             * 11 Crear convocatorias,
+             * 12 Visto bueno a las convocatorias,
+             * 13 Verificar convocatorias,
+             * 14 Aprobar convocatorias,
              * 15 Publicar convocatorias
              */
             $usuariosperfiles = array();
@@ -154,71 +154,71 @@ $app->get('/publicar_convocatoria', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-        
+
     try {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-                                    
+
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             $usuariosperfiles = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 15");
-            
+
             if($usuariosperfiles->id)
             {
-                $convocatoria = Convocatorias::findFirst($request->get('id'));                                                                
+                $convocatoria = Convocatorias::findFirst($request->get('id'));
                 if($convocatoria->estado!=5)
                 {
                     $convocatoria->actualizado_por = $user_current["id"];
                     $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                    $convocatoria->estado = 5;                                    
+                    $convocatoria->estado = 5;
                     if ($convocatoria->save() === false) {
-                        //Registro la accion en el log de convocatorias           
+                        //Registro la accion en el log de convocatorias
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al editar la convocatoria en el modulo publicar_convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();                    
+                        $logger->close();
                         echo "error";
                     } else {
                         $logger->info('"token":"{token}","user":"{user}","message":"Se edita la convocatoria con exito en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
                         $logger->close();
-                        
-                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+
+                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";
                         $app->modelsManager->executeQuery($phql, array(
                             'convocatoria_padre_categoria' => $convocatoria->id,
                             'estado' => 5,
-                            'habilitar_cronograma' => FALSE                    
-                        )); 
+                            'habilitar_cronograma' => FALSE
+                        ));
                         echo $convocatoria->id;
-                    } 
+                    }
                 }
                 else
                 {
                     $logger->info('"token":"{token}","user":"{user}","message":"Ya esta publicada la convocatoria en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
                     $logger->close();
                     echo $convocatoria->id;
-                }                                                               
+                }
             }
             else
             {
-                //Registro la accion en el log de convocatorias           
+                //Registro la accion en el log de convocatorias
                 $logger->error('"token":"{token}","user":"{user}","message":"No tiene permisos para publicar la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
-                echo "error_publicacion";                                
-            }                        
-            
+                echo "error_publicacion";
+            }
+
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo publicar_convocatoria para publicar la convocatoria"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo publicar_convocatoria para publicar convocatoria' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -231,71 +231,71 @@ $app->get('/cancelar_convocatoria', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-        
+
     try {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-                                    
+
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             $usuariosperfiles = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 15");
-            
+
             if($usuariosperfiles->id)
             {
-                $convocatoria = Convocatorias::findFirst($request->get('id'));                                                                
+                $convocatoria = Convocatorias::findFirst($request->get('id'));
                 if($convocatoria->estado!=32)
                 {
                     $convocatoria->actualizado_por = $user_current["id"];
                     $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                    $convocatoria->estado = 32;                                    
+                    $convocatoria->estado = 32;
                     if ($convocatoria->save() === false) {
-                        //Registro la accion en el log de convocatorias           
+                        //Registro la accion en el log de convocatorias
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al editar la convocatoria en el modulo publicar_convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();                    
+                        $logger->close();
                         echo "error";
                     } else {
                         $logger->info('"token":"{token}","user":"{user}","message":"Se edita la convocatoria con exito en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
                         $logger->close();
-                        
-                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+
+                        $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";
                         $app->modelsManager->executeQuery($phql, array(
                             'convocatoria_padre_categoria' => $convocatoria->id,
                             'estado' => 32,
-                            'habilitar_cronograma' => FALSE                    
-                        )); 
+                            'habilitar_cronograma' => FALSE
+                        ));
                         echo $convocatoria->id;
-                    } 
+                    }
                 }
                 else
                 {
                     $logger->info('"token":"{token}","user":"{user}","message":"Ya esta publicada la convocatoria en el modulo publicar_convocatoria"', ['user' => '', 'token' => $request->get('token')]);
                     $logger->close();
                     echo $convocatoria->id;
-                }                                                               
+                }
             }
             else
             {
-                //Registro la accion en el log de convocatorias           
+                //Registro la accion en el log de convocatorias
                 $logger->error('"token":"{token}","user":"{user}","message":"No tiene permisos para publicar la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
-                echo "error_publicacion";                                
-            }                        
-            
+                echo "error_publicacion";
+            }
+
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo publicar_convocatoria para publicar la convocatoria"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo publicar_convocatoria para publicar convocatoria' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -318,21 +318,21 @@ $app->get('/all', function () use ($app) {
 
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            $user_current = Usuarios::findFirst($user_current["id"]);            
+            $user_current = Usuarios::findFirst($user_current["id"]);
             //Creo array de entidades que puede acceder el usuario
             $array_usuarios_entidades="";
             foreach ($user_current->getUsuariosentidades() as $usuario_entidad) {
                 $array_usuarios_entidades = $array_usuarios_entidades . $usuario_entidad->entidad . ",";
             }
             $array_usuarios_entidades = substr($array_usuarios_entidades, 0, -1);
-            
+
             //Creo array de areas que puede acceder el usuario
             $array_usuarios_areas="";
             foreach ($user_current->getUsuariosareas() as $usuario_area) {
                 $array_usuarios_areas = $array_usuarios_areas . $usuario_area->area . ",";
             }
             $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
-            
+
             //Defino columnas para el orden desde la tabla html
             $columns = array(
                 0 => 'c.anio',
@@ -381,7 +381,7 @@ $app->get('/all', function () use ($app) {
                     if($clave=="anio" && $valor==null){
                         $valor=date("Y");
                     }
-                    
+
                     if($clave=="nombre" && $valor!="")
                     {
                         $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($valor) . "%' ";
@@ -533,7 +533,7 @@ $app->post('/new_categoria', function () use ($app, $config) {
         $request = new Request();
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
-        
+
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -577,7 +577,7 @@ $app->post('/new_categoria', function () use ($app, $config) {
                     else
                     {
                         echo "error_alfresco";
-                    }                    
+                    }
                 }
             } else {
                 echo "acceso_denegado";
@@ -674,11 +674,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 $convocatoria = Convocatorias::findFirst(json_decode($id));
                 $convocatoria->actualizado_por = $user_current["id"];
                 $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                
+
                 if($put["value_CKEDITOR"]!=""){
                     $put[$put["variable"]]=$put["value_CKEDITOR"];
-                }                
-                
+                }
+
                 if($put["tiene_categorias"]=="false")
                 {
                     $put["diferentes_categorias"]=FALSE;
@@ -704,11 +704,11 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 if ($convocatoria->save($put) === false) {
                     echo "error";
                 } else {
-                    
+
                     if($put["tiene_categorias"]=="true")
-                    {                    
+                    {
                         //Modifico el estado para todas las categorias
-                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque:,modalidad=:modalidad: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";            
+                        $phql = "UPDATE Convocatorias SET estado=:estado:, anio=:anio:, programa=:programa:, entidad=:entidad: ,area=:area: ,linea_estrategica=:linea_estrategica: ,enfoque=:enfoque:,modalidad=:modalidad: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria:";
                         $app->modelsManager->executeQuery($phql, array(
                             'convocatoria_padre_categoria' => $id,
                             'estado' => $put["estado"],
@@ -719,19 +719,19 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                             'linea_estrategica' => $put["linea_estrategica"],
                             'modalidad' => $put["modalidad"],
                             'enfoque' => $put["enfoque"]
-                        )); 
-                        
+                        ));
+
                     }
-                    
+
                     if($put["estado"]==5)
                     {
-                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";            
+                        $phql = "UPDATE Convocatorias SET habilitar_cronograma=:habilitar_cronograma: WHERE convocatoria_padre_categoria=:convocatoria_padre_categoria: OR id=:convocatoria_padre_categoria:";
                         $app->modelsManager->executeQuery($phql, array(
                             'convocatoria_padre_categoria' => $id,
-                            'habilitar_cronograma' => FALSE                    
+                            'habilitar_cronograma' => FALSE
                         ));
                     }
-                        
+
                     echo $id;
                 }
             } else {
@@ -882,9 +882,9 @@ $app->get('/search', function () use ($app) {
             if(isset($convocatoria->id))
             {
                 $array["modalidades"]= Modalidades::find("active=true AND programa=".$convocatoria->programa);
-                
+
                 $array["enfoques"]= Enfoques::find("active=true AND programa=".$convocatoria->programa);
-                
+
                 /*
                 $array["tipos_participantes"] = $app->modelsManager->executeQuery("SELECT Tiposparticipantes.id,Tiposparticipantes.nombre,Convocatoriasparticipantes.active,Convocatoriasparticipantes.descripcion_perfil AS descripcion_cp,Convocatoriasparticipantes.id AS id_cp  FROM Tiposparticipantes LEFT JOIN Convocatoriasparticipantes ON Convocatoriasparticipantes.tipo_participante = Tiposparticipantes.id AND Convocatoriasparticipantes.convocatoria= ".$convocatoria->id." WHERE /Tiposparticipantes.active=true AND Tiposparticipantes.id <> 4");*/
                 //cesar britto
@@ -897,7 +897,7 @@ $app->get('/search', function () use ($app) {
                     $array["barrios"]= Barrios::find("active=true AND localidad=".$convocatoria->localidad);
                 }
                 $array["categorias"]= Convocatorias::find(['convocatoria_padre_categoria = '.$convocatoria->id.' AND active=TRUE','order' => 'nombre']);
-            }            
+            }
             $array["lineas_estrategicas"]= Lineasestrategicas::find("active=true");
             $array["areas"]= Areas::find("active=true");
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='cantidad_perfil_jurado'");
@@ -991,13 +991,13 @@ $app->get('/load_search', function () use ($app) {
 
 //Modulo buscador
 $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger){
-    
+
     //Instancio los objetos que se van a manejar
     $request = new Request();
     $tokens = new Tokens();
-        
-    try {        
-        
+
+    try {
+
         //Registro la accion en el log de convocatorias
         $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
 
@@ -1006,7 +1006,7 @@ $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
@@ -1018,8 +1018,8 @@ $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-            
-            
+
+
             $array=array();
             for($i = date("Y"); $i >= 2016; $i--){
                 $array["anios"][] = $i;
@@ -1034,27 +1034,27 @@ $app->get('/modulo_buscador_propuestas', function () use ($app, $config, $logger
                                                                 "tipo_estado = 'propuestas' AND active = true",
                                                                 "order" => "orden"
                                                             )
-                                                            );            
-            
+                                                            );
+
             $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información en el metodo modulo_buscador_propuestas con el fin de cargar el formulario de busqueda"', ['user' => '', 'token' => $request->get('token')]);
-            
+
             echo json_encode($array);
-                        
+
             } else {
-                //Registro la accion en el log de convocatorias           
+                //Registro la accion en el log de convocatorias
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
-            
+
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo modulo_buscador_propuestas para cargar el formulario de busqueda"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo modulo_buscador_propuestas para cargar el formulario de busqueda' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
@@ -1163,16 +1163,16 @@ $app->get('/select_convocatoria_categorias', function () use ($app) {
         $tokens = new Tokens();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
-        
+
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-           
+
             $convocatorias = Convocatorias::find("id=".$request->get('id')." OR convocatoria_padre_categoria=".$request->get('id')."");
             $json_convocatorias=array();
             foreach ($convocatorias as $convocatoria) {
                 $json_convocatorias[] = array("id"=>$convocatoria->id,"nombre"=>$convocatoria->nombre);
             }
-            
+
             echo json_encode($json_convocatorias);
         }
         else
@@ -1181,6 +1181,70 @@ $app->get('/select_convocatoria_categorias', function () use ($app) {
         }
     } catch (Exception $ex) {
         echo "error_metodo";
+    }
+}
+);
+
+/*Cesar britto
+Retorna información de id y nombre las categorias asociadas a la convocatoria */
+//Busca el registro
+$app->get('/convocatoria/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Si existe consulto la convocatoria
+
+            $convocatoria = Convocatorias::findFirst("id = ".$id);
+
+            return json_encode($convocatoria);
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+
+        //retorno el array en json null
+      //  return "error_metodo";
+    }
+}
+);
+
+/*Cesar britto
+Retorna información de id y nombre las categorias asociadas a la convocatoria */
+//Busca el registro
+$app->get('/categoria/{id:[0-9]+}', function ($id) use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Si existe consulto la convocatoria
+
+            $convocatoria = Convocatorias::findFirst("id = ".$id);
+
+            return json_encode($convocatoria);
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+      //Para auditoria en versión de pruebas
+      return "error_metodo" . $ex->getMessage().$ex->getTraceAsString ();
+
+        //retorno el array en json null
+      //  return "error_metodo";
     }
 }
 );

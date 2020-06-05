@@ -255,10 +255,12 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
             $ronda = Convocatoriasrondas::findFirst($id);
-            if (isset($ronda->id)) {
-                echo json_encode($ronda);
+            if ( isset($ronda->id) ) {
+              $ronda->estado =  (Estados::findFirst(' id ='.$ronda->estado))->nombre;
+
+                return json_encode($ronda);
             } else {
-                echo "error";
+                return "error";
             }
         } else {
             echo "error";
