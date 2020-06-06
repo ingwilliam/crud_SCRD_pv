@@ -739,7 +739,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                 p.convocatoria  = ".$ronda->convocatoria." AND p.estado = ".$estado_habilitada->id;
             $query2 .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' ";
             $query2 .="  ORDER BY promedio DESC limit ".$request->get('total_suplentes');
-            $query2 .=" offset ".( intval($request->get('total_ganadores')) + 1 );
+            $query2 .=" offset ".( intval($request->get('total_ganadores')) );
 
             $suplentes =  $this->modelsManager->executeQuery($query2);
 
