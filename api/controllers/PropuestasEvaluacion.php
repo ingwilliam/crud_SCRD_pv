@@ -742,7 +742,8 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         //Si la evaluación esta habilitada para modificarse
                         //evaluacion_propuesta	Sin evaluar
                         //evaluacion_propuesta	En evaluación
-                        if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación")) {
+                        //05-06-2020 Wilmer Mogollón --- Se agrega el estado Deliberación para quew pueda ajustar puntajes
+                        if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación" || $evaluacion->getEstado_nombre() == "En deliberación")) {
 
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
