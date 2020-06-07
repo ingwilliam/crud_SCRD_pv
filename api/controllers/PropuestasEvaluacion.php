@@ -289,7 +289,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
 
                     $postulacion = $this->modelsManager->executeQuery($query)->getFirst();
 
-//                    echo json_encode($postulacion);
+                    // echo json_encode($postulacion);
                     if (isset($postulacion->id) && isset($ronda->id)) {
 
                         //valida si el usuario pertenece al grupo de evaluación de la ronda
@@ -589,7 +589,6 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
             //se establecen los valores del usuario
@@ -604,40 +603,26 @@ $app->get('/evaluacionpropuestas/{id:[0-9]+}', function ($id) use ($app, $config
 
                 if ($ronda->active) {
 
-
                     //se construye el array de grupos d ecriterios
                     $grupo_criterios = array();
                     //se cronstruye el array de criterios
                     $criterios = array();
 
-
-
-
                     //Se crea el array en el orden de los criterios
                     foreach ($ronda->Convocatoriasrondascriterios as $criterio) {
-//                        echo json_encode($criterio);
                         if ($criterio->active) {
                             $grupo_criterios[$criterio->grupo_criterio] = $criterio->orden;
                         }
                     }
 
-//                    echo json_encode($grupo_criterios);
-//                    exit;
                     //de acuerdo con el orden, se crea al array de criterios
                     foreach ($grupo_criterios as $categoria => $orden) {
-
 
                         //$obj = ["grupo" => $categoria, "criterios"=> array()];
                         $obj = array();
                         $obj[$categoria] = array();
 
-//                        echo $categoria;
-//                        exit;
-
                         foreach ($ronda->Convocatoriasrondascriterios as $criterio) {
-
-
-
 
                             if ($criterio->active && $criterio->grupo_criterio === $categoria) {
 
@@ -718,7 +703,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                     $ronda = Convocatoriasrondas::findFirst('id = ' . $evaluacion->ronda);
 
                     if( isset( $ronda->id ) ){
-                      
+
                         /**
                          * Cesar Britto, 20-04-2020
                          * Se modifica para el manejo de los estados
