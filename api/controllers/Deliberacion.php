@@ -285,7 +285,11 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
             */
             //fase de evaluación o de deliberación
             $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
-                              ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+            /*Cuando el estado de la ronda es En deliberación, muestra los registros
+            de evaluacionpropuesta donde fase=Deliberación*/
+            /*Cuando el estado de la ronda es Evaluada, muestra los registros de
+            evaluacionpropuesta donde fase=Deliberación debido a que fue la última calificacón registrada*/
+                              ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación': "" ) );
 
             //Propuestas habilitadas
             //Estado propuestas	Habilitada
@@ -338,7 +342,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                 ON p.id = ep2.propuesta
                               WHERE
                                 p.convocatoria  = ".$ronda->convocatoria." AND p.estado = ".$estado_habilitada->id;
-            $query .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' ";
+            $query .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' AND ep2.ronda = ".$ronda->id;
             $query .="  ORDER BY promedio DESC limit ".$request->get('length');
             $query .=" offset ".$request->get('start');
 
@@ -603,6 +607,113 @@ $app->post('/deliberar/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $conf
 );
 
 //Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
+$app->get('/validar_confirmacion/ronda/{id:[0-9]+}', function ($id) use ($app, $logger) {
+
+  try {
+
+
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    $response =  array();
+    $allpropuestas = array();
+    $resultset = array();
+
+    //Registro la accion en el log de convocatorias
+    $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/all_propuestas '. json_encode($request->get()).'"',
+                      ['user' => '', 'token' => $request->get('token')]);
+    $logger->close();
+
+    //Consulto si al menos hay un token
+    $token_actual = $tokens->verificar_token($request->get('token'));
+
+    //Si el token existe y esta activo entra a realizar la tabla
+    if ( isset($token_actual->id)  ) {
+
+      //se establecen los valores del usuario
+      $user_current = json_decode($token_actual->user_current, true);
+
+
+      if( $user_current["id"] ){
+
+
+          $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id);
+
+          if( isset($ronda->id) ){
+
+            /**
+            * Listar las propuestas que estan registradas para evaluar
+            */
+            //fase de evaluación o de deliberación
+            $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                              ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación': "" ) );
+
+            //Propuestas habilitadas
+            //Estado propuestas	Habilitada
+            $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
+
+            //todas las propuestas
+            $allpropuestas = Propuestas::find(
+                        [
+                           ' convocatoria = '.$ronda->convocatoria
+                           .' AND estado = '.$estado_habilitada->id,
+                           'order'=>'id ASC',
+                           'offset' => 0,
+                           'limit'=>( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes') ) )
+                        ]
+                      );
+
+            $response = array();
+            // propuestas_evaluacion	Confirmada
+            $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+            $estado_impedimento = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
+
+
+            //se verifica que todas las evaluaciones esten confirmadas
+            $propuestas_evaluacion = Evaluacionpropuestas::find([
+              " ronda = ".$ronda->id
+              ." AND fase = '".$fase."'"
+            ]);
+            foreach ($propuestas_evaluacion as $key => $evaluacion) {
+
+              if( $evaluacion->estado != $estado_confirmada->id && $evaluacion->estado != $estado_impedimento->id){
+                  return "error_confirmacion";
+              }
+            }
+
+          return "exito";
+
+          }else{
+                      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
+                                    ['user' => $user_current, 'token' => $request->get('token')]
+                                  );
+                      $logger->close();
+
+                      return "error";
+          }
+
+
+    }
+
+
+    } else {
+      $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_token"',
+                    ['user' => '', 'token' => $request->get('token')]);
+      $logger->close();
+      return "error_token";
+    }
+  } catch (Exception $ex) {
+    return "error_metodo".$ex->getMessage();
+    $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo '. json_encode($ex).'"',
+                  ['user' => '', 'token' => $request->get('token')]);
+    $logger->close();
+    //return "error_metodo";
+  }
+});
+
+
+//Retorna información de las propuestas que el usuario que inicio sesion  puede evaluar
 $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
 
   try {
@@ -640,7 +751,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
             */
             //fase de evaluación o de deliberación
             $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
-                              ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+                              ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación': "" ) );
 
             //Propuestas habilitadas
             //Estado propuestas	Habilitada
@@ -696,7 +807,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                 ON p.id = ep2.propuesta
                               WHERE
                                 p.convocatoria  = ".$ronda->convocatoria." AND p.estado = ".$estado_habilitada->id;
-            $query .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' ";
+            $query .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' AND ep2.ronda = ".$ronda->id;
             $query .="  ORDER BY promedio DESC limit ".$request->get('total_ganadores');
             $query .=" offset ".$request->get('start');
 
@@ -737,7 +848,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                 ON p.id = ep2.propuesta
                               WHERE
                                 p.convocatoria  = ".$ronda->convocatoria." AND p.estado = ".$estado_habilitada->id;
-            $query2 .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' ";
+            $query2 .="  AND ep2.estado = ".$estado_confirmada->id." AND fase = '".$fase."' AND ep2.ronda = ".$ronda->id;
             $query2 .="  ORDER BY promedio DESC limit ".$request->get('total_suplentes');
             $query2 .=" offset ".( intval($request->get('total_ganadores')) );
 
@@ -842,11 +953,21 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                     */
                     //fase de evaluación o de deliberación
                     $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
-                                      ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+                                      ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada")? 'Deliberación': "" ) );
 
                     //Propuestas habilitadas
                     //Estado propuestas	Habilitada
                     $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
+
+
+                    //todas las propuestas
+                    $allpropuestas = Propuestas::find(
+                                [
+                                   ' convocatoria = '.$ronda->convocatoria
+                                   .' AND estado = '.$estado_habilitada->id,
+                                   'order'=>'id ASC',
+                                ]
+                              );
 
                     $response = array();
                     // propuestas_evaluacion	Confirmada
@@ -893,7 +1014,6 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
                     $ganadores=  $this->modelsManager->executeQuery($query);
 
-
                     // Start a transaction
                     $this->db->begin();
 
@@ -903,6 +1023,8 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
                         $propuesta =  Propuestas::findFirst(" id = ". $row->id);
                         $propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas' AND	nombre = 'Recomendada como Ganadora'"))->id;
+                        $propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
+                        $propuesta->actualizado_por = $user_current["id"];
 
                         if ($propuesta->save() === false) {
                           //Para auditoria en versión de pruebas
@@ -929,13 +1051,16 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                     $ronda->aspectos = $request->getPut('aspectos');
                     $ronda->recomendaciones = $request->getPut('recomendaciones');
                     $ronda->comentarios = $request->getPut('comentarios');
+                    $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $ronda->actualizado_por = $user_current["id"];
+
 
                   if ($ronda->save() === false) {
                     //Para auditoria en versión de pruebas
                     /*foreach ($ronda->getMessages() as $message) {
                         echo $message;
                     }*/
-                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error:"'.$propuesta->getMessages(),
+                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error:"'.$ronda->getMessages(),
                                   ['user' => $user_current, 'token' => $request->getPut('token')]
                                 );
                     $logger->close();
@@ -944,10 +1069,8 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                     return "error";
                   }
 
-                  /*Crear las evaluacionespropuestas por cada propuesta ganadora y por cada evaluador,
-                  la evaluacionpropuesta se asocia la ronda siguiente*/
-
-
+                    /*Crear las evaluacionespropuestas por cada propuesta ganadora y por cada evaluador,
+                    la evaluacionpropuesta se asocia la ronda siguiente*/
 
                     // Commit the transaction
                     $this->db->commit();
@@ -961,6 +1084,141 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                               $logger->close();
 
                               return "error";
+                  }
+
+
+                }else{
+                    return "error";
+                }
+
+            } else {
+                return "acceso_denegado";
+            }
+
+        } else {
+            return "error_token";
+        }
+
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
+
+    }
+});
+
+/**
+*Declarar decierta la convocatoria
+*/
+$app->put('/declarar_desierta_convocatoria/ronda/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase= '';
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+} '. json_encode($request->getPut()).'"',
+                      ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if ( isset($token_actual->id) ) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ( $permiso_escritura == "ok" ) {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                if( $user_current["id"] ){
+
+                  $ronda =  Convocatoriasrondas::findFirst( 'id = '.$id );
+
+                  if( isset($ronda->id) ){
+                    // Start a transaction
+                    $this->db->begin();
+
+
+                    /**
+                    * Listar las propuestas que estan registradas para evaluar
+                    */
+                    //fase de evaluación o de deliberación
+                    $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación':
+                                      ( $ronda->getEstado_nombre() == "En deliberación" ? 'Deliberación': "" ) );
+
+                    //actualizo la ronda
+                    //35	convocatorias_rondas	Evaluada
+                    $ronda->estado = ( Estados::findFirst(" tipo_estado = 'convocatorias_rondas' AND	nombre = 'Evaluada' "))->id;
+                    $ronda->total_ganadores = $request->getPut('total_ganadores');
+                    $ronda->total_suplentes = $request->getPut('total_suplentes');
+                    $ronda->aspectos = $request->getPut('aspectos');
+                    $ronda->recomendaciones = $request->getPut('recomendaciones');
+                    $ronda->comentarios = $request->getPut('comentarios');
+                    $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
+                    $ronda->actualizado_por = $user_current["id"];
+
+                  if ($ronda->save() === false) {
+                    //Para auditoria en versión de pruebas
+                    /*foreach ($ronda->getMessages() as $message) {
+                        echo $message;
+                    }*/
+                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+} error:"'.$ronda->getMessages(),
+                                  ['user' => $user_current, 'token' => $request->getPut('token')]
+                                );
+                    $logger->close();
+
+                    $this->db->rollback();
+
+                    return "error";
+                  }
+
+                  // Actualizar la convocatoria
+                  $convocatoria = Convocatorias::findFirst(" id = ".$ronda->convocatoria);
+                  //43 convocatorias	Desierta
+                  $convocatoria->estado = (Estados::findFirst(" tipo_estado = 'convocatorias' AND	nombre = 'Desierta'  "))->id;
+                  $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
+                  $convocatoria->actualizado_por = $user_current["id"];
+
+                  if ( $convocatoria->save() === false ) {
+                    //Para auditoria en versión de pruebas
+                    /*foreach ($ronda->getMessages() as $message) {
+                        echo $message;
+                    }*/
+                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+} error:"'.$convocatoria->getMessages(),
+                                  ['user' => $user_current, 'token' => $request->getPut('token')]
+                                );
+                    $logger->close();
+
+                    $this->db->rollback();
+
+                    return "error";
+                  }
+
+
+                  // Commit the transaction
+                  $this->db->commit();
+
+                  return "exito";
+
+                  }else{
+                      $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+}"',
+                                    ['user' => $user_current, 'token' => $request->getPut('token')]
+                                  );
+                      $logger->close();
+
+                      return "error";
                   }
 
 
