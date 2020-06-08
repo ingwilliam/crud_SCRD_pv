@@ -13,6 +13,13 @@ class Gruposevaluadores extends Model
             'Convocatoriasrondas',
             'grupoevaluador'
         );
+        
+        //Se define la relación con 1 a N con Convocatorias
+        $this->hasMany(
+            'id',
+            'Evaluadores',
+            'grupoevaluador'
+        );
     }
 
 }
