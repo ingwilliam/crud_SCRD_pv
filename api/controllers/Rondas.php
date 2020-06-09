@@ -1,9 +1,11 @@
 <?php
+
 /*
-*Cesar britto
-*/
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+ * Cesar britto
+ */
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -35,7 +37,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,"port" => $config->database->port,
+        "host" => $config->database->host, "port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
         "dbname" => $config->database->name
@@ -63,13 +65,13 @@ $app->post('/new', function () use ($app, $config) {
 
             //Realizo una peticion curl por post para verificar si tiene permisos de escritura
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl."Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
             curl_setopt($ch, CURLOPT_POST, 2);
             curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             $permiso_escritura = curl_exec($ch);
             curl_close($ch);
-        //Verifico que la respuesta es ok, para poder realizar la escritura
+            //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
@@ -80,29 +82,30 @@ $app->post('/new', function () use ($app, $config) {
                 $ronda = new Convocatoriasrondas();
                 $ronda->creado_por = $user_current["id"];
                 $ronda->fecha_creacion = date("Y-m-d H:i:s");
+                /**
+                 * Cesar Britto,21-05-2020
+                 * se ajusta para guardar la fecha de fin de evaluación con las horas
+                 */
+                $post['fecha_fin_evaluacion'] = $post['fecha_fin_evaluacion'] . ' 23:59:59';
                 $ronda->active = true;
                 $ronda->grupoevaluador = null;
-
 
                 if ($ronda->save($post) === false) {
 
                     foreach ($ronda->getMessages() as $message) {
-                      echo $message;
+                        echo $message;
                     }
 
                     echo "error";
                 } else {
                     echo $ronda->id;
                 }
-
-
             } else {
                 echo "acceso_denegado";
             }
         } else {
             echo "error_token";
         }
-
     } catch (Exception $ex) {
         // echo "error_metodo" .  $ex->getMessage().json_encode($ex->getTrace());
         echo "error_metodo";
@@ -140,21 +143,89 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config) {
                 // Consultar el usuario que se esta editando
                 $ronda = Convocatoriasrondas::findFirst(json_decode($id));
                 $ronda->actualizado_por = $user_current["id"];
+                /**
+                 * Cesar Britto,21-05-2020
+                 * se ajusta para guardar la fecha de fin de evaluación con las horas
+                 */
+                $put['fecha_fin_evaluacion'] = $put['fecha_fin_evaluacion'] . ' 23:59:59';
                 $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
 
                 //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
-                if($ronda->estado === null){// Se quitan comillas al null
-
+                if ($ronda->estado === null) {// Se quitan comillas al null
                     if ($ronda->save($put) === false) {
                         echo "error";
                     } else {
                         echo $id;
                     }
-                }else{
+                } else {
                     return 'deshabilitado';
                 }
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
 
+/*
+ * 07-06-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Se agrega este método para ajustar por interfaz la ronda de evaluación
+ */
+// Editar registro desde ajustar convocatorias
+$app->put('/edit_rondas/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                //Consulto el usuario actual
+                $user_current = json_decode($token_actual->user_current, true);
+                $put = $app->request->getPut();
+                // Consultar el usuario que se esta editando
+                $ronda = Convocatoriasrondas::findFirst(json_decode($id));
+                $ronda->actualizado_por = $user_current["id"];
+                /**
+                 * Cesar Britto,21-05-2020
+                 * se ajusta para guardar la fecha de fin de evaluación con las horas
+                 */
+                $put['fecha_fin_evaluacion'] = $put['fecha_fin_evaluacion'] . ' 23:59:59';
+                $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
+
+                //si la ronda tiene estado null se puede editar, en caso contrario
+                //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
+                //Se agrega este método para ajustar por interfaz la ronda de evaluación
+
+
+                if ($ronda->save($put) === false) {
+                    echo "error";
+                } else {
+                    echo $id;
+                }
+                
             } else {
                 echo "acceso_denegado";
             }
@@ -190,37 +261,33 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 // Consultar el registro
-                $ronda = Convocatoriasrondas::findFirst('id = '.$id );
+                $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
 
                 //echo json_encode($ronda);
-
                 //si la ronda tiene estado null se puede editar, en caso contrario
                 //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
                 /**
-                *Cesar Britto, 2020-05-12
-                * Se ajusta la validación
-                */
-                if( $ronda->estado == null ){
+                 * Cesar Britto, 2020-05-12
+                 * Se ajusta la validación
+                 */
+                if ($ronda->estado == null) {
 
-                    if( $ronda->active == true ){
-                        $ronda->active=false;
-                        $retorna="No";
-                    }else{
-                        $ronda->active=true;
-                        $retorna="Si";
+                    if ($ronda->active == true) {
+                        $ronda->active = false;
+                        $retorna = "No";
+                    } else {
+                        $ronda->active = true;
+                        $retorna = "Si";
                     }
 
                     if ($ronda->save() === false) {
                         return "error";
                     } else {
-                        return (String)$retorna;
+                        return (String) $retorna;
                     }
-
-                }else{
+                } else {
                     return 'deshabilitado';
                 }
-
-
             } else {
                 return "acceso_denegado";
             }
@@ -228,7 +295,68 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config) {
             return "error";
         }
     } catch (Exception $ex) {
-      //return "error_metodo".$ex->getMessage();
+        //return "error_metodo".$ex->getMessage();
+        return "error_metodo";
+    }
+});
+
+/*
+ * 09-06-2020
+ * Wilmer Mogollón
+ * Se duplica delete para enviar a eliminar desde ajustar 
+ */
+$app->delete('/delete_ajustar/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el registro
+                $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
+
+                //echo json_encode($ronda);
+                //si la ronda tiene estado null se puede editar, en caso contrario
+                //quiere decir que ya tiene información asociada, por lo tanto no se puede modificar por interfaz
+                /**
+                 * Cesar Britto, 2020-05-12
+                 * Se ajusta la validación
+                 */
+                if ($ronda->active == true) {
+                    $ronda->active = false;
+                    $retorna = "No";
+                } else {
+                    $ronda->active = true;
+                    $retorna = "Si";
+                }
+
+                if ($ronda->save() === false) {
+                    return "error";
+                } else {
+                    return (String) $retorna;
+                }
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error";
+        }
+    } catch (Exception $ex) {
+        //return "error_metodo".$ex->getMessage();
         return "error_metodo";
     }
 });
@@ -247,9 +375,17 @@ $app->get('/search/{id:[0-9]+}', function ($id) use ($app) {
         if (isset($token_actual->id)) {
             $ronda = Convocatoriasrondas::findFirst($id);
             if (isset($ronda->id)) {
-                echo json_encode($ronda);
+                /*
+                 * 09-06-20210
+                 * Wilmer Mogollón - William Barbosa
+                 * Se agrega un if para controlar cuando el estado de la ronda es null
+                 */
+                if($ronda->estado!=null){
+                    $ronda->estado = (Estados::findFirst(' id =' . $ronda->estado))->nombre;
+                }
+                return json_encode($ronda);
             } else {
-                echo "error";
+                return "error";
             }
         } else {
             echo "error";
@@ -267,8 +403,8 @@ $app->get('/all_convocatoria', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $array =  array();
-        $response =  array();
+        $array = array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -276,53 +412,52 @@ $app->get('/all_convocatoria', function () use ($app) {
         if (isset($token_actual->id)) {
 
 
-          //validar si tiene $categorias
-          $convocatoria = Convocatorias::findFirst($request->get('idcat'));
+            //validar si tiene $categorias
+            $convocatoria = Convocatorias::findFirst($request->get('idcat'));
 
-          array_push($array, $convocatoria->id);
+            array_push($array, $convocatoria->id);
 
-          if( $convocatoria->tiene_categorias){
+            if ($convocatoria->tiene_categorias) {
 
-            $convocatorias = Convocatorias::find(
-              [
-                "convocatoria_padre_categoria = ".$request->get('idcat')
-              ]
-            );
+                $convocatorias = Convocatorias::find(
+                                [
+                                    "convocatoria_padre_categoria = " . $request->get('idcat')
+                                ]
+                );
 
-            //id relacionados con las categorias(convocatoria)
-            foreach ($convocatorias as $conv) {
-              array_push($array, $conv->id);
+                //id relacionados con las categorias(convocatoria)
+                foreach ($convocatorias as $conv) {
+                    array_push($array, $conv->id);
+                }
             }
 
-          }
-
-          //resultado con filtro
-          $rondas = Convocatoriasrondas::find(
-              [
-                  "convocatoria IN ({idConvocatoria:array}) AND nombre_ronda LIKE '%".$request->get("search")['value']."%'",
-                  "order" => 'numero_ronda',
-                  "limit" =>  $request->get('length'),
-                  "offset" =>  $request->get('start'),
-                  "bind" => [
-                    "idConvocatoria" => $array
-                  ],
-                ]
+            //resultado con filtro
+            $rondas = Convocatoriasrondas::find(
+                            [
+                                "convocatoria IN ({idConvocatoria:array}) AND nombre_ronda LIKE '%" . $request->get("search")['value'] . "%'",
+                                "order" => 'numero_ronda',
+                                "limit" => $request->get('length'),
+                                "offset" => $request->get('start'),
+                                "bind" => [
+                                    "idConvocatoria" => $array
+                                ],
+                            ]
             );
 
-          foreach ($rondas as $ronda) {
+            foreach ($rondas as $ronda) {
                 $ronda->actualizado_por = null;
                 $ronda->creado_por = null;
-                array_push($response, ['categoria'=>$ronda->convocatorias->nombre, 'ronda'=>$ronda]);
+                array_push($response, ['categoria' => $ronda->convocatorias->nombre, 'ronda' => $ronda]);
             }
 
-          //resultado sin filtro
-          $trondas = Convocatoriasrondas::find(
-              [
-                  "convocatoria IN ({idConvocatoria:array}) ",
-                  "bind" => [
-                    "idConvocatoria" => $array
-                  ]
-              ]
+            //resultado sin filtro
+            $trondas = Convocatoriasrondas::find(
+                            [
+                                "convocatoria IN ({idConvocatoria:array}) ",
+                                "bind" => [
+                                    "idConvocatoria" => $array
+                                ]
+                            ]
             );
 
             //creo el array
@@ -333,7 +468,90 @@ $app->get('/all_convocatoria', function () use ($app) {
                 "data" => $response   // total data array
             );
             //retorno el array en json
-           echo json_encode($json_data);
+            echo json_encode($json_data);
+        } else {
+            //retorno el array en json null
+            echo json_encode(null);
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo json_encode(null);
+    }
+}
+);
+// Recupera todos los registros
+$app->get('/all_convocatoria_ajustar', function () use ($app) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $array = array();
+        $response = array();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+
+            //validar si tiene $categorias
+            $convocatoria = Convocatorias::findFirst($request->get('idcat'));
+
+            array_push($array, $convocatoria->id);
+
+            if ($convocatoria->tiene_categorias) {
+
+                $convocatorias = Convocatorias::find(
+                                [
+                                    "convocatoria_padre_categoria = " . $request->get('idcat')
+                                ]
+                );
+
+                //id relacionados con las categorias(convocatoria)
+                foreach ($convocatorias as $conv) {
+                    array_push($array, $conv->id);
+                }
+            }
+
+            //resultado con filtro
+            $rondas = Convocatoriasrondas::find(
+                            [
+//                  "convocatoria IN ({idConvocatoria:array}) AND nombre_ronda LIKE '%".$request->get("search")['value']."%'" ."and estado is not null",
+                                "convocatoria IN ({idConvocatoria:array}) AND nombre_ronda LIKE '%" . $request->get("search")['value'] . "%'",
+                                "order" => 'numero_ronda',
+                                "limit" => $request->get('length'),
+                                "offset" => $request->get('start'),
+                                "bind" => [
+                                    "idConvocatoria" => $array
+                                ],
+                            ]
+            );
+
+            foreach ($rondas as $ronda) {
+                $ronda->actualizado_por = null;
+                $ronda->creado_por = null;
+                array_push($response, ['categoria' => $ronda->convocatorias->nombre, 'ronda' => $ronda]);
+            }
+
+            //resultado sin filtro
+            $trondas = Convocatoriasrondas::find(
+                            [
+                                "convocatoria IN ({idConvocatoria:array}) ",
+                                "bind" => [
+                                    "idConvocatoria" => $array
+                                ]
+                            ]
+            );
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => intval($trondas->count()),
+                "recordsFiltered" => intval($trondas->count()),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+            echo json_encode($json_data);
         } else {
             //retorno el array en json null
             echo json_encode(null);
@@ -354,7 +572,7 @@ $app->get('/select_rondas', function () use ($app) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $response =  array();
+        $response = array();
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
@@ -362,30 +580,27 @@ $app->get('/select_rondas', function () use ($app) {
         if (isset($token_actual->id)) {
 
             //Si existe consulto la convocatoria
-            if( $request->get('convocatoria') )
-            {
+            if ($request->get('convocatoria')) {
 
-                $rondas =  Convocatoriasrondas::find(
-                    [ ' convocatoria = '.$request->get('convocatoria')
-                      .' AND active = true ',
-                      ' order'=>'numero_ronda'
-                    ]
-                 );
+                $rondas = Convocatoriasrondas::find(
+                                [' convocatoria = ' . $request->get('convocatoria')
+                                    . ' AND active = true ',
+                                    ' order' => 'numero_ronda'
+                                ]
+                );
 
-                foreach ( $rondas as $ronda) {
-                    array_push($response, ["id"=> $ronda->id, "nombre"=> $ronda->nombre_ronda ] );
+                foreach ($rondas as $ronda) {
+                    array_push($response, ["id" => $ronda->id, "nombre" => $ronda->nombre_ronda]);
                 }
-
             }
 
             return json_encode($response);
-
         } else {
             return "error_token";
         }
     } catch (Exception $ex) {
         //retorno el array en json null
-        return "error_metodo".$ex->getMessage();
+        return "error_metodo" . $ex->getMessage();
     }
 }
 );
