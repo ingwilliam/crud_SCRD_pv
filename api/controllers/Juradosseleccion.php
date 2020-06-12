@@ -406,7 +406,7 @@ $app->put('/notificar', function () use ($app, $config) {
                         /*
                          * 17-04-2020
                          * Wilmer Gustavo Mogollón Duque.
-                         * Se realiza camvio en la validación para determinar el tipo de jurado.
+                         * Se realiza cambio en la validación para determinar el tipo de jurado.
                          */
                         $html_solicitud_usuario = str_replace("**jurado_rol**", ($request->getPut('option_suplente') == 'true' ? "Suplente" : "Principal"), $html_solicitud_usuario);
                         $html_solicitud_usuario = str_replace("**anio**", $postulacion->Propuestas->Convocatorias->anio, $html_solicitud_usuario);
