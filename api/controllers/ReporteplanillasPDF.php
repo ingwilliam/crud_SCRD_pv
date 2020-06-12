@@ -75,7 +75,7 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                   Propuestas p
                   inner join Evaluacionpropuestas ep ON p.id = ep.propuesta
               WHERE
-              ep.ronda = ' . $ronda.' LIMIT 2';
+              ep.ronda = ' . $ronda;
 
         $rs = $this->modelsManager->createQuery($phql)->execute();
 
@@ -116,16 +116,28 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                                     'order' => 'orden ASC'
                                 ]
                 );
+                
 
                 echo '<table border="1" cellpadding="2" cellspacing="2">
                         <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                          <td>Número</td>
                           <td>Criterio</td>
                           <td>Puntaje máximo</td>
                           <td>Calificación</td>
                           <td>Observación</td>
                         </tr>';
+                
+                
+                /*
+                 * 10-06-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se agrega numeración a los criterios
+                 */
+                
+                $cont = 0;
 
                 foreach ($criterios as $criterio) {
+                    $cont++;
 
                     $evaluacioncriterio = Evaluacioncriterios::findFirst(
                                     [
@@ -136,6 +148,7 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                     );
 
                     echo '<tr>
+                            <td>' . $cont . '</td>
                             <td>' . $criterio->descripcion_criterio . '</td>
                             <td>' . $criterio->puntaje_maximo . '</td>
                             <td>' . $evaluacioncriterio->puntaje . '</td>

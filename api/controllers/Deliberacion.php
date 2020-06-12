@@ -307,6 +307,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
             $response = array();
             // propuestas_evaluacion	Confirmada
             $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+//            $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada'  or nombre='En evaluación' or nombre='Evaluada'");
 
             $query = " SELECT
                                   distinct p.id,p.codigo,p.nombre,
@@ -348,9 +349,9 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
 
             $resultset =  $this->modelsManager->executeQuery($query);
 
-            //Se redondea a 3 cifras el promedio
+            //10-06-2020 - Wilmer Mogollón - Se redondea a 1 cifras el promedio
             foreach ($resultset as $key => $row) {
-                      $row->promedio = round($row->promedio, 3);
+                      $row->promedio = round($row->promedio, 1);
                       $row->estado = (Estados::findFirst("id = ".$row->estado))->nombre;
                       array_push($response, $row );
             }
@@ -858,13 +859,13 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
 
             //Se redondea a 3 cifras el promedio
             foreach ($ganadores as $key => $row) {
-                      $row->promedio = round($row->promedio, 3);
+                      $row->promedio = round($row->promedio, 1);
                       $row->estado = (Estados::findFirst("id = ".$row->estado))->nombre;
                       array_push($response, $row );
             }
             //Se redondea a 3 cifras el promedio
             foreach ($suplentes as $key => $row) {
-                      $row->promedio = round($row->promedio, 3);
+                      $row->promedio = round($row->promedio, 1);
                       $row->estado = (Estados::findFirst("id = ".$row->estado))->nombre;
                       array_push($response, $row );
             }
