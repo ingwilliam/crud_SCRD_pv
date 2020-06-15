@@ -919,7 +919,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
         $fase= '';
 
         //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} '. json_encode($request->getPut()).'"',
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general/ronda/{id:[0-9]+} '. json_encode($request->getPut()).'"',
                       ['user' => '', 'token' => $request->getPut('token')]);
         $logger->close();
 
@@ -1037,9 +1037,6 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                       }
                     }
 
-                    //se establece el grupo evaluador de la siguiente ronda
-                    $grupo_evaluador_ronda_siguiente = Gruposevaluadores::findFirst(" id = ".$ronda_siguiente->grupoevaluador);
-
 
                     //se le cambia al ganador el estado
                     //33	propuestas	Recomendada como Ganadora
@@ -1065,39 +1062,50 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                           return "error";
                         }
 
-                        //por cada propuesta ganadora se crean las evaluación de la siguiente ronda
-                        foreach ($grupo_evaluador_ronda_siguiente->Evaluadores as $evaluador) {
 
-                          $evaluacion_propuesta = new Evaluacionpropuestas();
-                          $evaluacion_propuesta->propuesta = $propuesta->id;
-                          $evaluacion_propuesta->ronda = $ronda_siguiente->id;
-                          $evaluacion_propuesta->evaluador = $evaluador->id;
-                          $evaluacion_propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'"))->id;
-                          $evaluacion_propuesta->fase = 'Evaluación';
-                          $evaluacion_propuesta->fecha_creacion = date("Y-m-d H:i:s");
-                          $evaluacion_propuesta->creado_por = $user_current["id"];
-                          $evaluacion_propuesta->active = true;
+                          //si existe la ronda siguiente
+                          if(isset($ronda_siguiente->id)){
 
-                          if ($evaluacion_propuesta->save() === false) {
-                              //Para auditoria en versión de pruebas
-                              /* foreach ($evaluacion_propuesta->getMessages() as $message) {
-                                echo $message;
-                                } */
-                              $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al crear la evaluación. '
-                                      . json_decode($evaluacion_propuesta->getMessages()) . '"',
-                                      ['user' => $user_current, 'token' => $request->get('token')]
-                              );
-                              $logger->close();
+                            //se establece el grupo evaluador de la siguiente ronda
+                            $grupo_evaluador_ronda_siguiente = Gruposevaluadores::findFirst(" id = ".$ronda_siguiente->grupoevaluador);
+                            
+                            //por cada propuesta ganadora se crean las evaluación de la siguiente ronda
+                            foreach ($grupo_evaluador_ronda_siguiente->Evaluadores as $evaluador) {
 
-                              $this->db->rollback();
-                              return "error";
-                          }
+                              $evaluacion_propuesta = new Evaluacionpropuestas();
+                              $evaluacion_propuesta->propuesta = $propuesta->id;
+                              $evaluacion_propuesta->ronda = $ronda_siguiente->id;
+                              $evaluacion_propuesta->evaluador = $evaluador->id;
+                              $evaluacion_propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'"))->id;
+                              $evaluacion_propuesta->fase = 'Evaluación';
+                              $evaluacion_propuesta->fecha_creacion = date("Y-m-d H:i:s");
+                              $evaluacion_propuesta->creado_por = $user_current["id"];
+                              $evaluacion_propuesta->active = true;
 
-                        }
+                              if ($evaluacion_propuesta->save() === false) {
+                                  //Para auditoria en versión de pruebas
+                                  /* foreach ($evaluacion_propuesta->getMessages() as $message) {
+                                    echo $message;
+                                    } */
+                                  $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general Error al crear la evaluación. '
+                                          . json_decode($evaluacion_propuesta->getMessages()) . '"',
+                                          ['user' => $user_current, 'token' => $request->get('token')]
+                                  );
+                                  $logger->close();
+
+                                  $this->db->rollback();
+                                  return "error";
+                              }
+
+                            }//fin foreach
+
+                          }//fin del if
+
+
 
                     }
 
-                    //actualizo la ronda
+                    //Se actualiza la ronda
                     //35	convocatorias_rondas	Evaluada
                     $ronda->estado = ( Estados::findFirst(" tipo_estado = 'convocatorias_rondas' AND	nombre = 'Evaluada' "))->id;
                     $ronda->total_ganadores = $request->getPut('total_ganadores');
@@ -1132,7 +1140,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                     return "exito";
 
                   }else{
-                              $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
+                              $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
                                             ['user' => $user_current, 'token' => $request->getPut('token')]
                                           );
                               $logger->close();
