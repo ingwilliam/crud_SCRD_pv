@@ -616,6 +616,50 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
         $propuestas = $this->modelsManager->createQuery($phql)->execute();
 
+        // propuestas_evaluacion	Confirmada
+        $fase = 'Deliberación';
+        $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+
+        $query = " SELECT
+                                          distinct p.id, p.*,
+                                          (	SELECT
+                                              sum(total) AS total
+                                            FROM
+                                              Evaluacionpropuestas e
+                                           WHERE
+                                              e.propuesta = p.id AND e.estado  = " . $estado_confirmada->id
+                . " AND fase = '" . $fase . "'";
+        $query .= " ) AS suma,
+                                          (	SELECT
+                                              count(e.id) AS cantidad
+                                            FROM
+                                              Evaluacionpropuestas e
+                                            WHERE
+                                                e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
+                . " AND fase = '" . $fase . "'";
+        $query .= " ) AS cantidad,
+                                          (	SELECT
+                                              avg(total) AS promedio
+                                            FROM
+                                              Evaluacionpropuestas e
+                                            WHERE
+                                            e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
+                . " AND fase = '" . $fase . "'";
+        $query .= " ) AS promedio,
+                                    p.estado,
+                                  'ganador' as rol
+                                      FROM
+                                        Propuestas AS p
+                                        INNER JOIN
+                                           Evaluacionpropuestas as ep2
+                                        ON p.id = ep2.propuesta
+                                      WHERE
+                                        p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado in (24,33) "; //. $estado_recomendada->id;
+        $query .= "  AND ep2.estado = " . $estado_confirmada->id.  " AND fase = '" . $fase . "' ";
+        $query .= "  ORDER BY promedio DESC ";
+
+        $propuestas = $this->modelsManager->executeQuery($query);
+
 
 
         $fancyTableStyleName = 'Fancy Table';
@@ -642,36 +686,10 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
         $prop = 0;
 
         foreach ($propuestas as $propuesta) {
-
             $prop++;
-//            $fase='Deliberación';
-
-            $evaluacionpropuestas = Evaluacionpropuestas::find(
-                            [
-                                " propuesta = " . $propuesta->p->id
-                                . " AND ronda = " . $ronda
-                                . " AND fase = 'Deliberación'"
-                                . " AND estado = 42 "
-                                . ""
-                            ]
-            );
-
-            $suma = 0;
-            $cont = 0;
-            foreach ($evaluacionpropuestas as $evaluacionpropuesta) {
-                $cont++;
-                $suma = $suma + $evaluacionpropuesta->total;
-            };
-
-            $promedio = $suma / $cont;
-//            $promedio = bcdiv($suma, $cont, 1);
-
-            $prom = number_format((float) $promedio, 1, '.', '');
-
-
             $participantes = Participantes::findFirst('id = ' . $propuesta->p->participante);
 
-//            $tipodocumento = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento]);
+//                $tipodocumento = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento]);
 
             if ($participantes->tipo == 'Agrupación' || $participantes->tipo == 'Persona Jurídica') {
 
@@ -686,17 +704,19 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $representante = "";
             }
 
-//            ($participantes->tipo) ? "" : "";
+            $prom = number_format((float) $propuesta->promedio, 1, '.', '');
 
-            $table->addRow(900);
+
+            $table->addRow();
             $table->addCell(500)->addText($prop);
             $table->addCell(1000)->addText($propuesta->p->codigo, $fontStyle9);
             $table->addCell(1000)->addText($participantes->tipo, $fontStyle9);
             $table->addCell(1250)->addText($participantes->primer_nombre . " " . $participantes->segundo_nombre . " " . $participantes->primer_apellido . " " . $participantes->primer_apellido, $fontStyle9);
             $table->addCell(1000)->addText($participantes->tipo_documento . " " . $participantes->numero_documento, $fontStyle9);
             $table->addCell(1250)->addText($representante, $fontStyle9);
-            $table->addCell(3500)->addText($propuesta->p->nombre, $fontStyle9);
-            $table->addCell(1000)->addText($prom);
+            $table->addCell(3000)->addText($propuesta->p->nombre, $fontStyle9);
+            $table->addCell(1000)->addText($prom, $fontStyle9);
+
         }
 
         $seccion->addTextBreak(2);
