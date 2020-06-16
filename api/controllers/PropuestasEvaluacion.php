@@ -1344,19 +1344,25 @@ $app->put('/confirmar_top_individual/ronda/{id:[0-9]+}', function ($id) use ($ap
                                   on p.participante = par.id
                                   INNER JOIN Usuariosperfiles as up
                                   on par.usuario_perfil = up.id and up.usuario = ' . $user_current["id"]
-                            . " WHERE j.convocatoria = " . $ronda->convocatoria;
+                            . " WHERE j.convocatoria = " . $ronda->convocatoria
+                            . " AND j.active = true ";
 
                     $postulacion = $this->modelsManager->executeQuery($query)->getFirst();
 
                     if (isset($postulacion->id) && isset($ronda->id)) {
+                        
+//                        return json_encode($postulacion->id);
 
                         //valida si el usuario pertenece al grupo de evaluación de la ronda
                         $evaluador = Evaluadores::findFirst(
                                         [
                                             'juradopostulado = ' . $postulacion->id
                                             . ' AND grupoevaluador = ' . $ronda->grupoevaluador
+//                                            . ' AND active is true'
                                         ]
                         );
+                        
+//                        return json_encode($evaluador->id);
 
                         if (isset($evaluador->id)) {
 
@@ -1537,8 +1543,8 @@ $app->put('/confirmar_top_individual_deliberacion/ronda/{id:[0-9]+}', function (
                                   on p.participante = par.id
                                   INNER JOIN Usuariosperfiles as up
                                   on par.usuario_perfil = up.id and up.usuario = ' . $user_current["id"]
-                            . " WHERE j.convocatoria = " . $ronda->convocatoria;
-
+                            . " WHERE j.convocatoria = " . $ronda->convocatoria
+                            . " AND j.active = true ";
                     $postulacion = $this->modelsManager->executeQuery($query)->getFirst();
 
                     if (isset($postulacion->id) && isset($ronda->id)) {
