@@ -310,6 +310,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 
 
+
+
         $seccion->addImage('../resources/img/logo-secretaria-cultura.png', array('width' => 70, 'height' => 70, 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER));
 
         $seccion->addTextBreak(1);
@@ -362,26 +364,24 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 
         // Add text elements
-        $seccion->addTitle($entidad->nombre, 3, array('textAlignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 100));
-        $seccion->addTitle($programa->nombre, 3, array('alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER));
+        $seccion->addText($entidad->nombre, array('bold' => true, "size" => 12), array('align' => 'center'));
+        $seccion->addText($programa->nombre, array('bold' => true, "size" => 12), array('align' => 'center'));
 
         $seccion->addTextBreak(1);
 
-        $seccion->addTitle($nombrec, 3);
-//        $seccion->addTitle('CATEGORÍA', 3);
+        $seccion->addText($nombrec, array('bold' => true, "size" => 12), array('align' => 'center'));
 
         $seccion->addTextBreak(2);
 
-
         if ($convocatoria->estado == 43) {
-            $seccion->addTitle('ACTA DE CONVOCATORIA DESIERTA', 3);
+            $seccion->addText('ACTA DE CONVOCATORIA DESIERTA', array('bold' => true, "size" => 12), array('align' => 'center'));
         } else {
             //Pregunto que tipo de acta voy a imprimir
             if ($convocatoriaronda->tipo_acta == 'Preselección') {
-                $seccion->addTitle('ACTA DE RECOMENDACIÓN DE PRESELECCIONADOS', 3);
+                $seccion->addText('ACTA DE RECOMENDACIÓN DE PRESELECCIONADOS', array('bold' => true, "size" => 12), array('align' => 'center'));
             } else {
                 if ($convocatoriaronda->tipo_acta == 'Ganadores') {
-                    $seccion->addTitle('ACTA DE RECOMENDACIÓN DE GANADORES', 3);
+                    $seccion->addText('ACTA DE RECOMENDACIÓN DE GANADORES', array('bold' => true, "size" => 12), array('align' => 'center'));
                 }
             }
         }
@@ -422,9 +422,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
             $fancyTableStyleName = 'Fancy Table';
             $cellRowSpan = array('vMerge' => 'restart', 'valign' => 'center', 'bgColor' => 'FFFF00');
-            $fancyTableStyle = array('borderSize' => 10, 'borderColor' => '999999', 'cellMargin' => 80, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER, 'cellSpacing' => 50);
-            $fancyTableFirstRowStyle = array('bgColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
-            $fancyTableCellStyle = array('valign' => 'center');
+            $fancyTableStyle = array('borderSize' => 1, 'borderColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER); //cambiar
+            $fancyTableFirstRowStyle = array('alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
+            $fancyTableCellStyle = array('valign' => 'center', 'bgColor' => 'dedbda',);
             $fancyTableCellBtlrStyle = array('valign' => 'center', 'textDirection' => \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR);
             $fancyTableFontStyle = array('bold' => true);
             $documento->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle, $cellRowSpan);
@@ -512,17 +512,17 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
         if ($convocatoria->estado == 43) {
             $seccion->addText('La reunión se realizó con el propósito de evaluar las propuestas participantes en la convocatoria '
-                    . $convocatoria->nombre . ' del ' . $programa->nombre);
+                    . $nombrec . ' del ' . $programa->nombre);
         } else {
 
             //Pregunto que tipo de acta voy a imprimir
             if ($convocatoriaronda->tipo_acta == 'Preselección') {
                 $seccion->addText('La reunión se realizó con el propósito de preseleccionar las propuestas participantes en la convocatoria '
-                        . $convocatoria->nombre . ' del ' . $programa->nombre);
+                        . $nombrec . ' del ' . $programa->nombre);
             } else {
                 if ($convocatoriaronda->tipo_acta == 'Ganadores') {
                     $seccion->addText('La reunión se realizó con el propósito de concluir el proceso de evaluación técnica de las propuestas participantes en la convocatoria '
-                            . $convocatoria->nombre . ' del ' . $programa->nombre);
+                            . $nombrec . ' del ' . $programa->nombre);
                 }
             }
         }
@@ -563,9 +563,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
         $fancyTableStyleName = 'Fancy Table';
         $cellRowSpan = array('vMerge' => 'restart', 'valign' => 'center', 'bgColor' => 'FFFF00');
-        $fancyTableStyle = array('borderSize' => 10, 'borderColor' => '999999', 'cellMargin' => 80, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER, 'cellSpacing' => 50);
-        $fancyTableFirstRowStyle = array('bgColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
-        $fancyTableCellStyle = array('valign' => 'center');
+        $fancyTableStyle = array('borderSize' => 1, 'borderColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER); //cambiar
+        $fancyTableFirstRowStyle = array('alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
+        $fancyTableCellStyle = array('valign' => 'center', 'bgColor' => 'dedbda',);
         $fancyTableCellBtlrStyle = array('valign' => 'center', 'textDirection' => \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR);
         $fancyTableFontStyle = array('bold' => true);
         $documento->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle, $cellRowSpan);
@@ -588,7 +588,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
             $suma_criterios = $suma_criterios + $criterio->puntaje_maximo;
         }
         $table->addRow();
-        $table->addCell(8000)->addText('Total');
+        $table->addCell(500)->addText();
+        $table->addCell(7500)->addText('Total');
         $table->addCell(2500)->addText($suma_criterios);
 
         $seccion->addTextBreak(2);
@@ -655,7 +656,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                         ON p.id = ep2.propuesta
                                       WHERE
                                         p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado in (24,33) "; //. $estado_recomendada->id;
-        $query .= "  AND ep2.estado = " . $estado_confirmada->id.  " AND fase = '" . $fase . "' ";
+        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' ";
         $query .= "  ORDER BY promedio DESC ";
 
         $propuestas = $this->modelsManager->executeQuery($query);
@@ -664,9 +665,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
         $fancyTableStyleName = 'Fancy Table';
         $cellRowSpan = array('vMerge' => 'restart', 'valign' => 'center', 'bgColor' => 'FFFF00');
-        $fancyTableStyle = array('borderSize' => 10, 'borderColor' => '999999', 'cellMargin' => 80, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER, 'cellSpacing' => 50);
-        $fancyTableFirstRowStyle = array('bgColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
-        $fancyTableCellStyle = array('valign' => 'center');
+        $fancyTableStyle = array('borderSize' => 1, 'borderColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER); //cambiar
+        $fancyTableFirstRowStyle = array('alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
+        $fancyTableCellStyle = array('valign' => 'center', 'bgColor' => 'dedbda',);
         $fancyTableCellBtlrStyle = array('valign' => 'center', 'textDirection' => \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR);
         $fancyTableFontStyle = array('bold' => true);
         $documento->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle, $cellRowSpan);
@@ -691,7 +692,15 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 //                $tipodocumento = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento]);
 
-            if ($participantes->tipo == 'Agrupación' || $participantes->tipo == 'Persona Jurídica') {
+            $usuarioperfil = Usuariosperfiles::findFirst(['id = ' . $participantes->usuario_perfil]);
+
+            $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
+
+
+
+
+
+            if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
                 $participantepadre = Participantes::findFirst(
                                 [
@@ -704,19 +713,27 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $representante = "";
             }
 
+
+            if ($perfil->nombre != 'Agrupación') {
+                $td = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento])->nombre;
+            } else {
+                $td = "";
+            }
+
+
+
             $prom = number_format((float) $propuesta->promedio, 1, '.', '');
 
 
             $table->addRow();
             $table->addCell(500)->addText($prop);
             $table->addCell(1000)->addText($propuesta->p->codigo, $fontStyle9);
-            $table->addCell(1000)->addText($participantes->tipo, $fontStyle9);
+            $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
             $table->addCell(1250)->addText($participantes->primer_nombre . " " . $participantes->segundo_nombre . " " . $participantes->primer_apellido . " " . $participantes->primer_apellido, $fontStyle9);
-            $table->addCell(1000)->addText($participantes->tipo_documento . " " . $participantes->numero_documento, $fontStyle9);
+            $table->addCell(1000)->addText($td . " " . $participantes->numero_documento, $fontStyle9);
             $table->addCell(1250)->addText($representante, $fontStyle9);
             $table->addCell(3000)->addText($propuesta->p->nombre, $fontStyle9);
             $table->addCell(1000)->addText($prom, $fontStyle9);
-
         }
 
         $seccion->addTextBreak(2);
@@ -726,18 +743,18 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
         if ($convocatoria->estado == 43) {
             $seccion->addTitle('CUARTO. Recomendación de preseleccionados', 3);
             $seccion->addText('Analizados los resultados de la evaluación y realizada la deliberación de la convocatoria '
-                    . $convocatoria->nombre . ' el jurado recomienda declarar desierta la convocatoria.');
+                    . $nombrec . ' el jurado recomienda declarar desierta la convocatoria.');
         } else {
             //Pregunto que tipo de acta voy a imprimir
             if ($convocatoriaronda->tipo_acta == 'Preselección') {
                 $seccion->addTitle('CUARTO. Recomendación de preseleccionados', 3);
                 $seccion->addText('Analizados los resultados de la evaluación y realizada la deliberación de la convocatoria '
-                        . $convocatoria->nombre . ' el jurado recomienda la siguiente preselección:');
+                        . $nombrec . ' el jurado recomienda la siguiente preselección:');
             } else {
                 if ($convocatoriaronda->tipo_acta == 'Ganadores') {
                     $seccion->addTitle('CUARTO. Recomendación de adjudicación', 3);
                     $seccion->addText('Analizados los resultados de la evaluación y realizada la deliberación de la convocatoria '
-                            . $convocatoria->nombre . ' el jurado recomienda el otorgamiento del estímulo a la(s) siguiente(s) propuesta(s):');
+                            . $nombrec . ' el jurado recomienda el otorgamiento del estímulo a la(s) siguiente(s) propuesta(s):');
                 }
             }
         }
@@ -800,9 +817,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
             $fancyTableStyleName = 'Fancy Table';
             $cellRowSpan = array('vMerge' => 'restart', 'valign' => 'center', 'bgColor' => 'FFFF00');
-            $fancyTableStyle = array('borderSize' => 10, 'borderColor' => '999999', 'cellMargin' => 80, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER, 'cellSpacing' => 50);
-            $fancyTableFirstRowStyle = array('bgColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
-            $fancyTableCellStyle = array('valign' => 'center');
+            $fancyTableStyle = array('borderSize' => 1, 'borderColor' => '999999', 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER); //cambiar
+            $fancyTableFirstRowStyle = array('alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
+            $fancyTableCellStyle = array('valign' => 'center', 'bgColor' => 'dedbda',);
             $fancyTableCellBtlrStyle = array('valign' => 'center', 'textDirection' => \PhpOffice\PhpWord\Style\Cell::TEXT_DIR_BTLR);
             $fancyTableFontStyle = array('bold' => true);
             $documento->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle, $cellRowSpan);
@@ -825,7 +842,16 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 //                $tipodocumento = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento]);
 
-                if ($participantes->tipo == 'Agrupación' || $participantes->tipo == 'Persona Jurídica') {
+
+                $usuarioperfil = Usuariosperfiles::findFirst(['id = ' . $participantes->usuario_perfil]);
+
+                $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
+
+
+
+
+
+                if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
                     $participantepadre = Participantes::findFirst(
                                     [
@@ -838,14 +864,22 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                     $representante = "";
                 }
 
+
+                if ($perfil->nombre != 'Agrupación') {
+                    $td = Tiposdocumentos::findFirst(['id = ' . $participantes->tipo_documento])->nombre;
+                } else {
+                    $td = "";
+                }
+
+
                 $prom = number_format((float) $ganador->promedio, 1, '.', '');
 
 
                 $table->addRow();
                 $table->addCell(1000)->addText($ganador->p->codigo, $fontStyle9);
-                $table->addCell(1000)->addText($participantes->tipo, $fontStyle9);
+                $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
                 $table->addCell(1250)->addText($participantes->primer_nombre . " " . $participantes->segundo_nombre . " " . $participantes->primer_apellido . " " . $participantes->primer_apellido, $fontStyle9);
-                $table->addCell(1000)->addText($participantes->tipo_documento . " " . $participantes->numero_documento, $fontStyle9);
+                $table->addCell(1000)->addText($td . " " . $participantes->numero_documento, $fontStyle9);
                 $table->addCell(1250)->addText($representante, $fontStyle9);
                 $table->addCell(3000)->addText($ganador->p->nombre, $fontStyle9);
                 $table->addCell(1000)->addText($prom, $fontStyle9);
