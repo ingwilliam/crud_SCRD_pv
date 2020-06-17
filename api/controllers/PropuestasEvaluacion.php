@@ -1248,29 +1248,29 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                                   $mail->Body = $html_jurado_notificacion_impedimento;
                                  */
 
-                                /* Servidor SMTP producción */
-                                $mail = new PHPMailer();
-                                $mail->IsSMTP();
-                                $mail->Host = "smtp-relay.gmail.com";
-                                $mail->Port = 25;
-                                $mail->CharSet = "UTF-8";
-                                $mail->IsHTML(true); // El correo se env  a como HTML
-                                $mail->From = "convocatorias@scrd.gov.co";
-                                $mail->FromName = "Sistema de Convocatorias";
-                                $mail->AddAddress($participante->correo_electronico);
-                                $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                                $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
-                                $mail->Body = $html_solicitud_usuario;
-
-                                // Env  a el correo.
-                                if ($mail->Send()) {
-
-                                    $this->db->commit();
-                                    return "exito";
-                                } else {
-                                    $this->db->rollback();
-                                    return "error_email";
-                                }
+//                                /* Servidor SMTP producción */
+//                                $mail = new PHPMailer();
+//                                $mail->IsSMTP();
+//                                $mail->Host = "smtp-relay.gmail.com";
+//                                $mail->Port = 25;
+//                                $mail->CharSet = "UTF-8";
+//                                $mail->IsHTML(true); // El correo se env  a como HTML
+//                                $mail->From = "convocatorias@scrd.gov.co";
+//                                $mail->FromName = "Sistema de Convocatorias";
+//                                $mail->AddAddress($participante->correo_electronico);
+//                                $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+//                                $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
+//                                $mail->Body = $html_solicitud_usuario;
+//
+//                                // Env  a el correo.
+//                                if ($mail->Send()) {
+//
+//                                    $this->db->commit();
+//                                    return "exito";
+//                                } else {
+//                                    $this->db->rollback();
+//                                    return "error_email";
+//                                }
                             }
                         } else {
                             return 'deshabilitado';
