@@ -1136,15 +1136,17 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
                         foreach ($rondas as $r) {
                             if ($r->id == $ronda->id) {
-//                                $rondas->next();
+                                $rondas->next();
                                 //se establece la siguiente ronda
-                                $ronda_siguiente = $rondas->next(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
+                                $ronda_siguiente = $rondas->current(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
                                 break;
                             }
                         }
 
 
 //                        return json_encode($ronda_siguiente->id);
+                        
+                        
                         //se le cambia al ganador el estado
                         //33	propuestas	Recomendada como Ganadora
                         foreach ($ganadores as $key => $row) {
