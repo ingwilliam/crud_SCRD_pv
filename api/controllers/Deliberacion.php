@@ -306,7 +306,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -314,7 +314,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -322,7 +322,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS promedio,
                               p.estado
                               FROM
@@ -747,7 +747,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -755,7 +755,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -763,7 +763,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS promedio,
                             p.estado,
                           'ganador' as rol
@@ -788,7 +788,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query2 .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -796,7 +796,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query2 .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -804,7 +804,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query2 .= " ) AS promedio,
                             p.estado,
                           'suplente' as rol
@@ -936,7 +936,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -944,7 +944,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -952,7 +952,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS promedio,
                             p.estado,
                           'ganador' as rol
@@ -1087,7 +1087,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                            WHERE
                                               e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS suma,
                                           (	SELECT
                                               count(e.id) AS cantidad
@@ -1095,7 +1095,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                                 e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS cantidad,
                                           (	SELECT
                                               avg(total) AS promedio
@@ -1103,7 +1103,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                             e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
                         $query .= " ) AS promedio,
                                     p.estado,
                                   'ganador' as rol
@@ -1114,7 +1114,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                         ON p.id = ep2.propuesta
                                       WHERE
                                         p.convocatoria  = " . $ronda->convocatoria . " AND p.estado = " . $estado_habilitada->id;
-                        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' ";
+                        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
                         $query .= "  ORDER BY promedio DESC limit " . $request->getPut('total_ganadores');
                         $query .= " offset 0";
 
@@ -1145,8 +1145,6 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
 
 //                        return json_encode($ronda_siguiente->id);
-                        
-                        
                         //se le cambia al ganador el estado
                         //33	propuestas	Recomendada como Ganadora
                         foreach ($ganadores as $key => $row) {
