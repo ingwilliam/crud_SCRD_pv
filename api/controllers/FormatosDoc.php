@@ -629,7 +629,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                            WHERE
                                               e.propuesta = p.id AND e.estado  = " . $estado_confirmada->id
-                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
         $query .= " ) AS suma,
                                           (	SELECT
                                               count(e.id) AS cantidad
@@ -637,7 +637,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                             WHERE
                                                 e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
         $query .= " ) AS cantidad,
                                           (	SELECT
                                               avg(total) AS promedio
@@ -645,7 +645,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                             WHERE
                                             e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
         $query .= " ) AS promedio,
                                     p.estado,
                                   'ganador' as rol
@@ -656,7 +656,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                         ON p.id = ep2.propuesta
                                       WHERE
                                         p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado in (24,33) "; //. $estado_recomendada->id;
-        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
+        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda;
         $query .= "  ORDER BY promedio DESC ";
 
         $propuestas = $this->modelsManager->executeQuery($query);
@@ -781,7 +781,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                            WHERE
                                               e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
             $query .= " ) AS suma,
                                           (	SELECT
                                               count(e.id) AS cantidad
@@ -789,7 +789,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                             WHERE
                                                 e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
             $query .= " ) AS cantidad,
                                           (	SELECT
                                               avg(total) AS promedio
@@ -797,7 +797,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                               Evaluacionpropuestas e
                                             WHERE
                                             e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                    . " AND fase = '" . $fase . "' AND ronda = '" . $ronda . "'";//Se agrega la ronda
             $query .= " ) AS promedio,
                                     p.estado,
                                   'ganador' as rol
@@ -808,7 +808,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                         ON p.id = ep2.propuesta
                                       WHERE
                                         p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado = " . $estado_recomendada->id;
-            $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
+            $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda;
             $query .= "  ORDER BY promedio DESC ";
 
             $ganadores = $this->modelsManager->executeQuery($query);
