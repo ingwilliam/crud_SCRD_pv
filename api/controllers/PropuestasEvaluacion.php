@@ -1,7 +1,8 @@
 <?php
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -59,6 +60,66 @@ $logger->setFormatter($formatter);
 $app = new Micro($di);
 
 //Retorna información de id y nombre de las convocatorias
+$app->get('/select_convocatorias_old', function () use ($app, $logger) {
+
+    try {
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias ' . json_encode($request->get()) . '"',
+                ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+
+            //Si existe consulto la convocatoria
+            if ($request->get('entidad') && $request->get('anio')) {
+
+                $rs = Convocatorias::find(
+                                [
+                                    " entidad = " . $request->get('entidad')
+                                    . " AND anio = " . $request->get('anio')
+                                    . " AND estado = 5 " //5	convocatorias	Publicada
+                                    . " AND modalidad != 2 " //2	Jurados
+                                    . " AND active = true "
+                                    . " AND convocatoria_padre_categoria is NULL",
+                                    'order' => 'nombre'
+                                ]
+                );
+
+                foreach ($rs as $convocatoria) {
+                    array_push($response, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
+                }
+            }
+
+            return json_encode($response);
+        } else {
+            $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias Error token"',
+                    ['user' => '', 'token' => $request->get('token')]);
+            $logger->close();
+
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        //return "error_metodo".$ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/select_convocatorias error_metodo ' . json_encode($ex) . '"',
+                ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        return "error_metodo";
+    }
+}
+);
 $app->get('/select_convocatorias', function () use ($app, $logger) {
 
     try {
@@ -79,8 +140,53 @@ $app->get('/select_convocatorias', function () use ($app, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+            $estado_postulacion = Estados::findFirst("tipo_estado='jurados' and nombre='Evaluado'");
+
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
+
+
+                /*
+                 * 22-06-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora consulta para listar unicamente las convocatorias a las que 
+                 * el jurado este postulado y ademas que haya sido seleccionado
+                 */
+                
+                $query = 'SELECT
+                            j.convocatoria
+                            FROM
+                            Juradospostulados as j
+                            INNER JOIN Propuestas as p
+                            on j.propuesta = p.id
+                            INNER JOIN Participantes as par
+                            on p.participante = par.id
+                            INNER JOIN Usuariosperfiles as up
+                            on par.usuario_perfil = up.id and up.usuario =' . $user_current["id"]
+                        . " INNER JOIN Convocatorias as c
+                            on j.convocatoria = c.id"
+                        . " AND j.active = true"
+                        . " AND j.estado =" . $estado_postulacion->id;
+
+
+                $postulaciones = $this->modelsManager->executeQuery($query);
+
+                $i = 0;
+                $valores = "(";
+                foreach ($postulaciones as $postulacion) {
+                    if ($i == 0) {
+                        $valores = $valores . $postulacion->convocatoria;
+                    } else {
+                        $valores = $valores . "," . $postulacion->convocatoria;
+                    }
+                    $i++;
+                }
+
+                $valores = $valores . ")";
+
 
                 $rs = Convocatorias::find(
                                 [
@@ -89,10 +195,12 @@ $app->get('/select_convocatorias', function () use ($app, $logger) {
                                     . " AND estado = 5 " //5	convocatorias	Publicada
                                     . " AND modalidad != 2 " //2	Jurados
                                     . " AND active = true "
+                                    . " AND id in " . $valores
                                     . " AND convocatoria_padre_categoria is NULL",
                                     'order' => 'nombre'
                                 ]
                 );
+
 
                 foreach ($rs as $convocatoria) {
                     array_push($response, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
@@ -698,11 +806,11 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                 //Se consulta la evalaucaión
                 $evaluacion = Evaluacionpropuestas::findFirst(" id = " . $request->getPost('evaluacion'));
 
-                if( isset( $evaluacion->id ) ){
+                if (isset($evaluacion->id)) {
 
                     $ronda = Convocatoriasrondas::findFirst('id = ' . $evaluacion->ronda);
 
-                    if( isset( $ronda->id ) ){
+                    if (isset($ronda->id)) {
 
                         /**
                          * Cesar Britto, 20-04-2020
@@ -720,7 +828,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         }
 
                         //En la fase de deliberación
-                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") ) ){
+                        if ($ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") )) {
                             $fase = 'Deliberación';
                         }
 
@@ -915,7 +1023,7 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                         }
 
                         //En la fase de deliberación
-                        if( $ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") ) ){
+                        if ($ronda->getEstado_nombre() == "En deliberación" && ( $ronda->fecha_deliberacion >= date("Y-m-d") )) {
                             $fase = 'Deliberación';
                         }
 
@@ -1220,13 +1328,13 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                                 $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado_2**", $participante->primer_nombre . " " . $participante->primer_apellido, $html_jurado_notificacion_impedimento);
                                 $html_jurado_notificacion_impedimento = str_replace("**tipo_documento**", $participante->Tiposdocumentos->nombre, $html_jurado_notificacion_impedimento);
                                 $html_jurado_notificacion_impedimento = str_replace("**numero_documento**", $participante->numero_documento, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", $evaluacionpropuesta->Propuestas->codigo, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacionpropuesta->Propuestas->nombre, $html_jurado_notificacion_impedimento);
+                                $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", $evaluacion->Propuestas->codigo, $html_jurado_notificacion_impedimento);
+                                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacion->Propuestas->nombre, $html_jurado_notificacion_impedimento);
                                 $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**", $participante->correo_electronico, $html_jurado_notificacion_impedimento);
                                 $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**", $request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
 
                                 //servidor smtp ambiente de prueba
-                                /*
+                                
                                   $mail = new PHPMailer();
                                   $mail->IsSMTP();
                                   $mail->SMTPAuth = true;
@@ -1240,13 +1348,13 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                                   $mail->From = "convocatorias@scrd.gov.co";
                                   //$mail->From = "cesar.augusto.britto@gmail.com";
                                   $mail->FromName = "Sistema de Convocatorias";
-                                  $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-                                  //$mail->AddAddress("cesar.augusto.britto@gmail.com");//direccion de prueba
+//                                  $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
+                                  $mail->AddAddress("ejercol45@hotmail.com");//direccion de prueba
                                   //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                                  //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
+                                  $mail->AddBCC("ejercol45@hotmail.com");//direccion de prueba
                                   $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
                                   $mail->Body = $html_jurado_notificacion_impedimento;
-                                 */
+                                 
 
 //                                /* Servidor SMTP producción */
 //                                $mail = new PHPMailer();
@@ -1350,18 +1458,17 @@ $app->put('/confirmar_top_individual/ronda/{id:[0-9]+}', function ($id) use ($ap
                     $postulacion = $this->modelsManager->executeQuery($query)->getFirst();
 
                     if (isset($postulacion->id) && isset($ronda->id)) {
-                        
-//                        return json_encode($postulacion->id);
 
+//                        return json_encode($postulacion->id);
                         //valida si el usuario pertenece al grupo de evaluación de la ronda
                         $evaluador = Evaluadores::findFirst(
                                         [
                                             'juradopostulado = ' . $postulacion->id
                                             . ' AND grupoevaluador = ' . $ronda->grupoevaluador
-//                                            . ' AND active is true'
+                                            . ' AND active = true'
                                         ]
                         );
-                        
+
 //                        return json_encode($evaluador->id);
 
                         if (isset($evaluador->id)) {
@@ -1554,6 +1661,7 @@ $app->put('/confirmar_top_individual_deliberacion/ronda/{id:[0-9]+}', function (
                                         [
                                             'juradopostulado = ' . $postulacion->id
                                             . ' AND grupoevaluador = ' . $ronda->grupoevaluador
+                                            . ' AND active = true'
                                         ]
                         );
 
@@ -1597,69 +1705,68 @@ $app->put('/confirmar_top_individual_deliberacion/ronda/{id:[0-9]+}', function (
 //
 //                                return "error_validacion";
 //                            } else {
+                            //Estados Evaluada Impedimento
+                            $estados = Estados:: find([
+                                        "tipo_estado = 'propuestas_evaluacion'"
+                                        . " AND nombre IN ('Evaluada', 'En evaluación') "
+                            ]);
+                            $estados_array = array();
+                            foreach ($estados as $key => $estado) {
+                                array_push($estados_array, $estado->id);
+                            }
 
-                                //Estados Evaluada Impedimento
-                                $estados = Estados:: find([
-                                            "tipo_estado = 'propuestas_evaluacion'"
-                                            . " AND nombre IN ('Evaluada', 'En evaluación') "
-                                ]);
-                                $estados_array = array();
-                                foreach ($estados as $key => $estado) {
-                                    array_push($estados_array, $estado->id);
-                                }
-
-                                $habilitadas = Evaluacionpropuestas::find(
-                                                [
-                                                    'ronda = ' . $ronda->id
-                                                    . ' AND evaluador = ' . $evaluador->id
-                                                    . ' AND fase = "' . $fase . '"'
-                                                    . ' AND estado IN ({estados:array})',
-                                                    'bind' => [
-                                                        'estados' => $estados_array
-                                                    ]
+                            $habilitadas = Evaluacionpropuestas::find(
+                                            [
+                                                'ronda = ' . $ronda->id
+                                                . ' AND evaluador = ' . $evaluador->id
+                                                . ' AND fase = "' . $fase . '"'
+                                                . ' AND estado IN ({estados:array})',
+                                                'bind' => [
+                                                    'estados' => $estados_array
                                                 ]
-                                );
+                                            ]
+                            );
 
-                                //estado Confirmada
-                                $estado_confimada = Estados::findFirst(
-                                                [
-                                                    "tipo_estado = 'propuestas_evaluacion'"
-                                                    . " AND nombre ='Confirmada'"
-                                                ]
-                                );
+                            //estado Confirmada
+                            $estado_confimada = Estados::findFirst(
+                                            [
+                                                "tipo_estado = 'propuestas_evaluacion'"
+                                                . " AND nombre ='Confirmada'"
+                                            ]
+                            );
 
-                                // Start a transaction
-                                $this->db->begin();
+                            // Start a transaction
+                            $this->db->begin();
 
-                                foreach ($habilitadas as $key => $evaluacion_propuesta) {
-                                    $evaluacion_propuesta->estado = $estado_confimada->id;
-                                    $evaluacion_propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
-                                    $evaluacion_propuesta->actualizado_por = $user_current["id"];
+                            foreach ($habilitadas as $key => $evaluacion_propuesta) {
+                                $evaluacion_propuesta->estado = $estado_confimada->id;
+                                $evaluacion_propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
+                                $evaluacion_propuesta->actualizado_por = $user_current["id"];
 
-                                    if ($evaluacion_propuesta->save() === false) {
-                                        //Para auditoria en versión de pruebas
-                                        /* foreach ($evaluacion_propuesta->getMessages() as $message) {
-                                          echo $message;
-                                          } */
+                                if ($evaluacion_propuesta->save() === false) {
+                                    //Para auditoria en versión de pruebas
+                                    /* foreach ($evaluacion_propuesta->getMessages() as $message) {
+                                      echo $message;
+                                      } */
 
-                                        $this->db->rollback();
+                                    $this->db->rollback();
 
-                                        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al actualizar la evaluación. '
-                                                . json_decode($evaluacion_propuesta->getMessages()) . '"',
-                                                ['user' => $user_current, 'token' => $request->getPut('token')]
-                                        );
-                                        $logger->close();
+                                    $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al actualizar la evaluación. '
+                                            . json_decode($evaluacion_propuesta->getMessages()) . '"',
+                                            ['user' => $user_current, 'token' => $request->getPut('token')]
+                                    );
+                                    $logger->close();
 
-                                        return "error";
-                                    }
+                                    return "error";
                                 }
+                            }
 
-                                $this->db->commit();
-                                $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} Exito al actualizar la evaluación. ',
-                                        ['user' => $user_current, 'token' => $request->getPut('token')]
-                                );
-                                $logger->close();
-                                return "exito";
+                            $this->db->commit();
+                            $logger->info('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/confirmar_top_individual/ronda/{id:[0-9]+} Exito al actualizar la evaluación. ',
+                                    ['user' => $user_current, 'token' => $request->getPut('token')]
+                            );
+                            $logger->close();
+                            return "exito";
 //                            }//quitar este
                         } else {
                             $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_evaluador"',
