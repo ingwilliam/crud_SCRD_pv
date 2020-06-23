@@ -306,7 +306,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -314,7 +314,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -322,7 +322,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                               p.estado
                               FROM
@@ -747,7 +747,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -755,7 +755,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -763,7 +763,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                             p.estado,
                           'ganador' as rol
@@ -788,7 +788,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -796,7 +796,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -804,7 +804,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS promedio,
                             p.estado,
                           'suplente' as rol
@@ -936,7 +936,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -944,7 +944,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -952,7 +952,7 @@ $app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                             p.estado,
                           'ganador' as rol
@@ -1087,7 +1087,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                            WHERE
                                               e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                           (	SELECT
                                               count(e.id) AS cantidad
@@ -1095,7 +1095,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                                 e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                           (	SELECT
                                               avg(total) AS promedio
@@ -1103,7 +1103,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                             e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'";//Se agrega la ronda
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                                     p.estado,
                                   'ganador' as rol
@@ -1114,6 +1114,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                         ON p.id = ep2.propuesta
                                       WHERE
                                         p.convocatoria  = " . $ronda->convocatoria . " AND p.estado = " . $estado_habilitada->id;
+                        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' ";
                         $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
                         $query .= "  ORDER BY promedio DESC limit " . $request->getPut('total_ganadores');
                         $query .= " offset 0";
@@ -1149,6 +1150,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                         //33	propuestas	Recomendada como Ganadora
                         foreach ($ganadores as $key => $row) {
 
+
                             $propuesta = Propuestas::findFirst(" id = " . $row->id);
                             $propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas' AND	nombre = 'Recomendada como Ganadora'"))->id;
                             $propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
@@ -1168,6 +1170,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                 $this->db->rollback();
                                 return "error";
                             }
+
 
 
                             //si existe la ronda siguiente
@@ -1589,6 +1592,151 @@ $app->put('/asignar_monto1/propuesta/{id:[0-9]+}', function ($id) use ($app, $co
         return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
+
+
+
+
+
+/*
+ * 22-06-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Agrego metodo anular deliberación
+ */
+
+$app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase = '';
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} ' . json_encode($request->getPut()) . '"',
+                ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                if ($user_current["id"]) {
+
+                    $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
+
+
+
+                    if (isset($ronda->id)) {
+
+                        if ($ronda->estado == 37 || $ronda->estado == 37) {
+                            // Start a transaction
+                            $this->db->begin();
+
+                            $evaluaciones = Evaluacionpropuestas::find(
+                                            [
+                                                'ronda =' . $ronda->id
+                                                . " AND fase = 'Deliberación'"
+                                            ]
+                            );
+
+                            /*
+                             * Se establece el estado en evaluación de la evaluacion en fase de Deliberación,
+                              para que pueda ser evaluada
+                             */
+                            $evaluacion_estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación' "))->id;
+
+                            foreach ($evaluaciones as $evaluacion) {
+
+                                $evaluacion->estado = $evaluacion_estado;
+                                $evaluacion->fecha_actualizacion = date("Y-m-d H:i:s");
+                                $evaluacion->actualizado_por = $user_current["id"];
+
+                                if (!$evaluacion->save()) {
+
+                                    //Para auditoria en versión de pruebas
+                                    /* foreach ($evaluacion->getMessages() as $message) {
+                                      echo $message;
+                                      } */
+
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $evaluacion->getMessages(),
+                                            ['user' => $user_current, 'token' => $request->getPut('token')]
+                                    );
+                                    $logger->close();
+
+                                    $this->db->rollback();
+                                    return "error";
+                                }
+                            }
+
+
+                            $ronda->estado = (Estados::findFirst(" tipo_estado = 'convocatorias_rondas' AND nombre = 'Habilitada' "))->id;
+                            $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
+                            $ronda->actualizado_por = $user_current["id"];
+
+
+                            if ($ronda->save() === false) {
+                                //Para auditoria en versión de pruebas
+                                /* foreach ($ronda->getMessages() as $message) {
+                                  echo $message;
+                                  } */
+                                $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $ronda->getMessages(),
+                                        ['user' => $user_current, 'token' => $request->getPut('token')]
+                                );
+                                $logger->close();
+
+                                $this->db->rollback();
+
+                                return "error";
+                            }
+                            // Commit the transaction
+                            $this->db->commit();
+                            return "exito";
+                        }else{
+                           return "acceso_denegado"; //Indica que no puede anular la deliberación porque ya confirmó su top general
+                        }
+                    } else {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
+                                ['user' => $user_current, 'token' => $request->getPut('token')]
+                        );
+                        $logger->close();
+
+                        return "error";
+                    }
+                } else {
+                    return "error";
+                }
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
+    }
+});
+
+
+
+
+
 
 /**
  * Funcionalidad Descargar archivos
