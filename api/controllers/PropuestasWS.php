@@ -630,7 +630,7 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Código de inscripción</td>
+                        <td align="center">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
@@ -737,12 +737,12 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . '<td width="60">' . $propuesta->codigo . '</td>';
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $text_observacion. "</td>";                                
+                $html_propuestas = $html_propuestas . '<td width="80">' . $propuesta->getEstados()->nombre. '</td>';                
+                $html_propuestas = $html_propuestas . '<td width="326">' . $text_observacion. '</td>';                                
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }
@@ -769,12 +769,12 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                         <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Código de inscripción</td>
+                        <td align="center" width="60">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
-                        <td align="center">Estado</td>
-                        <td align="center">Observaciones</td>
+                        <td align="center" width="80">Estado</td>
+                        <td align="center" width="326">Observaciones</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -884,12 +884,12 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 $text_observacion = substr($text_observacion, 0, -2);
                 
                 $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
+                $html_propuestas = $html_propuestas . '<td  width="60">' . $propuesta->codigo . '</td>';
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $text_observacion. "</td>";                
+                $html_propuestas = $html_propuestas . '<td width="80">' . $propuesta->getEstados()->nombre. '</td>';                
+                $html_propuestas = $html_propuestas . '<td width="326">' . $text_observacion. '</td>';                
                 $html_propuestas = $html_propuestas . "</tr>";
              
             }
@@ -916,12 +916,12 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                         <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Código de inscripción</td>
+                        <td align="center" width="60">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
-                        <td align="center">Estado</td>
-                        <td align="center">Observaciones</td>
+                        <td align="center" width="80">Estado</td>
+                        <td align="center" width="326">Observaciones</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -1039,7 +1039,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                         <td>'.$nombre_categoria.'</td>
                     </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Código de inscripción</td>
+                        <td align="center">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>

@@ -273,8 +273,10 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
 
                     }                    
                     
-                    $fechafinal = "desde <b>" .date('Y-m-d')."</b> hasta el <b>".date('Y-m-d', $total)." 17:00:00</b>";
-                    $html_subsanacion = str_replace("**fecha_inicio_propuesta**", date('Y-m-d'), $html_subsanacion);
+                    //sumo 1 día a la fecha inicio de subsanación
+                    $fecha_inicio_subsanacion = date("Y-m-d",strtotime(date("Y-m-d")."+ 1 days"));                                         
+                    
+                    $html_subsanacion = str_replace("**fecha_inicio_propuesta**", $fecha_inicio_subsanacion." 00:00:00", $html_subsanacion);
                     $html_subsanacion = str_replace("**fecha_fin_propuesta**", date('Y-m-d', $total)." 17:00:00", $html_subsanacion);
                     
                     $mail = new PHPMailer();
@@ -297,7 +299,7 @@ $app->post('/enviar_notificaciones/{id:[0-9]+}', function ($id) use ($app, $conf
                     if ($exito) { 
                         //Actualizo el estado a Subsanación Recibida
                         $propuesta->estado=22;
-                        $propuesta->fecha_inicio_subsanacion=date('Y-m-d H:i:s');
+                        $propuesta->fecha_inicio_subsanacion=$fecha_inicio_subsanacion." 00:00:00";
                         $propuesta->fecha_fin_subsanacion=date('Y-m-d', $total)." 17:00:00";
                         $propuesta->update();
                         
