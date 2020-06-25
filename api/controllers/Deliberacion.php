@@ -1643,7 +1643,7 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
 
                     if (isset($ronda->id)) {
 
-                        if ($ronda->estado == 37 || $ronda->estado == 37) {
+                        if ($ronda->estado == 36) {
                             // Start a transaction
                             $this->db->begin();
 
@@ -1673,7 +1673,7 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
                                       echo $message;
                                       } */
 
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $evaluacion->getMessages(),
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} error:"' . $evaluacion->getMessages(),
                                             ['user' => $user_current, 'token' => $request->getPut('token')]
                                     );
                                     $logger->close();
@@ -1684,17 +1684,12 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
                             }
 
 
-                            $ronda->estado = (Estados::findFirst(" tipo_estado = 'convocatorias_rondas' AND nombre = 'Habilitada' "))->id;
-                            $ronda->fecha_actualizacion = date("Y-m-d H:i:s");
-                            $ronda->actualizado_por = $user_current["id"];
-
-
                             if ($ronda->save() === false) {
                                 //Para auditoria en versión de pruebas
                                 /* foreach ($ronda->getMessages() as $message) {
                                   echo $message;
                                   } */
-                                $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $ronda->getMessages(),
+                                $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} error:"' . $ronda->getMessages(),
                                         ['user' => $user_current, 'token' => $request->getPut('token')]
                                 );
                                 $logger->close();
