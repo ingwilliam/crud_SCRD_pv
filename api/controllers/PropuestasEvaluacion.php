@@ -60,7 +60,7 @@ $logger->setFormatter($formatter);
 $app = new Micro($di);
 
 //Retorna información de id y nombre de las convocatorias
-$app->get('/select_convocatorias_old', function () use ($app, $logger) {
+$app->get('/select_convocatorias', function () use ($app, $logger) {
 
     try {
 
@@ -120,7 +120,7 @@ $app->get('/select_convocatorias_old', function () use ($app, $logger) {
     }
 }
 );
-$app->get('/select_convocatorias', function () use ($app, $logger) {
+$app->get('/select_convocatorias_dev', function () use ($app, $logger) {
 
     try {
 
@@ -836,8 +836,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         //evaluacion_propuesta	Sin evaluar
                         //evaluacion_propuesta	En evaluación
                         //05-06-2020 Wilmer Mogollón --- Se agrega el estado Deliberación para quew pueda ajustar puntajes
+                        
                         if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación" || $evaluacion->getEstado_nombre() == "En deliberación")) {
 
+                            
+                            
+                            
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
                                             [
@@ -1286,10 +1290,18 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
                         //30	evaluacion_propuesta	Evaluada
+                        
+                       
+                        
                         if ($evaluacion->fase == $fase && ( $evaluacion->getEstado_nombre() == 'Sin evaluar' || $evaluacion->getEstado_nombre() == 'En evaluación' || $evaluacion->getEstado_nombre() == 'Evaluada' )) {
-
+                             
+                            // Start a transaction
+                            $this->db->begin();
+                            
+                            
                             $evaluador = Evaluadores::findFirst('id = ' . $evaluacion->evaluador);
-
+                            
+                            
                             $juradopostulado = Juradospostulados::findFirst(' id = ' . $evaluador->juradopostulado);
 
                             //retorno el array en json
@@ -1305,9 +1317,10 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $array_estado_actual_5 = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
 
                             $evaluacion->estado = $array_estado_actual_5->id;
+                            
+//                            return json_encode($evaluacion->id);
 
-                            // Start a transaction
-                            $this->db->begin();
+                            
 
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
@@ -1322,38 +1335,38 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             } else {
 
                                 //Creo el cuerpo del messaje html del email
-                                $html_jurado_notificacion_impedimento = Tablasmaestras::find("active=true AND nombre='html_jurado_notificacion_impedimento'")[0]->valor;
-                                $html_jurado_notificacion_impedimento = str_replace("**fecha_creacion**", date("d/m/Y"), $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado**", $participante->primer_nombre . " " . $participante->primer_apellido, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado_2**", $participante->primer_nombre . " " . $participante->primer_apellido, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**tipo_documento**", $participante->Tiposdocumentos->nombre, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**numero_documento**", $participante->numero_documento, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", $evaluacion->Propuestas->codigo, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacion->Propuestas->nombre, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**", $participante->correo_electronico, $html_jurado_notificacion_impedimento);
-                                $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**", $request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = Tablasmaestras::find("active=true AND nombre='html_jurado_notificacion_impedimento'")[0]->valor;
+//                                $html_jurado_notificacion_impedimento = str_replace("**fecha_creacion**", date("d/m/Y"), $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado**", $participante->primer_nombre . " " . $participante->primer_apellido, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**nombre_jurado_2**", $participante->primer_nombre . " " . $participante->primer_apellido, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**tipo_documento**", $participante->Tiposdocumentos->nombre, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**numero_documento**", $participante->numero_documento, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**codigo_propuesta**", $evaluacion->Propuestas->codigo, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacion->Propuestas->nombre, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**", $participante->correo_electronico, $html_jurado_notificacion_impedimento);
+//                                $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**", $request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
 
                                 //servidor smtp ambiente de prueba
                                 
-                                  $mail = new PHPMailer();
-                                  $mail->IsSMTP();
-                                  $mail->SMTPAuth = true;
-                                  $mail->Host = "smtp.gmail.com";
-                                  $mail->SMTPSecure = 'ssl';
-                                  $mail->Username = "cesar.augusto.britto@gmail.com";
-                                  $mail->Password = "Guarracuco2016";
-                                  $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
-                                  $mail->CharSet = "UTF-8";
-                                  $mail->IsHTML(true); // El correo se env  a como HTML
-                                  $mail->From = "convocatorias@scrd.gov.co";
-                                  //$mail->From = "cesar.augusto.britto@gmail.com";
-                                  $mail->FromName = "Sistema de Convocatorias";
-//                                  $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-                                  $mail->AddAddress("ejercol45@hotmail.com");//direccion de prueba
-                                  //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                                  $mail->AddBCC("ejercol45@hotmail.com");//direccion de prueba
-                                  $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
-                                  $mail->Body = $html_jurado_notificacion_impedimento;
+//                                  $mail = new PHPMailer();
+//                                  $mail->IsSMTP();
+//                                  $mail->SMTPAuth = true;
+//                                  $mail->Host = "smtp.gmail.com";
+//                                  $mail->SMTPSecure = 'ssl';
+//                                  $mail->Username = "cesar.augusto.britto@gmail.com";
+//                                  $mail->Password = "Guarracuco2016";
+//                                  $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
+//                                  $mail->CharSet = "UTF-8";
+//                                  $mail->IsHTML(true); // El correo se env  a como HTML
+//                                  $mail->From = "convocatorias@scrd.gov.co";
+//                                  //$mail->From = "cesar.augusto.britto@gmail.com";
+//                                  $mail->FromName = "Sistema de Convocatorias";
+////                                  $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
+//                                  $mail->AddAddress("ejercol45@hotmail.com");//direccion de prueba
+//                                  //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+//                                  $mail->AddBCC("ejercol45@hotmail.com");//direccion de prueba
+//                                  $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
+//                                  $mail->Body = $html_jurado_notificacion_impedimento;
                                  
 
 //                                /* Servidor SMTP producción */
@@ -1380,6 +1393,11 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 //                                    return "error_email";
 //                                }
                             }
+                            
+                            // Commit the transaction
+                            $this->db->commit();
+                            
+                            
                         } else {
                             return 'deshabilitado';
                         }
