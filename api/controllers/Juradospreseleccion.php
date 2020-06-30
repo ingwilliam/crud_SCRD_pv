@@ -246,7 +246,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                     $convocatoria = Convocatorias::findFirst($request->get('convocatoria'));
 
-                    
+
                     //la convocatoria tiene categorias y son diferentes?, caso 3
                     if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias && $request->get('categoria')) {
 
@@ -385,20 +385,23 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                       ";
                         }
 
-                        if ($value["name"] === 'experto_con' && $value["value"] === 'on') {
-                            //--Titulo universiatrio
-                            $query = $query . " AND pro.id in (	select
-                                          p.id
-				   	                            from
-						                              Propuestas p
-						                              inner join Educacionformal ef
-						                              on p.id = ef.propuesta
-				   	                            where"
-                                    //-- codigo > 5 es titulo universitario (Profesional,Especialización,Maestría y Doctorado)
-                                    . "ef.nivel_educacion > 5
+                        //-- codigo > 5 es titulo universitario (Profesional,Especialización,Maestría y Doctorado)
+
+                        if ($value["name"] === 'experto_sin' && $value["value"] === 'on') {
+                           //--Titulo universiatrio
+                           $query = $query . " AND pro.id in ( select
+                                       p.id
+                     from
+               Propuestas p
+               inner join Educacionformal ef
+               on p.id = ef.propuesta
+                     where ef.nivel_educacion <= 5
+                     AND pro.id not in 
+                                       (select p.id from Propuestas p inner join Educacionformal ef on p.id = ef.propuesta where ef.nivel_educacion > 5)
                                         )
-                                        ";
-                        }
+                                       ";
+                       }
+
 
 
                         if ($value["name"] === 'exp_jurado' && $value["value"] === 'on') {
