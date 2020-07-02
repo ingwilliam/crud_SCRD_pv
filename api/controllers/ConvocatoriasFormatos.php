@@ -1914,7 +1914,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         WHERE 	
                                 jp.active=true AND
                             ev.active = true AND	                            
-                            REPLACE(TRIM(par.numero_documento),'.','')=REPLACE(TRIM('" . $request->getPut('nd') . "'),'.','')
+                            REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')= REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ";
             
             $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
@@ -1953,7 +1953,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                             LEFT JOIN estados AS e ON jp.estado=e.id
                         WHERE 
                             jp.active=TRUE AND  
-                            REPLACE(TRIM(par.numero_documento),'.','')=REPLACE(TRIM('" . $request->getPut('nd') . "'),'.','')                                
+                            REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ORDER BY 1,2,3,4,5,6,7,8";
             
             $jurados_procesos = $app->modelsManager->executeQuery($sql_jurados_proceso);
@@ -1989,7 +1989,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                                 vwp.segundo_apellido,
                                 vwp.estado_propuesta                                
                         FROM Viewparticipantes AS vwp                                
-                        WHERE vwp.tipo_participante <> 'Jurados' AND REPLACE(TRIM(vwp.numero_documento),'.','')=REPLACE(TRIM('" . $request->getPut('nd') . "'),'.','')
+                        WHERE vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ";
             
             $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
@@ -2047,7 +2047,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         ec.fecha_creacion
                 FROM Entidadescontratistas AS ec
                 INNER JOIN Entidades AS e ON e.id=ec.entidad
-                WHERE ec.active=TRUE AND REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM('" . $request->getPut('nd') . "'),'.','')";
+                WHERE ec.active=TRUE AND REPLACE(REPLACE(TRIM(ec.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')";
 
             $contratistas = $app->modelsManager->executeQuery($sql_contratistas);
             
@@ -2058,6 +2058,30 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->observaciones . '</td>';                
                 $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';                
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "</tr>";
+            }
+            
+            //Genero reporte de jurados seleccionados
+            $sql_ganadores_anios_anteriores = "
+                        SELECT 
+                                ga.*
+                        FROM Ganadoresantes2020 as ga                                
+                        WHERE 	
+                                ga.active=true AND                               
+                                REPLACE(REPLACE(TRIM(ga.numero_documento),'.',''),' ', '') IN (REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', ''))                            
+                        ORDER BY ga.anio DESC
+                        ";
+
+            $ganadores_anios_anteriores = $app->modelsManager->executeQuery($sql_ganadores_anios_anteriores);
+
+            foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";                                                                                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . " - " . $ganador_anio_anterior->tipo_rol . "</td>";                
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
             }
             
             
@@ -2098,6 +2122,18 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         <td align="center">Estado propuesta</td>                                                                                                                   
                     </tr>
                     ' . $html_propuestas_ganadoras . '    
+                    <tr>
+                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS COMO GANADOR AÑOS ANTERIORES </td>
+                    </tr>    
+                    <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                        <td align="center">Año</td>
+                        <td align="center">Entidad</td>
+                        <td align="center">Convocatoria - Categoría</td>                        
+                        <td align="center">Propuesta</td>   
+                        <td align="center">Participante</td>
+                        <td align="center">Tipo participante - Tipo Rol</td>                                                                        
+                    </tr>
+                    ' . $html_ganadoras_anios_anteriores . '    
                     <tr>
                         <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA SIDO JURADO </td>
                     </tr>
