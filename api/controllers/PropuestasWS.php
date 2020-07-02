@@ -256,7 +256,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                         $consulta_integrantes = Participantes::find(([
                                     'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
                                     'bind' => $conditions,
-                                    "order" => 'id'
+                                    "order" => 'representante DESC'
                         ]));
 
                         $i = 1;
@@ -362,7 +362,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                         $consulta_integrantes = Participantes::find(([
                                     'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
                                     'bind' => $conditions,
-                                    "order" => 'id'
+                                    "order" => 'representante DESC'
                         ]));
 
                         $i = 1;

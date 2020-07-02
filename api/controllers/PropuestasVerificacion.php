@@ -806,7 +806,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 //Consulto solo los integrantes de la propuesta
                 $sql_integrantes = "
                     SELECT 
-                            REPLACE(TRIM(p.numero_documento),'.','') AS numero_documento
+                            REPLACE(REPLACE(TRIM(p.numero_documento),'.',''),' ', '') AS numero_documento
                     FROM Participantes AS p                                        
                     WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.active=TRUE";                
                 $integrantes = $app->modelsManager->executeQuery($sql_integrantes);
@@ -823,7 +823,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             concat(p.numero_documento,' ',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS participante,
                             concat(e.nombre,' ',ec.numero_documento,' ',ec.primer_nombre,' ',ec.segundo_nombre,' ',ec.primer_apellido,' ',ec.segundo_apellido) AS contratista
                     FROM Participantes AS p
-                    INNER JOIN Entidadescontratistas AS ec ON REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM(p.numero_documento),'.','')
+                    INNER JOIN Entidadescontratistas AS ec ON REPLACE(REPLACE(TRIM(ec.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM(p.numero_documento),'.',''),' ', '')
                     INNER JOIN Entidades AS e ON e.id=ec.entidad
                     WHERE (p.id=".$propuesta->participante." OR p.participante_padre=".$propuesta->participante.") AND p.tipo_documento<>7 AND ec.active=TRUE AND p.active=TRUE";
 
@@ -861,7 +861,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             WHERE 	
                                     jp.active=true AND
                                 ev.active = true AND	                            
-                                REPLACE(TRIM(par.numero_documento),'.','') IN ($cedulas_integrantes)
+                                    REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') IN ($cedulas_integrantes)
                             ";
 
                 $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
@@ -897,7 +897,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                     vwp.segundo_apellido,
                                     vwp.estado_propuesta                                
                             FROM Viewparticipantes AS vwp                                
-                            WHERE vwp.codigo <> '".$propuesta->codigo."' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(TRIM(vwp.numero_documento),'.','') IN ($cedulas_integrantes)
+                            WHERE vwp.codigo <> '".$propuesta->codigo."' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '') IN ($cedulas_integrantes)
                             ";
 
                 $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
@@ -945,9 +945,35 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     }
                 }
                 
-                //$array["html_propuestas"] = $html_propuestas;
-                $array["html_propuestas"] = "";
+                //Genero reporte de jurados seleccionados
+                $sql_ganadores_anios_anteriores = "
+                            SELECT 
+                                    ga.*
+                            FROM Ganadoresantes2020 as ga                                
+                            WHERE 	
+                                    ga.active=true AND                               
+                                    REPLACE(REPLACE(TRIM(ga.numero_documento),'.',''),' ', '') IN ($cedulas_integrantes)                            
+                            ORDER BY ga.anio DESC
+                            ";
+
+                $ganadores_anios_anteriores = $app->modelsManager->executeQuery($sql_ganadores_anios_anteriores);
+
+                foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . "</td>";                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->categoria . "</td>";                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";                                                                                                    
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . "</td>";
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_rol . "</td>";
+                    $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
+                }
+                
+                $array["html_propuestas"] = $html_propuestas;                
                 $array["html_propuestas_ganadoras"] = $html_propuestas_ganadoras;
+                $array["html_ganadoras_anios_anteriores"] = $html_ganadoras_anios_anteriores;
                 $array["html_propuestas_jurados_seleccionados"] = $html_propuestas_jurados_seleccionados;
                 
                 //Registro la accion en el log de convocatorias

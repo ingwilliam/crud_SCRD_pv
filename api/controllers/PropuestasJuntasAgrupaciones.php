@@ -592,6 +592,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     5 => 'p.segundo_apellido',
                     6 => 'p.rol',
                     7 => 'p.id',
+                    8 => 'p.representante',
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
@@ -609,7 +610,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -619,7 +620,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                $sqlRec .= " ORDER BY p.representante DESC  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -725,51 +726,83 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
 
                 //Trae los datos del formulario por post
                 $post = $app->request->getPost();
+                
+                //Validar que exite un representante
+                $validar_representante=true;
+                if( $post["representante"] == "true")
+                {
+                    //Valido si enviaron el id del participante
+                    $validacion="";
+                    if (is_numeric($post["id"])) {
+                     $validacion= "id<>".$post["id"]." AND ";
+                    }
 
-                //Valido si existe para editar o crear
-                if (is_numeric($post["id"])) {
-                    $participante = Participantes::findFirst($post["id"]);
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                    $post["por_que_actualiza"] = $participante->por_que_actualiza."<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";                    
-                } else {
-                    //Consulto el participante
-                    $participante_padre = Participantes::findFirst($post["participante"]);
-                    $perfil=$participante_padre->getUsuariosperfiles()->perfil;
-                    
-                    //Se valida que tipo de perfil es
-                    //Para asociar el tipo de integrante
-                    if($perfil==7)
+                    $representante = Participantes::findFirst($validacion." participante_padre=".$post["participante"]." AND representante = true AND active IN (TRUE,FALSE)");
+                    if($representante->id>0)
                     {
-                      $post["tipo"] = "Junta";  
+                        $validar_representante=false;
                     }
-                    if($perfil==8)
-                    {
-                      $post["tipo"] = "Integrante";  
-                    }
-                    //Creo el objeto del particpante de persona natural
-                    $participante = new Participantes();
-                    $participante->creado_por = $user_current["id"];
-                    $participante->fecha_creacion = date("Y-m-d H:i:s");
-                    $participante->participante_padre = $post["participante"];
-                    $participante->usuario_perfil = $participante_padre->usuario_perfil;                    
-                    $participante->active = TRUE;
-                    $post["por_que_actualiza"] = "<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";
-                    
                 }
+                
+                
+                if($validar_representante)
+                {
+                    //Valido si existe para editar o crear
+                    if (is_numeric($post["id"])) {
+                        $participante = Participantes::findFirst($post["id"]);
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                        $post["por_que_actualiza"] = $participante->por_que_actualiza."<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";                    
+                    } else {
+                        //Consulto el participante
+                        $participante_padre = Participantes::findFirst($post["participante"]);
+                        $perfil=$participante_padre->getUsuariosperfiles()->perfil;
 
-                if ($participante->save($post) === false) {
+                        //Se valida que tipo de perfil es
+                        //Para asociar el tipo de integrante
+                        if($perfil==7)
+                        {
+                          $post["tipo"] = "Junta";  
+                        }
+                        if($perfil==8)
+                        {
+                          $post["tipo"] = "Integrante";  
+                        }
+                        //Creo el objeto del particpante de persona natural
+                        $participante = new Participantes();
+                        $participante->creado_por = $user_current["id"];
+                        $participante->fecha_creacion = date("Y-m-d H:i:s");
+                        $participante->participante_padre = $post["participante"];
+                        $participante->usuario_perfil = $participante_padre->usuario_perfil;                    
+                        $participante->active = TRUE;
+                        $post["por_que_actualiza"] = "<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";
+
+                    }
+
+                    $post["representante"] = $post["representante"] === 'true'? true: false;
+                    
+                    if ($participante->save($post) === false) {
+                        //Registro la accion en el log de convocatorias
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controller PropuestasJuntasAgrupaciones en el método crear_integrante, al crear y/o editar el integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias                    
+                        $logger->info('"token":"{token}","user":"{user}","message":"El controller PropuestasJuntasAgrupaciones retorna en el método crear_integrante, creo y/o edito el integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+
+                        echo $participante->id;
+                    }
+                }                
+                else
+                {
                     //Registro la accion en el log de convocatorias
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controller PropuestasJuntasAgrupaciones en el método crear_integrante, al crear y/o editar el integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Ya existe el representante en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
-                    echo "error";
-                } else {
-                    //Registro la accion en el log de convocatorias                    
-                    $logger->info('"token":"{token}","user":"{user}","message":"El controller PropuestasJuntasAgrupaciones retorna en el método crear_integrante, creo y/o edito el integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-
-                    echo $participante->id;
+                    echo "error_representante";
                 }
+                
+                
             } else {
                 //Registro la accion en el log de convocatorias                
                 $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasJuntasAgrupaciones en el método crear_integrante, el usuario no tiene acceso"', ['user' => $user_current["username"], 'token' => $request->get('token')]);               
