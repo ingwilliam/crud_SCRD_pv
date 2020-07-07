@@ -2,6 +2,7 @@
 
 //error_reporting(E_ALL);
 //ini_set('display_errors', '1');
+
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -10,6 +11,8 @@ use Phalcon\Config\Adapter\Ini as ConfigIni;
 use Phalcon\Http\Request;
 use Phalcon\Mvc\Model\Query;
 use Phalcon\Db\RawValue;
+use Phalcon\Logger\Adapter\File as FileAdapter;
+use Phalcon\Logger\Formatter\Line;
 
 // Definimos algunas rutas constantes para localizar recursos
 define('BASE_PATH', dirname(__DIR__));
@@ -43,6 +46,16 @@ $di->set('db', function () use ($config) {
             )
     );
 });
+
+
+//Funcionalidad para crear los log de la aplicación
+//la carpeta debe tener la propietario y usuario
+//sudo chown -R www-data:www-data log/
+//https://docs.phalcon.io/3.4/es-es/logging
+$formatter = new Line('{"date":"%date%","type":"%type%",%message%},');
+$formatter->setDateFormat('Y-m-d H:i:s');
+$logger = new FileAdapter($config->sistema->path_log . "convocatorias." . date("Y-m-d") . ".log");
+$logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
@@ -388,8 +401,8 @@ $app->get('/all_preseleccionados', function () use ($app) {
                         //-- codigo > 5 es titulo universitario (Profesional,Especialización,Maestría y Doctorado)
 
                         if ($value["name"] === 'experto_sin' && $value["value"] === 'on') {
-                           //--Titulo universiatrio
-                           $query = $query . " AND pro.id in ( select
+                            //--Titulo universiatrio
+                            $query = $query . " AND pro.id in ( select
                                        p.id
                      from
                Propuestas p
@@ -400,7 +413,7 @@ $app->get('/all_preseleccionados', function () use ($app) {
                                        (select p.id from Propuestas p inner join Educacionformal ef on p.id = ef.propuesta where ef.nivel_educacion > 5)
                                         )
                                        ";
-                       }
+                        }
 
 
 
@@ -2414,6 +2427,171 @@ $app->post('/new_postulacion', function () use ($app, $config) {
     }
 }
 );
+
+/*
+ * 06-07-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Agrego metodo liberar postulaciones
+ */
+
+$app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase = '';
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Juradospreseleccion/liberar_postulaciones/convocatoria/{id:[0-9]+} ' . json_encode($request->getPut()) . '"',
+                ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
+            curl_setopt($ch, CURLOPT_POST, 2);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $permiso_escritura = curl_exec($ch);
+            curl_close($ch);
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                $user_current = json_decode($token_actual->user_current, true);
+
+                if ($user_current["id"]) {
+
+                    $convocatoria = Convocatorias::findFirst('id = ' . $id);
+
+
+
+                    if (isset($convocatoria->id)) {//Si existe la convocatoria
+                        $rondas = Convocatoriasrondas::find(
+                                        [
+                                            'convocatoria = ' . $convocatoria->id
+                                            . ' AND active= true '
+                                        ]
+                        );
+
+//                        return json_encode($rondas);
+
+                        if (count($rondas)<=0) {
+                            return "error_rondas"; //Indica que no ha creado las rondas asociadas a esta convocatoria
+                        }else{
+                           
+                            
+                            $gruposconfirmados = true; //Se establece la variable $gruposconfirmados para determinar si están creados todos los grupos de evaluación
+
+                            foreach ($rondas as $ronda) {
+                                if ($ronda->grupoevaluador == null) {
+                                    $gruposconfirmados = false;
+                                } else {
+                                    $grupo = Gruposevaluadores::findFirst(
+                                                    [
+                                                        'id = ' . $ronda->grupoevaluador
+                                                    ]
+                                    );
+                                    $sin_confirmar = (Estados::findFirst(" tipo_estado = 'grupos_evaluacion' AND nombre = 'Sin confirmar' "))->id;
+
+                                    if ($grupo->estado == $sin_confirmar) {
+                                        $gruposconfirmados = false;
+                                    }
+                                }
+                            }
+
+//                        return json_encode($gruposconfirmados);
+                            //Si los grupos evaluadores fueron creados y confirmados para todas las rondas, 
+                            //entra a desactivar las postulaciones
+                            if ($gruposconfirmados == true) {
+                                // Start a transaction
+                                $this->db->begin();
+
+                                $postulaciones = Juradospostulados::find(
+                                                [
+                                                    'convocatoria = ' . $convocatoria->id
+                                                    . ' AND active= true '
+                                                ]
+                                );
+
+                                $rechazada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Rechazada' "))->id;
+                                $declinada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Declinada' "))->id;
+
+                                foreach ($postulaciones as $postulacion) {
+
+                                    $notificacion = Juradosnotificaciones::findFirst(
+                                                    [
+                                                        'juradospostulado = ' . $postulacion->id
+                                                    ]
+                                    );
+
+                                    if (isset($notificacion->id)) {
+
+                                        if ($notificacion->estado == $rechazada || $notificacion->estado == $declinada) {
+                                            $postulacion->active = false;
+                                            $postulacion->fecha_actualizacion = date("Y-m-d H:i:s");
+                                            $postulacion->actualizado_por = $user_current["id"];
+                                        }
+                                    } else {
+                                        $postulacion->active = false;
+                                        $postulacion->fecha_actualizacion = date("Y-m-d H:i:s");
+                                        $postulacion->actualizado_por = $user_current["id"];
+                                    }
+
+
+                                    if (!$postulacion->save()) {
+
+                                        //Para auditoria en versión de pruebas
+                                        /* foreach ($evaluacion->getMessages() as $message) {
+                                          echo $message;
+                                          } */
+
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Juradospreseleccion/liberar_postulaciones/convocatoria/{id:[0-9]+} error:"' . $postulacion->getMessages(),
+                                                ['user' => $user_current, 'token' => $request->getPut('token')]
+                                        );
+                                        $logger->close();
+
+                                        $this->db->rollback();
+                                        return "error";
+                                    }
+                                }
+
+                                // Commit the transaction
+                                $this->db->commit();
+                                return "exito";
+                            } else {
+                                return "acceso_denegado"; //Indica que no puede liberar las postulaciones, pues no ha creado grupo evaluador para todas las rondas
+                            }
+                        }
+                    } else {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Juradospreseleccion/liberar_postulaciones/convocatoria/{id:[0-9]+} error"',
+                                ['user' => $user_current, 'token' => $request->getPut('token')]
+                        );
+                        $logger->close();
+
+                        return "error";
+                    }
+                } else {
+                    return "error";
+                }
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
+    }
+});
 
 
 try {
