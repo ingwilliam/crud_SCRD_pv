@@ -266,27 +266,51 @@ $app->get('/search', function () use ($app, $config,$logger) {
             $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-            $array["barrio_residencia_name"] = "";
-            $array["ciudad_nacimiento_name"] = "";
-            $array["ciudad_residencia_id"] = "";
-            $array["departamento_residencia_id"] = "";
-
+            $array["discapacidades"] = Tiposdiscapacidades::find("active=true");            
+                                    
             $array["pais_residencia_id"] = "";
+            $array["departamento_residencia_id"] = "";
+            $array["ciudad_residencia_id"] = "";
+            
+            $array["pais_nacimiento_id"] = "";
+            $array["departamento_nacimiento_id"] = "";
+            $array["ciudad_nacimiento_id"] = "";
+            
             $array["departamentos"]=array();
-            $array["ciudades"]=array();
+            $array["ciudades"]=array();                        
+            $array["barrios"] = array();
+            
+            $array["departamentos_nacimiento"]=array();
+            $array["ciudades_nacimiento"]=array();
+            
             if(isset($participante->id))
             {
-                $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
-                $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
-                $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
-                $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;
+                
                 $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;                
+                $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
+                
+                
+                if(isset($participante->ciudad_nacimiento))
+                {
+                    $array["pais_nacimiento_id"] = $participante->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id;
+                    $array["departamento_nacimiento_id"] = $participante->getCiudadesnacimiento()->getDepartamentos()->id;                
+                    $array["ciudad_nacimiento_id"] = $participante->ciudad_nacimiento;
+                    
+                    $array["departamentos_nacimiento"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id."'");
+                    $array["ciudades_nacimiento"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesnacimiento()->getDepartamentos()->id."'");
+                }                                                     
                 
                 $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
                 $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
+                        
+                if(isset($participante->localidad_residencia))
+                {
+                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $participante->localidad_residencia);                                            
+                }
             
             }
-
+            
             //Elimino el id si se importa de jurados
             if($eliminar_id)
             {
@@ -398,17 +422,33 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
                             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
                             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-                            $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;
-                            $array["ciudad_nacimiento_name"] = $participante_hijo_propuesta->getCiudadesnacimiento()->nombre;                            
+                            $array["discapacidades"] = Tiposdiscapacidades::find("active=true");     
                             
-                            $array["ciudad_residencia_id"] = $propuesta->getParticipantes()->ciudad_residencia;
-                            $array["departamento_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->id;
                             $array["pais_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                            $array["ciudad_residencia_id"] = $propuesta->getParticipantes()->ciudad_residencia;
+                            $array["departamento_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->id;                            
 
+                            $array["departamentos_nacimiento"]=array();
+                            $array["ciudades_nacimiento"]=array();
+                            
+                            if(isset($propuesta->getParticipantes()->ciudad_nacimiento))
+                            {
+                                $array["pais_nacimiento_id"] = $propuesta->getParticipantes()->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id;
+                                $array["departamento_nacimiento_id"] = $propuesta->getParticipantes()->getCiudadesnacimiento()->getDepartamentos()->id;                
+                                $array["ciudad_nacimiento_id"] = $propuesta->getParticipantes()->ciudad_nacimiento;
+                                
+                                $array["departamentos_nacimiento"]= Departamentos::find("active=true AND pais='".$propuesta->getParticipantes()->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id."'");
+                                $array["ciudades_nacimiento"]= Ciudades::find("active=true AND departamento='".$propuesta->getParticipantes()->getCiudadesnacimiento()->getDepartamentos()->id."'");
+                            }
+                
                             $array["departamentos"]= Departamentos::find("active=true AND pais='".$propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
                             $array["ciudades"]= Ciudades::find("active=true AND departamento='".$propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->id."'");
-                            
-                            
+                             
+                            $array["barrios"]=array();
+                            if(isset($propuesta->getParticipantes()->localidad_residencia))
+                            {
+                                $array["barrios"] = Barrios::find("active=true AND localidad=" . $propuesta->getParticipantes()->localidad_residencia);
+                            }
                             
                             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
                             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
@@ -813,6 +853,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                                 $array["grupo_etnico"] = Gruposetnicos::find("active=true");
                                 $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
                                 $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
+                                $array["discapacidades"] = Tiposdiscapacidades::find("active=true");            
 
                                 //Registro la accion en el log de convocatorias
                                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -1070,6 +1111,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     5 => 'p.segundo_apellido',
                     6 => 'p.rol',
                     7 => 'p.id',
+                    8 => 'p.representante',
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
@@ -1087,7 +1129,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1097,7 +1139,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY " . $columns[$request->get('order')[0]['column']] . "   " . $request->get('order')[0]['dir'] . "  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                $sqlRec .= " ORDER BY p.representante DESC  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -1157,28 +1199,47 @@ $app->get('/editar_integrante', function () use ($app, $config) {
             $array["participante"] = $participante;
 
             //Creo los array de los select del formulario
-            $array["tipo_documento"] = Tiposdocumentos::find("active=true");
-            $array["sexo"] = Sexos::find("active=true");
-            $array["orientacion_sexual"] = Orientacionessexuales::find("active=true");
-            $array["identidad_genero"] = Identidadesgeneros::find("active=true");
-            $array["grupo_etnico"] = Gruposetnicos::find("active=true");
-            $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
-            $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
-            $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;
-            $array["ciudad_nacimiento_name"] = $participante->getCiudadesnacimiento()->nombre;
+            $array["pais_residencia_id"] = "";
+            $array["departamento_residencia_id"] = "";
+            $array["ciudad_residencia_id"] = "";
             
-            $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
-            $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;
-            $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
-
-            $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
-            $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
-                            
-
-            //Creo los tipos de documentos para anexar
-            $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='tipos_parametros'");
-            $array["tipo_parametro"] = explode(",", $tabla_maestra->valor);
-
+            $array["pais_nacimiento_id"] = "";
+            $array["departamento_nacimiento_id"] = "";
+            $array["ciudad_nacimiento_id"] = "";
+            
+            $array["departamentos"]=array();
+            $array["ciudades"]=array();                        
+            $array["barrios"] = array();
+            
+            $array["departamentos_nacimiento"]=array();
+            $array["ciudades_nacimiento"]=array();
+            
+            if(isset($participante->id))
+            {
+                $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;                
+                $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
+                                
+                if(isset($participante->ciudad_nacimiento))
+                {
+                    $array["pais_nacimiento_id"] = $participante->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id;
+                    $array["departamento_nacimiento_id"] = $participante->getCiudadesnacimiento()->getDepartamentos()->id;                
+                    $array["ciudad_nacimiento_id"] = $participante->ciudad_nacimiento;
+                    
+                    $array["departamentos_nacimiento"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesnacimiento()->getDepartamentos()->getPaises()->id."'");
+                    $array["ciudades_nacimiento"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesnacimiento()->getDepartamentos()->id."'");
+                }                                                     
+                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
+                        
+                if(isset($participante->localidad_residencia))
+                {
+                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $participante->localidad_residencia);                                            
+                }
+            
+            }            
+            
             //Retorno el array
             echo json_encode($array);
         } else {
