@@ -699,6 +699,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
             $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
 
+            $td="";
 
             if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
