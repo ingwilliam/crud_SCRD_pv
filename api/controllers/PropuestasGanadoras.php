@@ -363,7 +363,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
                     $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
 
-                    $where .= " WHERE p.active=true AND p.estado IN (33,34)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
+                    $where .= " WHERE p.active=true AND p.estado IN (24,33,34)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
 
                     if ($params["convocatoria"] != "") {
                         $convocatoria = Convocatorias::findFirst("id=" . $params["convocatoria"] . " AND active=TRUE");
