@@ -240,19 +240,35 @@ $app->get('/search', function () use ($app, $config) {
             //Creo los array de los select del formulario
             $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
             
-            $array["barrio_residencia_name"] = "";            
-            $array["ciudad_residencia_name"] = "";
-            if(isset($participante->id))
-            {
-                $array["barrio_residencia_name"] = $participante->getBarriosresidencia()->nombre;            
-                $array["ciudad_residencia_name"] = $participante->getCiudadesresidencia()->nombre;
-            } 
-            
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
             
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
+            
+            $array["pais_residencia_id"] = "";
+            $array["departamento_residencia_id"] = "";
+            $array["ciudad_residencia_id"] = "";
+            
+            $array["departamentos"]=array();
+            $array["ciudades"]=array();                        
+            $array["barrios"] = array();
+            
+            if(isset($participante->id))
+            {
+                $array["pais_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                $array["departamento_residencia_id"] = $participante->getCiudadesresidencia()->getDepartamentos()->id;                
+                $array["ciudad_residencia_id"] = $participante->ciudad_residencia;
+                
+                $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante->getCiudadesresidencia()->getDepartamentos()->id."'");
+                        
+                if(isset($participante->localidad_residencia))
+                {
+                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $participante->localidad_residencia);                                            
+                }
+            
+            }
             
             //Retorno el array
             echo json_encode($array);
@@ -337,16 +353,36 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             //Creo los array de los select del formulario
                             $array["estado"] = $propuesta->estado;
                             $array["tipo_documento"] = Tiposdocumentos::find("active=true");
-                            $array["tipo_documento"]= Tiposdocumentos::find("active=true");            
-                            $array["barrio_residencia_name"] = $participante_hijo_propuesta->getBarriosresidencia()->nombre;            
-                            $array["ciudad_residencia_name"] = $participante_hijo_propuesta->getCiudadesresidencia()->nombre;
-
                             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='estrato'");            
                             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
                             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
                             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
 
+                            $array["pais_residencia_id"] = "";
+                            $array["departamento_residencia_id"] = "";
+                            $array["ciudad_residencia_id"] = "";
+
+                            $array["departamentos"]=array();
+                            $array["ciudades"]=array();                        
+                            $array["barrios"] = array();
+
+                            if(isset($propuesta->id))
+                            {
+                                $array["pais_residencia_id"] = $participante_hijo_propuesta->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
+                                $array["departamento_residencia_id"] = $participante_hijo_propuesta->getCiudadesresidencia()->getDepartamentos()->id;                
+                                $array["ciudad_residencia_id"] = $participante_hijo_propuesta->ciudad_residencia;
+
+                                $array["departamentos"]= Departamentos::find("active=true AND pais='".$participante_hijo_propuesta->getCiudadesresidencia()->getDepartamentos()->getPaises()->id."'");
+                                $array["ciudades"]= Ciudades::find("active=true AND departamento='".$participante_hijo_propuesta->getCiudadesresidencia()->getDepartamentos()->id."'");
+
+                                if(isset($participante_hijo_propuesta->localidad_residencia))
+                                {
+                                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $participante_hijo_propuesta->localidad_residencia);                                            
+                                }
+
+                            }
+                            
                             //Registro la accion en el log de convocatorias
                             $logger->info('"token":"{token}","user":"{user}","message":"Retorno el participante pj en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();

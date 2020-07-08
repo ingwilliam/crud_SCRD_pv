@@ -768,7 +768,7 @@ $app->get('/all_view', function () use ($app) {
         $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=view.linea_estrategica";
         $where .= " LEFT JOIN Enfoques AS en ON en.id=view.enfoque";
         $where .= " INNER JOIN Estados AS es ON es.id=view.estado";        
-        $where .= " WHERE view.modalidad <> 2 AND es.id IN (5, 6, 32) AND view.active IN (true) ";
+        $where .= " WHERE view.modalidad <> 2 AND es.id IN (5, 6, 32, 43 ,45) AND view.active IN (true) ";
 
 
         //Condiciones para la consulta del select del buscador principal        
@@ -782,8 +782,8 @@ $app->get('/all_view', function () use ($app) {
         if (!empty($request->get("params"))) {
             foreach ($array_json_param AS $clave => $valor) {
                 if ($clave == "nombre" && $valor != "") {
-                    $where .= " AND ( UPPER(view.convocatoria) LIKE '%" . strtoupper($valor) . "%' ";
-                    $where .= " OR UPPER(view.categoria) LIKE '%" . strtoupper($valor) . "%' )";
+                    $where .= " AND ( UPPER(TRANSLATE(view.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ";
+                    $where .= " OR UPPER(TRANSLATE(view.categoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') )";
                 }
                 
                 if ($valor != "" && $clave != "nombre") {
