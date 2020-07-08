@@ -64,10 +64,35 @@ $app = new Micro($di);
 
 
 
-$app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $config) {
+$app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $config) {
     try {
 
-
+        $request = new Request();        
+        $fase='Evaluación';
+        
+        if($request->get("deliberacion")=="true")
+        {
+            $fase='Deliberación';
+        }
+        
+        $in_codigos="";
+        
+        if($request->get("codigos")!="")
+        {
+            $array_codigos= explode(",",$request->get("codigos"));                        
+            foreach($array_codigos as $clave)
+            {
+                $in_codigos=$in_codigos.",'".$clave."'";
+            }
+            
+            $in_codigos = trim($in_codigos, ",");
+            
+            $in_codigos=" AND p.codigo IN (".$in_codigos.")";
+            
+        }
+        
+        $where = " AND ep.fase='".$fase."'".$in_codigos;
+        
         //ordenar
         $phql = 'SELECT
                   distinct (p.id), p.*
@@ -75,7 +100,7 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                   Propuestas p
                   inner join Evaluacionpropuestas ep ON p.id = ep.propuesta
               WHERE
-              ep.ronda = ' . $ronda;
+              ep.ronda = ' . $ronda." ".$where;
 
         $rs = $this->modelsManager->createQuery($phql)->execute();
 

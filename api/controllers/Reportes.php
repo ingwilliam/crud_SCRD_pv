@@ -304,7 +304,7 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
                     $select_ronda=$select_ronda.$option;
                     $select_ronda=$select_ronda.'</select> ';
                     
-                    $array_retorno["reporte_planillas_evaluacion"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Ronda</label>'.$select_ronda.'</div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_planillas" class="btn btn-default">Generar reporte</button></div></div>';                
+                    $array_retorno["reporte_planillas_evaluacion"]='<div class="row"><div class="col-lg-6"><div class="form-group"><label>Ronda</label>'.$select_ronda.'</div></div><div class="col-lg-6"><div class="form-group"><label>Deliberación</label><select id="deliberacion" name="deliberacion" class="form-control" ><option value="true">Sí</option><option value="false" selected="selected">No</option></select></div></div><div class="col-lg-6"><div class="form-group"><label>Códigos de propuestas</label><input type="text" id="codigos" name="codigos" class="form-control"></div></div><div class="col-lg-6"><div class="form-group"><label>&nbsp;</label><button id="btn_planillas" class="btn btn-primary form-control">Generar reporte</button></div></div></div>';                
                     
                     $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                     echo json_encode($array_retorno);
@@ -447,7 +447,7 @@ $app->get('/generar_reportes_generales', function () use ($app, $config, $logger
                 
                 $params=array("token"=>$request->get('token'),"entidad"=>$request->get('entidad'),"anio"=>$request->get('anio'));
                 //Seteo los varoles a retornar
-                $array_retorno["reporte_pn"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Número de documento</label><input type="text" id="pn_numero_documento" class="form-control input-number"></div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_pn" type="submit" class="btn btn-default">Generar reporte</button></div></div>';                
+                $array_retorno["reporte_pn"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Número de documento</label><input type="text" id="pn_numero_documento" class="form-control"></div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_pn" type="submit" class="btn btn-default">Generar reporte</button></div></div>';                
                 $array_retorno["reporte_ganadores"]="<a target='_blank' href='".$config->sistema->url_report."reporte_ganadores.php?token=".$request->get('token')."&anio=".$request->get('anio')."&entidad=".$request->get('entidad')."' class='btn'>Generar Reporte <i class='fa fa-file-pdf-o'></i></a><a href='javascript:void(0);' rel='". json_encode($params)."' class='btn reporte_propuestas_ganadoras'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";                
                 $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                 echo json_encode($array_retorno);                                                                                       
