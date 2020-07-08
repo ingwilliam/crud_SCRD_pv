@@ -61,6 +61,13 @@ class Participantes extends Model
             'Tiposdocumentos',
             'id'
         );
+        
+        //Se define relacion de N a 1 con Tiposdiscapacidades        
+        $this->belongsTo(
+            'discapacidad',
+            'Tiposdiscapacidades',
+            'id'
+        );
 
         //Se define relacion de N a 1 con Sexos
         $this->belongsTo(

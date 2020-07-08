@@ -103,8 +103,11 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
             if (!empty($request->get("params"))) {
                 foreach (json_decode($request->get("params")) AS $clave => $valor) {
                     if ($clave == "nombre" && $valor != "") {
-                        $where_convocatorias .= " AND ( UPPER(c.nombre) LIKE '%" . strtoupper($valor) . "%' ";
-                        $where_convocatorias .= " OR UPPER(cpad.nombre) LIKE '%" . strtoupper($valor) . "%' )";
+                        //$where_convocatorias .= " AND ( UPPER(c.nombre) LIKE '%" . strtoupper($valor) . "%' ";
+                        //$where_convocatorias .= " OR UPPER(cpad.nombre) LIKE '%" . strtoupper($valor) . "%' )";
+                        
+                        $where_convocatorias .= " AND ( UPPER(TRANSLATE(c.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ";
+                        $where_convocatorias .= " OR UPPER(TRANSLATE(cpad.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') )";
                     }
 
                     if ($valor != "" && $clave != "nombre" && $clave != "estado") {

@@ -56,7 +56,7 @@ $app->get('/select', function () use ($app) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            $phql = "SELECT * FROM Localidades AS l WHERE l.active = true AND l.ciudad = $ciudad  ORDER BY nombre";
+            $phql = "SELECT * FROM Localidades AS l WHERE l.active = true AND l.ciudad = $ciudad  ORDER BY id";
 
             $robots = $app->modelsManager->executeQuery($phql);
 
