@@ -85,10 +85,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                 $estado = $propuesta->estado;
                 $titulo_reporte="CERTIFICADO DE INSCRIPCIÓN";
                 $generar = $request->getPut('vi');
+                $parrafo_1="Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.";
                 if($generar==1)
                 {
                     $estado=8;
                     $titulo_reporte="CERTIFICADO DE PRE-INSCRIPCIÓN";
+                    $parrafo_1="Su inscripción no ha sido confirmada. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.";
                 }
                 
                 if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31|| $estado == 33|| $estado == 34) {
@@ -433,7 +435,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 </style>
 <h2  style="text-align:center;">'.$titulo_reporte.'</h2>
 <h3>Información de la propuesta</h3>        
-<p>Su inscripción ha sido realizada correctamente. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.</p>
+<p>'.$parrafo_1.'</p>
 <table>
     <tr>
         <td colspan="2"><b>Código</b></td>
@@ -583,6 +585,7 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
             ]));
             
             $html_propuestas = "";
+            $i=1;
             foreach ($listado_propuestas_inscritas as $propuesta) {
                 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
@@ -599,12 +602,14 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . '<td>' . $i . '</td>';
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->getEstados()->nombre. "</td>";                                
                 $html_propuestas = $html_propuestas . "</tr>";
+                $i++;
              
             }
                         
@@ -615,21 +620,22 @@ $app->post('/reporte_listado_propuesta_habilitados', function () use ($app, $con
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="5" align="center">Listado de habilitados</td>
+                        <td colspan="6" align="center">Listado de habilitados</td>
                     </tr>
                     <tr>
-                        <td colspan="5" align="center">'.$entidad.'</td>
+                        <td colspan="6" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
-                        <td colspan="5" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td colspan="2">'.$nombre_convocatoria.'</td>
+                        <td colspan="3">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center"></td>
                         <td align="center">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
@@ -706,6 +712,7 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
             ]));
             
             $html_propuestas = "";
+            $i=1;            
             foreach ($listado_propuestas_inscritas as $propuesta) {
                 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
@@ -737,13 +744,16 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . '<td width="30">' . $i . '</td>';
                 $html_propuestas = $html_propuestas . '<td width="60">' . $propuesta->codigo . '</td>';
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . '<td width="80">' . $propuesta->getEstados()->nombre. '</td>';                
-                $html_propuestas = $html_propuestas . '<td width="326">' . $text_observacion. '</td>';                                
+                $html_propuestas = $html_propuestas . '<td width="361">' . $text_observacion. '</td>';                                
                 $html_propuestas = $html_propuestas . "</tr>";
+                
+                $i++;
              
             }
                         
@@ -754,27 +764,29 @@ $app->post('/reporte_listado_propuesta_rechazados_habilitados', function () use 
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="6" align="center">Listado de habilitados y rechazados</td>
+                        <td colspan="7" align="center">Listado de habilitados y rechazados</td>
                     </tr>
                     <tr>
-                        <td colspan="6" align="center">'.$entidad.'</td>
+                        <td colspan="7" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
-                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="7" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td colspan="2">'.$nombre_convocatoria.'</td>
+                        <td colspan="3">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                    
+                        <td align="center" width="30"></td>
                         <td align="center" width="60">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
                         <td align="center" width="80">Estado</td>
-                        <td align="center" width="326">Observaciones</td>
+                        <td align="center" width="361">Observaciones</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -846,6 +858,7 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
             ]));
             
             $html_propuestas = "";
+            $i=1;
             foreach ($listado_propuestas_inscritas as $propuesta) {
                 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
@@ -884,13 +897,15 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 $text_observacion = substr($text_observacion, 0, -2);
                 
                 $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . '<td width="44">' . $i . '</td>';
                 $html_propuestas = $html_propuestas . '<td  width="60">' . $propuesta->codigo . '</td>';
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . '<td width="80">' . $propuesta->getEstados()->nombre. '</td>';                
-                $html_propuestas = $html_propuestas . '<td width="326">' . $text_observacion. '</td>';                
+                $html_propuestas = $html_propuestas . '<td width="347">' . $text_observacion. '</td>';                
                 $html_propuestas = $html_propuestas . "</tr>";
+                $i++;
              
             }
                         
@@ -901,27 +916,28 @@ $app->post('/reporte_listado_propuesta_rechazados_subsanar', function () use ($a
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="6" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
+                        <td colspan="7" align="center">Listado de habilitados, rechazados y documentos por subsanar</td>
                     </tr>
                     <tr>
-                        <td colspan="6" align="center">'.$entidad.'</td>
+                        <td colspan="7" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
-                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="7" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td colspan="2">'.$nombre_convocatoria.'</td>
+                        <td colspan="3">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td colspan="2">'.$nombre_categoria.'</td>
                     </tr>                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center" width="44"></td>
                         <td align="center" width="60">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
                         <td align="center">Nombre de la propuesta</td>
                         <td align="center" width="80">Estado</td>
-                        <td align="center" width="326">Observaciones</td>
+                        <td align="center" width="347">Observaciones</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -993,6 +1009,7 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
             ]));
             
             $html_propuestas = "";
+            $i=1;
             foreach ($listado_propuestas_inscritas as $propuesta) {
                 
                 $participante = $propuesta->getParticipantes()->primer_nombre . " " . $propuesta->getParticipantes()->segundo_nombre . " " . $propuesta->getParticipantes()->primer_apellido . " " . $propuesta->getParticipantes()->segundo_apellido;
@@ -1009,11 +1026,13 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                 }
                         
                 $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td width='30'>" . $i . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $propuesta->codigo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $nombre_representante . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $propuesta->nombre. "</td>";                
+                $html_propuestas = $html_propuestas . "<td width='343'>" . $propuesta->nombre. "</td>";                
                 $html_propuestas = $html_propuestas . "</tr>";
+                $i++;
              
             }
                         
@@ -1024,25 +1043,26 @@ $app->post('/reporte_listado_inscrita', function () use ($app, $config, $logger)
                 
                 $html='<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="4" align="center">Listado de participantes inscritos</td>
+                        <td colspan="5" align="center">Listado de participantes inscritos</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center">'.$entidad.'</td>
+                        <td colspan="5" align="center">'.$entidad.'</td>
                     </tr>
                     <tr>
-                        <td colspan="4" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="5" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
                         <td>Convocatoria</td>
-                        <td>'.$nombre_convocatoria.'</td>
+                        <td colspan="2">'.$nombre_convocatoria.'</td>
                         <td>Categoría</td>
                         <td>'.$nombre_categoria.'</td>
                     </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center" width="30"></td>
                         <td align="center">Código</td>
                         <td align="center">Participante</td>
                         <td align="center">Representante</td>
-                        <td align="center">Nombre de la propuesta</td>
+                        <td align="center" width="343">Nombre de la propuesta</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -1222,10 +1242,12 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
                 $estado = $propuesta->estado;
                 $titulo_reporte="CERTIFICADO DE SUBSANACIÓN";
                 $generar = $request->getPut('vi');
+                $parrafo_1="La subsanación ha sido realizada correctamente, recuerde que después del periodo de subsanación, su propuesta pasa a verificación de los requisitos subsanados.";
                 if($generar==1)
                 {
                     $estado=8;
                     $titulo_reporte="CERTIFICADO DE PRE-SUBSANACIÓN";
+                    $parrafo_1="La subsanación no ha sido confirmada, recuerde que después del periodo de subsanación, su propuesta pasa a verificación de los requisitos subsanados.";
                 }
                 
                 if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31) {
@@ -1451,7 +1473,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
 </style>
 <h2  style="text-align:center;">'.$titulo_reporte.'</h2>
 <h3>Información de la propuesta</h3>        
-<p>La subsanación ha sido realizada correctamente, recuerde que después del periodo de subsanación, su propuesta pasa a verificación de los requisitos subsanados.</p>
+<p>'.$parrafo_1.'</p>
 <table>
     <tr>
         <td colspan="2"><b>Código</b></td>
