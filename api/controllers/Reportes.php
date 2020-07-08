@@ -304,7 +304,7 @@ $app->get('/generar_reportes', function () use ($app, $config, $logger) {
                     $select_ronda=$select_ronda.$option;
                     $select_ronda=$select_ronda.'</select> ';
                     
-                    $array_retorno["reporte_planillas_evaluacion"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Ronda</label>'.$select_ronda.'</div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_planillas" class="btn btn-default">Generar reporte</button></div></div>';                
+                    $array_retorno["reporte_planillas_evaluacion"]='<div class="row"><div class="col-lg-6"><div class="form-group"><label>Ronda</label>'.$select_ronda.'</div></div><div class="col-lg-6"><div class="form-group"><label>Deliberación</label><select id="deliberacion" name="deliberacion" class="form-control" ><option value="true">Sí</option><option value="false" selected="selected">No</option></select></div></div><div class="col-lg-6"><div class="form-group"><label>Códigos de propuestas</label><input type="text" id="codigos" name="codigos" class="form-control"></div></div><div class="col-lg-6"><div class="form-group"><label>&nbsp;</label><button id="btn_planillas" class="btn btn-primary form-control">Generar reporte</button></div></div></div>';                
                     
                     $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                     echo json_encode($array_retorno);
