@@ -2303,6 +2303,231 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
     }
 });
 
+$app->post('/reporte_ganadores', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_estado para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Consulto lo necesario
+            $user_current = json_decode($token_actual->user_current, true);
+            
+
+            $where_entidad="";
+            if($request->getPut('entidad')!="")
+            {
+                $where_entidad=" AND vp.entidad=".$request->getPut('entidad');
+            }
+            
+            //Genero reporte propuestas por estado
+            $sql_convocatorias = "
+                SELECT 
+                    vp.*
+                FROM
+                    Viewpropuestas AS vp
+                WHERE vp.anio='" . $request->getPut('anio') . "' AND vp.id_estado=34 ".$where_entidad;
+            
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            $html_propuestas = "";
+            foreach ($convocatorias as $convocatoria) {
+                $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->anio . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_entidad . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->convocatoria . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->categoria . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->propuesta . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estado_propuesta . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_resolucion . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_resolucion . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->monto_asignado . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo_presupuestal . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo_proyecto_inversion . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->cdp . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->crp . "</td>";
+                $html_propuestas = $html_propuestas . "</tr>";
+            }
+
+            $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                    <tr>
+                        <td colspan="14" align="center">Reporte de Ganadores</td>
+                    </tr>
+                    <tr>
+                        <td colspan="14" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                    </tr>
+                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Año</td>
+                        <td align="center">Entidad</td>
+                        <td align="center">Convocatoria</td>
+                        <td align="center">Categoría</td>                        
+                        <td align="center">Propuesta</td>                        
+                        <td align="center">Código</td>                        
+                        <td align="center">Estado</td>                        
+                        <td align="center">Número de resolución</td>                        
+                        <td align="center">Fecha de resolución</td>                        
+                        <td align="center">Monto asignado</td>                        
+                        <td align="center">Código presupuestal</td>                        
+                        <td align="center">Código proyecto de inversión</td>                        
+                        <td align="center">CDP</td>                        
+                        <td align="center">CRP</td>                        
+                    </tr> 
+                    ' . $html_propuestas . '
+                </table>';
+
+            $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo $html;
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_estado al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_estado al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+            $anio = $request->getPut('anio');
+
+            $where_entidad="";
+            if($request->getPut('entidad')!="")
+            {
+                $where_entidad=" AND vp.entidad=".$request->getPut('entidad');
+            }
+            //Genero reporte propuestas por estado
+            $sql_convocatorias = "
+                SELECT 
+                    vp.*
+                FROM
+                    Viewpropuestas AS vp
+                WHERE vp.anio='" . $anio . "' AND vp.id_estado=34 ".$where_entidad;
+            
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Reporte de Ganadores')
+                    ->setSubject('SICON')
+                    ->setDescription('Reporte de Ganadores')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Reporte de Ganadores");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Reporte de Ganadores");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 5, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Categoría");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Propuesta");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Código");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Estado");
+            $hoja->setCellValueByColumnAndRow(8, 5, "Número de resolución");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Fecha de resolución");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Monto asignado");
+            $hoja->setCellValueByColumnAndRow(11, 5, "Código presupuestal");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Código proyecto de inversión");
+            $hoja->setCellValueByColumnAndRow(13, 5, "CDP");
+            $hoja->setCellValueByColumnAndRow(14, 5, "CRP");
+
+            //Registros de la base de datos
+            $fila = 6;
+            foreach ($convocatorias as $convocatoria) {
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->anio);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->nombre_entidad);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->convocatoria);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->categoria);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->propuesta);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->estado_propuesta);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_resolucion);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->fecha_resolucion);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->monto_asignado);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->codigo_presupuestal);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->codigo_proyecto_inversion);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->cdp);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->crp);
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "reporte_ganadores.xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 try {
     // Gestionar la consulta
     $app->handle();
