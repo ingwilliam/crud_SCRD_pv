@@ -495,6 +495,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
         $totalpropuestaconvocatoria = Propuestas::find(
                         [
                             'convocatoria = ' . $convocatoria->id
+                            . ' AND estado not in (20,7)'//Para no traer anuladas y guardadas - no inscritas
                             . ' AND active= true'
                         ]
         );
@@ -705,8 +706,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
                 $participantepadre = Participantes::findFirst(
                                 [
-                                    'participante_padre = ' . $propuesta->p->participante,
-                                    'representante is true'
+                                    'participante_padre = ' . $propuesta->p->participante
+                                    .' AND representante = true'
                                 ]
                 );
 
@@ -838,10 +839,11 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
                         $participantepadre = Participantes::findFirst(
                                         [
-                                            'participante_padre = ' . $ganador->p->participante,
-                                            'representante is true'
+                                            'participante_padre = ' . $ganador->p->participante
+                                            .' AND representante = true'
                                         ]
                         );
+                        
 
                         $td = "";
 
@@ -917,7 +919,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                            Evaluacionpropuestas as ep2
                                         ON p.id = ep2.propuesta
                                       WHERE
-                                        p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado = " . $estado_recomendada->id . " AND p.monto_asignado is not null ";
+                                        p.convocatoria  = " . $convocatoriaronda->convocatoria . " AND p.estado = " . $estado_recomendada->id . " AND p.monto_asignado is not null ";// . " AND p.monto_asignado is not null "
                     $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda;
                     $query .= "  ORDER BY promedio DESC ";
 
@@ -959,8 +961,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
                             $participantepadre = Participantes::findFirst(
                                             [
-                                                'participante_padre = ' . $ganador->p->participante,
-                                                'representante is true'
+                                                'participante_padre = ' . $ganador->p->participante
+                                                .' AND representante = true'
                                             ]
                             );
 
