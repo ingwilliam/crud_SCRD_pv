@@ -2325,7 +2325,7 @@ $app->post('/reporte_ganadores', function () use ($app, $config, $logger) {
             
 
             $where_entidad="";
-            if($request->getPut('entidad')!="")
+            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
             {
                 $where_entidad=" AND vp.entidad=".$request->getPut('entidad');
             }
@@ -2425,7 +2425,7 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
             $anio = $request->getPut('anio');
 
             $where_entidad="";
-            if($request->getPut('entidad')!="")
+            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
             {
                 $where_entidad=" AND vp.entidad=".$request->getPut('entidad');
             }

@@ -596,7 +596,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
-                $where .= " WHERE (p.id = " . $propuesta->participante . " OR p.participante_padre = " . $propuesta->participante . ") AND tipo IN ('Junta','Integrante','Participante') AND tipo_documento<>7 AND tipo_documento IS NOT NULL";
+                $where .= " WHERE (p.id = " . $propuesta->participante . " OR p.participante_padre = " . $propuesta->participante . ") AND tipo IN ('Junta','Integrante','Participante') AND tipo_documento IS NOT NULL";
                 //Condiciones para la consulta
 
                 if (!empty($request->get("search")['value'])) {
@@ -610,7 +610,12 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ","
+                        . "CASE td.descripcion
+                                WHEN 'NIT' THEN concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_pj\"><span class=\"glyphicon glyphicon-edit\"></span></button>')
+                                ELSE concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\"><span class=\"glyphicon glyphicon-edit\"></span></button>')
+                           END as acciones,"
+                        . "concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -753,6 +758,15 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                         $post["por_que_actualiza"] = $participante->por_que_actualiza."<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";                    
+                        if($post["active"]=="false")
+                        {
+                            $post["active"]=FALSE;
+                        }
+                        
+                        if($post["active"]=="true")
+                        {
+                            $post["active"]=TRUE;
+                        }                                                
                     } else {
                         //Consulto el participante
                         $participante_padre = Participantes::findFirst($post["participante"]);
