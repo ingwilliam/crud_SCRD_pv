@@ -108,16 +108,15 @@ $app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use (
 
         foreach ($rs as $row) {
             //echo json_encode($rs);
-
+            
             $evaluacionpropuestas = Evaluacionpropuestas::find(
                             [
                                 ' propuesta = ' . $row->p->id
                                 . ' AND ronda = ' . $ronda
+                                . ' AND fase = "' . $fase.'"'
                             ]
             );
-
-
-
+            
             $participantes = Participantes::findFirst('id = ' . $row->p->participante);
 
             echo "<b>Código propuesta:</b>" . $row->p->codigo . "<br/>";
