@@ -1683,7 +1683,7 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
                             $this->db->commit();
                             return "exito";
                         }else{
-                           return "acceso_denegado"; //Indica que no puede anular la deliberación porque ya confirmó su top general
+                           return "acceso_denegado"; //Indica que no puede anular la deliberación porque ya confirmó su top general.
                         }
                     } else {
                         $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
