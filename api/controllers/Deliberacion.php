@@ -1499,20 +1499,16 @@ $app->put('/asignar_monto1/propuesta/{id:[0-9]+}', function ($id) use ($app, $co
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
 //            return $permiso_escritura;
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1602,19 +1598,15 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1683,7 +1675,7 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
                             $this->db->commit();
                             return "exito";
                         }else{
-                           return "acceso_denegado"; //Indica que no puede anular la deliberación porque ya confirmó su top general.
+                           return "confirmo_top"; //Indica que no puede anular la deliberación porque ya confirmó su top general.
                         }
                     } else {
                         $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
