@@ -639,7 +639,8 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
                              	ON c.requisito = r.id
                              	AND r.tipo_requisito LIKE 'Tecnicos'
                           WHERE
-                              	p.propuesta = " . $propuesta->id;
+                              	p.propuesta = " . $propuesta->id
+                                ." AND p.active=true ";
 
                 $documentos = $this->modelsManager->executeQuery($query);
 
