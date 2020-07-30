@@ -2291,6 +2291,8 @@ $app->post('/new_postulacion', function () use ($app, $config) {
         $tokens = new Tokens();
         //$chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
         $contador = 0;
+        $contador1 = 0;
+        $contador2 = 0;
 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
@@ -2328,10 +2330,29 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                     foreach ($postulaciones as $postulacion) {
 
                         //la convocatoria está activa y está publicada
-                        if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active) {
-                            $contador++;
+                        if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active && $postulacion->convocatorias->convocatoria_padre_categoria == null) {
+                            $contador1++;
                         }
                     }
+                    
+                    $phql = 'select count(j.id)
+                                from juradospostulados j
+                                inner join convocatorias c on c.id=j.convocatoria 
+                                where j.propuesta = '. $participante->propuestas->id
+                                .' and j.active
+                                   and c.active 
+                                   and c.estado=5 
+                                   and c.convocatoria_padre_categoria is not null 
+                                group by c.convocatoria_padre_categoria';
+
+                    $postulaciones_categorias = $this->modelsManager->createQuery($phql)->execute();
+
+                    foreach ($postulaciones_categorias as $postulaciones_categoria) {
+                        $contador2++;
+                    }
+
+
+                    $contador=$contador1+$contador2;
 
                     $nummax = Tablasmaestras::findFirst(
                                     [
