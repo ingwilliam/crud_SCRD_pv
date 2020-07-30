@@ -6049,7 +6049,6 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
 
                     $contador=$contador1+$contador2;
 
-                    return json_encode($contador);
 
                     $nummax = Tablasmaestras::findFirst(
                                     [
