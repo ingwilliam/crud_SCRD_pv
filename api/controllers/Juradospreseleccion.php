@@ -2335,17 +2335,18 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                         }
                     }
                     
-                    $phql = 'select count(j.id)
-                                from juradospostulados j
-                                inner join convocatorias c on c.id=j.convocatoria 
-                                where j.propuesta = '. $participante->propuestas->id
-                                .' and j.active
-                                   and c.active 
-                                   and c.estado=5 
-                                   and c.convocatoria_padre_categoria is not null 
-                                group by c.convocatoria_padre_categoria';
-
-                    $postulaciones_categorias = $this->modelsManager->createQuery($phql)->execute();
+                    $postulaciones_categorias = Juradospostulados::query()
+                            ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
+                            ->where("Juradospostulados.propuesta = ". $participante->propuestas->id)
+                            ->andWhere("Juradospostulados.active")
+                            ->andWhere("Convocatorias.active")
+                            ->andWhere("Convocatorias.estado=5")
+                            ->andWhere("Convocatorias.convocatoria_padre_categoria is not null")
+                            ->groupBy("Convocatorias.convocatoria_padre_categoria")
+                            ->columns("count(*)")
+                            ->execute();
+                    
+                    
 
                     foreach ($postulaciones_categorias as $postulaciones_categoria) {
                         $contador2++;
