@@ -265,8 +265,8 @@ $app->get('/all_preseleccionados', function () use ($app) {
 
                         $juradospostulados = Juradospostulados::find(
                                         [
-                                            " convocatoria = " . $request->get('categoria'),
-                                            " active =" . true,
+                                            " convocatoria = " . $request->get('categoria')
+                                            . " AND active = true ",
                                             "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
                                         ]
                         );
