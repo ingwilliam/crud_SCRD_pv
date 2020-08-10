@@ -696,7 +696,13 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
             $usuarioperfil = Usuariosperfiles::findFirst(['id = ' . $participante_actual->usuario_perfil]);
 
+            /*
+             * 31-07-2020
+             * WIlmer Gustavo Mogollón Duque
+             * Se incorpora el tipo y npumero de documento para persona natural
+             */
 
+            $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
 
             $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
 
@@ -720,6 +726,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                     $td = $td->nombre . " " . $participantepadre->numero_documento;
                 }
             } else {
+
+                $td_pn = Tiposdocumentos::findFirst('id = ' . $participante_actual->tipo_documento)->nombre;
+                $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                 $representante = "";
             }
 
@@ -730,7 +739,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
             $table->addCell(500)->addText($prop);
             $table->addCell(1000)->addText($propuesta->p->codigo, $fontStyle9);
             $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-            $table->addCell(1250)->addText($participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido, $fontStyle9);
+            $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
             $table->addCell(1000)->addText($td, $fontStyle9);
             $table->addCell(1250)->addText($representante, $fontStyle9);
             $table->addCell(3500)->addText($propuesta->p->nombre, $fontStyle9);
@@ -834,6 +843,14 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
                     $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
 
+                    /*
+                     * 31-07-2020
+                     * WIlmer Gustavo Mogollón Duque
+                     * Se incorpora el tipo y npumero de documento para persona natural
+                     */
+
+                    $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
+
 
                     if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
@@ -853,6 +870,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                             $td = $td->nombre . " " . $participantepadre->numero_documento;
                         }
                     } else {
+                        $td_pn = Tiposdocumentos::findFirst('id = ' . $participante_actual->tipo_documento)->nombre;
+                        $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                         $representante = "";
                     }
 
@@ -863,7 +882,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                     $table->addRow();
                     $table->addCell(1000)->addText($ganador->p->codigo, $fontStyle9);
                     $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-                    $table->addCell(1250)->addText($participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido, $fontStyle9);
+                    $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
                     $table->addCell(1000)->addText($td, $fontStyle9);
                     $table->addCell(1500)->addText($representante, $fontStyle9);
                     $table->addCell(3000)->addText($ganador->p->nombre, $fontStyle9);
@@ -955,6 +974,14 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                         $usuarioperfil = Usuariosperfiles::findFirst(['id = ' . $participante_actual->usuario_perfil]);
 
                         $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
+                        
+                        /*
+                     * 31-07-2020
+                     * WIlmer Gustavo Mogollón Duque
+                     * Se incorpora el tipo y npumero de documento para persona natural
+                     */
+
+                    $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
 
 
                         if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
@@ -974,6 +1001,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                                 $td = $td->nombre . " " . $participantepadre->numero_documento;
                             }
                         } else {
+                            $td_pn = Tiposdocumentos::findFirst('id = ' . $participante_actual->tipo_documento)->nombre;
+                            $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                             $representante = "";
                         }
 
@@ -984,7 +1013,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                         $table->addRow();
                         $table->addCell(1000)->addText($ganador->p->codigo, $fontStyle9);
                         $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-                        $table->addCell(1250)->addText($participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido, $fontStyle9);
+                        $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
                         $table->addCell(1000)->addText($td, $fontStyle9);
                         $table->addCell(1500)->addText($representante, $fontStyle9);
                         $table->addCell(3000)->addText($ganador->p->nombre, $fontStyle9);
@@ -1382,10 +1411,10 @@ $app->get('/carta_aceptacion_notificacion/postulacion/{postulacion:[0-9]+}', fun
                                     su incumplimiento y se establecerá que el ganador no podrá participar por el término de los dos (2) años siguientes en las convocatorias del PDE.<br/><br/>";
 
 
-                    echo "Fecha de aceptación: ".$notificacion->fecha_aceptacion;
+                    echo "Fecha de aceptación: " . $notificacion->fecha_aceptacion;
 
                     break;
-                
+
                 case "Rechazada":
 
                     echo "Yo " . $participante . ", identificado(a) con el documento de identidad " . $juradopostulado->Propuestas->Participantes->numero_documento . " manifiesto que:<br/><br/>";
@@ -1395,7 +1424,7 @@ $app->get('/carta_aceptacion_notificacion/postulacion/{postulacion:[0-9]+}', fun
                     . $entidad->nombre . ".<br/><br/>";
 
 
-                    echo "Fecha de rechazo: ".$notificacion->fecha_rechazo;
+                    echo "Fecha de rechazo: " . $notificacion->fecha_rechazo;
 
                     break;
 
