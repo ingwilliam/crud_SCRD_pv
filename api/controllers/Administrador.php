@@ -752,7 +752,7 @@ $app->post('/menu', function () use ($app,$config) {
                                 ?>
                                 <?php
                                 //El sub menu de jurados, debido a la modalidad de la convocatoria
-                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5||$request->getPost('m')==6||$request->getPost('m')==7||$request->getPost('m')==8)
+                                if($request->getPost('m')==1||$request->getPost('m')==3||$request->getPost('m')==4||$request->getPost('m')==5||$request->getPost('m')==6||$request->getPost('m')==7||$request->getPost('m')==8||$request->getPost('m')==9)
                                 {
                                 ?>
                                 <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
@@ -774,17 +774,39 @@ $app->post('/menu', function () use ($app,$config) {
                                 ?>
                                 <?php
                                 if( $request->getPost('m')=="pj" )
-                                {
-                                ?>
-                                <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
-                                <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
-                                <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Persona jurídica</a></li>
-                                <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
-                                <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Junta directiva</a></li>
-                                <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>
-                                <?php
+                                {                                
+                                    //Validamos si la propuesta es del PDAC
+                                    $propuesta = Propuestas::findFirst("id=".$request->getPost('p'));
+
+                                    if( $propuesta->getConvocatorias()->programa == 2)
+                                    {
+                                    ?>
+                                    <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                    <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
+                                    <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Persona jurídica</a></li>
+                                    <li><a href="../propuestas/propuestas_pdac.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
+                                    <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Junta directiva</a></li>                                    
+                                    <li><a href="../propuestas/grupos_trabajos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Equipo de trabajo</a></li>
+                                    <li><a href="../propuestas/objetivos_metas_actividades.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Objetivos, metas y actividades</a></li>
+                                    <li><a href="../propuestas/territorios_poblaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Territorios y población</a></li>
+                                    <li><a href="../propuestas/cronogramas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Cronograma</a></li>
+                                    <li><a href="../propuestas/presupuestos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Presupuesto</a></li>
+                                    <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>                                    
+                                    <?php
+                                    }
+                                    else
+                                    {
+                                    ?>
+                                    <li><a href="../propuestas/propuestas_busqueda_convocatorias.html">Búsqueda de convocatorias</a></li>
+                                    <li><a href="../propuestas/perfiles.html?m=1&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Términos y condiciones de participación</a></li>
+                                    <li><a href="../propuestas/perfil_persona_juridica.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Persona jurídica</a></li>
+                                    <li><a href="../propuestas/propuestas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Propuesta</a></li>
+                                    <li><a href="../propuestas/junta.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Junta directiva</a></li>
+                                    <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>                                    
+                                    <?php
+                                    }                                                                                                    
                                 }
-                                ?>
+                                ?>                                
                                 <?php
                                 if( $request->getPost('m')=="agr" )
                                 {
