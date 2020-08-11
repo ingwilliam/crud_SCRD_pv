@@ -768,7 +768,7 @@ $app->get('/all_view', function () use ($app) {
         $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=view.linea_estrategica";
         $where .= " LEFT JOIN Enfoques AS en ON en.id=view.enfoque";
         $where .= " INNER JOIN Estados AS es ON es.id=view.estado";        
-        $where .= " WHERE view.modalidad <> 2 AND es.id IN (5, 6, 32, 43 ,45) AND view.active IN (true) ";
+        $where .= " WHERE view.modalidad NOT IN (2,7) AND es.id IN (5, 6, 32, 43 ,45) AND view.active IN (true) ";
 
 
         //Condiciones para la consulta del select del buscador principal        
@@ -884,6 +884,9 @@ $app->get('/search_convocatorias', function () use ($app) {
         $array["lineas_estrategicas"] = Lineasestrategicas::find("active = true");
         $array["programas"] = Programas::find("active = true");
         $array["enfoques"] = Enfoques::find("active = true");
+        $array["sexos"] = Sexos::find("active = true");
+        $array["localidades"] = Localidades::find("active = true");
+        $array["tiposparticipantes"] = Perfiles::find("active = true AND id IN (6,7,8,17)");
         $array["estados"] = Estados::find(
                         array(
                             "tipo_estado = 'convocatorias' AND active = true AND id IN (5,6)",
