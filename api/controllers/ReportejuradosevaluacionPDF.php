@@ -69,15 +69,15 @@ $app = new Micro($di);
  * Wilmer Gustavo Mogollón Duque
  * Se incorpora método juradospostulados/convocatoria/
  */
-$app->post('/juradospostulados/convocatoria/{convocatoria:[0-9]+}', function ($id_convocatoria) use ($app, $config) {
+$app->post('/evaluacionjuradospostulados/convocatoria/{convocatoria:[0-9]+}', function ($id_convocatoria) use ($app, $config) {
     try {
 
 
 
 
         $convocatoria = Convocatorias::findFirst([' id = ' . $id_convocatoria]);
-        
-        
+
+
         $programa = Programas::findFirst(['id=' . $convocatoria->programa]);
 
 
@@ -104,7 +104,7 @@ $app->post('/juradospostulados/convocatoria/{convocatoria:[0-9]+}', function ($i
         echo $entidad->nombre . "<br/>";
         echo $programa->nombre . "<br/>";
         echo $nombrec . "<br/>";
-        echo 'Listado de jurados postulados';
+        echo 'Planillas de evaluación de los jurados postulados';
         echo '<br/>';
         echo '<br/>';
         echo '</div>';
@@ -119,39 +119,83 @@ $app->post('/juradospostulados/convocatoria/{convocatoria:[0-9]+}', function ($i
         );
 
 
-        echo '<table border="1" cellpadding="2" cellspacing="2">
-                        <tr style="background-color:#D8D8D8;color:#OOOOOO;">
-                          <td>Número</td>
-                          <td>Código</td>
-                          <td>Nombre</td>
-                          <td>Correo</td>
-                          <td>Teléfono</td>
-                        </tr>';
-        
-        
-
         $cont = 0;
         foreach ($juradospostulados as $juradopostulado) {
             $cont++;
+            
+            //Verifico si el perfil aplica a la convocatoria
+            switch ($juradopostulado->aplica_perfil) {
+                
+                case false:
+                    $aplica="No aplica";
+                    break;
+                case NULL:
+                    $aplica="Sin verificar";
+                    break;
+                case true:
+                    $aplica="Si aplica";
+                    break;
+
+                default:
+                    break;
+            }
+            
+
+            echo "<br/>";
+            echo "Código jurado: ".$juradopostulado->Propuestas->codigo. "<br/>";
+            echo "Nombre jurado: ".$juradopostulado->Propuestas->Participantes->primer_nombre . " "
+            . $juradopostulado->Propuestas->Participantes->segundo_nombre . " "
+            . $juradopostulado->Propuestas->Participantes->primer_apellido . " "
+            . $juradopostulado->Propuestas->Participantes->segundo_apellido . "<br/>";
+            echo "Aplica perfil: ".$aplica. "<br/>";
+            echo "Descripción: ".$juradopostulado->descripcion_evaluacion. "<br/>";
+            echo "Total evaluación: ".$juradopostulado->total_evaluacion. "<br/>";
 
 
-            echo "<tr>
-                    <td style='border: 1px solid black;'>" . $cont . "</td>
-                    <td style='border: 1px solid black;'>" . $juradopostulado->Propuestas->codigo . "</td>
-                    <td style='border: 1px solid black;'>" . $juradopostulado->Propuestas->Participantes->primer_nombre . " "
-                . $juradopostulado->Propuestas->Participantes->segundo_nombre . " "
-                . $juradopostulado->Propuestas->Participantes->primer_apellido . " "
-                . $juradopostulado->Propuestas->Participantes->segundo_apellido . "</td>
-                    <td style='border: 1px solid black;'>" . $juradopostulado->Propuestas->Participantes->correo_electronico . "</td>
-                    <td style='border: 1px solid black;'>" . $juradopostulado->Propuestas->Participantes->numero_celular . "</td>
+
+
+            $criterios = Evaluacion::query()
+                    ->join("Convocatoriasrondascriterios", "Convocatoriasrondascriterios.id=Evaluacion.criterio")
+                    ->where("Evaluacion.postulado = " . $juradopostulado->id)
+                    ->andWhere("Evaluacion.active")
+                    ->andWhere("Convocatoriasrondascriterios.active")
+                    ->groupBy("Convocatoriasrondascriterios.grupo_criterio")
+                    ->columns("sum(Evaluacion.puntaje) as suma, Convocatoriasrondascriterios.grupo_criterio")
+                    ->execute();
+
+
+
+            echo '<table border="1" cellpadding="2" cellspacing="2">
+                        <tr style="background-color:#D8D8D8;color:#OOOOOO;text-align: center;">
+                          <td>Criterio</td>
+                          <td>Puntaje</td>
+                        </tr>';
+            $uma = 0;
+            foreach ($criterios as $criterio) {
+                $uma=$uma+$criterio->suma;
+                echo "<tr>
+                    <td style='border: 1px solid black;'>" . $criterio->grupo_criterio . "</td>
+                    <td style='border: 1px solid black;'>" . $criterio->suma . "</td>
                   </tr>";
+            }
+            
+            echo "<tr>
+                    <td style='border: 1px solid black;'>Total</td>
+                    <td style='border: 1px solid black;'>" . $uma . "</td>
+                  </tr>";
+
+            echo "</table>";
+            echo "<br/>";
+            echo "<hr/>";
+            echo "<br/>";
+
+
+
+
+
 
 //            return json_encode($participante);
         }
-        
-        echo "</table>";
-
-
     } catch (Exception $ex) {
         //return "error_metodo";
         //Para auditoria en versión de pruebas
