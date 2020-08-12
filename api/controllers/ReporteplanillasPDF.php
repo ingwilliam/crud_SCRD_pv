@@ -171,6 +171,9 @@ $app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use (
                                     ]
                     );
                     
+                    
+                    //Se agrega el if para evitar errores cuando el valor sea null
+                    
                     if(isset($evaluacioncriterio->puntaje)){
                         $puntaje=$evaluacioncriterio->puntaje;
                     }else{

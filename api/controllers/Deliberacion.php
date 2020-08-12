@@ -1134,19 +1134,14 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                         foreach ($rondas as $r) {
                             if ($r->id == $ronda->id) {
 
+
+
                                 if ($r->tipo_acta == 'Preselección') {
                                     $rondas->next();
                                     //se establece la siguiente ronda
                                     $ronda_siguiente = $rondas->current(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
                                     break;
                                 }
-//                                echo ' $r->id '.json_encode($r->id);
-//                                echo ' $ronda->id '.json_encode($ronda->id);
-//                                echo ' $ronda_siguiente->id '.json_encode($ronda_siguiente->id);
-//                                echo ' $rondas->next() '.json_encode($rondas->next()->id);
-//                                exit;
-
-                                
                             }
                         }
 
