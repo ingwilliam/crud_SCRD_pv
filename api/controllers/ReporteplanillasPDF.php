@@ -170,13 +170,30 @@ $app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use (
                                         . ' AND active= true'
                                     ]
                     );
+                    
+                    
+                    //Se agrega el if para evitar errores cuando el valor sea null
+                    
+                    if(isset($evaluacioncriterio->puntaje)){
+                        $puntaje=$evaluacioncriterio->puntaje;
+                    }else{
+                        $puntaje="";
+                    }
+                    
+                    if(isset($evaluacioncriterio->observacion)){
+                        $observacion=$evaluacioncriterio->observacion;
+                    }else{
+                        $observacion="";
+                    }
+                    
+                    
 
                     echo '<tr>
                             <td>' . $cont . '</td>
                             <td>' . $criterio->descripcion_criterio . '</td>
                             <td>' . $criterio->puntaje_maximo . '</td>
-                            <td>' . $evaluacioncriterio->puntaje . '</td>
-                            <td>' . $evaluacioncriterio->observacion . '</td>
+                            <td>' . $puntaje . '</td>
+                            <td>' . $observacion . '</td>
                           </tr>';
                 }
 
