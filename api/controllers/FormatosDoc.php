@@ -731,18 +731,20 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                 $representante = "";
             }
+            
+            
 
 
             $prom = number_format((float) $propuesta->promedio, 1, '.', '');
 
             $table->addRow();
             $table->addCell(500)->addText($prop);
-            $table->addCell(1000)->addText($propuesta->p->codigo, $fontStyle9);
-            $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-            $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
-            $table->addCell(1000)->addText($td, $fontStyle9);
-            $table->addCell(1250)->addText($representante, $fontStyle9);
-            $table->addCell(3500)->addText($propuesta->p->nombre, $fontStyle9);
+            $table->addCell(1000)->addText(htmlspecialchars($propuesta->p->codigo), $fontStyle9);
+            $table->addCell(1000)->addText(htmlspecialchars($perfil->nombre), $fontStyle9);
+            $table->addCell(1250)->addText(htmlspecialchars($nombre_participante), $fontStyle9);
+            $table->addCell(1000)->addText(htmlspecialchars($td), $fontStyle9);
+            $table->addCell(1250)->addText(htmlspecialchars($representante), $fontStyle9);
+            $table->addCell(3500)->addText(htmlspecialchars($propuesta->p->nombre), $fontStyle9);
             $table->addCell(1000)->addText($prom, $fontStyle9);
         }
 
@@ -880,13 +882,13 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 
                     $table->addRow();
-                    $table->addCell(1000)->addText($ganador->p->codigo, $fontStyle9);
-                    $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-                    $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
-                    $table->addCell(1000)->addText($td, $fontStyle9);
-                    $table->addCell(1500)->addText($representante, $fontStyle9);
-                    $table->addCell(3000)->addText($ganador->p->nombre, $fontStyle9);
-                    $table->addCell(1000)->addText($prom, $fontStyle9);
+                    $table->addCell(1000)->addText(htmlspecialchars($ganador->p->codigo), $fontStyle9);
+                    $table->addCell(1000)->addText(htmlspecialchars($perfil->nombre), $fontStyle9);
+                    $table->addCell(1250)->addText(htmlspecialchars($nombre_participante), $fontStyle9);
+                    $table->addCell(1000)->addText(htmlspecialchars($td), $fontStyle9);
+                    $table->addCell(1500)->addText(htmlspecialchars($representante), $fontStyle9);
+                    $table->addCell(3000)->addText(htmlspecialchars($ganador->p->nombre), $fontStyle9);
+                    $table->addCell(1000)->addText(htmlspecialchars($prom), $fontStyle9);
                 }
             } else {
                 if ($convocatoriaronda->tipo_acta == 'Ganadores') {
@@ -1011,14 +1013,14 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 
                         $table->addRow();
-                        $table->addCell(1000)->addText($ganador->p->codigo, $fontStyle9);
-                        $table->addCell(1000)->addText($perfil->nombre, $fontStyle9);
-                        $table->addCell(1250)->addText($nombre_participante, $fontStyle9);
-                        $table->addCell(1000)->addText($td, $fontStyle9);
-                        $table->addCell(1500)->addText($representante, $fontStyle9);
-                        $table->addCell(3000)->addText($ganador->p->nombre, $fontStyle9);
-                        $table->addCell(1000)->addText($prom, $fontStyle9);
-                        $table->addCell(1000)->addText($ganador->p->monto_asignado, $fontStyle9);
+                        $table->addCell(1000)->addText(htmlspecialchars($ganador->p->codigo), $fontStyle9);
+                        $table->addCell(1000)->addText(htmlspecialchars($perfil->nombre), $fontStyle9);
+                        $table->addCell(1250)->addText(htmlspecialchars($nombre_participante), $fontStyle9);
+                        $table->addCell(1000)->addText(htmlspecialchars($td), $fontStyle9);
+                        $table->addCell(1500)->addText(htmlspecialchars($representante), $fontStyle9);
+                        $table->addCell(3000)->addText(htmlspecialchars($ganador->p->nombre), $fontStyle9);
+                        $table->addCell(1000)->addText(htmlspecialchars($prom), $fontStyle9);
+                        $table->addCell(1000)->addText(htmlspecialchars($ganador->p->monto_asignado), $fontStyle9);
                     }
                 }
             }
