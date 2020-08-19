@@ -177,7 +177,7 @@ $app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use (
                     if(isset($evaluacioncriterio->puntaje)){
                         $puntaje=$evaluacioncriterio->puntaje;
                     }else{
-                        $puntaje="";
+                        $puntaje=0;
                     }
                     
                     if(isset($evaluacioncriterio->observacion)){
