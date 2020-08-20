@@ -196,8 +196,22 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 $array["propuesta"]["mecanismos_cualitativa"] = $propuesta->mecanismos_cualitativa;
                                 $array["propuesta"]["mecanismos_cuantitativa"] = $propuesta->mecanismos_cuantitativa;
                                 $array["propuesta"]["localidades"] = $propuesta->localidades;
-                                                                
+                                $array["propuesta"]["poblacion_objetivo"] = $propuesta->poblacion_objetivo;
+                                $array["propuesta"]["comunidad_objetivo"] = $propuesta->comunidad_objetivo;
+                                $array["propuesta"]["establecio_cifra"] = $propuesta->establecio_cifra;
+                                $array["propuesta"]["total_beneficiario"] = $propuesta->total_beneficiario;
+                                                                                                
                                 $array["propuesta"]["id"] = $propuesta->id;
+                                
+                                //parametros de territorio
+                                $array_parametros_territorios = Propuestasterritorios::find("propuesta=".$propuesta->id);
+                                foreach($array_parametros_territorios AS $clave => $valor){
+                                    $array["propuesta_territorio"][$valor->variable]=$valor->valor;
+                                }
+                                
+                                //consulto los objetivos especificos
+                                $array["objetivos_especificos"]=$propuesta->getPropuestasobjetivos("active=true");
+                                
                                 //Recorro los valores de los parametros con el fin de ingresarlos al formulario
                                 foreach ($propuestaparametros as $pp) {
                                     $array["propuesta"]["parametro[" . $pp->convocatoriapropuestaparametro . "]"] = $pp->valor;
@@ -696,6 +710,345 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
 }
 );
 
+$app->post('/editar_propuesta_territorio', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                //parametros de la peticion
+                $post = $app->request->getPost();
+                $propuesta = Propuestas::findFirst($post["id"]);
+                $post["localidades"] = json_encode($post["localidades"]);
+                $post["actualizado_por"] = $user_current["id"];
+                $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                
+                if ($propuesta->save($post) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    
+                    
+                    //Variables del territorio
+                    $array_territorio=array(
+                                            "femenino",
+                                            "intersexual",
+                                            "masculino",
+                                            "primera_infancia",
+                                            "infancia",
+                                            "adolescencia",
+                                            "juventud",
+                                            "adulto",
+                                            "adulto_mayor",
+                                            "estrato_1",
+                                            "estrato_2",
+                                            "estrato_3",
+                                            "estrato_4",
+                                            "estrato_5",
+                                            "estrato_6",
+                                            "comunidades_negras_afrocolombianas",
+                                            "comunidad_raizal",
+                                            "pueblos_comunidades_indigenas",
+                                            "pueblo_rom_gitano",
+                                            "mestizo",
+                                            "ninguno_etnico",
+                                            "artesanos",
+                                            "discapacitados",
+                                            "habitantes_calle",
+                                            "lgbti",
+                                            "personas_comunidades_rurales_campesinas",
+                                            "personas_privadas_libertad",
+                                            "victimas_conflicto",
+                                            "ninguno_grupo"
+                                            );
+                    
+                    foreach($array_territorio as $clave => $valor)
+                    {
+                        //Consulto la propuesta territorio
+                        $conditions = ['propuesta' => $propuesta->id, 'variable' => $valor];
+                        $array_territorio = Propuestasterritorios::findFirst(([
+                                    'conditions' => 'propuesta=:propuesta: AND variable=:variable:',
+                                    'bind' => $conditions,
+                        ]));
+                        
+                        if(isset($array_territorio->id))
+                        {
+                            
+                            $array_formulario=array(
+                                                "variable"=>$valor,
+                                                "valor"=>$post[$valor],
+                                                "propuesta"=>$propuesta->id,
+                                                "actualizado_por" => $user_current["id"],
+                                                "fecha_actualizacion" => date("Y-m-d H:i:s")
+                                                );
+                        }
+                        else
+                        {
+                            $array_territorio=new Propuestasterritorios();
+                            
+                            $array_formulario=array(
+                                                    "variable"=>$valor,
+                                                    "valor"=>$post[$valor],
+                                                    "propuesta"=>$propuesta->id,
+                                                    "creado_por" => $user_current["id"],
+                                                    "fecha_creacion" => date("Y-m-d H:i:s")
+                                                    );
+                            
+                        }
+                        
+                        if ($array_territorio->save($array_formulario) === false) {
+                            foreach ($array_territorio->getMessages() as $message) {                              
+                              $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . '), parametro de territorio (' . $message . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                        }                        
+                    }
+                    
+                    $logger->close();                    
+                    echo $propuesta->id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/editar_propuesta_objetivo', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                //parametros de la peticion
+                $post = $app->request->getPost();
+                $propuesta = Propuestas::findFirst($post["id"]);
+                $post["actualizado_por"] = $user_current["id"];
+                $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                
+                if ($propuesta->save($post) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();                    
+                    echo $propuesta->id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {                
+                //parametros de la peticion
+                $post = $app->request->getPost();
+                $propuesta_documento = Propuestasobjetivos::findFirst($post["id"]);
+                
+                if(isset($propuesta_documento->id))
+                {
+                    $post["actualizado_por"] = $user_current["id"];
+                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                }
+                else
+                {
+                    $propuesta_documento = new Propuestasobjetivos();
+                    $post["creado_por"] = $user_current["id"];
+                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                }                                                
+                
+                if ($propuesta_documento->save($post) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();                    
+                    echo $propuesta_documento->id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+$app->post('/editar_propuesta_actividad', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {                
+                //parametros de la peticion
+                $post = $app->request->getPost();
+                $propuesta_actividad = Propuestasactividades::findFirst($post["id"]);
+                
+                if(isset($propuesta_actividad->id))
+                {
+                    $post["actualizado_por"] = $user_current["id"];
+                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                }
+                else
+                {
+                    $propuesta_actividad = new Propuestasactividades();
+                    $post["creado_por"] = $user_current["id"];
+                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                }                                                
+                
+                if ($propuesta_actividad->save($post) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
+                    echo "error";
+                } else {
+                    //Registro la accion en el log de convocatorias
+                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();                    
+                    echo $propuesta_actividad->id;
+                }
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
@@ -1027,6 +1380,358 @@ $app->post('/anular_propuesta', function () use ($app, $config, $logger) {
     }
 }
 );
+
+// Carga los objetivos especificios de la propuesta
+$app->get('/cargar_tabla_objetivos', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+
+                //Defino columnas para el orden desde la tabla html
+                $columns = array(
+                    0 => 'p.objetivo',
+                    1 => 'p.meta',
+                    2 => 'p.id',
+                    3 => 'p.orden'                    
+                );
+                
+                $where .= " WHERE p.propuesta = " . $propuesta->id;
+                //Condiciones para la consulta
+
+                if (!empty($request->get("search")['value'])) {
+                    $where .= " AND ( UPPER(" . $columns[0] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }
+
+                //Defino el sql del total y el array de datos
+                $sqlTot = "SELECT count(*) as total FROM Propuestasobjetivos AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_objetivo\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar, concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_objetivo\" />') as activar_registro FROM Propuestasobjetivos AS p";
+
+                //concarnar search sql if value exist
+                if (isset($where) && $where != '') {
+
+                    $sqlTot .= $where;
+                    $sqlRec .= $where;
+                }
+
+                //Concarno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY p.orden";
+
+                //ejecuto el total de registros actual
+                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                //creo el array
+                $json_data = array(
+                    "draw" => intval($request->get("draw")),
+                    "recordsTotal" => intval($totalRecords["total"]),
+                    "recordsFiltered" => intval($totalRecords["total"]),
+                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                );
+                //retorno el array en json
+                echo json_encode($json_data);
+            } else {
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+// Carga los actividades de la propuesta
+$app->get('/cargar_tabla_actividades', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+
+                //Defino columnas para el orden desde la tabla html
+                $columns = array(
+                    0 => 'p.id',
+                    1 => 'p.orden',
+                    2 => 'p.actividad',
+                    3 => 'po.objetivo'                    
+                );
+                
+                $where .= " INNER JOIN Propuestasobjetivos AS po ON po.id=p.propuestaobjetivo";
+                $where .= " WHERE po.propuesta = " . $propuesta->id;
+                //Condiciones para la consulta
+
+                if (!empty($request->get("search")['value'])) {
+                    $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }
+
+                //Defino el sql del total y el array de datos
+                $sqlTot = "SELECT count(*) as total FROM Propuestasactividades AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_actividad\" data-toggle=\"modal\" data-target=\"#nuevo_actividad\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-info cargar_formulario_actividad\" data-toggle=\"modal\" data-target=\"#nuevo_cronograma\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as cronograma,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-danger cargar_formulario_actividad\" data-toggle=\"modal\" data-target=\"#nuevo_actividad\"><span class=\"glyphicon glyphicon-usd\"></span></button>') as presupuesto, concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_actividad\" />') as activar_registro FROM Propuestasactividades AS p";
+
+                //concarnar search sql if value exist
+                if (isset($where) && $where != '') {
+
+                    $sqlTot .= $where;
+                    $sqlRec .= $where;
+                }
+
+                //Concarno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY p.orden";
+                
+                //ejecuto el total de registros actual
+                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                //creo el array
+                $json_data = array(
+                    "draw" => intval($request->get("draw")),
+                    "recordsTotal" => intval($totalRecords["total"]),
+                    "recordsFiltered" => intval($totalRecords["total"]),
+                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                );
+                //retorno el array en json
+                echo json_encode($json_data);
+            } else {
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+//Busca el registro
+$app->get('/consultar_objetivo', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Si existe consulto la convocatoria
+            if ($request->get('id')) {
+                $propuestaobjetivo = Propuestasobjetivos::findFirst($request->get('id'));
+            } else {
+                $propuestaobjetivo = new Propuestasobjetivos();
+            }
+
+            //Retorno el array
+            echo json_encode($propuestaobjetivo);
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+$app->get('/consultar_actividad', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //Si existe consulto la convocatoria
+            if ($request->get('id')) {
+                $propuestaobjetivo = Propuestasactividades::findFirst($request->get('id'));
+            } else {
+                $propuestaobjetivo = new Propuestasactividades();
+            }
+
+            //Retorno el array
+            echo json_encode($propuestaobjetivo);
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
+// Eliminar registro
+$app->delete('/eliminar_objetivo_especifico/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $user = Propuestasobjetivos::findFirst(json_decode($id));
+                if($request->getPut('active')=='false')
+                {
+                    $user->active = FALSE;
+                }
+                if($request->getPut('active')=='true')
+                {
+                    $user->active = true;
+                }
+                
+                if ($user->save($user) === false) {
+                    echo "error";
+                } else {
+                    echo "ok";
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+
+            exit;
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
+
+// Eliminar registro
+$app->delete('/eliminar_actividad/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                // Consultar el usuario que se esta editando
+                $user = Propuestasactividades::findFirst(json_decode($id));
+                if($request->getPut('active')=='false')
+                {
+                    $user->active = FALSE;
+                }
+                if($request->getPut('active')=='true')
+                {
+                    $user->active = true;
+                }
+                
+                if ($user->save($user) === false) {
+                    echo "error";
+                } else {
+                    echo "ok";
+                }
+            } else {
+                echo "acceso_denegado";
+            }
+
+            exit;
+        } else {
+            echo "error";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+});
 
 
 try {
