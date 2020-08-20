@@ -789,8 +789,6 @@ $app->post('/menu', function () use ($app,$config) {
                                     <li><a href="../propuestas/grupos_trabajos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Equipo de trabajo</a></li>
                                     <li><a href="../propuestas/objetivos_metas_actividades.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Objetivos, metas y actividades</a></li>
                                     <li><a href="../propuestas/territorios_poblaciones.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Territorios y población</a></li>
-                                    <li><a href="../propuestas/cronogramas.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Cronograma</a></li>
-                                    <li><a href="../propuestas/presupuestos.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Presupuesto</a></li>
                                     <li><a href="../propuestas/documentacion.html?m=<?php echo $request->getPost('m');?>&id=<?php echo $request->getPost('id');?>&p=<?php echo $request->getPost('p');?>">Documentación</a></li>                                    
                                     <?php
                                     }
