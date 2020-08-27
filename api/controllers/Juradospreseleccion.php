@@ -693,6 +693,7 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
 
                     $participante = Participantes::findFirst($request->get('participante'));
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
+
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     if ($postulacion->perfil) {
                         $array["postulacion_perfil"] = Convocatoriasparticipantes::findFirst($postulacion->perfil);
@@ -2309,7 +2310,7 @@ $app->post('/new_postulacion', function () use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 $participante = Participantes::findFirst(
                                 [
@@ -2334,10 +2335,10 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                             $contador1++;
                         }
                     }
-                    
+
                     $postulaciones_categorias = Juradospostulados::query()
                             ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
-                            ->where("Juradospostulados.propuesta = ". $participante->propuestas->id)
+                            ->where("Juradospostulados.propuesta = " . $participante->propuestas->id)
                             ->andWhere("Juradospostulados.active")
                             ->andWhere("Convocatorias.active")
                             ->andWhere("Convocatorias.estado=5")
@@ -2345,15 +2346,15 @@ $app->post('/new_postulacion', function () use ($app, $config) {
                             ->groupBy("Convocatorias.convocatoria_padre_categoria")
                             ->columns("count(*)")
                             ->execute();
-                    
-                    
+
+
 
                     foreach ($postulaciones_categorias as $postulaciones_categoria) {
                         $contador2++;
                     }
 
 
-                    $contador=$contador1+$contador2;
+                    $contador = $contador1 + $contador2;
 
                     $nummax = Tablasmaestras::findFirst(
                                     [
@@ -2474,11 +2475,11 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
 
 //                        return json_encode($rondas);
 
-                        if (count($rondas)<=0) {
+                        if (count($rondas) <= 0) {
                             return "error_rondas"; //Indica que no ha creado las rondas asociadas a esta convocatoria
-                        }else{
-                           
-                            
+                        } else {
+
+
                             $gruposconfirmados = true; //Se establece la variable $gruposconfirmados para determinar si están creados todos los grupos de evaluación
 
                             foreach ($rondas as $ronda) {
@@ -2582,6 +2583,270 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
         //return "error_metodo";
         //Para auditoria en versión de pruebas
         return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
+    }
+});
+
+
+/*
+ * 20-08-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Agrego metodo liberar postulaciones
+ */
+
+$app->get('/search_info_inhabilidades', function () use ($app, $config) {
+
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+
+        //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if ($user_current["id"]) {
+
+                /*
+
+                  $participante = Participantes::query()
+                  ->join("Usuariosperfiles","Participantes.usuario_perfil = Usuariosperfiles.id")
+                  ->join("Propuestas"," Participantes.id = Propuestas.participante")
+                  //perfil = 17  perfil de jurado
+                  ->where("Usuariosperfiles.perfil = 17 ")
+                  ->andWhere("Usuariosperfiles.usuario = ".$participante->usuariosperfiles->usuario )
+                  ->andWhere("Propuestas.convocatoria = ".$request->get('idc'))
+                  ->execute()
+                  ->getFirst();
+
+                 */
+                //  $participante = Participantes::findFirst($request->get('participante'));
+
+                if ($request->get('postulacion') && $request->get('postulacion') == 'null') {
+
+                    $participante = Participantes::findFirst($request->get('participante'));
+                } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
+
+                    $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
+
+                    if ($postulacion->perfil) {
+
+                        $array["postulacion_perfil"] = Convocatoriasparticipantes::findFirst($postulacion->perfil);
+                    }
+
+                    $participante = $postulacion->propuestas->participantes;
+                }
+
+                if ($participante->id != null) {
+
+                    //  $new_participante = clone $old_participante;
+
+                    $participante->tipo_documento = Tiposdocumentos::findFirst($participante->tipo_documento)->descripcion;
+                    $participante->sexo = Sexos::findFirst($participante->sexo)->nombre;
+                    $participante->orientacion_sexual = Orientacionessexuales::findFirst($participante->orientacion_sexual)->nombre;
+                    $participante->identidad_genero = Identidadesgeneros::findFirst($participante->identidad_genero)->nombre;
+                    $participante->ciudad_residencia = Ciudades::findFirst($participante->ciudad_residencia)->nombre;
+                    $participante->fecha_creacion = null;
+                    $participante->participante_padre = null;
+
+                    //Asigno el participante al array
+                    $array["participante"] = $participante;
+                    $array["propuesta_resumen"] = $participante->propuestas->resumen;
+                    $array["propuesta_codigo"] = $participante->propuestas->codigo;
+                    $array["propuesta_nombre"] = $participante->propuestas->nombre;
+                    $array["propuesta_estado"] = Estados::findFirst($participante->propuestas->estado)->nombre;
+
+
+
+                    //Consultamos las inhabilidades como contratistas                
+                    $sql_contratistas = "
+                    SELECT 
+                            concat(p.numero_documento,' ',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS participante,
+                            concat(e.nombre) AS contratista
+                    FROM Participantes AS p
+                    INNER JOIN Entidadescontratistas AS ec ON REPLACE(REPLACE(TRIM(ec.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM(p.numero_documento),'.',''),' ', '')
+                    INNER JOIN Entidades AS e ON e.id=ec.entidad
+                    WHERE (p.id=" . $participante->id . " OR p.participante_padre=" . $participante->id . ") AND p.tipo_documento<>7 AND ec.active=TRUE AND p.active=TRUE";
+
+                    $contratistas = $app->modelsManager->executeQuery($sql_contratistas);
+
+                    $array_contratistas = array();
+                    foreach ($contratistas as $contratista) {
+                        $array_contratistas[$contratista->participante][] = $contratista->contratista;
+                    }
+                    $array["contratistas"] = $array_contratistas;
+
+
+                    //Variables html
+                    $html_propuestas = "";
+                    $html_propuestas_ganadoras = "";
+                    $html_propuestas_jurados_seleccionados = "";
+
+                    //Genero reporte de jurados seleccionados
+                    $sql_jurados_seleccionado = "
+                            SELECT 
+                                    cp.nombre AS convocatoria,
+                                    c.nombre AS categoria,	
+                                    par.tipo AS rol_participante,	
+                                    jp.rol AS rol_jurado,
+                                    par.numero_documento,
+                                    concat(par.primer_nombre, ' ' ,par.segundo_nombre, ' ' ,par.primer_apellido, ' ' ,par.segundo_apellido ) AS participante,
+                                    pro.codigo AS codigo_propuesta,
+                                    e.nombre AS estado_de_la_postulacion
+                            FROM Juradospostulados as jp
+                                INNER JOIN Evaluadores ev ON jp.id=ev.juradopostulado 
+                                    INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                                    INNER join Participantes par on pro.participante = par.id
+                                    INNER JOIN Convocatorias AS c ON jp.convocatoria = c.id
+                                    LEFT JOIN Convocatorias as cp ON c.convocatoria_padre_categoria = cp.id
+                                    LEFT JOIN Estados e ON jp.estado=e.id
+                            WHERE 	
+                                    jp.active=true AND
+                                ev.active = true AND	                            
+                                    REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') = '" . $participante->numero_documento . "'"
+//                            . " group by (cp.nombre,c.nombre,jp.rol,par.tipo,par.numero_documento,pro.codigo,e.nombre,par.primer_nombre,par.segundo_nombre,par.primer_apellido,par.segundo_apellido)"
+                    ;
+
+                    $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
+
+
+                    foreach ($jurados_seleccionados as $jurado) {
+                        if ($jurado->convocatoria == "") {
+                            $jurado->convocatoria = $jurado->categoria;
+                            $jurado->categoria = "";
+                        }
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr class='tr_jurados_seleccionados'>";
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . "</td>";
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->categoria . '</td>';
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->participante . '</td>';
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado</td>';
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
+                    }
+
+
+                    $array["html_propuestas_jurados_seleccionados"] = $html_propuestas_jurados_seleccionados;
+
+
+                    //Genero reporte personas naturales
+                    $sql_pn = "
+                            SELECT 
+                                    vwp.convocatoria,
+                                    vwp.codigo,
+                                    vwp.nombre_propuesta,
+                                    vwp.tipo_participante,
+                                    vwp.representante,
+                                    vwp.tipo_rol,
+                                    vwp.rol,
+                                    vwp.primer_nombre,
+                                    vwp.segundo_nombre,
+                                    vwp.primer_apellido,
+                                    vwp.segundo_apellido,
+                                    vwp.estado_propuesta                                
+                            FROM Viewparticipantes AS vwp                                
+                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '". $participante->numero_documento."'"
+                            ;
+
+                    $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
+                    
+                   
+
+                    foreach ($personas_naturales as $pn) {
+
+                        //Consulto la convocatoria -- Se ajusta la consulta, pues no siempre traia la información correcta.
+                        $convocatoria_pn = Convocatorias::findFirst([" nombre = '".$pn->convocatoria."'"]);
+                        
+//                         return json_encode($convocatoria_pn);
+
+                        //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                        $nombre_convocatoria_pn = $convocatoria_pn->nombre;
+                        $nombre_categoria_pn = "";
+                        $anio_convocatoria_pn = $convocatoria_pn->anio;
+                        if ($convocatoria_pn->convocatoria_padre_categoria > 0) {
+                            $nombre_convocatoria_pn = $convocatoria_pn->getConvocatorias()->nombre;
+                            $nombre_categoria_pn = $convocatoria_pn->nombre;
+                            $anio_convocatoria_pn = $convocatoria_pn->getConvocatorias()->anio;
+                        }
+
+                        if ($anio_convocatoria_pn == $anio_convocatoria_pn) {
+                            if ($pn->estado_propuesta == "Ganadora") {
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr class='tr_propuestas_ganadoras'>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria_pn . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_categoria_pn . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->estado_propuesta . "</td>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
+                            } else {
+                                $html_propuestas = $html_propuestas . "<tr class='tr_propuestas'>";
+                                $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria_pn . "</td>";
+                                $html_propuestas = $html_propuestas . "<td>" . $nombre_categoria_pn . "</td>";
+                                $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";
+                                $html_propuestas = $html_propuestas . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
+                                $html_propuestas = $html_propuestas . "<td>" . $pn->codigo . "</td>";
+                                $html_propuestas = $html_propuestas . "<td>" . $pn->estado_propuesta . "</td>";
+                                $html_propuestas = $html_propuestas . "</tr>";
+                            }
+                        }
+                    }
+
+
+                    $array["html_propuestas"] = $html_propuestas;
+                    $array["html_propuestas_ganadoras"] = $html_propuestas_ganadoras;
+
+
+                    //Genero reporte de jurados seleccionados en años anteriores
+                    $sql_ganadores_anios_anteriores = "
+                            SELECT 
+                                    ga.*
+                            FROM Ganadoresantes2020 as ga                                
+                            WHERE 	
+                                    ga.active=true AND                               
+                                    REPLACE(REPLACE(TRIM(ga.numero_documento),'.',''),' ', '') = '" . $participante->numero_documento . "'                             
+                            ORDER BY ga.anio DESC
+                            ";
+
+                    $ganadores_anios_anteriores = $app->modelsManager->executeQuery($sql_ganadores_anios_anteriores);
+
+                    foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->categoria . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_rol . "</td>";
+                        $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
+                    }
+
+                    $array["html_ganadoras_anios_anteriores"] = $html_ganadoras_anios_anteriores;
+
+
+
+
+
+                    //  $array["perfiles_covocatoria"] = Convocatoriasparticipantes::find("convocatoria = " $participante->propuestas->convocatorias->id
+                } else {
+                    $array["participante"] = new Participantes();
+                }
+
+                return json_encode($array);
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+
+        //  echo "error_metodo";
+        //Para auditoria en versión de pruebas
+        echo "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
 
