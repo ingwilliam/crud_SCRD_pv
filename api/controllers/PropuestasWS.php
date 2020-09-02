@@ -93,7 +93,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
                     $parrafo_1="Su inscripción no ha sido confirmada. Recuerde que con la inscripción, su propuesta pasa al período de revisión de los requisitos formales del concurso, pero deberá estar atento en caso de que le sea solicitada la subsanación de alguno de los documentos.";
                 }
                 
-                if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31|| $estado == 33|| $estado == 34) {
+                if ($estado <> 7 && $estado <> 20) {
                     $array_administrativos = array();
                     $array_tecnicos = array();
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {
@@ -1250,7 +1250,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
                     $parrafo_1="La subsanación no ha sido confirmada, recuerde que después del periodo de subsanación, su propuesta pasa a verificación de los requisitos subsanados.";
                 }
                 
-                if ($estado == 8 || $estado == 21 || $estado == 22 || $estado == 23 || $estado == 24 || $estado == 31) {
+                if ($estado <> 7 && $estado <> 20) {
                     
                     $array_administrativos = array();                    
                     foreach ($propuesta->Propuestasdocumentos as $propuestadocumento) {

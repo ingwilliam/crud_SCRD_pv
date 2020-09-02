@@ -541,17 +541,29 @@ $app->post('/nombre_convocatoria/{id:[0-9]+}', function ($id) use ($app, $config
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 
-                $convocatoria = Convocatorias::findFirst($id);
-                
+                $convocatoria = Convocatorias::findFirst($id);                
+                $programa=$convocatoria->programa;
+                $nombre_convocatoria="";
                 if(isset($convocatoria->convocatoria_padre_categoria))
                 {
                     $categoria = Convocatorias::findFirst($convocatoria->convocatoria_padre_categoria);
-                    echo $categoria->nombre." - <span style='color:red'>".$convocatoria->nombre."<span>";
+                    $programa=$categoria->programa;
+                    $nombre_convocatoria = $categoria->nombre." - <span style='color:red'>".$convocatoria->nombre."<span>";
                 }
                 else
                 {
-                    echo $convocatoria->nombre;
+                    $nombre_convocatoria = $convocatoria->nombre;
                 }
+                
+                $array=array();
+                $array["nombre_convocatoria"]=$nombre_convocatoria;
+                $array["programa"]=$programa;                
+                if(isset($convocatoria->convocatoria_par))
+                {
+                    $convocatoria_par = Convocatorias::findFirst($convocatoria->convocatoria_par);
+                    $array["nombre_convocatoria_par"]=$convocatoria_par->nombre;
+                }
+                echo json_encode($array);                
                 
             } else {
                 echo "acceso_denegado";
