@@ -526,7 +526,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 //Mostramos el formulario inactivo
                 $conditions = ['id' => $request->getPost('p'), 'active' => true];
                 $propuesta_formulario = Propuestas::findFirst(([
-                            'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24,31,33,34)',
+                            'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24,31,33,34,44)',
                             'bind' => $conditions,
                 ]));
 
@@ -679,7 +679,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                         {
                                             //Consulto las propuestas de los participantes
                                             //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
-                                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34)");                                    
+                                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34,44)");                                    
                                             if(count($propuestas)<$propuestas_permitidas)
                                             {
                                                 //Registro la accion en el log de convocatorias                                            
@@ -752,7 +752,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     {
                                         //Consulto las propuestas de los participantes
                                         //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
-                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34)");
+                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34,44)");
 
                                         //Valido si ya tiene el maximo de propuestas permitidas
                                         if(count($propuestas)<$propuestas_permitidas)
