@@ -850,9 +850,6 @@ $app->post('/validar_periodo_ejecucion', function () use ($app, $config, $logger
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo validar_periodo_ejecucion de la propuesta (' . $request->getPut('p') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -862,6 +859,9 @@ $app->post('/validar_periodo_ejecucion', function () use ($app, $config, $logger
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método validar_periodo_ejecucion, validar periodo de ejecucicion de la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -894,33 +894,33 @@ $app->post('/validar_periodo_ejecucion', function () use ($app, $config, $logger
                 if (($fecha_actual >= $fecha_inicio) && ($fecha_actual <= $fecha_fin))
                 {
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"La fecha de ejecucion del cronograma es correcta en la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna en el controlador PropuestaPdac en el método validar_periodo_ejecucion, La fecha de ejecucion del cronograma es correcta en la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();                    
                     echo true;                                   
                 }
                 else
                 {
                     //Registro la accion en el log de convocatorias
-                    $logger->error('"token":"{token}","user":"{user}","message":"La fecha de ejecucion del cronograma no es correcta en la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método validar_periodo_ejecucion, La fecha de ejecucion del cronograma no es correcta en la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);                    
                     $logger->close();                    
                     echo false; 
                 }
                 
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo validar_periodo_ejecucion en la propuesta (' . $request->getPut('p') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método validar_periodo_ejecucion, acceso denegado en la propuesta (' . $request->getPut('p') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo validar_periodo_ejecucion en la propuesta (' . $request->getPut('p') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método validar_periodo_ejecucion, token caduco en la propuesta (' . $request->getPut('p') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_periodo_ejecucion en la propuesta (' . $request->getPut('p') . ')"' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método validar_periodo_ejecucion, error metodo en la propuesta (' . $request->getPut('p') . ')"' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -996,8 +996,6 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1006,6 +1004,9 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, ingreso a crear o editar el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1028,30 +1029,30 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
                 }                                                
                 
                 if ($propuesta_documento->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error";
                 } else {
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();                    
                     echo $propuesta_documento->id;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1065,8 +1066,6 @@ $app->post('/editar_propuesta_actividad', function () use ($app, $config, $logge
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1075,6 +1074,9 @@ $app->post('/editar_propuesta_actividad', function () use ($app, $config, $logge
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método editar_propuesta_actividad, ingresa a crear o editar la actividad como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);        
+                
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1097,30 +1099,30 @@ $app->post('/editar_propuesta_actividad', function () use ($app, $config, $logge
                 }                                                
                 
                 if ($propuesta_actividad->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, error al editar la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error";
                 } else {
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_actividad, se edito con exito la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();                    
                     echo $propuesta_actividad->id;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, token caduco como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, error metodo como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1134,8 +1136,6 @@ $app->post('/editar_propuesta_cronograma', function () use ($app, $config, $logg
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1144,6 +1144,9 @@ $app->post('/editar_propuesta_cronograma', function () use ($app, $config, $logg
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método editar_propuesta_cronograma, ingresa a crear o editar el cronograma como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);        
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1172,38 +1175,38 @@ $app->post('/editar_propuesta_cronograma', function () use ($app, $config, $logg
                 
                 if(isset($validar_propuesta_cronograma->id))
                 {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error crear el cronograma, ya cuenta con la semana de ejecución, en la propuesta (' . $post["id"] . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, error crear el cronograma, ya cuenta con la semana de ejecución, en la propuesta (' . $post["propuesta"] . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error_fecha";
                 }
                 else
                 {
                     if ($propuesta_cronograma->save($post) === false) {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se genero un error al editar o crea el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error";
                     } else {
                         //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se edito con exito el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();                    
                         echo $propuesta_cronograma->id;
                     }
                 }                                                
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, token caduco como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, error metodo como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1217,8 +1220,6 @@ $app->post('/editar_propuesta_presupuesto', function () use ($app, $config, $log
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1226,7 +1227,10 @@ $app->post('/editar_propuesta_presupuesto', function () use ($app, $config, $log
         if (isset($token_actual->id)) {
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-
+            
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método editar_propuesta_presupuesto, ingresa a crear o editar presupuesto como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);        
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1249,31 +1253,31 @@ $app->post('/editar_propuesta_presupuesto', function () use ($app, $config, $log
                 }                                                
                 
                 if ($propuesta_presupuesto->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, error al crear o editar el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error";
                 } else {
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se edito con exito la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, se creo o edito con exito el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();                    
                     echo $propuesta_presupuesto->id;
                 }
                                                                
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, token caduco como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo editar_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, error metodo como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1824,15 +1828,15 @@ $app->get('/cargar_tabla_cronogramas', function () use ($app, $config, $logger) 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método editar_propuesta_actividad, ingresa a cargar tabla de cronograma como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
@@ -1882,19 +1886,19 @@ $app->get('/cargar_tabla_cronogramas', function () use ($app, $config, $logger) 
                 echo json_encode($json_data);
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, acceso denegado como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current['username'], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, token caduco como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, error metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1912,15 +1916,15 @@ $app->get('/cargar_tabla_presupuestos', function () use ($app, $config, $logger)
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestaPdac en el método cargar_tabla_presupuestos, ingresa a cargar la tabla de presupuesto como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current['username'], 'token' => $request->get('token')]);
+            
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
@@ -1978,19 +1982,19 @@ $app->get('/cargar_tabla_presupuestos', function () use ($app, $config, $logger)
                 echo json_encode($json_data);
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método cargar_tabla_presupuestos, acceso denegado como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current['username'], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método cargar_tabla_presupuestos, token caduco como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método cargar_tabla_presupuestos, error metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -2121,7 +2125,7 @@ $app->get('/consultar_actividad', function () use ($app, $config) {
 );
 
 // Eliminar registro
-$app->delete('/eliminar_objetivo_especifico/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->delete('/eliminar_objetivo_especifico/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -2152,8 +2156,12 @@ $app->delete('/eliminar_objetivo_especifico/{id:[0-9]+}', function ($id) use ($a
                 }
                 
                 if ($user->save($user) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método eliminar_objetivo_especifico, error al activar o inactivar el objetivo espefico (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método eliminar_objetivo_especifico, edito al activar o inactivar el objetivo espefico (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
+                    $logger->close();
                     echo "ok";
                 }
             } else {
@@ -2170,7 +2178,7 @@ $app->delete('/eliminar_objetivo_especifico/{id:[0-9]+}', function ($id) use ($a
 });
 
 // Eliminar registro
-$app->delete('/eliminar_actividad/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->delete('/eliminar_actividad/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -2201,8 +2209,12 @@ $app->delete('/eliminar_actividad/{id:[0-9]+}', function ($id) use ($app, $confi
                 }
                 
                 if ($user->save($user) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método eliminar_actividad, error al activar o inactivar la actividad (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método eliminar_actividad, edito al activar o inactivar la actividad (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
+                    $logger->close();
                     echo "ok";
                 }
             } else {
@@ -2219,7 +2231,7 @@ $app->delete('/eliminar_actividad/{id:[0-9]+}', function ($id) use ($app, $confi
 });
 
 // Eliminar registro
-$app->delete('/eliminar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->delete('/eliminar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -2250,8 +2262,12 @@ $app->delete('/eliminar_cronograma/{id:[0-9]+}', function ($id) use ($app, $conf
                 }
                 
                 if ($user->save($user) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método eliminar_cronograma, error al activar o inactivar el cronograma (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método eliminar_cronograma, edito al activar o inactivar el cronograma (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
+                    $logger->close();
                     echo "ok";
                 }
             } else {
@@ -2268,7 +2284,7 @@ $app->delete('/eliminar_cronograma/{id:[0-9]+}', function ($id) use ($app, $conf
 });
 
 // Eliminar registro
-$app->delete('/eliminar_presupuesto/{id:[0-9]+}', function ($id) use ($app, $config) {
+$app->delete('/eliminar_presupuesto/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
     try {
         //Instancio los objetos que se van a manejar
         $request = new Request();
@@ -2299,8 +2315,12 @@ $app->delete('/eliminar_presupuesto/{id:[0-9]+}', function ($id) use ($app, $con
                 }
                 
                 if ($user->save($user) === false) {
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método eliminar_presupuesto, error al activar o inactivar el presupuesto (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método eliminar_presupuesto, edito al activar o inactivar el presupuesto (' . $id . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                    
+                    $logger->close();
                     echo "ok";
                 }
             } else {

@@ -1219,11 +1219,12 @@ $app->get('/editar_integrante', function () use ($app, $config) {
 
 
 // Eliminar registro
-$app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    try {        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1233,6 +1234,9 @@ $app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $conf
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método eliminar_integrante, ingreso a inactivar el integrante"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1250,19 +1254,32 @@ $app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $conf
                 }
                 
                 if ($user->save($user) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método eliminar_integrante, error al desactivar el integrante "', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno al controlador Personasnaturales en el método eliminar_integrante, se desactivo el integrante"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
                     echo "ok";
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, acceso denegado"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
                 echo "acceso_denegado";
             }
 
             exit;
         } else {
-            echo "error";
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, token caduco"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
         }
     } catch (Exception $ex) {
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, error metodo ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
         echo "error_metodo";
     }
 });

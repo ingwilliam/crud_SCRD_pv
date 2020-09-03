@@ -445,7 +445,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
             $user_current = json_decode($token_actual->user_current, true);
 
             //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a crear_propuesta_pj en la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingreso al controlador Personasjuridicas en el método crear_propuesta_pj, ingresa a crear la propuesta en la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
         
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
@@ -477,7 +477,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
 
                             if (isset($propuesta->id)) {
                                 //Registro la accion en el log de convocatorias
-                                $logger->info('"token":"{token}","user":"{user}","message":"Retorno la propuesta ('.$propuesta->id.') para el participante pj en la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador Personasjuridicas en el método crear_propuesta_pj, retorno la propuesta ('.$propuesta->id.') para el participante pj en la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo $propuesta->id;
                                 exit;                                
@@ -485,7 +485,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                             else
                             {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, error al crear el participante PJ asociado a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "error_participante_propuesta";
                                 exit;
@@ -549,6 +549,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                 {
                                     $crear_propuesta=false;
                                     $error_validar_pdac = "error_otra_propuesta_pdac";
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, ya cuenta con una propuesta inscrita en la otra convocatoria ('.$in_convocatorias_par.') del PDAC."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 }
                                 else
                                 {
@@ -562,6 +563,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                     {
                                         $crear_propuesta=false;
                                         $error_validar_pdac = "error_maximo_propuesta_pdac";
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, ya cuenta con el maximo de propuestas para el PDAC, debe ser una con alianza y la otra sin alianza."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     }
                                 }                                                                                                                                
                             }
@@ -581,13 +583,13 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                 $participante_hijo_propuesta->terminos_condiciones = TRUE;
                                 if ($participante_hijo_propuesta->save() === false) {
                                     //Registro la accion en el log de convocatorias           
-                                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PJ asociado a la propuesta de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, error al crear el participante PJ asociado a la propuesta de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                     $logger->close();
                                     echo "error_participante_propuesta";
                                     exit;
                                 } else {
                                     //Registro la accion en el log de convocatorias
-                                    $logger->info('"token":"{token}","user":"{user}","message":"Se creo el participante PJ que se asocia a la propuesta de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                    $logger->info('"token":"{token}","user":"{user}","message":"Informa en el controlador Personasjuridicas en el método crear_propuesta_pj, se creo el participante PJ que se asocia a la propuesta de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
 
                                     //Creo la propuesta asociada al participante hijo
                                     $propuesta = new Propuestas();
@@ -604,12 +606,12 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                     }
                                     if ($propuesta->save() === false) {
                                         //Registro la accion en el log de convocatorias           
-                                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la propuesta para el participante ('.$participante_hijo_propuesta->id.') como PJ de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, error al crear la propuesta para el participante ('.$participante_hijo_propuesta->id.') como PJ de la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                         $logger->close();
                                         echo "error_participante_propuesta";
                                         exit;
                                     } else {
-                                        /*
+                                        
                                         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
 
                                         //Se crea la carpeta principal de la propuesta en la convocatoria                                    
@@ -617,9 +619,9 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                             //Registro la accion en el log de convocatorias           
                                             $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la carpeta de la propuesta para el participante como PJ."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                         }
-                                        */
+                                        
                                         //Registro la accion en el log de convocatorias
-                                        $logger->info('"token":"{token}","user":"{user}","message":"Se creo la propuesta ('.$propuesta->id.') para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno al controlador Personasjuridicas en el método crear_propuesta_pj, Se creo la propuesta ('.$propuesta->id.') para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                         $logger->close();
                                         echo $propuesta->id;
                                         exit;
@@ -628,8 +630,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                             }
                             else
                             {
-                                //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Ya cuenta con el maximo de propuestas para el PDAC."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                //Registro la accion en el log de convocatorias                                           
                                 $logger->close();
                                 echo $error_validar_pdac;
                                 exit;
@@ -638,33 +639,33 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                         
                     } else {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona jurídica para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, para poder inscribir la propuesta debe crear el perfil de persona jurídica para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil";
                         exit;
                     }
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Para poder inscribir la propuesta debe crear el perfil de persona jurídica para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, para poder inscribir la propuesta debe crear el perfil de persona jurídica para la convocatoria(' . $request->get('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "crear_perfil";
                     exit;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado crear_propuesta_pj"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, acceso denegado"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, token caduco"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo crear_propuesta_pj ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, error metodo ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
