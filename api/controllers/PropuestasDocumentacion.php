@@ -919,15 +919,15 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método guardar_archivo, ingresa a crear documento como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -942,7 +942,7 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
                 $return = $chemistry_alfresco->newFile("/Sites/convocatorias/" . $request->getPut('conv') . "/propuestas/" . $request->getPut('propuesta'), $fileName, base64_decode($data), $request->getPut("srcType"));
                 if (strpos($return, "Error") !== FALSE) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el archivo (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_archivo, error al crear el archivo (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo "error_archivo";
                 } else {
@@ -960,30 +960,30 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
                     }                                        
                     if ($propuestasdocumentos->save() === false) {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, error al relacionar el idalfresco con idpropuestadocumento en el archivo (' . $request->getPut('srcName') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                         $logger->close();
                         echo "error_archivo";
                     } else {
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se creo el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorna en el controlador PropuestasDocumentacion en el método guardar_archivo, se relaciona el idalfresco con idpropuestadocumento en el archivo (' . $request->getPut('srcName') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                         $logger->close();
                         echo $propuestasdocumentos->id;
                     }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, acceso denegado como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, token caduco como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, error en el metodo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
