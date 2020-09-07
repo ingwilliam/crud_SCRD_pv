@@ -514,9 +514,16 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                 
                                 $convocatoria_par = $convocatoria_solicitada->getConvocatorias()->convocatoria_par;
                                 
+                                $where_convocatoria_par="";
+                                if($convocatoria_par!=null)
+                                {
+                                    $where_convocatoria_par=",".$convocatoria_par;
+                                }
+                                
+                                
                                 //Consulto todas las convocatorias hijas de la convocatoria actual
                                 // y de la convocatoria par
-                                $convocatorias_hijas = Convocatorias::find("convocatoria_padre_categoria IN (" . $convocatoria_padre->id . ",".$convocatoria_par.") OR id IN (".$request->get('conv').",".$convocatoria_par.")");                                
+                                $convocatorias_hijas = Convocatorias::find("convocatoria_padre_categoria IN (" . $convocatoria_padre->id . $where_convocatoria_par.") OR id IN (".$request->get('conv').$where_convocatoria_par.")");                                
                                 $in_convocatorias="";
                                 $in_convocatorias_par="";
                                 foreach ($convocatorias_hijas as $convocatoria_hija) {

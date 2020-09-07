@@ -1014,30 +1014,44 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
             if ($permiso_escritura == "ok") {                
                 //parametros de la peticion
                 $post = $app->request->getPost();
+                
                 $propuesta_documento = Propuestasobjetivos::findFirst($post["id"]);
                 
-                if(isset($propuesta_documento->id))
+                $propuesta = Propuestas::findFirst($post["propuesta"]);
+                
+                if($propuesta->estado==7)
                 {
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    if(isset($propuesta_documento->id))
+                    {
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    }
+                    else
+                    {
+                        $propuesta_documento = new Propuestasobjetivos();
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                    }                                                
+
+                    if ($propuesta_documento->save($post) === false) {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                    
+                        echo $propuesta_documento->id;
+                    }
                 }
                 else
                 {
-                    $propuesta_documento = new Propuestasobjetivos();
-                    $post["creado_por"] = $user_current["id"];
-                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                }                                                
-                
-                if ($propuesta_documento->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                   //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, la propuesta ya esta inscrita como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
-                    echo "error";
-                } else {
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();                    
-                    echo $propuesta_documento->id;
+                    echo "acceso_denegado"; 
                 }
+                
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
@@ -1086,28 +1100,41 @@ $app->post('/editar_propuesta_actividad', function () use ($app, $config, $logge
                 $post = $app->request->getPost();
                 $propuesta_actividad = Propuestasactividades::findFirst($post["id"]);
                 
-                if(isset($propuesta_actividad->id))
+                $propuesta = Propuestas::findFirst($post["propuesta"]);
+                
+                if($propuesta->estado==7)
                 {
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    if(isset($propuesta_actividad->id))
+                    {
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    }
+                    else
+                    {
+                        $propuesta_actividad = new Propuestasactividades();
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                    }                                                
+
+                    if ($propuesta_actividad->save($post) === false) {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, error al editar la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_actividad, se edito con exito la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                    
+                        echo $propuesta_actividad->id;
+                    }
                 }
                 else
                 {
-                    $propuesta_actividad = new Propuestasactividades();
-                    $post["creado_por"] = $user_current["id"];
-                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                }                                                
-                
-                if ($propuesta_actividad->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, error al editar la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, la propuesta ya esta inscrita como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
-                    echo "error";
-                } else {
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_actividad, se edito con exito la actividad (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();                    
-                    echo $propuesta_actividad->id;
+                    echo "acceso_denegado";
                 }
+                
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_actividad, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
@@ -1156,42 +1183,55 @@ $app->post('/editar_propuesta_cronograma', function () use ($app, $config, $logg
                 $post = $app->request->getPost();
                 $propuesta_cronograma = Propuestascronogramas::findFirst($post["id"]);
                 
-                $where_id="";
-                if(isset($propuesta_cronograma->id))
-                {
-                    $where_id=" AND id<>".$propuesta_cronograma->id;                    
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-                }
-                else
-                {
-                    $propuesta_cronograma = new Propuestascronogramas();
-                    $post["creado_por"] = $user_current["id"];
-                    $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                    $post["etapa"] = "Registro";
-                }                                                
+                $propuesta = Propuestas::findFirst($post["propuesta"]);
                 
-                $validar_propuesta_cronograma = Propuestascronogramas::findFirst("fecha='".$post["fecha"]."' AND propuestaactividad=".$post["propuestaactividad"].$where_id);
+                if($propuesta->estado==7)
+                {
                 
-                if(isset($validar_propuesta_cronograma->id))
-                {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, error crear el cronograma, ya cuenta con la semana de ejecución, en la propuesta (' . $post["propuesta"] . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    echo "error_fecha";
-                }
-                else
-                {
-                    if ($propuesta_cronograma->save($post) === false) {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se genero un error al editar o crea el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error";
-                    } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se edito con exito el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();                    
-                        echo $propuesta_cronograma->id;
+                    $where_id="";
+                    if(isset($propuesta_cronograma->id))
+                    {
+                        $where_id=" AND id<>".$propuesta_cronograma->id;                    
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                     }
-                }                                                
+                    else
+                    {
+                        $propuesta_cronograma = new Propuestascronogramas();
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");
+                        $post["etapa"] = "Registro";
+                    }                                                
+
+                    $validar_propuesta_cronograma = Propuestascronogramas::findFirst("fecha='".$post["fecha"]."' AND propuestaactividad=".$post["propuestaactividad"].$where_id);
+
+                    if(isset($validar_propuesta_cronograma->id))
+                    {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, error crear el cronograma, ya cuenta con la semana de ejecución, en la propuesta (' . $post["propuesta"] . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error_fecha";
+                    }
+                    else
+                    {
+                        if ($propuesta_cronograma->save($post) === false) {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se genero un error al editar o crea el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_cronograma, se edito con exito el cronograma (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta (' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();                    
+                            echo $propuesta_cronograma->id;
+                        }
+                    }        
+                }
+                else
+                {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, la propuesta ya esta inscrita como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
+                    $logger->close();
+                    echo "acceso_denegado";    
+                }
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_cronograma, acceso denegado como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
@@ -1240,27 +1280,40 @@ $app->post('/editar_propuesta_presupuesto', function () use ($app, $config, $log
                 $post = $app->request->getPost();
                 $propuesta_presupuesto = Propuestaspresupuestos::findFirst($post["id"]);
                 
-                if(isset($propuesta_presupuesto->id))
+                $propuesta = Propuestas::findFirst($post["propuesta"]);
+                
+                if($propuesta->estado==7)
                 {
-                    $post["actualizado_por"] = $user_current["id"];
-                    $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                
+                    if(isset($propuesta_presupuesto->id))
+                    {
+                        $post["actualizado_por"] = $user_current["id"];
+                        $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                    }
+                    else
+                    {
+                        $propuesta_presupuesto = new Propuestaspresupuestos();
+                        $post["creado_por"] = $user_current["id"];
+                        $post["fecha_creacion"] = date("Y-m-d H:i:s");                    
+                    }                                                
+
+                    if ($propuesta_presupuesto->save($post) === false) {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, error al crear o editar el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error";
+                    } else {
+                        //Registro la accion en el log de convocatorias
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, se creo o edito con exito el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();                    
+                        echo $propuesta_presupuesto->id;
+                    }
                 }
                 else
                 {
-                    $propuesta_presupuesto = new Propuestaspresupuestos();
-                    $post["creado_por"] = $user_current["id"];
-                    $post["fecha_creacion"] = date("Y-m-d H:i:s");                    
-                }                                                
-                
-                if ($propuesta_presupuesto->save($post) === false) {
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, error al crear o editar el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, la propuesta ya esta inscrita como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
                     $logger->close();
-                    echo "error";
-                } else {
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestaPdac en el método editar_propuesta_presupuesto, se creo o edito con exito el presupuesto (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();                    
-                    echo $propuesta_presupuesto->id;
+                    echo "acceso_denegado";
                 }
                                                                
             } else {
@@ -1665,9 +1718,18 @@ $app->get('/cargar_tabla_objetivos', function () use ($app, $config, $logger) {
                     $where .= " OR UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
 
+                if($propuesta->estado==7)
+                {
+                    $check="concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_objetivo\" />') as activar_registro";
+                }
+                else
+                {
+                    $check="concat('<input disabled title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_objetivo\" />') as activar_registro";
+                }
+                
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Propuestasobjetivos AS p";
-                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_objetivo\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar, concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_objetivo\" />') as activar_registro FROM Propuestasobjetivos AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_objetivo\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar, ".$check." FROM Propuestasobjetivos AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1766,9 +1828,18 @@ $app->get('/cargar_tabla_actividades', function () use ($app, $config, $logger) 
                     $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
 
+                if($propuesta->estado==7)
+                {
+                    $check="concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_actividad\" />') as activar_registro";
+                }
+                else
+                {
+                    $check="concat('<input disabled title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_actividad\" />') as activar_registro";
+                }
+                
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Propuestasactividades AS p";
-                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_actividad\" data-toggle=\"modal\" data-target=\"#nuevo_actividad\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-info cargar_actividad_cronograma\" data-toggle=\"modal\" data-target=\"#nuevo_cronograma\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as cronograma,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-danger cargar_actividad_presupuesto\" data-toggle=\"modal\" data-target=\"#nuevo_presupuesto\"><span class=\"glyphicon glyphicon-usd\"></span></button>') as presupuesto, concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_actividad\" />') as activar_registro FROM Propuestasactividades AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_actividad\" data-toggle=\"modal\" data-target=\"#nuevo_actividad\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-info cargar_actividad_cronograma\" data-toggle=\"modal\" data-target=\"#nuevo_cronograma\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as cronograma,concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-danger cargar_actividad_presupuesto\" data-toggle=\"modal\" data-target=\"#nuevo_presupuesto\"><span class=\"glyphicon glyphicon-usd\"></span></button>') as presupuesto,".$check." FROM Propuestasactividades AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1843,6 +1914,13 @@ $app->get('/cargar_tabla_cronogramas', function () use ($app, $config, $logger) 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+                
                 //Defino columnas para el orden desde la tabla html
                 $columns = array(
                     0 => 'p.id',
@@ -1857,10 +1935,19 @@ $app->get('/cargar_tabla_cronogramas', function () use ($app, $config, $logger) 
                     $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
                     $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
+                
+                if($propuesta->estado==7)
+                {
+                    $check="concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_cronograma\" />') as activar_registro";
+                }
+                else
+                {
+                    $check="concat('<input disabled title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_cronograma\" />') as activar_registro";
+                }
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Propuestascronogramas AS p";
-                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_cronograma\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar, concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_cronograma\" />') as activar_registro FROM Propuestascronogramas AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_cronograma\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar, ".$check." FROM Propuestascronogramas AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1931,6 +2018,13 @@ $app->get('/cargar_tabla_presupuestos', function () use ($app, $config, $logger)
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+                
                 //Defino columnas para el orden desde la tabla html
                 $columns = array(
                     0 => 'p.id',
@@ -1954,9 +2048,18 @@ $app->get('/cargar_tabla_presupuestos', function () use ($app, $config, $logger)
                     $where .= " AND ( UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
 
+                if($propuesta->estado==7)
+                {
+                    $check="concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_presupuesto\" />') as activar_registro";
+                }
+                else
+                {
+                    $check="concat('<input disabled title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_presupuesto\" />') as activar_registro";
+                }
+                
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Propuestaspresupuestos AS p";
-                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_presupuesto\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_presupuesto\" />') as activar_registro FROM Propuestaspresupuestos AS p";
+                $sqlRec = "SELECT " . $columns[0] . "," . $columns[1] . "," . $columns[2] . "," . $columns[3] . "," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_presupuesto\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as editar , ".$check." FROM Propuestaspresupuestos AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
