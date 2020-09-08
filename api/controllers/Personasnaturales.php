@@ -988,6 +988,7 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                     }
 
                     $post["representante"] = $post["representante"] === 'true'? true: false;
+                    $post["director"] = $post["director"] === 'true'? true: false;
 
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias
@@ -1074,6 +1075,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     6 => 'p.rol',
                     7 => 'p.id',
                     8 => 'p.representante',
+                    9 => 'p.director',
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
@@ -1101,7 +1103,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones ," . $check . "  FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones ," . $check . "  FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {

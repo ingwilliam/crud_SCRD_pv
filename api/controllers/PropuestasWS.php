@@ -804,7 +804,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                                     "order" => 'orden DESC'
                         ]));
                         
-                        $html_objetivo = "";
+                        $html_objetivo = "<table>";
                         foreach ($consulta_objetivos_especificos as $objetivo) {
                             $html_objetivo = $html_objetivo . "<tr>";                            
                             $html_objetivo = $html_objetivo . "<td>Objetivo especifico</td><td>" . $objetivo->objetivo . "</td>";                                                                                    
@@ -813,16 +813,15 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_objetivo = $html_objetivo . "<td>Meta</td><td>" . $objetivo->meta . "</td>";                                                        
                             $html_objetivo = $html_objetivo . "</tr>";                            
                             $html_objetivo = $html_objetivo . "<tr>";
-                            $html_objetivo = $html_objetivo . "<td colspan='2'>Actividades</td>";
+                            $html_objetivo = $html_objetivo . '<td colspan="2"><b>Actividades</b></td>';
                             $html_objetivo = $html_objetivo . "</tr>";
-                            $html_objetivo = $html_objetivo . "<tr><td colspan='2'>";
+                            $html_objetivo = $html_objetivo . '<tr><td colspan="2">';
                             foreach ($objetivo->getPropuestasactividades() as $actividad) {                                                                                        
                             $html_objetivo = $html_objetivo . "" . $actividad->actividad . "<br/><br/>";                                                                                                                
                             }                            
                             $html_objetivo = $html_objetivo . "</td></tr>";                                                        
-                        }
-                        
-                        
+                        }                        
+                        $html_objetivo = $html_objetivo."</table>";
                         
                         $tabla_participante = '<table>
     <tr>
@@ -912,10 +911,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
     </tr>    
 </table>
 <h3>Objetivos Específicos, metas y actividades</h3>
-<table>
-    '.$html_objetivo.'
-</table>
-
+'.$html_objetivo.'
 ';
                     }
                     //Participante agrupacion
