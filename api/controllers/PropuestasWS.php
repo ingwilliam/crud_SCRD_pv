@@ -778,14 +778,24 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                         $i = 1;
                         $html_equipo = "";
                         foreach ($consulta_equipo_trabajo as $integrante) {
+                            $value_representante="No";
+                            if($integrante->director)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
                             $html_equipo = $html_equipo . "<tr>";
-                            $html_equipo = $html_equipo . "<td>" . $i . "</td>";                            
+                            $html_equipo = $html_equipo . "<td>" . $i . "</td>";  
+                            $html_equipo = $html_equipo . "<td>" . $value_representante . "</td>";
                             $html_equipo = $html_equipo . "<td>" . $integrante->getTiposdocumentos()->descripcion . "</td>";
                             $html_equipo = $html_equipo . "<td>" . $integrante->numero_documento . "</td>";
                             $html_equipo = $html_equipo . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . "</td>";
                             $html_equipo = $html_equipo . "<td>" . $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
                             $html_equipo = $html_equipo . "<td>" . $integrante->getCiudadesresidencia()->nombre . "</td>";                            
                             $html_equipo = $html_equipo . "<td>" . $integrante->rol . "</td>";
+                            $html_equipo = $html_equipo . "<td>" . $integrante->profesion . "</td>";
+                            $html_equipo = $html_equipo . "<td>" . $integrante->experiencia . "</td>";
+                            $html_equipo = $html_equipo . "<td>" . $integrante->actividades_cargo . "</td>";
                             $html_equipo = $html_equipo . "</tr>";
                             $i++;
                         }
@@ -815,13 +825,66 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_objetivo = $html_objetivo . "<tr>";
                             $html_objetivo = $html_objetivo . '<td colspan="2"><b>Actividades</b></td>';
                             $html_objetivo = $html_objetivo . "</tr>";
-                            $html_objetivo = $html_objetivo . '<tr><td colspan="2">';
-                            foreach ($objetivo->getPropuestasactividades() as $actividad) {                                                                                        
+                            $html_objetivo = $html_objetivo . '<tr><td colspan="2">';                            
+                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
                             $html_objetivo = $html_objetivo . "" . $actividad->actividad . "<br/><br/>";                                                                                                                
                             }                            
                             $html_objetivo = $html_objetivo . "</td></tr>";                                                        
                         }                        
                         $html_objetivo = $html_objetivo."</table>";
+                        
+                        $html_cronograma = "";
+                        foreach ($consulta_objetivos_especificos as $objetivo) {
+                            $array_ejecucion=array();
+                            $array_ejecucion[1]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[2]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[3]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[4]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[5]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[6]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[7]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[8]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[9]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[10]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[11]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");
+                            $array_ejecucion[12]=array("1"=>"","2"=>"","3"=>"","4"=>"","5"=>"");                            
+                            
+                            $html_cronograma = $html_cronograma . "<br/><br/><table>";                            
+                            $html_cronograma = $html_cronograma . "<tr>";                            
+                            $html_cronograma = $html_cronograma . '<td colspan="64">Objetivo especifico: ' . $objetivo->objetivo . '</td>';
+                            $html_cronograma = $html_cronograma . "</tr>";         
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="4">Mes</td><td colspan="5">Enero</td><td colspan="5">Febrero</td><td colspan="5">Marzo</td><td colspan="5">Abril</td><td colspan="5">Mayo</td><td colspan="5">Junio</td><td colspan="5">Julio</td><td colspan="5">Agosto</td><td colspan="5">Septiembre</td><td colspan="5">Octubre</td><td colspan="5">Noviembre</td><td colspan="5">Diciembre</td></tr>';
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="4">Semana</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>';
+                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="64">' . $actividad->actividad . '</td></tr>';
+                                foreach ($actividad->getPropuestascronogramas(["order" => 'fecha DESC']) as $fecha) {
+                                    $numero_semana=weekOfMonth($fecha->fecha);
+                                    $numero_mes=$mes = (Integer)date("m", strtotime($fecha->fecha));                                                                        
+                                    $array_ejecucion[$numero_mes][$numero_semana]="X";
+                                }                                                        
+                            }       
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="4"></td>';
+                            foreach ($array_ejecucion AS $clave=>$valor)
+                            {
+                                $html_cronograma = $html_cronograma . '<td>'.$valor[1].'</td>'. '<td>'.$valor[2].'</td>'. '<td>'.$valor[3].'</td>'. '<td>'.$valor[4].'</td>'. '<td>'.$valor[5].'</td>';
+                            }
+                            $html_cronograma = $html_cronograma . '</tr>';
+                            $html_cronograma = $html_cronograma . "</table>";                                                        
+                        } 
+                        
+                        $html_presupuesto = "";
+                        foreach ($consulta_objetivos_especificos as $objetivo) {
+                            $html_presupuesto = $html_presupuesto . "<br/><br/><table>";                            
+                            $html_presupuesto = $html_presupuesto . '<tr><td align="center" bgcolor="#BDBDBD">Insumo</td><td align="center" bgcolor="#BDBDBD">Cantidad</td><td align="center" bgcolor="#BDBDBD">Valor Total</td><td align="center" bgcolor="#BDBDBD">Valor Solicitado</td><td align="center" bgcolor="#BDBDBD">Valor Cofinanciado</td><td align="center" bgcolor="#BDBDBD">Valor Aportado Participante</td></tr>';                            
+                            $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">Objetivo especifico: ' . $objetivo->objetivo . '</td></tr>';                            
+                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
+                            $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">' . $actividad->actividad . '</td></tr>';
+                                foreach ($actividad->getPropuestaspresupuestos(["order" => 'insumo DESC']) as $presupuesto) {
+                                    $html_presupuesto = $html_presupuesto . '<tr><td>'.$presupuesto->insumo.'</td><td>'.$presupuesto->cantidad.' ('.$presupuesto->unidadmedida.')</td><td align="right">$'.number_format($presupuesto->valortotal).'</td><td align="right">$'.number_format($presupuesto->aportesolicitado).'</td><td align="right">$'.number_format($presupuesto->aportecofinanciado).'</td><td align="right">$'.number_format($presupuesto->aportepropio).'</td></tr>';
+                                }                                                        
+                            }                                                                                          
+                            $html_presupuesto = $html_presupuesto . "</table>";                                                        
+                        }                                                
                         
                         $tabla_participante = '<table>
     <tr>
@@ -895,16 +958,20 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
 <table>    
     <tr>
         <td align="center" bgcolor="#BDBDBD">N°</td>        
+        <td align="center" bgcolor="#BDBDBD">¿Director del Proyecto?</td>    
         <td align="center" bgcolor="#BDBDBD">Tipo de documento</td>    
         <td align="center" bgcolor="#BDBDBD">Número de documento de identificación</td>    
         <td align="center" bgcolor="#BDBDBD">Nombres</td>        
         <td align="center" bgcolor="#BDBDBD">Apellidos</td>        
         <td align="center" bgcolor="#BDBDBD">Ciudad de residencia</td>        
         <td align="center" bgcolor="#BDBDBD">Rol que desempeña o ejecuta en la propuesta</td>                
+        <td align="center" bgcolor="#BDBDBD">Profesión</td>                
+        <td align="center" bgcolor="#BDBDBD">Experiencia</td>                
+        <td align="center" bgcolor="#BDBDBD">Actividades a cargo</td>                
     </tr> 
     ' . $html_equipo . '
 </table>
-<h3>Objetivos general</h3>
+<h3>Objetivo general</h3>
 <table>
     <tr>        
         <td colspan="4">' . $propuesta->objetivo_general . '</td>        
@@ -912,6 +979,10 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
 </table>
 <h3>Objetivos Específicos, metas y actividades</h3>
 '.$html_objetivo.'
+<h3>Cronograma</h3>    
+'.$html_cronograma.'
+<h3>Presupuesto por actividades</h3>    
+'.$html_presupuesto.'
 ';
                     }
                     //Participante agrupacion
@@ -2259,4 +2330,30 @@ try {
 } catch (\Exception $e) {
     echo 'Excepción: ', $e->getMessage();
 }
+
+function weekOfMonth($qDate) {
+    $dt = strtotime($qDate);
+    $day  = date('j',$dt);
+    $month = date('m',$dt);
+    $year = date('Y',$dt);
+    $totalDays = date('t',$dt);
+    $weekCnt = 1;
+    $retWeek = 0;
+    for($i=1;$i<=$totalDays;$i++) {
+        $curDay = date("N", mktime(0,0,0,$month,$i,$year));
+        if($curDay==7) {
+            if($i==$day) {
+                $retWeek = $weekCnt+1;
+            }
+            $weekCnt++;
+        } else {
+            if($i==$day) {
+                $retWeek = $weekCnt;
+            }
+        }
+    }
+    return $retWeek;
+}
+
+
 ?>
