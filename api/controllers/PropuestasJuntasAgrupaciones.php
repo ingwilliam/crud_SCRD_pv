@@ -134,16 +134,11 @@ $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -197,16 +192,11 @@ $app->get('/select_categorias', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -258,20 +248,15 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
-                
                 $params = json_decode($request->get('params'), true);
                 $consultar = true;
 
@@ -496,20 +481,15 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+            
                 //Consulto el participante inicial
                 $propuesta = Propuestas::findFirst("id=" . $request->get('idp'));
 
@@ -561,20 +541,15 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Consulto el usuario actual
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Consulto la propuesta solicitada
                 $conditions = ['id' => $request->get('propuesta'), 'active' => true];
                 $propuesta = Propuestas::findFirst(([
@@ -596,7 +571,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
-                $where .= " WHERE (p.id = " . $propuesta->participante . " OR p.participante_padre = " . $propuesta->participante . ") AND tipo IN ('Junta','Integrante','Participante') AND tipo_documento<>7 AND tipo_documento IS NOT NULL";
+                $where .= " WHERE (p.id = " . $propuesta->participante . " OR p.participante_padre = " . $propuesta->participante . ") AND tipo IN ('Junta','Integrante','Participante') AND tipo_documento IS NOT NULL";
                 //Condiciones para la consulta
 
                 if (!empty($request->get("search")['value'])) {
@@ -610,7 +585,12 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ","
+                        . "CASE td.descripcion
+                                WHEN 'NIT' THEN concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario_pj\"><span class=\"glyphicon glyphicon-edit\"></span></button>')
+                                ELSE concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\"><span class=\"glyphicon glyphicon-edit\"></span></button>')
+                           END as acciones,"
+                        . "concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -709,17 +689,11 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Consulto el usuario actual
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -753,6 +727,15 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                         $post["por_que_actualiza"] = $participante->por_que_actualiza."<b>".date("Y-m-d H:i:s")." ".$user_current["username"].":</b> ".$post["por_que_actualiza"]."<br/>";                    
+                        if($post["active"]=="false")
+                        {
+                            $post["active"]=FALSE;
+                        }
+                        
+                        if($post["active"]=="true")
+                        {
+                            $post["active"]=TRUE;
+                        }                                                
                     } else {
                         //Consulto el participante
                         $participante_padre = Participantes::findFirst($post["participante"]);

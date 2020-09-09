@@ -538,16 +538,11 @@ $app->put('/new', function () use ($app, $config) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -866,16 +861,11 @@ $app->put('/grupo/{id:[0-9]+}', function ($id) use ($app, $config) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //return json_encode($request->getPut());
             //Verifica que la respuesta es ok, para poder realizar la escritura
@@ -1034,16 +1024,11 @@ $app->put('/confirmar/{id:[0-9]+}', function ($id) use ($app, $config) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //return json_encode($request->getPut());
             //Verifica que la respuesta es ok, para poder realizar la escritura

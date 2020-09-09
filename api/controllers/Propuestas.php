@@ -76,20 +76,15 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Busco si tiene el perfil asociado de acuerdo al parametro
                 if ($request->get('m') == "pn") {
                     $tipo_participante = "Persona Natural";
@@ -317,20 +312,15 @@ $app->get('/buscar_propuesta_visualizar_formulario', function () use ($app, $con
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Consulto la convocatoria
                 $convocatoria = Convocatorias::findFirst($request->get('id'));
 
@@ -473,20 +463,15 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //parametros de la peticion
                 $post = $app->request->getPost();
                 $propuesta = Propuestas::findFirst($post["id"]);
@@ -583,29 +568,24 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Propuestas en el método inscribir_propuesta, ingresa a inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+            
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Consulto la convocatoria
                 $id=$request->getPut('conv');
                 $convocatoria = Convocatorias::findFirst($id);
@@ -638,7 +618,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                 
                 if ($fecha_actual > $fecha_cierre) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria(' . $request->getPut('conv') . ') no esta activa, la fecha de cierre es (' . $fecha_cierre_real->fecha_fin . ')", en el metodo inscribir_propuesta', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, la convocatoria(' . $request->getPut('conv') . ') no esta activa, la fecha de cierre es (' . $fecha_cierre_real->fecha_fin . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                    
                     $logger->close();
                     echo "error_fecha_cierre";
                 } else {
@@ -676,38 +656,37 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                         $propuesta->codigo = $codigo_propuesta;
 
                         if ($propuesta->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, Se genero un error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                                                            
                             $logger->close();
                             echo "error";
                         } else {
-
                             //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->info('"token":"{token}","user":"{user}","message":"Retornar en el controlador Propuestas en el método inscribir_propuesta, Se inscribio la propuesta con exito (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                                        
                             $logger->close();
                             echo $propuesta->id;
                         }
                     } else {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no esta en estado Registrada en el metodo inscribir_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, la propuesta (' . $request->getPut('id') . ') no esta en estado Registrada"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error_estado";
                     }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, acceso denegado como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, token caduco como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, error metodo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -730,20 +709,15 @@ $app->post('/subsanar_propuesta', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Consulto la convocatoria
                 $id=$request->getPut('conv');
                 $convocatoria = Convocatorias::findFirst($id);
@@ -768,13 +742,13 @@ $app->post('/subsanar_propuesta', function () use ($app, $config, $logger) {
                         $post["fecha_subsanacion"] = date("Y-m-d H:i:s");                        
 
                         if ($propuesta->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error";
                         } else {
 
                             //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo $propuesta->id;
                         }
@@ -829,20 +803,15 @@ $app->post('/anular_propuesta', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Consulto la propuesta
                 $propuesta = Propuestas::findFirst($request->getPost('propuesta'));
                 

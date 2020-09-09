@@ -113,6 +113,20 @@ class Propuestas extends Model
             'Propuestasdocumentos',
             'propuesta'
         );
+        
+        //Se define la relación con 1 a N con Propuestasterritorios
+        $this->hasMany(
+            'id',
+            'Propuestasterritorios',
+            'propuesta'
+        );
+        
+        //Se define la relación con 1 a N con Propuestasobjetivos
+        $this->hasMany(
+            'id',
+            'Propuestasobjetivos',
+            'propuesta'
+        );
 
         //Se define la relación con 1 a N con Propuestaslinks
         $this->hasMany(

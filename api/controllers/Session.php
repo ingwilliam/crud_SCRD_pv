@@ -144,7 +144,20 @@ $app->post('/consultar_usuario', function () use ($app, $config, $logger) {
                 $logger->info('"token":"{token}","user":"{user}","message":"Ingreso a la interfaz de bienvenida"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
 
-                echo json_encode($user_current);
+                $array=array();
+                $array["user"]=$user_current;
+                
+                $usuariosperfiles = Usuariosperfiles::findFirst("usuario=".$user_current["id"]." AND perfil = 16");
+                if(isset($usuariosperfiles->id))
+                {
+                    $array["externo"]="Si";
+                }
+                else
+                {
+                    $array["externo"]="No";
+                }
+                
+                echo json_encode($array);
                 exit;
             }
             else {

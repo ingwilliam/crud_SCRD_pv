@@ -457,19 +457,14 @@ $app->post('/deliberar/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $conf
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPost('modulo') . "&token=" . $request->getPost('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-
-                $user_current = json_decode($token_actual->user_current, true);
 
                 $ronda = Convocatoriasrondas::findFirst('id = ' . $ronda);
 
@@ -614,47 +609,52 @@ $app->get('/validar_confirmacion/ronda/{id:[0-9]+}', function ($id) use ($app, $
 
                 if (isset($ronda->id)) {
 
-                    /**
-                     * Listar las propuestas que estan registradas para evaluar
-                     */
-                    //fase de evaluación o de deliberación
-                    $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación' :
-                            ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación' : "" ) );
+                    //Se agerra el if para evitar que confirmen top general sin enviar a deliberar previamente.
+                    if ($ronda->estado == 36 || $ronda->estado == 35) {
+                        /**
+                         * Listar las propuestas que estan registradas para evaluar
+                         */
+                        //fase de evaluación o de deliberación
+                        $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación' :
+                                ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación' : "" ) );
 
-                    //Propuestas habilitadas
-                    //Estado propuestas	Habilitada
-                    $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
+                        //Propuestas habilitadas
+                        //Estado propuestas	Habilitada
+                        $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
 
-                    //todas las propuestas
-                    $allpropuestas = Propuestas::find(
-                                    [
-                                        ' convocatoria = ' . $ronda->convocatoria
-                                        . ' AND estado = ' . $estado_habilitada->id,
-                                        'order' => 'id ASC',
-                                        'offset' => 0,
-                                        'limit' => ( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes')) )
-                                    ]
-                    );
+                        //todas las propuestas
+                        $allpropuestas = Propuestas::find(
+                                        [
+                                            ' convocatoria = ' . $ronda->convocatoria
+                                            . ' AND estado = ' . $estado_habilitada->id,
+                                            'order' => 'id ASC',
+                                            'offset' => 0,
+                                            'limit' => ( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes')) )
+                                        ]
+                        );
 
-                    $response = array();
-                    // propuestas_evaluacion	Confirmada
-                    $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
-                    $estado_impedimento = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
+                        $response = array();
+                        // propuestas_evaluacion	Confirmada
+                        $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+                        $estado_impedimento = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
 
 
-                    //se verifica que todas las evaluaciones esten confirmadas
-                    $propuestas_evaluacion = Evaluacionpropuestas::find([
-                                " ronda = " . $ronda->id
-                                . " AND fase = '" . $fase . "'"
-                    ]);
-                    foreach ($propuestas_evaluacion as $key => $evaluacion) {
+                        //se verifica que todas las evaluaciones esten confirmadas
+                        $propuestas_evaluacion = Evaluacionpropuestas::find([
+                                    " ronda = " . $ronda->id
+                                    . " AND fase = '" . $fase . "'"
+                        ]);
+                        foreach ($propuestas_evaluacion as $key => $evaluacion) {
 
-                        if ($evaluacion->estado != $estado_confirmada->id && $evaluacion->estado != $estado_impedimento->id) {
-                            return "error_confirmacion";
+                            if ($evaluacion->estado != $estado_confirmada->id && $evaluacion->estado != $estado_impedimento->id) {
+                                return "error_confirmacion";
+                            }
                         }
-                    }
 
-                    return "exito";
+                        return "exito";
+                    } else {
+                        return "error_deliberacion";
+                    }
                 } else {
                     $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
                             ['user' => $user_current, 'token' => $request->get('token')]
@@ -1034,19 +1034,15 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1137,10 +1133,15 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
                         foreach ($rondas as $r) {
                             if ($r->id == $ronda->id) {
-                                $rondas->next();
-                                //se establece la siguiente ronda
-                                $ronda_siguiente = $rondas->current(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
-                                break;
+
+
+
+                                if ($r->tipo_acta == 'Preselección') {
+                                    $rondas->next();
+                                    //se establece la siguiente ronda
+                                    $ronda_siguiente = $rondas->current(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
+                                    break;
+                                }
                             }
                         }
 
@@ -1288,19 +1289,14 @@ $app->put('/declarar_desierta_convocatoria/ronda/{id:[0-9]+}', function ($id) us
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1423,19 +1419,14 @@ $app->put('/asignar_monto/propuesta/{id:[0-9]+}', function ($id) use ($app, $con
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1518,20 +1509,16 @@ $app->put('/asignar_monto1/propuesta/{id:[0-9]+}', function ($id) use ($app, $co
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
 //            return $permiso_escritura;
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1621,19 +1608,15 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
 
-                $user_current = json_decode($token_actual->user_current, true);
 
                 if ($user_current["id"]) {
 
@@ -1701,8 +1684,8 @@ $app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $c
                             // Commit the transaction
                             $this->db->commit();
                             return "exito";
-                        }else{
-                           return "acceso_denegado"; //Indica que no puede anular la deliberación porque ya confirmó su top general
+                        } else {
+                            return "confirmo_top"; //Indica que no puede anular la deliberación porque ya confirmó su top general.
                         }
                     } else {
                         $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',

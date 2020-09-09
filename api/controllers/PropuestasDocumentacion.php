@@ -71,26 +71,21 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_documentacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método buscar_documentacion, ingresa al formulario de documentación como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Busco si tiene el perfil asociado de acuerdo al parametro
                 if ($request->get('m') == "pn") {
                     $tipo_participante = "Persona Natural";
@@ -129,6 +124,7 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
 
                                 //Creo el array de la propuesta
                                 $array = array();
+                                $array["programa"] = $propuesta->getConvocatorias()->programa;
                                 $array["propuesta"] = $propuesta->id;
                                 //Valido si se habilita propuesta por derecho de petición
                                 $array["estado"] = $propuesta->estado;                                    
@@ -195,7 +191,7 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 $array["tecnicos"] = $documentos_tecnicos;
 
                                 //Registro la accion en el log de convocatorias
-                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador PropuestasDocumentacion en el método buscar_documentacion, retorna la información de la documentacion de la propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
 
                                 //Retorno el array
@@ -203,14 +199,14 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 
                             } else {
                                 //Registro la accion en el log de convocatorias           
-                                $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, la propuesta no existe como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
                                 echo "crear_propuesta";
                                 exit;
                             }
                         } else {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante PN asociado que se asocia a la propuesta."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, la propuesta no existe como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error_cod_propuesta";
                             exit;
@@ -219,21 +215,21 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                         //Busco si tiene el perfil asociado de acuerdo al parametro
                         if ($request->get('m') == "pn") {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_pn";
                             exit;
                         }
                         if ($request->get('m') == "pj") {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_pj";
                             exit;
                         }
                         if ($request->get('m') == "agr") {
                             //Registro la accion en el log de convocatorias           
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_agr";
                             exit;
@@ -243,21 +239,21 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                     //Busco si tiene el perfil asociado de acuerdo al parametro
                     if ($request->get('m') == "pn") {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_pn";
                         exit;
                     }
                     if ($request->get('m') == "pj") {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_pj";
                         exit;
                     }
                     if ($request->get('m') == "agr") {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_agr";
                         exit;
@@ -265,19 +261,19 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_documentacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, acceso denegado como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_documentacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, token caduco como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_documentacion como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_documentacion, error metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -302,20 +298,15 @@ $app->get('/buscar_documentacion_subsanacion', function () use ($app, $config, $
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 //Valido si existe el codigo de la propuesta
                 //De lo contratio creo el participante del cual depende del inicial
                 //Creo la propuesta asociando el participante creado
@@ -423,26 +414,21 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método validar_requisitos, valida requisitos de la propuesta (' . $request->get('propuesta') . ') de la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
 
                 if (isset($propuesta->id)) {
@@ -450,10 +436,11 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     //Consulto la convocatoria
                     $id=$request->get('conv');
                     $convocatoria = Convocatorias::findFirst($id);
-
+                    $programa=$convocatoria->programa;
                     //Si la convocatoria seleccionada es categoria y no es especial invierto los id
                     if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
                         $id = $convocatoria->getConvocatorias()->id;                    
+                        $programa=$convocatoria->getConvocatorias()->programa;
                     }
                     
                     //Consulto los requisitos administrativos no guardados
@@ -472,7 +459,7 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     foreach ($requisitos_administrativos as $requisito) {
                         
                         $array_retorno[] = array('id' => $requisito->id, 'nombre' => $requisito->nombre);
-                                                
+                        $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado requisito administrativo ('.$requisito->nombre.') en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     }
                     
                     //Consulto los requisitos tecnicos no guardados
@@ -490,6 +477,7 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     foreach ($requisitos_tecnicos as $requisito) {
                         
                         $array_retorno[] = array('id' => $requisito->id, 'nombre' => $requisito->nombre);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado requisito técnico ('.$requisito->nombre.') en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                                 
                     }
                     
@@ -499,18 +487,20 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     {
                         
                         //Se valida que al menos tenga registrado un integrante
-                        $participantes = Participantes::find("active = TRUE AND participante_padre=" . $propuesta->participante . "");
+                        $participantes = Participantes::find("tipo IN ('Junta','Integrante') AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
                         
                         if( count($participantes) <= 0 )
                         {                                                
                             if( $id_perfil==7)
                             {
-                                $array_retorno[] = array('id' => "Junta", 'nombre' => "Junta");                                                                
+                                $array_retorno[] = array('id' => "Junta", 'nombre' => "Junta");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes de la junta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             }
                             
                             if($id_perfil==8)
                             {
                                 $array_retorno[] = array('id' => "Integrante", 'nombre' => "Integrante");                                                                                                                                
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             }                                                        
                         }
                         
@@ -522,50 +512,167 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                             if( $id_perfil==7)
                             {
                                 $array_retorno[] = array('id' => "RJunta", 'nombre' => "RJunta");                                                                                                                                
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado el representante de la junta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             }
                             
                             if($id_perfil==8)
                             {
                                 $array_retorno[] = array('id' => "RIntegrante", 'nombre' => "RIntegrante");                                                                                                                                                                
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado el representante de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             }                                                        
                         }
                         
+                        //Validaciones solo para el PDAC
+                        if($programa==2){
+                            //Se valida que al menos tenga un integrante equipo
+                            $participantes = Participantes::find("tipo='EquipoTrabajo' AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
+
+                            if( count($participantes) <= 0 )
+                            {
+                                $array_retorno[] = array('id' => "EquipoTrabajo", 'nombre' => "EquipoTrabajo");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes del equipo de trabajo de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //No ha ingresado la informacion del objetivo general
+                            if($propuesta->objetivo_general=="")
+                            {
+                                $array_retorno[] = array('id' => "FObjetivogeneral", 'nombre' => "FObjetivogeneral");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado información en el formulario del objetivo general de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+
+                            //No ha ingresado la informacion del formulario para el registro de los territorios y población 
+                            if($propuesta->poblacion_objetivo=="" || $propuesta->comunidad_objetivo=="" || $propuesta->total_beneficiario=="" || $propuesta->establecio_cifra=="" || $propuesta->localidades=="")
+                            {
+                                $array_retorno[] = array('id' => "FTerritorio", 'nombre' => "FTerritorio");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado información en el formulario del territorio y pobación de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //Objetivos especificos de la propuesta
+                            $total_objetivos = COUNT($propuesta->getPropuestasobjetivos("active=TRUE"));
+                            if($total_objetivos<=0)
+                            {
+                                $array_retorno[] = array('id' => "FObjetivos", 'nombre' => "FObjetivos");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado objetivos especificos en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //Actividades de la propuesta
+                            $error_objetivos=false;
+                            foreach($propuesta->getPropuestasobjetivos("active=TRUE") as $objetivo){
+                                $total_actividades= COUNT(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id));
+                                if($total_actividades<=0)
+                                {
+                                    $error_objetivos=true;
+                                    break;
+                                }                                                                
+                            }             
+                            
+                            if($error_objetivos){
+                                $array_retorno[] = array('id' => "FActividades", 'nombre' => "FActividades");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, hay objetivos que no cuentan con actividades en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //Cronograma de la propuesta
+                            $error_cronograma=false;
+                            foreach($propuesta->getPropuestasobjetivos("active=TRUE") as $objetivo){                                
+                                foreach(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id) as $actividad)
+                                {
+                                    $total_cronograma= COUNT(Propuestascronogramas::find("active=true AND propuestaactividad = ".$actividad->id));
+                                    if($total_cronograma<=0)
+                                    {
+                                        $error_cronograma=true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if($error_cronograma){
+                                $array_retorno[] = array('id' => "FCronograma", 'nombre' => "FCronograma");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, hay actividades que no cuentan con cronograma en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //presupuesto de la propuesta
+                            $error_presupuesto=false;
+                            foreach($propuesta->getPropuestasobjetivos("active=TRUE") as $objetivo){                                
+                                foreach(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id) as $actividad)
+                                {
+                                    $total_presupuesto= COUNT(Propuestaspresupuestos::find("active=true AND propuestaactividad = ".$actividad->id));
+                                    if($total_presupuesto<=0)
+                                    {
+                                        $error_presupuesto=true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if($error_presupuesto){
+                                $array_retorno[] = array('id' => "FPresupuesto", 'nombre' => "FPresupuesto");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, hay actividades que no cuentan con presupuesto en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                            //total presupuesto de la propuesta
+                            $error_total_presupuesto=false;
+                            $valor_total_proyecto=0;
+                            $valor_total_concertacion=0;
+                            foreach($propuesta->getPropuestasobjetivos("active=TRUE") as $objetivo){                                
+                                foreach(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id) as $actividad)
+                                {
+                                    
+                                    $sql_totales = 'SELECT SUM(valortotal) AS total_proyecto, SUM(aportesolicitado) AS total_concertacion FROM Propuestaspresupuestos WHERE active=TRUE';
+
+                                    $totales = $app->modelsManager->executeQuery($sql_totales)->getFirst();
+                                    
+                                    $valor_total_proyecto=$valor_total_proyecto+$totales->total_proyecto;
+                                    
+                                    $valor_total_concertacion=$valor_total_concertacion+$totales->total_concertacion;
+                                    
+                                }
+                            }
+                            
+                            //Generamos el 70% del total del proyecto
+                            $porcentaje_proyecto=($valor_total_proyecto*70)/100;
+                            
+                            if($valor_total_concertacion>$porcentaje_proyecto){
+                                $array_retorno[] = array('id' => "FPorcentajePresupuesto", 'nombre' => "FPorcentajePresupuesto");
+                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, el total de la cofinanciación es superior al 70% del valor total del proyecto en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            }
+                            
+                        }
+                        
+                        
                     }
                     
+                    //No ha ingresado la informacion de la propuesta
                     if($propuesta->nombre=="")
                     {
                         $array_retorno[] = array('id' => "FPropuesta", 'nombre' => "FPropuesta");
+                        $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado información en el formulario de la propuesta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     }
-                    
-                    
-                    //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información de la documentacion para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                    $logger->close();
-                    
+                                        
+                    $logger->close();                    
                     echo json_encode($array_retorno);
                     
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo validar_requisitos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método validar_requisitos, no existe la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "crear_propuesta";
                     exit;
                 }
             } else {
-                //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                //Registro la accion en el log de convocatorias      
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método validar_requisitos, acceso denegado en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);                
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
-            //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            //Registro la accion en el log de convocatorias                       
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método validar_requisitos, token caduco en la propuesta (' . $request->get('propuesta') . ')."', ['user' => '', 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo validar_requisitos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método validar_requisitos, error en el metodo de la propuesta (' . $request->get('propuesta') . ')  ' . $ex->getMessage() . '"', ['user' => '', 'token' => $request->get('token')]);        
         $logger->close();
         echo "error_metodo";
     }
@@ -588,20 +695,15 @@ $app->get('/validar_requisitos_subsanacion', function () use ($app, $config, $lo
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
 
                 if (isset($propuesta->id)) {
@@ -674,26 +776,21 @@ $app->get('/buscar_archivos', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_archivos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método buscar_archivos, cargar tabla de los archivos del documento como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
 
                 if (isset($propuesta->id)) {
@@ -707,33 +804,33 @@ $app->get('/buscar_archivos', function () use ($app, $config, $logger) {
                     ]));
 
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información documento convocatoriadocumento para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_archivos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método buscar_archivos, retorna la información pata el documento como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_archivos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
 
                     //Retorno el array
                     echo json_encode($consulta_documentos_administrativos);
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_archivos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_archivos, no existe la propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_archivos"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "crear_propuesta";
                     exit;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_archivos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_archivos, acceso denegado como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_archivos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_archivos, token caduco como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_archivos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_archivos, error en el metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -750,26 +847,21 @@ $app->get('/buscar_link', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->get('modulo') . "&token=" . $request->get('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método buscar_link, cargar tabla de los link de los documentos como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 $propuesta = Propuestas::findFirst("id=" . $request->get('propuesta') . "");
 
                 if (isset($propuesta->id)) {
@@ -783,33 +875,33 @@ $app->get('/buscar_link', function () use ($app, $config, $logger) {
                     ]));
 
                     //Registro la accion en el log de convocatorias
-                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información documento convocatoriadocumento para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador PropuestasDocumentacion en el método buscar_link, retorna link para el documento como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
 
                     //Retorno el array
                     echo json_encode($consulta_documentos_link);
                 } else {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_link, la propuesta no existe como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_link"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "crear_propuesta";
                     exit;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_link, acceso denegado como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_link, token caduco en el metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_link como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método buscar_link, error metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -827,26 +919,21 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método guardar_archivo, ingresa a crear documento como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                //Validar si existe un participante como persona jurídica, con id usuario innner usuario_perfil
-                $user_current = json_decode($token_actual->user_current, true);
-
+                
                 $explode = explode(',', substr($request->getPut('srcData'), 5), 2);
                 $data = $explode[1];
                 $fileName = "c" . $request->getPost('convocatoria_padre_categoria') . "d" . $request->getPut('conv') . "u" . $user_current["id"] . "f" . date("YmdHis") . "." . $request->getPut("srcExt");
@@ -855,7 +942,7 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
                 $return = $chemistry_alfresco->newFile("/Sites/convocatorias/" . $request->getPut('conv') . "/propuestas/" . $request->getPut('propuesta'), $fileName, base64_decode($data), $request->getPut("srcType"));
                 if (strpos($return, "Error") !== FALSE) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el archivo (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_archivo, error al crear el archivo (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo "error_archivo";
                 } else {
@@ -873,30 +960,30 @@ $app->post('/guardar_archivo', function () use ($app, $config, $logger) {
                     }                                        
                     if ($propuestasdocumentos->save() === false) {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, error al relacionar el idalfresco con idpropuestadocumento en el archivo (' . $request->getPut('srcName') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                         $logger->close();
                         echo "error_archivo";
                     } else {
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se creo el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorna en el controlador PropuestasDocumentacion en el método guardar_archivo, se relaciona el idalfresco con idpropuestadocumento en el archivo (' . $request->getPut('srcName') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                         $logger->close();
                         echo $propuestasdocumentos->id;
                     }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, acceso denegado como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, token caduco como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_archivo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método guardar_archivo, error en el metodo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -912,20 +999,17 @@ $app->post('/guardar_link', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_escritura");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método guardar_link, ingresa a guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -945,29 +1029,29 @@ $app->post('/guardar_link', function () use ($app, $config, $logger) {
                 } 
                 if ($propuestaslinks->save() === false) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el link en la base de datos (' . $request->getPut('documento') . ') en el metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, error al crear el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo "error_archivo";
                 } else {
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se creo el link en la base de datos (' . $request->getPut('documento') . ') en el metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno el controlador PropuestasDocumentacion en el método guardar_link, se creo el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo $propuestaslinks->id;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, acceso denegado como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, token caduco como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo guardar_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, error metodo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -983,20 +1067,18 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config, $logger) 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+            
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método delete, ingreso a inactivar el archivo"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -1006,29 +1088,29 @@ $app->delete('/delete/{id:[0-9]+}', function ($id) use ($app, $config, $logger) 
 
                 if ($propuestasdocumentos->save($propuestasdocumentos) === false) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error al desactivar el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete, error al desactivar el archivo "', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo "error";
                 } else {
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se desactivo el archivo en la base de datos (' . $request->getPut('srcName') . ') en el metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno al controlador PropuestasDocumentacion en el método delete, se desactivo el archivo"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo $propuestasdocumentos->id;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete, acceso denegado"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete, token caduco"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo delete como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete, error metodo ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1044,20 +1126,17 @@ $app->delete('/delete_link/{id:[0-9]+}', function ($id) use ($app, $config, $log
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método delete_link, ingresa inactivar"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+        
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
@@ -1067,29 +1146,29 @@ $app->delete('/delete_link/{id:[0-9]+}', function ($id) use ($app, $config, $log
 
                 if ($propuestaslinks->save($propuestaslinks) === false) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"Error al desactivar el link en la base de datos (' . $request->getPut('srcName') . ') en el metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete_link, error al inactivar "', ['user' => "", 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo "error";
                 } else {
-                    $logger->info('"token":"{token}","user":"{user}","message":"Se desactivo el link en la base de datos (' . $request->getPut('srcName') . ') en el metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                    $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasDocumentacion en el método delete_link, se inactivo el link "', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                     $logger->close();
                     echo $propuestaslinks->id;
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete_link, acceso denegado "', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete_link, token caduco "', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo delete_link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador PropuestasDocumentacion en el método delete_link, error metodo ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1109,14 +1188,11 @@ $app->post('/download_file', function () use ($app, $config, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-            //Realizo una peticion curl por post para verificar si tiene permisos de escritura
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $config->sistema->url_curl . "Session/permiso_eliminar");
-            curl_setopt($ch, CURLOPT_POST, 2);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, "modulo=" . $request->getPut('modulo') . "&token=" . $request->getPut('token'));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $permiso_escritura = curl_exec($ch);
-            curl_close($ch);
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {

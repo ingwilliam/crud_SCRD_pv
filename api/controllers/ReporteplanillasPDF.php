@@ -64,10 +64,35 @@ $app = new Micro($di);
 
 
 
-$app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $config) {
+$app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $config) {
     try {
 
-
+        $request = new Request();        
+        $fase='Evaluación';
+        
+        if($request->get("deliberacion")=="true")
+        {
+            $fase='Deliberación';
+        }
+        
+        $in_codigos="";
+        
+        if($request->get("codigos")!="")
+        {
+            $array_codigos= explode(",",$request->get("codigos"));                        
+            foreach($array_codigos as $clave)
+            {
+                $in_codigos=$in_codigos.",'".$clave."'";
+            }
+            
+            $in_codigos = trim($in_codigos, ",");
+            
+            $in_codigos=" AND p.codigo IN (".$in_codigos.")";
+            
+        }
+        
+        $where = " AND ep.fase='".$fase."'".$in_codigos;
+        
         //ordenar
         $phql = 'SELECT
                   distinct (p.id), p.*
@@ -75,7 +100,7 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                   Propuestas p
                   inner join Evaluacionpropuestas ep ON p.id = ep.propuesta
               WHERE
-              ep.ronda = ' . $ronda;
+              ep.ronda = ' . $ronda." ".$where;
 
         $rs = $this->modelsManager->createQuery($phql)->execute();
 
@@ -83,16 +108,15 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
 
         foreach ($rs as $row) {
             //echo json_encode($rs);
-
+            
             $evaluacionpropuestas = Evaluacionpropuestas::find(
                             [
                                 ' propuesta = ' . $row->p->id
                                 . ' AND ronda = ' . $ronda
+                                . ' AND fase = "' . $fase.'"'
                             ]
             );
-
-
-
+            
             $participantes = Participantes::findFirst('id = ' . $row->p->participante);
 
             echo "<b>Código propuesta:</b>" . $row->p->codigo . "<br/>";
@@ -146,13 +170,30 @@ $app->get('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use ($
                                         . ' AND active= true'
                                     ]
                     );
+                    
+                    
+                    //Se agrega el if para evitar errores cuando el valor sea null
+                    
+                    if(isset($evaluacioncriterio->puntaje)){
+                        $puntaje=$evaluacioncriterio->puntaje;
+                    }else{
+                        $puntaje=0;
+                    }
+                    
+                    if(isset($evaluacioncriterio->observacion)){
+                        $observacion=$evaluacioncriterio->observacion;
+                    }else{
+                        $observacion="";
+                    }
+                    
+                    
 
                     echo '<tr>
                             <td>' . $cont . '</td>
                             <td>' . $criterio->descripcion_criterio . '</td>
                             <td>' . $criterio->puntaje_maximo . '</td>
-                            <td>' . $evaluacioncriterio->puntaje . '</td>
-                            <td>' . $evaluacioncriterio->observacion . '</td>
+                            <td>' . $puntaje . '</td>
+                            <td>' . $observacion . '</td>
                           </tr>';
                 }
 
