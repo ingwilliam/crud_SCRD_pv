@@ -873,18 +873,104 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                         } 
                         
                         $html_presupuesto = "";
+                        $valortotal_proyecto=0;
+                        $aportesolicitado_proyecto=0;
+                        $aportecofinanciado_proyecto=0;
+                        $aportepropio_proyecto=0;
                         foreach ($consulta_objetivos_especificos as $objetivo) {
                             $html_presupuesto = $html_presupuesto . "<br/><br/><table>";                            
                             $html_presupuesto = $html_presupuesto . '<tr><td align="center" bgcolor="#BDBDBD">Insumo</td><td align="center" bgcolor="#BDBDBD">Cantidad</td><td align="center" bgcolor="#BDBDBD">Valor Total</td><td align="center" bgcolor="#BDBDBD">Valor Solicitado</td><td align="center" bgcolor="#BDBDBD">Valor Cofinanciado</td><td align="center" bgcolor="#BDBDBD">Valor Aportado Participante</td></tr>';                            
                             $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">Objetivo especifico: ' . $objetivo->objetivo . '</td></tr>';                            
                             foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
                             $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">' . $actividad->actividad . '</td></tr>';
+                                $valortotal=0;
+                                $aportesolicitado=0;
+                                $aportecofinanciado=0;
+                                $aportepropio=0;
                                 foreach ($actividad->getPropuestaspresupuestos(["order" => 'insumo DESC']) as $presupuesto) {
+                                    $valortotal=$valortotal+$presupuesto->valortotal;
+                                    $aportesolicitado=$aportesolicitado+$presupuesto->aportesolicitado;
+                                    $aportecofinanciado=$aportecofinanciado+$presupuesto->aportecofinanciado;
+                                    $aportepropio=$aportepropio+$presupuesto->aportepropio;
                                     $html_presupuesto = $html_presupuesto . '<tr><td>'.$presupuesto->insumo.'</td><td>'.$presupuesto->cantidad.' ('.$presupuesto->unidadmedida.')</td><td align="right">$'.number_format($presupuesto->valortotal).'</td><td align="right">$'.number_format($presupuesto->aportesolicitado).'</td><td align="right">$'.number_format($presupuesto->aportecofinanciado).'</td><td align="right">$'.number_format($presupuesto->aportepropio).'</td></tr>';
                                 }                                                        
-                            }                                                                                          
+                                $html_presupuesto = $html_presupuesto . '<tr><td></td><td align="right">Totales Actividad</td><td align="right">$'.number_format($valortotal).'</td><td align="right">$'.number_format($aportesolicitado).'</td><td align="right">$'.number_format($aportecofinanciado).'</td><td align="right">$'.number_format($aportepropio).'</td></tr>';
+                                $valortotal_proyecto=$valortotal_proyecto+$valortotal;
+                                $aportesolicitado_proyecto=$aportesolicitado_proyecto+$aportesolicitado;
+                                $aportecofinanciado_proyecto=$aportecofinanciado_proyecto+$aportecofinanciado;
+                                $aportepropio_proyecto=$aportepropio_proyecto+$aportepropio;
+                            }                            
                             $html_presupuesto = $html_presupuesto . "</table>";                                                        
-                        }                                                
+                        }
+                        $html_presupuesto = $html_presupuesto . "<table>";                                                        
+                        $html_presupuesto = $html_presupuesto . '<tr><td colspan="2" align="right">TOTAL PRESUPUESTO INGRESADO PARA LAS ACTIVIDADES</td><td align="right">$'.number_format($valortotal_proyecto).'</td><td align="right">$'.number_format($aportesolicitado_proyecto).'</td><td align="right">$'.number_format($aportecofinanciado_proyecto).'</td><td align="right">$'.number_format($aportepropio_proyecto).'</td></tr>';
+                        $html_presupuesto = $html_presupuesto . "</table>";                                                        
+                        
+                        $utf8_ansi2 = array(
+    "\u00c0" =>"À",
+    "\u00c1" =>"Á",
+    "\u00c2" =>"Â",
+    "\u00c3" =>"Ã",
+    "\u00c4" =>"Ä",
+    "\u00c5" =>"Å",
+    "\u00c6" =>"Æ",
+    "\u00c7" =>"Ç",
+    "\u00c8" =>"È",
+    "\u00c9" =>"É",
+    "\u00ca" =>"Ê",
+    "\u00cb" =>"Ë",
+    "\u00cc" =>"Ì",
+    "\u00cd" =>"Í",
+    "\u00ce" =>"Î",
+    "\u00cf" =>"Ï",
+    "\u00d1" =>"Ñ",
+    "\u00d2" =>"Ò",
+    "\u00d3" =>"Ó",
+    "\u00d4" =>"Ô",
+    "\u00d5" =>"Õ",
+    "\u00d6" =>"Ö",
+    "\u00d8" =>"Ø",
+    "\u00d9" =>"Ù",
+    "\u00da" =>"Ú",
+    "\u00db" =>"Û",
+    "\u00dc" =>"Ü",
+    "\u00dd" =>"Ý",
+    "\u00df" =>"ß",
+    "\u00e0" =>"à",
+    "\u00e1" =>"á",
+    "\u00e2" =>"â",
+    "\u00e3" =>"ã",
+    "\u00e4" =>"ä",
+    "\u00e5" =>"å",
+    "\u00e6" =>"æ",
+    "\u00e7" =>"ç",
+    "\u00e8" =>"è",
+    "\u00e9" =>"é",
+    "\u00ea" =>"ê",
+    "\u00eb" =>"ë",
+    "\u00ec" =>"ì",
+    "\u00ed" =>"í",
+    "\u00ee" =>"î",
+    "\u00ef" =>"ï",
+    "\u00f0" =>"ð",
+    "\u00f1" =>"ñ",
+    "\u00f2" =>"ò",
+    "\u00f3" =>"ó",
+    "\u00f4" =>"ô",
+    "\u00f5" =>"õ",
+    "\u00f6" =>"ö",
+    "\u00f8" =>"ø",
+    "\u00f9" =>"ù",
+    "\u00fa" =>"ú",
+    "\u00fb" =>"û",
+    "\u00fc" =>"ü",
+    "\u00fd" =>"ý",
+    "\u00ff" =>"ÿ");  
+                        
+                        $propuesta_localidades=str_replace('","', " , ", $propuesta->localidades );
+                        $propuesta_localidades=str_replace('["', "", $propuesta_localidades);
+                        $propuesta_localidades=str_replace('"]', "", $propuesta_localidades);    
+                        
                         
                         $tabla_participante = '<table>
     <tr>
@@ -983,6 +1069,182 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
 '.$html_cronograma.'
 <h3>Presupuesto por actividades</h3>    
 '.$html_presupuesto.'
+<h3>Territorio y población</h3>    
+<table>
+    <tr>
+        <td>Localidad principal en donde el proyecto desarrollará las acciones</td><td colspan="3">'.$propuesta->getLocalidades()->nombre.'</td>
+    </tr>
+    <tr>
+        <td>localidades en donde el proyecto desarrollará acciones</td><td colspan="3">' . strtr($propuesta_localidades, $utf8_ansi2) . '</td>
+    </tr>
+</table>    
+<h3>Participantes y/o beneficiarios</h3>    
+<table>    
+    <tr>
+        <td>Describa brevemente la población objetivo del proyecto</td>
+        <td colspan="3">' . $propuesta->poblacion_objetivo . '</td>        
+    </tr> 
+    <tr>
+        <td>¿Cómo se concertó el proyecto con la comunidad objetivo?</td>
+        <td colspan="3">' . $propuesta->comunidad_objetivo . '</td>        
+    </tr> 
+    <tr>
+        <td>Estimado total de beneficiarios o participantes</td>
+        <td colspan="3">' . $propuesta->total_beneficiario . '</td>        
+    </tr> 
+    <tr>
+        <td>Cómo se estableció esta cifra</td>
+        <td colspan="3">' . $propuesta->establecio_cifra . '</td>        
+    </tr> 
+</table>
+<h3>Caracterización de la población</h3>    
+<table>    
+    <tr>        
+        <td colspan="2">Sexo</td>        
+    </tr>     
+    <tr>        
+        <td>Femenino</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Intersexual</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Masculino</td>        
+        <td></td>        
+    </tr>     
+</table>
+<br/><br/>
+<table>    
+    <tr>        
+        <td colspan="2">Grupo etareo</td>        
+    </tr>     
+    <tr>        
+        <td>Primera infancia (0 – 5 años)</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Infancia (6 – 12 años)</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Adolescencia (13 – 18 años)</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Juventud (19 – 28 años)</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Adulto (29 – 59 años)</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Adulto mayor (60 años y más)</td>        
+        <td></td>        
+    </tr>     
+</table>
+<br/><br/>
+<table>    
+    <tr>        
+        <td colspan="2">Estrato</td>        
+    </tr>     
+    <tr>        
+        <td>1</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>2</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>3</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>4</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>5</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>6</td>        
+        <td></td>        
+    </tr>     
+</table>
+<br/><br/>
+<table>    
+    <tr>        
+        <td colspan="2">Grupos étnico</td>        
+    </tr>     
+    <tr>        
+        <td>Comunidades Negras o Afrocolombianas</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Comunidad raizal</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Pueblos y Comunidades Indígenas</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Pueblo Rom o Gitano</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Mestizo</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Ninguno</td>        
+        <td></td>        
+    </tr>     
+</table>
+<br/><br/>
+<table>    
+    <tr>        
+        <td colspan="2">Grupos sociales y poblacionales</td>        
+    </tr>     
+    <tr>        
+        <td>Artesanos</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Discapacitados</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Habitantes de calle</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>LGBTI</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Personas de comunidades rurales y campesinas</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Personas privadas de la libertad</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Víctimas del conflicto</td>        
+        <td></td>        
+    </tr>     
+    <tr>        
+        <td>Ninguno</td>        
+        <td></td>        
+    </tr>     
+</table>
+
+
 ';
                     }
                     //Participante agrupacion
@@ -1072,67 +1334,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
     $alianza_sectorial = ($propuesta->alianza_sectorial) ? 'Sí' : 'No';
     
     $primera_vez_pdac = ($propuesta->primera_vez_pdac) ? 'Sí' : 'No';    
-    
-    $utf8_ansi2 = array(
-    "\u00c0" =>"À",
-    "\u00c1" =>"Á",
-    "\u00c2" =>"Â",
-    "\u00c3" =>"Ã",
-    "\u00c4" =>"Ä",
-    "\u00c5" =>"Å",
-    "\u00c6" =>"Æ",
-    "\u00c7" =>"Ç",
-    "\u00c8" =>"È",
-    "\u00c9" =>"É",
-    "\u00ca" =>"Ê",
-    "\u00cb" =>"Ë",
-    "\u00cc" =>"Ì",
-    "\u00cd" =>"Í",
-    "\u00ce" =>"Î",
-    "\u00cf" =>"Ï",
-    "\u00d1" =>"Ñ",
-    "\u00d2" =>"Ò",
-    "\u00d3" =>"Ó",
-    "\u00d4" =>"Ô",
-    "\u00d5" =>"Õ",
-    "\u00d6" =>"Ö",
-    "\u00d8" =>"Ø",
-    "\u00d9" =>"Ù",
-    "\u00da" =>"Ú",
-    "\u00db" =>"Û",
-    "\u00dc" =>"Ü",
-    "\u00dd" =>"Ý",
-    "\u00df" =>"ß",
-    "\u00e0" =>"à",
-    "\u00e1" =>"á",
-    "\u00e2" =>"â",
-    "\u00e3" =>"ã",
-    "\u00e4" =>"ä",
-    "\u00e5" =>"å",
-    "\u00e6" =>"æ",
-    "\u00e7" =>"ç",
-    "\u00e8" =>"è",
-    "\u00e9" =>"é",
-    "\u00ea" =>"ê",
-    "\u00eb" =>"ë",
-    "\u00ec" =>"ì",
-    "\u00ed" =>"í",
-    "\u00ee" =>"î",
-    "\u00ef" =>"ï",
-    "\u00f0" =>"ð",
-    "\u00f1" =>"ñ",
-    "\u00f2" =>"ò",
-    "\u00f3" =>"ó",
-    "\u00f4" =>"ô",
-    "\u00f5" =>"õ",
-    "\u00f6" =>"ö",
-    "\u00f8" =>"ø",
-    "\u00f9" =>"ù",
-    "\u00fa" =>"ú",
-    "\u00fb" =>"û",
-    "\u00fc" =>"ü",
-    "\u00fd" =>"ý",
-    "\u00ff" =>"ÿ");                   
+                         
                     $html = '<!-- EXAMPLE OF CSS STYLE -->
 <style>
         table {
