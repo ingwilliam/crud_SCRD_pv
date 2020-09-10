@@ -699,8 +699,18 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                     } else {
                         //Registro la accion en el log de convocatorias                    
                         $logger->info('"token":"{token}","user":"{user}","message":"El controller PropuestasGanadoras retorna en el método editar_propuesta, creo y/o edito la propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
+                        
 
+                        $convocatoria = Convocatorias::findFirst($propuesta->convocatoria);
+                        //Solo se puede pasar adjudicada si la convocatoria esta publicada
+                        if($convocatoria->estado==5){
+                            $convocatoria->estado=6;
+                            if ($convocatoria->save($convocatoria) === false) {
+                            //Registro la accion en el log de convocatorias
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controller PropuestasGanadoras en el método editar_propuesta, al cambiar el estado de la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                        
+                            }                   
+                        }                                                
+                        $logger->close();
                         echo $propuesta->id;
                     }                                        
                 }                
