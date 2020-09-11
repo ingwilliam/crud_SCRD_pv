@@ -708,7 +708,23 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                             if ($convocatoria->save($convocatoria) === false) {
                             //Registro la accion en el log de convocatorias
                             $logger->error('"token":"{token}","user":"{user}","message":"Error en el controller PropuestasGanadoras en el método editar_propuesta, al cambiar el estado de la convocatoria"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                        
-                            }                   
+                            }
+                            else
+                            {
+                                $phql = "UPDATE Convocatorias SET estado=:estado:,habilitar_cronograma=:habilitar_cronograma: WHERE id IN (:id:,:convocatoria_padre_categoria:)";
+                                $convocatoria_padre_categoria=$convocatoria->id;
+                                if($convocatoria_padre_categoria!=null && $convocatoria_padre_categoria>0)
+                                {
+                                    $convocatoria_padre_categoria=$convocatoria->convocatoria_padre_categoria;
+                                }
+                                
+                                $app->modelsManager->executeQuery($phql, array(
+                                    'id' => $convocatoria->id,
+                                    'convocatoria_padre_categoria' => $convocatoria_padre_categoria,
+                                    'estado' => 6,
+                                    'habilitar_cronograma' => FALSE
+                                ));
+                            }
                         }                                                
                         $logger->close();
                         echo $propuesta->id;

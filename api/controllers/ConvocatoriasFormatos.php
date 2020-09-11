@@ -1936,7 +1936,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";                
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';                
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="2">' . $jurado->participante . '</td>';                                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="3">' . $jurado->participante . '</td>';                                
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';                
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
             }
@@ -1983,7 +1983,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->entidad . "</td>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';                
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="2">' . $jurado->participante . '</td>';                                
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="3">' . $jurado->participante . '</td>';                                
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';                
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "</tr>";
             }
@@ -2097,8 +2097,8 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             foreach ($contratistas as $contratista) {                    
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<tr>";
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<td>" . $contratista->entidad . "</td>";
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->contratista . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';                
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->observaciones . '</td>';                
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="2">' . $contratista->contratista . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';                
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->observaciones . '</td>';                
                 $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';                
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "</tr>";
             }
@@ -2121,6 +2121,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";                    
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";                    
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>Adjudicada</td>";                                    
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";                                                                                                    
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . " - " . $ganador_anio_anterior->tipo_rol . "</td>";                
@@ -2207,8 +2208,8 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
-                        <td align="center" colspan="4">Contratista</td>   
-                        <td align="center">Observaciones</td>                                                
+                        <td align="center" colspan="2">Contratista</td>   
+                        <td align="center" colspan="3">Observaciones</td>                                                
                         <td align="center">Fecha de cargue</td>                                                
                     </tr>
                     ' . $html_propuestas_contratistas. '    
