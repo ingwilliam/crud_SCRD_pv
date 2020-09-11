@@ -823,7 +823,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_objetivo = $html_objetivo . "<td>Meta</td><td>" . $objetivo->meta . "</td>";                                                        
                             $html_objetivo = $html_objetivo . "</tr>";                            
                             $html_objetivo = $html_objetivo . "<tr>";
-                            $html_objetivo = $html_objetivo . '<td colspan="2"><b>Actividades</b></td>';
+                            $html_objetivo = $html_objetivo . '<td colspan="2" bgcolor="#BDBDBD"><b>Actividades</b></td>';
                             $html_objetivo = $html_objetivo . "</tr>";
                             $html_objetivo = $html_objetivo . '<tr><td colspan="2">';                            
                             foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
@@ -853,8 +853,8 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_cronograma = $html_cronograma . "<tr>";                            
                             $html_cronograma = $html_cronograma . '<td colspan="64">Objetivo especifico: ' . $objetivo->objetivo . '</td>';
                             $html_cronograma = $html_cronograma . "</tr>";         
-                            $html_cronograma = $html_cronograma . '<tr><td colspan="4">Mes</td><td colspan="5">Enero</td><td colspan="5">Febrero</td><td colspan="5">Marzo</td><td colspan="5">Abril</td><td colspan="5">Mayo</td><td colspan="5">Junio</td><td colspan="5">Julio</td><td colspan="5">Agosto</td><td colspan="5">Septiembre</td><td colspan="5">Octubre</td><td colspan="5">Noviembre</td><td colspan="5">Diciembre</td></tr>';
-                            $html_cronograma = $html_cronograma . '<tr><td colspan="4">Semana</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>';
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="4" align="center" bgcolor="#BDBDBD">Mes</td><td colspan="5" align="center" bgcolor="#BDBDBD">Enero</td><td colspan="5" align="center" bgcolor="#BDBDBD">Febrero</td><td colspan="5" align="center" bgcolor="#BDBDBD">Marzo</td><td colspan="5" align="center" bgcolor="#BDBDBD">Abril</td><td colspan="5" align="center" bgcolor="#BDBDBD">Mayo</td><td colspan="5" align="center" bgcolor="#BDBDBD">Junio</td><td colspan="5" align="center" bgcolor="#BDBDBD">Julio</td><td colspan="5" align="center" bgcolor="#BDBDBD">Agosto</td><td colspan="5" align="center" bgcolor="#BDBDBD">Septiembre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Octubre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Noviembre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Diciembre</td></tr>';
+                            $html_cronograma = $html_cronograma . '<tr><td colspan="4" align="center" bgcolor="#BDBDBD">Semana</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td></tr>';
                             foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
                             $html_cronograma = $html_cronograma . '<tr><td colspan="64">' . $actividad->actividad . '</td></tr>';
                                 foreach ($actividad->getPropuestascronogramas(["order" => 'fecha DESC']) as $fecha) {
@@ -866,7 +866,37 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_cronograma = $html_cronograma . '<tr><td colspan="4"></td>';
                             foreach ($array_ejecucion AS $clave=>$valor)
                             {
-                                $html_cronograma = $html_cronograma . '<td>'.$valor[1].'</td>'. '<td>'.$valor[2].'</td>'. '<td>'.$valor[3].'</td>'. '<td>'.$valor[4].'</td>'. '<td>'.$valor[5].'</td>';
+                                $color_1="";
+                                if($valor[1]=="X")
+                                {
+                                    $color_1='align="center" bgcolor="#BDBDBD"';
+                                }
+                                
+                                $color_2="";
+                                if($valor[2]=="X")
+                                {
+                                    $color_2='align="center" bgcolor="#BDBDBD"';
+                                }
+                                
+                                $color_3="";
+                                if($valor[3]=="X")
+                                {
+                                    $color_3='align="center" bgcolor="#BDBDBD"';
+                                }
+                                
+                                $color_4="";
+                                if($valor[4]=="X")
+                                {
+                                    $color_4='align="center" bgcolor="#BDBDBD"';
+                                }
+                                
+                                $color_5="";
+                                if($valor[5]=="X")
+                                {
+                                    $color_5='align="center" bgcolor="#BDBDBD"';
+                                }
+                                
+                                $html_cronograma = $html_cronograma . '<td '.$color_1.'>'.$valor[1].'</td>'. '<td '.$color_2.'>'.$valor[2].'</td>'. '<td '.$color_3.'>'.$valor[3].'</td>'. '<td '.$color_4.'>'.$valor[4].'</td>'. '<td '.$color_5.'>'.$valor[5].'</td>';
                             }
                             $html_cronograma = $html_cronograma . '</tr>';
                             $html_cronograma = $html_cronograma . "</table>";                                                        
@@ -894,7 +924,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                                     $aportepropio=$aportepropio+$presupuesto->aportepropio;
                                     $html_presupuesto = $html_presupuesto . '<tr><td>'.$presupuesto->insumo.'</td><td>'.$presupuesto->cantidad.' ('.$presupuesto->unidadmedida.')</td><td align="right">$'.number_format($presupuesto->valortotal).'</td><td align="right">$'.number_format($presupuesto->aportesolicitado).'</td><td align="right">$'.number_format($presupuesto->aportecofinanciado).'</td><td align="right">$'.number_format($presupuesto->aportepropio).'</td></tr>';
                                 }                                                        
-                                $html_presupuesto = $html_presupuesto . '<tr><td></td><td align="right">Totales Actividad</td><td align="right">$'.number_format($valortotal).'</td><td align="right">$'.number_format($aportesolicitado).'</td><td align="right">$'.number_format($aportecofinanciado).'</td><td align="right">$'.number_format($aportepropio).'</td></tr>';
+                                $html_presupuesto = $html_presupuesto . '<tr><td colspan="2" align="right" bgcolor="#BDBDBD">Totales Actividad</td><td align="right">$'.number_format($valortotal).'</td><td align="right">$'.number_format($aportesolicitado).'</td><td align="right">$'.number_format($aportecofinanciado).'</td><td align="right">$'.number_format($aportepropio).'</td></tr>';
                                 $valortotal_proyecto=$valortotal_proyecto+$valortotal;
                                 $aportesolicitado_proyecto=$aportesolicitado_proyecto+$aportesolicitado;
                                 $aportecofinanciado_proyecto=$aportecofinanciado_proyecto+$aportecofinanciado;
@@ -903,7 +933,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_presupuesto = $html_presupuesto . "</table>";                                                        
                         }
                         $html_presupuesto = $html_presupuesto . "<table>";                                                        
-                        $html_presupuesto = $html_presupuesto . '<tr><td colspan="2" align="right">TOTAL PRESUPUESTO INGRESADO PARA LAS ACTIVIDADES</td><td align="right">$'.number_format($valortotal_proyecto).'</td><td align="right">$'.number_format($aportesolicitado_proyecto).'</td><td align="right">$'.number_format($aportecofinanciado_proyecto).'</td><td align="right">$'.number_format($aportepropio_proyecto).'</td></tr>';
+                        $html_presupuesto = $html_presupuesto . '<tr><td colspan="2" align="right" bgcolor="#BDBDBD"><b>TOTAL PRESUPUESTO INGRESADO PARA LAS ACTIVIDADES</b></td><td align="right">$'.number_format($valortotal_proyecto).'</td><td align="right">$'.number_format($aportesolicitado_proyecto).'</td><td align="right">$'.number_format($aportecofinanciado_proyecto).'</td><td align="right">$'.number_format($aportepropio_proyecto).'</td></tr>';
                         $html_presupuesto = $html_presupuesto . "</table>";                                                        
                         
                         $utf8_ansi2 = array(
@@ -970,6 +1000,21 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                         $propuesta_localidades=str_replace('","', " , ", $propuesta->localidades );
                         $propuesta_localidades=str_replace('["', "", $propuesta_localidades);
                         $propuesta_localidades=str_replace('"]', "", $propuesta_localidades);    
+
+//Consultamos los territorios
+                        
+$conditions = ['propuesta' => $propuesta->id];
+
+//Se crea todo el array de las rondas de evaluacion
+$consulta_territorios = Propuestasterritorios::find(([
+            'conditions' => 'propuesta=:propuesta:',
+            'bind' => $conditions
+]));                        
+                     
+$array_territorios=array();
+foreach ($consulta_territorios as $territorio) {
+    $array_territorios[$territorio->variable]=$territorio->valor;
+}
                         
                         
                         $tabla_participante = '<table>
@@ -1100,147 +1145,147 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
 <h3>Caracterización de la población</h3>    
 <table>    
     <tr>        
-        <td colspan="2">Sexo</td>        
+        <td colspan="2" bgcolor="#BDBDBD">Sexo</td>        
     </tr>     
     <tr>        
         <td>Femenino</td>        
-        <td></td>        
+        <td>'.$array_territorios["femenino"].'</td>        
     </tr>     
     <tr>        
         <td>Intersexual</td>        
-        <td></td>        
+        <td>'.$array_territorios["intersexual"].'</td>        
     </tr>     
     <tr>        
         <td>Masculino</td>        
-        <td></td>        
+        <td>'.$array_territorios["masculino"].'</td>        
     </tr>     
 </table>
 <br/><br/>
 <table>    
     <tr>        
-        <td colspan="2">Grupo etareo</td>        
+        <td colspan="2" bgcolor="#BDBDBD">Grupo etareo</td>        
     </tr>     
     <tr>        
         <td>Primera infancia (0 – 5 años)</td>        
-        <td></td>        
+        <td>'.$array_territorios["primera_infancia"].'</td>        
     </tr>     
     <tr>        
         <td>Infancia (6 – 12 años)</td>        
-        <td></td>        
+        <td>'.$array_territorios["infancia"].'</td>        
     </tr>     
     <tr>        
         <td>Adolescencia (13 – 18 años)</td>        
-        <td></td>        
+        <td>'.$array_territorios["adolescencia"].'</td>        
     </tr>     
     <tr>        
         <td>Juventud (19 – 28 años)</td>        
-        <td></td>        
+        <td>'.$array_territorios["juventud"].'</td>        
     </tr>     
     <tr>        
         <td>Adulto (29 – 59 años)</td>        
-        <td></td>        
+        <td>'.$array_territorios["adulto"].'</td>        
     </tr>     
     <tr>        
         <td>Adulto mayor (60 años y más)</td>        
-        <td></td>        
+        <td>'.$array_territorios["adulto_mayor"].'</td>        
     </tr>     
 </table>
 <br/><br/>
 <table>    
     <tr>        
-        <td colspan="2">Estrato</td>        
+        <td colspan="2" bgcolor="#BDBDBD">Estrato</td>        
     </tr>     
     <tr>        
         <td>1</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_1"].'</td>        
     </tr>     
     <tr>        
         <td>2</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_2"].'</td>        
     </tr>     
     <tr>        
         <td>3</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_3"].'</td>        
     </tr>     
     <tr>        
         <td>4</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_4"].'</td>        
     </tr>     
     <tr>        
         <td>5</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_5"].'</td>        
     </tr>     
     <tr>        
         <td>6</td>        
-        <td></td>        
+        <td>'.$array_territorios["estrato_6"].'</td>        
     </tr>     
 </table>
 <br/><br/>
 <table>    
     <tr>        
-        <td colspan="2">Grupos étnico</td>        
+        <td colspan="2" bgcolor="#BDBDBD">Grupos étnico</td>        
     </tr>     
     <tr>        
         <td>Comunidades Negras o Afrocolombianas</td>        
-        <td></td>        
+        <td>'.$array_territorios["comunidades_negras_afrocolombianas"].'</td>        
     </tr>     
     <tr>        
         <td>Comunidad raizal</td>        
-        <td></td>        
+        <td>'.$array_territorios["comunidad_raizal"].'</td>        
     </tr>     
     <tr>        
         <td>Pueblos y Comunidades Indígenas</td>        
-        <td></td>        
+        <td>'.$array_territorios["pueblos_comunidades_indigenas"].'</td>        
     </tr>     
     <tr>        
         <td>Pueblo Rom o Gitano</td>        
-        <td></td>        
+        <td>'.$array_territorios["pueblo_rom_gitano"].'</td>        
     </tr>     
     <tr>        
         <td>Mestizo</td>        
-        <td></td>        
+        <td>'.$array_territorios["mestizo"].'</td>        
     </tr>     
     <tr>        
         <td>Ninguno</td>        
-        <td></td>        
+        <td>'.$array_territorios["ninguno_etnico"].'</td>        
     </tr>     
 </table>
 <br/><br/>
 <table>    
     <tr>        
-        <td colspan="2">Grupos sociales y poblacionales</td>        
+        <td colspan="2" bgcolor="#BDBDBD">Grupos sociales y poblacionales</td>        
     </tr>     
     <tr>        
         <td>Artesanos</td>        
-        <td></td>        
+        <td>'.$array_territorios["artesanos"].'</td>        
     </tr>     
     <tr>        
         <td>Discapacitados</td>        
-        <td></td>        
+        <td>'.$array_territorios["discapacitados"].'</td>        
     </tr>     
     <tr>        
         <td>Habitantes de calle</td>        
-        <td></td>        
+        <td>'.$array_territorios["habitantes_calle"].'</td>        
     </tr>     
     <tr>        
         <td>LGBTI</td>        
-        <td></td>        
+        <td>'.$array_territorios["lgbti"].'</td>        
     </tr>     
     <tr>        
         <td>Personas de comunidades rurales y campesinas</td>        
-        <td></td>        
+        <td>'.$array_territorios["personas_comunidades_rurales_campesinas"].'</td>        
     </tr>     
     <tr>        
         <td>Personas privadas de la libertad</td>        
-        <td></td>        
+        <td>'.$array_territorios["personas_privadas_libertad"].'</td>        
     </tr>     
     <tr>        
         <td>Víctimas del conflicto</td>        
-        <td></td>        
+        <td>'.$array_territorios["victimas_conflicto"].'</td>        
     </tr>     
     <tr>        
         <td>Ninguno</td>        
-        <td></td>        
+        <td>'.$array_territorios["ninguno_grupo"].'</td>        
     </tr>     
 </table>
 
