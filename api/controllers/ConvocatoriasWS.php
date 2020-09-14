@@ -793,7 +793,7 @@ $app->get('/all_view', function () use ($app) {
         }
 
         //Defino el sql del total y el array de datos
-        $sqlTot = "SELECT count(*) as total FROM Viewconvocatorias AS view";
+        $sqlTot = "SELECT count(*) as total FROM Viewconvocatoriaspublicas AS view";
         $sqlRec = "SELECT
                         ". $columns[8] . " AS estado_convocatoria, 
                         ". $columns[0] . " AS anio , 
@@ -808,7 +808,7 @@ $app->get('/all_view', function () use ($app) {
                         view.estado , 
                         concat('<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"',view.id_diferente,'\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as ver_cronograma,
                         concat('<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page(2,',view.id,')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>') as ver_convocatoria
-                    FROM Viewconvocatorias AS view";
+                    FROM Viewconvocatoriaspublicas AS view";
 
         //concatenate search sql if value exist
         if (isset($where) && $where != '') {
