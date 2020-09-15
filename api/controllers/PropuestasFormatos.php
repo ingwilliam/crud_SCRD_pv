@@ -1,7 +1,7 @@
 <?php
 
-//error_reporting(E_ALL);
-//ini_set('display_errors', '1');
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 use Phalcon\Loader;
 use Phalcon\Mvc\Micro;
 use Phalcon\Di\FactoryDefault;
@@ -178,22 +178,49 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+           
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
-            
+           
             //Registro la accion en el log de convocatorias
             $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasFormatos en el método propuesta_presupuesto_xls, ingreso a generar el presupuesto de la propuesta (' . $request->getPut('id') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
 
 
             require_once("../library/phpspreadsheet/autoload.php");
 
+            //arrays con estilos
+
+            $negritaCentrado = [
+                    'font' => [
+                        'bold' => true,
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    ],
+            ];
+
+            $negrita = [
+                    'font' => [
+                        'bold' => true,
+                    ]
+            ];
+
+            $bordes = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_HAIR,
+                    'color' => ['argb' => '00000000'],
+                  ],
+             ],
+           ];
+
+
             $documento = new Spreadsheet();
             $documento
                     ->getProperties()
                     ->setCreator("SICON")
                     ->setLastModifiedBy('SICON') // última vez modificado por
-                    ->setTitle('Estado de propuestas')
+                    ->setTitle('Estado de propuestas presupuestos')
                     ->setSubject('SICON')
                     ->setDescription('Estado de propuestas')
                     ->setKeywords('SICON')
@@ -201,10 +228,174 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
 
             $hoja = $documento->getActiveSheet();
             $hoja->setTitle("Estado de propuestas");
+
+            //Consulto la propuesta solicitada
+            $id_propuesta = $request->getPut('propuesta');
+            $conditions = ['id' => $id_propuesta, 'active' => true];
+            $propuesta = Propuestas::findFirst(([
+                'conditions' => 'id=:id: AND active=:active:',
+                'bind' => $conditions,
+            ]));
+           
+            $hoja->setCellValueByColumnAndRow(1, 2, "PROYECTO PROGRAMA DISTRITAL DE APOYOS CONCERTADOS");
+            $hoja->setCellValueByColumnAndRow(1, 3, "PROPUESTA:");
+            $hoja->setCellValueByColumnAndRow(2, 3, $propuesta->codigo);
+            $hoja->setCellValueByColumnAndRow(1, 4, "LÍNEA:");
+            $hoja->setCellValueByColumnAndRow(2, 4, $propuesta->getConvocatorias()->nombre);
+            $hoja->setCellValueByColumnAndRow(1, 5, "PROYECTO:");
+            $hoja->setCellValueByColumnAndRow(2, 5, $propuesta->nombre);
+
+            $hoja->setCellValueByColumnAndRow(1, 7, "Presupuesto");
+
+            //encabezado
+            $hoja->setCellValueByColumnAndRow(1, 8, "Insumo");
+            $hoja->setCellValueByColumnAndRow(2, 8, "Cantidad");
+            $hoja->setCellValueByColumnAndRow(3, 8, "Valor Total");
+            $hoja->setCellValueByColumnAndRow(4, 8, "Valor Solicitado");
+            $hoja->setCellValueByColumnAndRow(5, 8, "Valor Cofinanciado");
+            $hoja->setCellValueByColumnAndRow(6, 8, "Valor Aportado Participante");
+
+            //se rellena de fondo gris las celdas para resaltar
+           $hoja->getStyle('A3:F5')->getFill()
+    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+    ->getStartColor()->setARGB('E0E0E0E0');
+
+            //se rellena de fondo azul las celdas para resaltar
+           $hoja->getStyle('A2:F2')->getFill()
+    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+    ->getStartColor()->setARGB('5DADE2');
+
+            //se rellena de fondo azul las celdas para resaltar
+           $hoja->getStyle('A6:F6')->getFill()
+    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+    ->getStartColor()->setARGB('5DADE2');
+
+            //se rellena de fondo azul las celdas para resaltar
+           $hoja->getStyle('A8:F8')->getFill()
+    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+    ->getStartColor()->setARGB('5DADE2');
+
+    $hoja->getStyle('A8:F8')
+    ->getFont()->getColor()->setARGB(\PhpOffice\PhpSpreadsheet\Style\Color::COLOR_WHITE);
+
+    $hoja->getStyle('A8:F8')->applyFromArray($negrita);
+
+
+            $fila = 9;
+
+            //se buscan los datos de los objetivos
+            $conditions = ['propuesta' => $id_propuesta, 'active' => true];
+
+            $consulta_objetivos_especificos = Propuestasobjetivos::find(([
+                'conditions' => 'propuesta=:propuesta: AND active=:active:',
+                'bind' => $conditions,
+                "order" => 'orden DESC'
+            ]));
+
+            //totales por actividad
+            $valortotal2 = 0;
+            $portesolicitado2 = 0;
+            $aportecofinanciado2 = 0;
+            $aportepropio2 = 0;
+
+            foreach ($consulta_objetivos_especificos as $objetivo) {
+                $hoja->setCellValueByColumnAndRow(1, $fila, "Objetivo Específico:");
+                $hoja->setCellValueByColumnAndRow(2, $fila, $objetivo->objetivo);
+                $hoja->mergeCells('B'.$fila.':F'.$fila);
+                //Agregamos formato, relleno gris
+                $hoja->getStyle('A'.$fila.':F'.$fila)->getFill()
+                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('E0E0E0E0');
+                $fila++;
+                foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {
+                    //totales por actividad
+                    $valortotal = 0;
+                    $portesolicitado = 0;
+                    $aportecofinanciado = 0;
+                    $aportepropio = 0;
+
+                    $hoja->setCellValueByColumnAndRow(1, $fila, "Actividad:");       
+                    $hoja->setCellValueByColumnAndRow(2, $fila, $actividad->actividad);
+                    $hoja->mergeCells('B'.$fila.':F'.$fila);
+                    //Agregamos formato, relleno gris
+                    $hoja->getStyle('A'.$fila.':F'.$fila)->getFill()
+                    ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('E0E0E0E0');
+                    $fila++;
+                    foreach ($actividad->getPropuestaspresupuestos(["order" => 'insumo DESC']) as $presupuesto) {
+                        $hoja->setCellValueByColumnAndRow(1, $fila, $presupuesto->insumo);
+                        $hoja->setCellValueByColumnAndRow(2, $fila, $presupuesto->cantidad . " " . $presupuesto->unidadmedida);
+                        $hoja->setCellValueByColumnAndRow(3, $fila, number_format($presupuesto->valortotal, 2, ',', '.'));
+                        $hoja->setCellValueByColumnAndRow(4, $fila, number_format($presupuesto->aportesolicitado, 2, ',', '.'));
+                        $hoja->setCellValueByColumnAndRow(5, $fila, number_format($presupuesto->aportecofinanciado, 2, ',', '.'));
+                        $hoja->setCellValueByColumnAndRow(6, $fila, number_format($presupuesto->aportepropio, 2, ',', '.'));
+                        //sumatoria
+                        $valortotal += $presupuesto->valortotal;
+                        $portesolicitado += $presupuesto->aportesolicitado;
+                        $aportecofinanciado += $presupuesto->aportecofinanciado;
+                        $aportepropio += $presupuesto->aportepropio;
+                        //se rellena de fondo azul las celdas para resaltar
+                       $hoja->getStyle('B'.$fila)->getFill()
+                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                        ->getStartColor()->setARGB('5DADE2');
+                        $fila++;
+                    }
+                    $hoja->setCellValueByColumnAndRow(1, $fila, "Totales Actividad");
+                    $hoja->setCellValueByColumnAndRow(3, $fila, number_format($valortotal, 2, ',', '.'));
+                    $hoja->setCellValueByColumnAndRow(4, $fila, number_format($portesolicitado, 2, ',', '.'));
+                    $hoja->setCellValueByColumnAndRow(5, $fila, number_format($aportecofinanciado, 2, ',', '.'));
+                    $hoja->setCellValueByColumnAndRow(6, $fila, number_format($aportepropio, 2, ',', '.'));
+
+                    //Se aplica formato
+                    $hoja->getStyle('A'.$fila.':F'.$fila)->applyFromArray($negritaCentrado);
+
+                    //sumatoria totales finales
+                    $valortotal2 += $valortotal;
+                    $portesolicitado2 += $portesolicitado;
+                    $aportecofinanciado2 += $aportecofinanciado;
+                    $aportepropio2 += $aportepropio;
+
+                    $fila++;                                    
+                }                                                                    
+            }
+
+            $hoja->setCellValueByColumnAndRow(1, $fila, "TOTAL PRESUPUESTO");
+            $hoja->setCellValueByColumnAndRow(3, $fila, number_format($valortotal2, 2, ',', '.'));
+            $hoja->setCellValueByColumnAndRow(4, $fila, number_format($portesolicitado2, 2, ',', '.'));
+            $hoja->setCellValueByColumnAndRow(5, $fila, number_format($aportecofinanciado2, 2, ',', '.'));
+            $hoja->setCellValueByColumnAndRow(6, $fila, number_format($aportepropio2, 2, ',', '.'));
+            //Se aplica formato centrado negrita para la primera fila
+            $hoja->getStyle('A'.$fila.':F'.$fila)->applyFromArray($negritaCentrado);
+            //se aplica formato para obtener bordes en todas las celdas del reporte
+            //se rellena de fondo azul las celdas para resaltar
+            $hoja->getStyle('A'.$fila.':F'.$fila)->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('5DADE2');
+            $hoja->getStyle('A1'.':F'.$fila)->applyFromArray($bordes);
             
 
+            //combinación de celdas
 
-            $nombreDelDocumento = "nombre_del_archivo_descargar.xlsx";
+            $hoja->mergeCells('A2:F2');
+            $hoja->mergeCells('B3:F3');
+            $hoja->mergeCells('B4:F4');
+            $hoja->mergeCells('B5:F5');
+            $hoja->mergeCells('B9:F9');
+            //se da un valor fijo para la columna A
+            $hoja->getColumnDimension('A')->setWidth(44);
+            //se ajusta el ancho de las columnas de la B a la F
+
+            $hoja->getColumnDimension('B')->setAutoSize(true);
+            $hoja->getColumnDimension('C')->setAutoSize(true);
+            $hoja->getColumnDimension('D')->setAutoSize(true);
+            $hoja->getColumnDimension('E')->setAutoSize(true);
+            $hoja->getColumnDimension('F')->setAutoSize(true);
+
+            $hoja->getStyle('A2:F2')->applyFromArray($negritaCentrado);
+            $hoja->getStyle('A3:A5')->applyFromArray($negrita);
+            $hoja->getStyle('A7')->applyFromArray($negrita);
+
+            $nombreDelDocumento = "presupuestos_insumos.xlsx";
 
             // Redirect output to a client’s web browser (Xlsx)
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -221,18 +412,18 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
             # Le pasamos la ruta de guardado
             $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
             $writer->save('php://output');
-            
+           
             //Registro la accion en el log de convocatorias
             $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el controlador PropuestasFormatos en el método propuesta_presupuesto_xls, retorno el reporte del presupuesto de la propuesta (' . $request->getPut('id') . ')"', ['user' => $user_current['username'], 'token' => $request->getPut('token')]);
-            
+           
         } else {
-            //Registro la accion en el log de convocatorias           
+            //Registro la accion en el log de convocatorias          
             $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasFormatos en el método propuesta_presupuesto_xls, token caduco en la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
-        //Registro la accion en el log de convocatorias           
+        //Registro la accion en el log de convocatorias          
         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasFormatos en el método propuesta_presupuesto_xls, error metodo en la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
