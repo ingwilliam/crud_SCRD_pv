@@ -221,7 +221,7 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
                     </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center">Convocatoria</td>
-                        <td align="center">Categoria</td>
+                        <td align="center">Categoría</td>
                         <td align="center">Estado de la propuesta</td>
                         <td align="center">Total</td>                        
                     </tr> 
@@ -408,7 +408,7 @@ $app->post('/reporte_listado_entidades_convocatorias_cerrar', function () use ($
                     </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
                         <td align="center" colspan="2">Convocatoria</td>
-                        <td align="center">Categoria</td>
+                        <td align="center">Categoría</td>
                         <td align="center">Fecha de cierre</td>                                              
                     </tr> 
                     ' . $html_propuestas . '
@@ -1440,128 +1440,246 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+            
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
             $entidad = Entidades::findFirst($request->getPut('entidad'));
+            $convocatoria=$request->getPut('convocatoria');
 
             $html_propuestas = "";
 
-            //Genero reporte propuestas por estado
-            $sql_convocatorias = "
-                        SELECT 
-                                vwp.convocatoria,
-                                vwp.id_convocatoria,
-                                vwp.codigo,
-                                vwp.nombre_propuesta,
-                                vwp.tipo_participante,
-                                vwp.representante,
-                                vwp.tipo_rol,
-                                vwp.rol,
-                                vwp.numero_documento,
-                                vwp.primer_nombre,
-                                vwp.segundo_nombre,
-                                vwp.primer_apellido,
-                                vwp.segundo_apellido,
-                                vwp.id_tipo_documento,
-                                vwp.tipo_documento,
-                                vwp.fecha_nacimiento,
-                                vwp.sexo,
-                                vwp.direccion_residencia,
-                                vwp.ciudad_residencia,
-                                vwp.localidad_residencia,
-                                vwp.upz_residencia,
-                                vwp.barrio_residencia,
-                                vwp.estrato,
-                                vwp.correo_electronico,
-                                vwp.numero_telefono,
-                                vwp.numero_celular
-                        FROM Viewparticipantes AS vwp                                
-                        WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . "
-                        ORDER BY vwp.codigo
-                        ";
+            if($convocatoria>0)
+            {
+                //Genero reporte propuestas por estado
+                $sql_convocatorias = "
+                            SELECT 
+                                    vwp.convocatoria,
+                                    vwp.id_convocatoria,
+                                    vwp.codigo,
+                                    vwp.nombre_propuesta,
+                                    vwp.tipo_participante,
+                                    vwp.representante,
+                                    vwp.tipo_rol,
+                                    vwp.rol,
+                                    vwp.numero_documento,
+                                    vwp.primer_nombre,
+                                    vwp.segundo_nombre,
+                                    vwp.primer_apellido,
+                                    vwp.segundo_apellido,
+                                    vwp.id_tipo_documento,
+                                    vwp.tipo_documento,
+                                    vwp.fecha_nacimiento,
+                                    vwp.sexo,
+                                    vwp.direccion_residencia,
+                                    vwp.ciudad_residencia,
+                                    vwp.localidad_residencia,
+                                    vwp.upz_residencia,
+                                    vwp.barrio_residencia,
+                                    vwp.estrato,
+                                    vwp.correo_electronico,
+                                    vwp.numero_telefono,
+                                    vwp.numero_celular
+                            FROM Viewparticipantes AS vwp                                
+                            WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . "
+                            ORDER BY vwp.codigo
+                            ";
 
-            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
-
-            foreach ($convocatorias as $convocatoria) {
-                $html_propuestas = $html_propuestas . "<tr>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
-                $value_representante="No";
-                if($convocatoria->representante)
-                {
-                    $value_representante="Sí";
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+                
+                foreach ($convocatorias as $convocatoria) {
+                    $html_propuestas = $html_propuestas . "<tr>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
+                    $value_representante="No";
+                    if($convocatoria->representante)
+                    {
+                        $value_representante="Sí";
+                    }
+                    $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->ciudad_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->localidad_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->upz_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->barrio_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estrato . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";                
+                    $html_propuestas = $html_propuestas . "</tr>";
                 }
-                $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->ciudad_residencia . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->localidad_residencia . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->upz_residencia . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->barrio_residencia . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estrato . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";                
-                $html_propuestas = $html_propuestas . "</tr>";
-            }
 
-            //Consulto la convocatoria
-            $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
-            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
-            $nombre_convocatoria = $convocatoria->nombre;
-            $nombre_categoria = "";
-            if ($convocatoria->convocatoria_padre_categoria > 0) {                
-                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                $nombre_categoria = $convocatoria->nombre;                                
+                //Consulto la convocatoria
+                $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
+                //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                $nombre_convocatoria = $convocatoria->nombre;
+                $nombre_categoria = "";
+                if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                    $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                    $nombre_categoria = $convocatoria->nombre;                                
+                }
+
+                $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                        <tr>
+                            <td colspan="20" align="center"> Integrantes, Representantes y Participantes por convocatoria  </td>
+                        </tr>                    
+                        <tr>
+                            <td colspan="20" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">Año: ' . $request->getPut('anio') . '</td>
+                            <td colspan="10">Entidad: ' . $entidad->descripcion . '</td>
+                        </tr>                                    
+                        <tr>
+                            <td colspan="10">Convocatoria: ' . $nombre_convocatoria . '</td>
+                            <td colspan="10">Categoría: ' . $nombre_categoria . '</td>
+                        </tr>                                    
+                        <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                            <td align="center">Código Propuesta</td>                        
+                            <td align="center">Propuesta Nombre</td>
+                            <td align="center">Tipo Participante</td>                        
+                            <td align="center">Tipo Rol</td>
+                            <td align="center">Rol</td>
+                            <td align="center">¿Representante?</td>
+                            <td align="center">Tipo de documento</td>
+                            <td align="center">Número de documento</td>
+                            <td align="center">Nombres y Apellidos</td>                        
+                            <td align="center">Fecha Nacimiento</td>
+                            <td align="center">Sexo</td>
+                            <td align="center">Dir. Residencia</td>
+                            <td align="center">Ciudad de residencia</td>                        
+                            <td align="center">Localidad Residencia</td>
+                            <td align="center">Upz Residencia</td>
+                            <td align="center">Barrio Residencia</td>
+                            <td align="center">Estrato</td>
+                            <td align="center">Correo electrónico</td>
+                            <td align="center">Tel Fijo</td>
+                            <td align="center">Tel Celular</td>                                                
+                        </tr> 
+                        ' . $html_propuestas . '
+                    </table>';
+            }
+            else
+            {
+                
+                //Genero reporte propuestas por estado
+                $sql_convocatorias = "
+                            SELECT 
+                                    vwp.convocatoria,
+                                    vwp.categoria,
+                                    vwp.id_convocatoria,
+                                    vwp.codigo,
+                                    vwp.nombre_propuesta,
+                                    vwp.tipo_participante,
+                                    vwp.representante,
+                                    vwp.tipo_rol,
+                                    vwp.rol,
+                                    vwp.numero_documento,
+                                    vwp.primer_nombre,
+                                    vwp.segundo_nombre,
+                                    vwp.primer_apellido,
+                                    vwp.segundo_apellido,
+                                    vwp.id_tipo_documento,
+                                    vwp.tipo_documento,
+                                    vwp.fecha_nacimiento,
+                                    vwp.sexo,
+                                    vwp.direccion_residencia,
+                                    vwp.ciudad_residencia,
+                                    vwp.localidad_residencia,
+                                    vwp.upz_residencia,
+                                    vwp.barrio_residencia,
+                                    vwp.estrato,
+                                    vwp.correo_electronico,
+                                    vwp.numero_telefono,
+                                    vwp.numero_celular
+                            FROM Viewparticipantes AS vwp                                
+                            WHERE vwp.id_entidad=" . $entidad->id . "
+                            ORDER BY vwp.codigo
+                            ";
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $html_propuestas = $html_propuestas . "<tr>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->convocatoria . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->categoria . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
+                    $value_representante="No";
+                    if($convocatoria->representante)
+                    {
+                        $value_representante="Sí";
+                    }
+                    $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->ciudad_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->localidad_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->upz_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->barrio_residencia . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estrato . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";                
+                    $html_propuestas = $html_propuestas . "</tr>";
+                }
+
+                $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                        <tr>
+                            <td colspan="20" align="center"> Integrantes, Representantes y Participantes por convocatoria  </td>
+                        </tr>                    
+                        <tr>
+                            <td colspan="20" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        </tr>
+                        <tr>
+                            <td colspan="10">Año: ' . $request->getPut('anio') . '</td>
+                            <td colspan="10">Entidad: ' . $entidad->descripcion . '</td>
+                        </tr>                                    
+                        <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                            <td align="center">Convocatoria</td>                        
+                            <td align="center">Categoría</td>
+                            <td align="center">Código Propuesta</td>                        
+                            <td align="center">Propuesta Nombre</td>
+                            <td align="center">Tipo Participante</td>                        
+                            <td align="center">Tipo Rol</td>
+                            <td align="center">Rol</td>
+                            <td align="center">¿Representante?</td>
+                            <td align="center">Tipo de documento</td>
+                            <td align="center">Número de documento</td>
+                            <td align="center">Nombres y Apellidos</td>                        
+                            <td align="center">Fecha Nacimiento</td>
+                            <td align="center">Sexo</td>
+                            <td align="center">Dir. Residencia</td>
+                            <td align="center">Ciudad de residencia</td>                        
+                            <td align="center">Localidad Residencia</td>
+                            <td align="center">Upz Residencia</td>
+                            <td align="center">Barrio Residencia</td>
+                            <td align="center">Estrato</td>
+                            <td align="center">Correo electrónico</td>
+                            <td align="center">Tel Fijo</td>
+                            <td align="center">Tel Celular</td>                                                
+                        </tr> 
+                        ' . $html_propuestas . '
+                    </table>';
+                
             }
             
-            $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
-                    <tr>
-                        <td colspan="20" align="center"> Integrantes, Representantes y Participantes por convocatoria  </td>
-                    </tr>                    
-                    <tr>
-                        <td colspan="20" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
-                    </tr>
-                    <tr>
-                        <td colspan="10">Año: ' . $request->getPut('anio') . '</td>
-                        <td colspan="10">Entidad: ' . $entidad->descripcion . '</td>
-                    </tr>                                    
-                    <tr>
-                        <td colspan="10">Convocatoria: ' . $nombre_convocatoria . '</td>
-                        <td colspan="10">Categoría: ' . $nombre_categoria . '</td>
-                    </tr>                                    
-                    <tr style="background-color:#BDBDBD;color:#OOOOOO;">
-                        <td align="center">Código Propuesta</td>                        
-                        <td align="center">Propuesta Nombre</td>
-                        <td align="center">Tipo Participante</td>                        
-                        <td align="center">Tipo Rol</td>
-                        <td align="center">Rol</td>
-                        <td align="center">¿Representante?</td>
-                        <td align="center">Tipo de documento</td>
-                        <td align="center">Número de documento</td>
-                        <td align="center">Nombres y Apellidos</td>                        
-                        <td align="center">Fecha Nacimiento</td>
-                        <td align="center">Sexo</td>
-                        <td align="center">Dir. Residencia</td>
-                        <td align="center">Ciudad de residencia</td>                        
-                        <td align="center">Localidad Residencia</td>
-                        <td align="center">Upz Residencia</td>
-                        <td align="center">Barrio Residencia</td>
-                        <td align="center">Estrato</td>
-                        <td align="center">Correo electrónico</td>
-                        <td align="center">Tel Fijo</td>
-                        <td align="center">Tel Celular</td>                                                
-                    </tr> 
-                    ' . $html_propuestas . '
-                </table>';
-
             $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
             $logger->close();
             echo $html;
@@ -1598,42 +1716,86 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
 
             require_once("../library/phpspreadsheet/autoload.php");
 
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+            
             $entidad = Entidades::findFirst($request->getPut('entidad'));
             $anio = $request->getPut('anio');
-
-            //Genero reporte propuestas por estado
-            $sql_convocatorias = "
-            SELECT 
-                    vwp.convocatoria,
-                    vwp.id_convocatoria,
-                    vwp.codigo,
-                    vwp.nombre_propuesta,
-                    vwp.tipo_participante,
-                    vwp.representante,
-                    vwp.tipo_rol,
-                    vwp.rol,
-                    vwp.numero_documento,
-                    vwp.primer_nombre,
-                    vwp.segundo_nombre,
-                    vwp.primer_apellido,
-                    vwp.segundo_apellido,
-                    vwp.id_tipo_documento,
-                    vwp.tipo_documento,
-                    vwp.fecha_nacimiento,
-                    vwp.sexo,
-                    vwp.direccion_residencia,
-                    vwp.ciudad_residencia,
-                    vwp.localidad_residencia,
-                    vwp.upz_residencia,
-                    vwp.barrio_residencia,
-                    vwp.estrato,
-                    vwp.correo_electronico,
-                    vwp.numero_telefono,
-                    vwp.numero_celular
-            FROM Viewparticipantes AS vwp                    
-            WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . "
-            ORDER BY vwp.codigo
-            ";
+            $convocatoria=$request->getPut('convocatoria');
+            
+            if($convocatoria>0)
+            {
+                //Genero reporte propuestas por estado
+                $sql_convocatorias = "
+                SELECT 
+                        vwp.convocatoria,
+                        vwp.id_convocatoria,
+                        vwp.codigo,
+                        vwp.nombre_propuesta,
+                        vwp.tipo_participante,
+                        vwp.representante,
+                        vwp.tipo_rol,
+                        vwp.rol,
+                        vwp.numero_documento,
+                        vwp.primer_nombre,
+                        vwp.segundo_nombre,
+                        vwp.primer_apellido,
+                        vwp.segundo_apellido,
+                        vwp.id_tipo_documento,
+                        vwp.tipo_documento,
+                        vwp.fecha_nacimiento,
+                        vwp.sexo,
+                        vwp.direccion_residencia,
+                        vwp.ciudad_residencia,
+                        vwp.localidad_residencia,
+                        vwp.upz_residencia,
+                        vwp.barrio_residencia,
+                        vwp.estrato,
+                        vwp.correo_electronico,
+                        vwp.numero_telefono,
+                        vwp.numero_celular
+                FROM Viewparticipantes AS vwp                    
+                WHERE vwp.id_convocatoria=" . $convocatoria . "
+                ORDER BY vwp.codigo
+                ";
+            }
+            else
+            {
+                //Genero reporte propuestas por estado
+                $sql_convocatorias = "
+                SELECT 
+                        vwp.convocatoria,
+                        vwp.categoria,
+                        vwp.id_convocatoria,
+                        vwp.codigo,
+                        vwp.nombre_propuesta,
+                        vwp.tipo_participante,
+                        vwp.representante,
+                        vwp.tipo_rol,
+                        vwp.rol,
+                        vwp.numero_documento,
+                        vwp.primer_nombre,
+                        vwp.segundo_nombre,
+                        vwp.primer_apellido,
+                        vwp.segundo_apellido,
+                        vwp.id_tipo_documento,
+                        vwp.tipo_documento,
+                        vwp.fecha_nacimiento,
+                        vwp.sexo,
+                        vwp.direccion_residencia,
+                        vwp.ciudad_residencia,
+                        vwp.localidad_residencia,
+                        vwp.upz_residencia,
+                        vwp.barrio_residencia,
+                        vwp.estrato,
+                        vwp.correo_electronico,
+                        vwp.numero_telefono,
+                        vwp.numero_celular
+                FROM Viewparticipantes AS vwp                    
+                WHERE vwp.id_entidad=" . $entidad->id . "
+                ORDER BY vwp.codigo
+                ";                
+            }
             
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -1664,75 +1826,144 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
             $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
             $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
             
-            //Consulto la convocatoria
-            $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
-            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
-            $nombre_convocatoria = $convocatoria->nombre;
-            $nombre_categoria = "";
-            if ($convocatoria->convocatoria_padre_categoria > 0) {                
-                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                $nombre_categoria = $convocatoria->nombre;                                
-            }
             
-            //Cabezote de la tabla
-            $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
-            $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
-            $hoja->setCellValueByColumnAndRow(3, 4, "Categoría");
-            $hoja->setCellValueByColumnAndRow(4, 4, $nombre_categoria);
-
-            //Cabezote de la tabla
-            $hoja->setCellValueByColumnAndRow(1, 6, "Código Propuesta");
-            $hoja->setCellValueByColumnAndRow(2, 6, "Propuesta Nombre");
-            $hoja->setCellValueByColumnAndRow(3, 6, "Tipo Participante");
-            $hoja->setCellValueByColumnAndRow(4, 6, "Tipo Rol");
-            $hoja->setCellValueByColumnAndRow(5, 6, "Rol");
-            $hoja->setCellValueByColumnAndRow(6, 6, "¿Representante?");
-            $hoja->setCellValueByColumnAndRow(7, 6, "Tipo de documento");
-            $hoja->setCellValueByColumnAndRow(8, 6, "Número de documento");
-            $hoja->setCellValueByColumnAndRow(9, 6, "Nombres y Apellidos");
-            $hoja->setCellValueByColumnAndRow(10, 6, "Fecha Nacimiento");
-            $hoja->setCellValueByColumnAndRow(11, 6, "Sexo");
-            $hoja->setCellValueByColumnAndRow(12, 6, "Dir. Residencia");
-            $hoja->setCellValueByColumnAndRow(13, 6, "Ciudad de residencia");
-            $hoja->setCellValueByColumnAndRow(14, 6, "Localidad Residencia");
-            $hoja->setCellValueByColumnAndRow(15, 6, "Upz Residencia");
-            $hoja->setCellValueByColumnAndRow(16, 6, "Barrio Residencia");
-            $hoja->setCellValueByColumnAndRow(17, 6, "Estrato");
-            $hoja->setCellValueByColumnAndRow(18, 6, "Correo electrónico");
-            $hoja->setCellValueByColumnAndRow(19, 6, "Tel Fijo");
-            $hoja->setCellValueByColumnAndRow(20, 6, "Tel Celular");            
-
-            //Registros de la base de datos
-            $fila = 7;
-            foreach ($convocatorias as $convocatoria) {
-
-                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->codigo);
-                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->nombre_propuesta);
-                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->tipo_participante);
-                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->tipo_rol);
-                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->rol);
-                $value_representante="No";
-                if($convocatoria->representante)
-                {
-                    $value_representante="Sí";
+            if($convocatoria>0)
+            {
+                //Consulto la convocatoria
+                $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
+                //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                $nombre_convocatoria = $convocatoria->nombre;
+                $nombre_categoria = "";
+                if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                    $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                    $nombre_categoria = $convocatoria->nombre;                                
                 }
-                $hoja->setCellValueByColumnAndRow(6, $fila, $value_representante);
-                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
-                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
-                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
-                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->fecha_nacimiento);
-                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);                
-                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->direccion_residencia);
-                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->ciudad_residencia);
-                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->localidad_residencia);
-                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->upz_residencia);
-                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->barrio_residencia);
-                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->estrato);
-                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->correo_electronico);
-                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_telefono);
-                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular );                
-                $fila++;
+
+                //Cabezote de la tabla
+                $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
+                $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
+                $hoja->setCellValueByColumnAndRow(3, 4, "Categoría");
+                $hoja->setCellValueByColumnAndRow(4, 4, $nombre_categoria);
+                
+                //Cabezote de la tabla
+                $hoja->setCellValueByColumnAndRow(1, 6, "Código Propuesta");
+                $hoja->setCellValueByColumnAndRow(2, 6, "Propuesta Nombre");
+                $hoja->setCellValueByColumnAndRow(3, 6, "Tipo Participante");
+                $hoja->setCellValueByColumnAndRow(4, 6, "Tipo Rol");
+                $hoja->setCellValueByColumnAndRow(5, 6, "Rol");
+                $hoja->setCellValueByColumnAndRow(6, 6, "¿Representante?");
+                $hoja->setCellValueByColumnAndRow(7, 6, "Tipo de documento");
+                $hoja->setCellValueByColumnAndRow(8, 6, "Número de documento");
+                $hoja->setCellValueByColumnAndRow(9, 6, "Nombres y Apellidos");
+                $hoja->setCellValueByColumnAndRow(10, 6, "Fecha Nacimiento");
+                $hoja->setCellValueByColumnAndRow(11, 6, "Sexo");
+                $hoja->setCellValueByColumnAndRow(12, 6, "Dir. Residencia");
+                $hoja->setCellValueByColumnAndRow(13, 6, "Ciudad de residencia");
+                $hoja->setCellValueByColumnAndRow(14, 6, "Localidad Residencia");
+                $hoja->setCellValueByColumnAndRow(15, 6, "Upz Residencia");
+                $hoja->setCellValueByColumnAndRow(16, 6, "Barrio Residencia");
+                $hoja->setCellValueByColumnAndRow(17, 6, "Estrato");
+                $hoja->setCellValueByColumnAndRow(18, 6, "Correo electrónico");
+                $hoja->setCellValueByColumnAndRow(19, 6, "Tel Fijo");
+                $hoja->setCellValueByColumnAndRow(20, 6, "Tel Celular");            
+
+                //Registros de la base de datos
+                $fila = 7;
+                foreach ($convocatorias as $convocatoria) {
+
+                    $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->codigo);
+                    $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->nombre_propuesta);
+                    $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->tipo_participante);
+                    $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->tipo_rol);
+                    $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->rol);
+                    $value_representante="No";
+                    if($convocatoria->representante)
+                    {
+                        $value_representante="Sí";
+                    }
+                    $hoja->setCellValueByColumnAndRow(6, $fila, $value_representante);
+                    $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
+                    $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
+                    $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                    $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->fecha_nacimiento);
+                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);                
+                    $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->direccion_residencia);
+                    $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->ciudad_residencia);
+                    $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->localidad_residencia);
+                    $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->upz_residencia);
+                    $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->barrio_residencia);
+                    $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->estrato);
+                    $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->correo_electronico);
+                    $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_telefono);
+                    $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular );                
+                    $fila++;
+                }
+                
             }
+            else            
+            {
+                //Cabezote de la tabla
+                $hoja->setCellValueByColumnAndRow(1, 6, "Convocatoria");
+                $hoja->setCellValueByColumnAndRow(2, 6, "Categoría");
+                $hoja->setCellValueByColumnAndRow(3, 6, "Código Propuesta");
+                $hoja->setCellValueByColumnAndRow(4, 6, "Propuesta Nombre");
+                $hoja->setCellValueByColumnAndRow(5, 6, "Tipo Participante");
+                $hoja->setCellValueByColumnAndRow(6, 6, "Tipo Rol");
+                $hoja->setCellValueByColumnAndRow(7, 6, "Rol");
+                $hoja->setCellValueByColumnAndRow(8, 6, "¿Representante?");
+                $hoja->setCellValueByColumnAndRow(9, 6, "Tipo de documento");
+                $hoja->setCellValueByColumnAndRow(10, 6, "Número de documento");
+                $hoja->setCellValueByColumnAndRow(11, 6, "Nombres y Apellidos");
+                $hoja->setCellValueByColumnAndRow(12, 6, "Fecha Nacimiento");
+                $hoja->setCellValueByColumnAndRow(13, 6, "Sexo");
+                $hoja->setCellValueByColumnAndRow(14, 6, "Dir. Residencia");
+                $hoja->setCellValueByColumnAndRow(15, 6, "Ciudad de residencia");
+                $hoja->setCellValueByColumnAndRow(16, 6, "Localidad Residencia");
+                $hoja->setCellValueByColumnAndRow(17, 6, "Upz Residencia");
+                $hoja->setCellValueByColumnAndRow(18, 6, "Barrio Residencia");
+                $hoja->setCellValueByColumnAndRow(19, 6, "Estrato");
+                $hoja->setCellValueByColumnAndRow(20, 6, "Correo electrónico");
+                $hoja->setCellValueByColumnAndRow(21, 6, "Tel Fijo");
+                $hoja->setCellValueByColumnAndRow(22, 6, "Tel Celular");            
+
+                //Registros de la base de datos
+                $fila = 7;
+                foreach ($convocatorias as $convocatoria) {
+
+                    $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->convocatoria);
+                    $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->categoria);
+                    
+                    $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->codigo);
+                    $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->nombre_propuesta);
+                    $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->tipo_participante);
+                    $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->tipo_rol);
+                    $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->rol);
+                    $value_representante="No";
+                    if($convocatoria->representante)
+                    {
+                        $value_representante="Sí";
+                    }
+                    $hoja->setCellValueByColumnAndRow(8, $fila, $value_representante);
+                    $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->tipo_documento);
+                    $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->numero_documento);
+                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                    $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->fecha_nacimiento);
+                    $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->sexo);                
+                    $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->direccion_residencia);
+                    $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->ciudad_residencia);
+                    $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->localidad_residencia);
+                    $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->upz_residencia);
+                    $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->barrio_residencia);
+                    $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->estrato);
+                    $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->correo_electronico);
+                    $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->numero_telefono);
+                    $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->numero_celular );                
+                    $fila++;
+                }
+                
+            }
+
+            
 
             $nombreDelDocumento = "listado_entidades_convocatorias_listado_contratistas_" . $entidad->id . "_" . $anio . ".xlsx";
 
