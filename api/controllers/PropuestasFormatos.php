@@ -298,6 +298,7 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
             $aportecofinanciado2 = 0;
             $aportepropio2 = 0;
 
+            $conditions2 = ['active' => true];
             foreach ($consulta_objetivos_especificos as $objetivo) {
                 $hoja->setCellValueByColumnAndRow(1, $fila, "Objetivo Específico:");
                 $hoja->setCellValueByColumnAndRow(2, $fila, $objetivo->objetivo);
@@ -307,7 +308,10 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
                 ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                 ->getStartColor()->setARGB('E0E0E0E0');
                 $fila++;
-                foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {
+                foreach ($objetivo->getPropuestasactividades([
+                    'conditions' => 'active=:active:',
+                    'bind' => $conditions2,
+                    "order" => 'orden DESC']) as $actividad) {
                     //totales por actividad
                     $valortotal = 0;
                     $portesolicitado = 0;
@@ -322,7 +326,8 @@ $app->post('/propuesta_presupuesto_xls', function () use ($app, $config, $logger
                     ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('E0E0E0E0');
                     $fila++;
-                    foreach ($actividad->getPropuestaspresupuestos(["order" => 'insumo DESC']) as $presupuesto) {
+                    foreach ($actividad->getPropuestaspresupuestos(['conditions' => 'active=:active:',
+                    'bind' => $conditions2,"order" => 'insumo DESC']) as $presupuesto) {
                         $hoja->setCellValueByColumnAndRow(1, $fila, $presupuesto->insumo);
                         $hoja->setCellValueByColumnAndRow(2, $fila, $presupuesto->cantidad . " " . $presupuesto->unidadmedida);
                         $hoja->setCellValueByColumnAndRow(3, $fila, number_format($presupuesto->valortotal, 2, ',', '.'));
