@@ -3063,15 +3063,50 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
             $where_entidad="";
             if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
             {
-                $where_entidad=" AND vp.id_entidad=".$request->getPut('entidad');
+                $where_entidad=" AND vwp.id_entidad=".$request->getPut('entidad');
             }
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
                 SELECT 
-                    vp.*
-                FROM
-                    Viewpropuestas AS vp
-                WHERE vp.anio='" . $anio . "' AND vp.id_estado=34 ".$where_entidad;
+                        vwp.anio,
+                        vwp.entidad,
+                        vwp.convocatoria,
+                        vwp.id_convocatoria,
+                        vwp.codigo,
+                        vwp.estado_propuesta,
+                        vwp.nombre_propuesta,
+                        vwp.tipo_participante,
+                        vwp.representante,
+                        vwp.tipo_rol,
+                        vwp.rol,
+                        vwp.numero_documento,
+                        vwp.primer_nombre,
+                        vwp.segundo_nombre,
+                        vwp.primer_apellido,
+                        vwp.segundo_apellido,
+                        vwp.id_tipo_documento,
+                        vwp.tipo_documento,
+                        vwp.fecha_nacimiento,
+                        vwp.sexo,
+                        vwp.direccion_residencia,
+                        vwp.ciudad_residencia,
+                        vwp.localidad_residencia,
+                        vwp.upz_residencia,
+                        vwp.barrio_residencia,
+                        vwp.estrato,
+                        vwp.correo_electronico,
+                        vwp.numero_telefono,
+                        vwp.numero_celular,
+                        vwp.numero_resolucion,
+                        vwp.fecha_resolucion,
+                        vwp.monto_asignado,
+                        vwp.codigo_presupuestal,
+                        vwp.codigo_proyecto_inversion,
+                        vwp.cdp,
+                        vwp.crp
+                FROM Viewparticipantes AS vwp  
+                WHERE vwp.anio='" . $anio . "' AND vwp.estado_propuesta='Ganadora' ".$where_entidad."
+                ORDER BY vwp.convocatoria, vwp.nombre_propuesta, vwp.tipo_participante, vwp.representante DESC";
             
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -3101,8 +3136,8 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
             $hoja->setCellValueByColumnAndRow(2, 5, "Entidad");
             $hoja->setCellValueByColumnAndRow(3, 5, "Convocatoria");
             $hoja->setCellValueByColumnAndRow(4, 5, "Categoría");
-            $hoja->setCellValueByColumnAndRow(5, 5, "Propuesta");
-            $hoja->setCellValueByColumnAndRow(6, 5, "Código");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Propuesta Nombre");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Código Propuesta");
             $hoja->setCellValueByColumnAndRow(7, 5, "Estado");
             $hoja->setCellValueByColumnAndRow(8, 5, "Número de resolución");
             $hoja->setCellValueByColumnAndRow(9, 5, "Fecha de resolución");
@@ -3111,15 +3146,33 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
             $hoja->setCellValueByColumnAndRow(12, 5, "Código proyecto de inversión");
             $hoja->setCellValueByColumnAndRow(13, 5, "CDP");
             $hoja->setCellValueByColumnAndRow(14, 5, "CRP");
-
+            $hoja->setCellValueByColumnAndRow(15, 5, "Tipo Participante");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Tipo Rol");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Rol");
+            $hoja->setCellValueByColumnAndRow(18, 5, "¿Representante?");
+            $hoja->setCellValueByColumnAndRow(19, 5, "Tipo de documento");
+            $hoja->setCellValueByColumnAndRow(20, 5, "Número de documento");
+            $hoja->setCellValueByColumnAndRow(21, 5, "Nombres y Apellidos");
+            $hoja->setCellValueByColumnAndRow(22, 5, "Fecha Nacimiento");
+            $hoja->setCellValueByColumnAndRow(23, 5, "Sexo");
+            $hoja->setCellValueByColumnAndRow(24, 5, "Dir. Residencia");
+            $hoja->setCellValueByColumnAndRow(25, 5, "Ciudad de residencia");
+            $hoja->setCellValueByColumnAndRow(26, 5, "Localidad Residencia");
+            $hoja->setCellValueByColumnAndRow(27, 5, "Upz Residencia");
+            $hoja->setCellValueByColumnAndRow(28, 5, "Barrio Residencia");
+            $hoja->setCellValueByColumnAndRow(29, 5, "Estrato");
+            $hoja->setCellValueByColumnAndRow(30, 5, "Correo electrónico");
+            $hoja->setCellValueByColumnAndRow(31, 5, "Tel Fijo");
+            $hoja->setCellValueByColumnAndRow(32, 5, "Tel Celular");
+            
             //Registros de la base de datos
             $fila = 6;
             foreach ($convocatorias as $convocatoria) {
                 $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->anio);
-                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->nombre_entidad);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->entidad);
                 $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->convocatoria);
                 $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->categoria);
-                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->propuesta);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->nombre_propuesta);
                 $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->codigo);
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->estado_propuesta);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_resolucion);
@@ -3129,10 +3182,32 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
                 $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->codigo_proyecto_inversion);
                 $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->cdp);
                 $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->crp);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->tipo_participante);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->tipo_rol);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->rol);
+                $value_representante="No";
+                if($convocatoria->representante)
+                {
+                    $value_representante="Sí";
+                }
+                $hoja->setCellValueByColumnAndRow(18, $fila, $value_representante);
+                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->tipo_documento);
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_documento);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->fecha_nacimiento);
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->sexo);                
+                $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->direccion_residencia);
+                $hoja->setCellValueByColumnAndRow(25, $fila, $convocatoria->ciudad_residencia);
+                $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->localidad_residencia);
+                $hoja->setCellValueByColumnAndRow(27, $fila, $convocatoria->upz_residencia);
+                $hoja->setCellValueByColumnAndRow(28, $fila, $convocatoria->barrio_residencia);
+                $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->estrato);
+                $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->correo_electronico);
+                $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->numero_celular );
                 $fila++;
             }
-
-
+            
             $nombreDelDocumento = "reporte_ganadores.xlsx";
 
             // Redirect output to a client’s web browser (Xlsx)

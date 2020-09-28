@@ -151,7 +151,14 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                 //consulto tabla maestra para los terminos y condiciones pj
                 if($participante->tipo_participante==2)
                 {
-                    $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_".date("Y")."'");   
+                    if($siglas_programa=="pdac")
+                    {
+                        $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_pdac_".date("Y")."'");      
+                    }
+                    else
+                    {
+                        $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_".date("Y")."'");   
+                    }                                        
                     $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
                     
                     //Busco si tiene el perfil de persona juridica
