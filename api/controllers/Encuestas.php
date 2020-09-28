@@ -397,7 +397,7 @@ $app->get('/all_params', function () use ($app) {
 
             //Condiciones basicas
             $where .= " INNER JOIN Encuestas AS en ON en.id=ca.encuesta";
-            $where .= " WHERE ca.active IN (true,false) ";
+            $where .= " WHERE ca.encuesta =".$request->get('encuesta')." AND ca.active IN (true,false) ";
 
             //Condiciones para la consulta
             if (!empty($request->get("search")['value'])) {
@@ -451,7 +451,7 @@ $app->post('/new_param', function () use ($app, $config) {
         $tokens = new Tokens();
 
         //Consulto si al menos hay un token
-        $token_actual = $tokens->verificar_token($request->getPost('token'));
+        $token_actual = $tokens->verificar_token($request->getPost('token'));        
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
