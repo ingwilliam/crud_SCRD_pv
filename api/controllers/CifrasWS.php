@@ -372,6 +372,105 @@ $app->post('/general_propuestas_inscritas', function () use ($app, $config, $log
 }
 );
 
+$app->post('/general_anio', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    try {
+        $array = array();
+
+        $where = "vwc.anio=".date("Y");
+        if ($request->getPost('anio') != "") {
+            $where = "vwc.anio=".$request->getPost('anio');            
+        }
+
+        //Convocatorias ofertadas por anio
+        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        $sql_propuestas = "
+            SELECT 
+                vwc.nombre_entidad AS label,
+                count(vwc.id) AS total_propuestas
+            FROM 
+                Viewconvocatorias AS vwc
+            WHERE
+                ".$where." AND vwc.estado IN (5,6,32,43,45)
+            GROUP BY 1
+            ORDER BY 2 DESC
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $i = 0;
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[$i][0] = $valor->label;
+            $array_value[$i][1] = $valor->total_propuestas;
+            $i++;
+        }
+        $array["estados_convocatoria_anio"] = $array_value;
+        
+        //Convocatorias ofertadas por anio
+        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        //Propuestas Inscritas
+        $sql_propuestas = "
+            SELECT 
+            es.nombre AS label,
+            count(vwp.id_propuesta) AS total_propuestas
+        FROM 
+            Viewpropuestas AS vwp
+        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_diferente=vwp.id_convocatoria
+        INNER JOIN Estados AS es ON es.id=vwc.estado 
+        WHERE
+            ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwp.id_estado NOT IN (7,20)
+        GROUP BY 1
+        ORDER BY 2 ASC
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["estados_convocatoria_propuestas_anio"]["value"] = $array_value;
+        $array["estados_convocatoria_propuestas_anio"]["label"] = $array_label;
+        
+        //Participante por rango etareo
+        $sql_propuestas = "
+            SELECT
+                vwc.rango AS label,
+                vwc.total AS total_propuestas
+            FROM Viewrangosetareos AS vwc
+            WHERE ".$where."
+            ORDER BY 2
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
+        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
+        
+
+        $array["fecha_corte"] = date("Y-m-d H:i:s");
+
+        echo json_encode($array);
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo select_convocatorias para cargar las convocatorias con el año (' . $request->get('anio') . ') y la entidad (' . $request->get('entidad') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
