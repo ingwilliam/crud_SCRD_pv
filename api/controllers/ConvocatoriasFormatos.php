@@ -1087,9 +1087,9 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
             $hoja->setCellValueByColumnAndRow(17, 5, "Estado de la propuesta");
             $hoja->setCellValueByColumnAndRow(18, 5, "Convocatoria");
             $hoja->setCellValueByColumnAndRow(19, 5, "Estado Postulación");
-            
-            
-             
+
+
+
 
             //Registros de la base de datos
             $fila = 6;
@@ -1136,7 +1136,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $genero = $identidad_genero->nombre;
                 }
-                
+
                 //Validamos la ciudad de residencia
                 if ($participante->ciudad_residencia == null) {
                     $ciudad = "No aplica";
@@ -1149,8 +1149,8 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $ciudad = $ciudad_residencia->nombre;
                 }
-                
-                
+
+
                 //Validamos la localidad de residencia
                 if ($convocatoria->localidad == null) {
                     $localidad = "No aplica";
@@ -1163,8 +1163,8 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $localidad = $localidad_propuesta->nombre;
                 }
-                
-                
+
+
                 //Validamos la UPZ de residencia
                 if ($convocatoria->upz == null) {
                     $upz = "No aplica";
@@ -1177,8 +1177,8 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $upz = $upz_s->nombre;
                 }
-                
-                
+
+
                 //Validamos el barrio de residencia
                 if ($participante->barrio_residencia == null) {
                     $barrio = "No aplica";
@@ -1191,7 +1191,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $barrio = $barrio_residencia->nombre;
                 }
-                
+
                 //Validamos el estado de la propuesta
                 if ($convocatoria->estado_propuesta == null) {
                     $estado_p = "No aplica";
@@ -1204,7 +1204,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
                     $estado_p = $estado_propuesta->nombre;
                 }
-                
+
 
                 //calculamos la edad
                 $fechanacimiento = $participante->fecha_nacimiento;
