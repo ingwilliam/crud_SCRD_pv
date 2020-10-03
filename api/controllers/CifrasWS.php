@@ -406,6 +406,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             $i++;
         }
         $array["estados_convocatoria_anio"] = $array_value;
+        $array["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
         
         //Convocatorias ofertadas por anio
         //Estado Publicada Adjudicada Cancelada Desierta Suspendida
@@ -435,6 +436,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["estados_convocatoria_propuestas_anio"]["value"] = $array_value;
         $array["estados_convocatoria_propuestas_anio"]["label"] = $array_label;
+        $array["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
         
         //Participante por rango etareo
         $sql_propuestas = "
@@ -457,6 +459,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
         $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
         
         //Propuestas por entidad
         $sql_propuestas = "
@@ -481,6 +484,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_entidad_anio"]["value"] = $array_value;
         $array["propuestas_entidad_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_entidad_anio"] = $propuestas_entidad;
         
         //Propuestas por area
         $sql_propuestas = "
@@ -506,6 +510,8 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["propuestas_area_anio"]["value"] = $array_value;
         $array["propuestas_area_anio"]["label"] = $array_label;
         
+        $array["table_propuestas_area_anio"] = $propuestas_area;
+        
         //Propuestas por lineaestrategica
         $sql_propuestas = "
             SELECT 
@@ -529,6 +535,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_lineaestrategica_anio"]["value"] = $array_value;
         $array["propuestas_lineaestrategica_anio"]["label"] = $array_label;
+        $array["table_propuestas_lineaestrategica_anio"] = $propuestas_lineaestrategica;
         
         //Propuestas por enfoque
         $sql_propuestas = "
@@ -553,6 +560,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_enfoque_anio"]["value"] = $array_value;
         $array["propuestas_enfoque_anio"]["label"] = $array_label;
+        $array["table_propuestas_enfoque_anio"] = $propuestas_enfoque;
         
         //Propuestas por participante
         $sql_propuestas = "
@@ -581,6 +589,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_tipoparticipante_anio"]["value"] = $array_value;
         $array["propuestas_tipoparticipante_anio"]["label"] = $array_label;
+        $array["table_propuestas_tipoparticipante_anio"] = $propuestas_tipoparticipante;
         
         //Propuestas por localidad de ejecucion
         $sql_propuestas = "
@@ -605,6 +614,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_localidadeje_anio"]["value"] = $array_value;
         $array["propuestas_localidadeje_anio"]["label"] = $array_label;
+        $array["table_propuestas_localidadeje_anio"] = $propuestas_localidadeje;
         
         //Participante por localidades de residencia
         $sql_propuestas = "
@@ -627,6 +637,8 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["propuestas_localidadres_anio"]["value"] = $array_value;
         $array["propuestas_localidadres_anio"]["label"] = $array_label;
+        
+        $array["table_propuestas_localidadres_anio"] = $convocatorias_anio;
         
         //Propuestas por localidad de ejecucion
         $sql_propuestas = "
@@ -652,6 +664,8 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["valor_localidadeje_anio"]["value"] = $array_value;
         $array["valor_localidadeje_anio"]["label"] = $array_label;
 
+        $array["table_valor_localidadeje_anio"] = $propuestas_localidadeje;
+        
         $array["fecha_corte"] = date("Y-m-d H:i:s");
 
         echo json_encode($array);
