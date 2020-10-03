@@ -85,7 +85,17 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         
         $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");                           
         
-        $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
+        //Valido si la convocatoria cuenta con información de
+        //condiciones especificas
+        if($convocatoria->link_condiciones!="")
+        {
+            $array_convocatoria["condiciones_participacion"] = $convocatoria->link_condiciones;
+        }
+        else
+        {
+            $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
+        }
+        
 
         $tipo_convocatoria = "";
 

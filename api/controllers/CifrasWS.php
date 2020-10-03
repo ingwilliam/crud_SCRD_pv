@@ -372,6 +372,312 @@ $app->post('/general_propuestas_inscritas', function () use ($app, $config, $log
 }
 );
 
+$app->post('/general_anio', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    try {
+        $array = array();
+
+        $where = "vwc.anio=".date("Y");
+        if ($request->getPost('anio') != "") {
+            $where = "vwc.anio=".$request->getPost('anio');            
+        }
+
+        //Convocatorias ofertadas por anio
+        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        $sql_propuestas = "
+            SELECT 
+                vwc.nombre_entidad AS label,
+                count(vwc.id) AS total_propuestas
+            FROM 
+                Viewconvocatorias AS vwc
+            WHERE
+                ".$where." AND vwc.estado IN (5,6,32,43,45)
+            GROUP BY 1
+            ORDER BY 2 DESC
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $i = 0;
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[$i][0] = $valor->label;
+            $array_value[$i][1] = $valor->total_propuestas;
+            $i++;
+        }
+        $array["estados_convocatoria_anio"] = $array_value;
+        $array["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
+        
+        //Convocatorias ofertadas por anio
+        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        //Propuestas Inscritas
+        $sql_propuestas = "
+            SELECT 
+            es.nombre AS label,
+            count(vwp.id_propuesta) AS total_propuestas
+        FROM 
+            Viewpropuestas AS vwp
+        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_diferente=vwp.id_convocatoria
+        INNER JOIN Estados AS es ON es.id=vwc.estado 
+        WHERE
+            ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwp.id_estado NOT IN (7,20)
+        GROUP BY 1
+        ORDER BY 2 ASC
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["estados_convocatoria_propuestas_anio"]["value"] = $array_value;
+        $array["estados_convocatoria_propuestas_anio"]["label"] = $array_label;
+        $array["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
+        
+        //Participante por rango etareo
+        $sql_propuestas = "
+            SELECT
+                vwc.rango AS label,
+                vwc.total AS total_propuestas
+            FROM Viewrangosetareos AS vwc
+            WHERE ".$where."
+            ORDER BY 2
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
+        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
+        
+        //Propuestas por entidad
+        $sql_propuestas = "
+            SELECT 
+                    vwc.nombre_entidad AS label,
+                    COUNT(vwc.id_propuesta) AS total_propuestas
+            FROM 
+                    viewpropuestas AS vwc 
+            WHERE 
+                    ".$where." AND vwc.id_estado NOT IN (7,20)
+            GROUP BY 1
+            ORDER BY 2
+            ";
+
+        $propuestas_entidad = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_entidad AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_entidad_anio"]["value"] = $array_value;
+        $array["propuestas_entidad_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_entidad_anio"] = $propuestas_entidad;
+        
+        //Propuestas por area
+        $sql_propuestas = "
+            SELECT 
+                    vwc.area AS label,
+                    COUNT(vwc.id_propuesta) AS total_propuestas
+            FROM 
+                    Viewpropuestas AS vwc 
+            WHERE 
+                    ".$where." and vwc.id_estado NOT IN (7,20)
+            GROUP BY 1
+            ORDER BY 2
+            ";
+
+        $propuestas_area = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_area AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_area_anio"]["value"] = $array_value;
+        $array["propuestas_area_anio"]["label"] = $array_label;
+        
+        $array["table_propuestas_area_anio"] = $propuestas_area;
+        
+        //Propuestas por lineaestrategica
+        $sql_propuestas = "
+            SELECT 
+                    vwc.lineaestrategica AS label,
+                    COUNT(vwc.id_propuesta) AS total_propuestas
+            FROM 
+                    Viewpropuestas AS vwc 
+            WHERE 
+                    ".$where." and vwc.id_estado NOT IN (7,20)
+            GROUP BY 1
+            ORDER BY 2
+            ";
+
+        $propuestas_lineaestrategica = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_lineaestrategica AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_lineaestrategica_anio"]["value"] = $array_value;
+        $array["propuestas_lineaestrategica_anio"]["label"] = $array_label;
+        $array["table_propuestas_lineaestrategica_anio"] = $propuestas_lineaestrategica;
+        
+        //Propuestas por enfoque
+        $sql_propuestas = "
+            SELECT 
+                    vwc.enfoque AS label,
+                    COUNT(vwc.id_propuesta) AS total_propuestas
+            FROM 
+                    Viewpropuestas AS vwc 
+            WHERE 
+                    ".$where." and vwc.id_estado NOT IN (7,20)
+            GROUP BY 1
+            ORDER BY 2
+            ";
+
+        $propuestas_enfoque = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_enfoque AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_enfoque_anio"]["value"] = $array_value;
+        $array["propuestas_enfoque_anio"]["label"] = $array_label;
+        $array["table_propuestas_enfoque_anio"] = $propuestas_enfoque;
+        
+        //Propuestas por participante
+        $sql_propuestas = "
+            SELECT 
+                    per.nombre AS label,
+                    COUNT(vwc.id_propuesta) as total_propuestas
+            FROM 
+                    viewpropuestas AS vwc
+            INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
+            INNER JOIN Participantes AS par ON par.id=p.participante
+            INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
+            INNER JOIN Perfiles AS per ON per.id=up.perfil	
+            WHERE 
+                    ".$where." and vwc.id_estado NOT IN (7,20)
+            GROUP BY 1
+            ORDER BY 2
+            ";
+
+        $propuestas_tipoparticipante = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_tipoparticipante AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_tipoparticipante_anio"]["value"] = $array_value;
+        $array["propuestas_tipoparticipante_anio"]["label"] = $array_label;
+        $array["table_propuestas_tipoparticipante_anio"] = $propuestas_tipoparticipante;
+        
+        //Propuestas por localidad de ejecucion
+        $sql_propuestas = "
+            select 
+                    vwc.localidad_ejecucion_propuesta as label,
+                    COUNT(vwc.id_convocatoria) as total_propuestas
+            from 
+                    Viewparticipantes as vwc 
+            where 
+                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND tipo_rol='Participante' AND vwc.localidad_ejecucion_propuesta is not NULL
+            group by 1
+            ORDER BY 2
+            ";
+
+        $propuestas_localidadeje = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_localidadeje AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_localidadeje_anio"]["value"] = $array_value;
+        $array["propuestas_localidadeje_anio"]["label"] = $array_label;
+        $array["table_propuestas_localidadeje_anio"] = $propuestas_localidadeje;
+        
+        //Participante por localidades de residencia
+        $sql_propuestas = "
+            SELECT
+                vwc.label,
+                vwc.total_propuestas
+            FROM Viewlocalidaesresidencia AS vwc
+            WHERE ".$where."
+            ORDER BY 2
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_localidadres_anio"]["value"] = $array_value;
+        $array["propuestas_localidadres_anio"]["label"] = $array_label;
+        
+        $array["table_propuestas_localidadres_anio"] = $convocatorias_anio;
+        
+        //Propuestas por localidad de ejecucion
+        $sql_propuestas = "
+            select 
+                    vwc.localidad_ejecucion_propuesta as label,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            where 
+                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') and vwc.localidad_ejecucion_propuesta is not null
+            group by 1
+            order by 2 ASC
+            ";
+        
+        $propuestas_localidadeje = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_localidadeje AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_localidadeje_anio"]["value"] = $array_value;
+        $array["valor_localidadeje_anio"]["label"] = $array_label;
+
+        $array["table_valor_localidadeje_anio"] = $propuestas_localidadeje;
+        
+        $array["fecha_corte"] = date("Y-m-d H:i:s");
+
+        echo json_encode($array);
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo select_convocatorias para cargar las convocatorias con el año (' . $request->get('anio') . ') y la entidad (' . $request->get('entidad') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 $app->get('/select_convocatorias', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
