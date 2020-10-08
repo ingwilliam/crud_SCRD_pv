@@ -568,9 +568,6 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -580,6 +577,9 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Propuestas en el método inscribir_propuesta, ingresa a inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
             
@@ -618,7 +618,7 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                 
                 if ($fecha_actual > $fecha_cierre) {
                     //Registro la accion en el log de convocatorias           
-                    $logger->error('"token":"{token}","user":"{user}","message":"La convocatoria(' . $request->getPut('conv') . ') no esta activa, la fecha de cierre es (' . $fecha_cierre_real->fecha_fin . ')", en el metodo inscribir_propuesta', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, la convocatoria(' . $request->getPut('conv') . ') no esta activa, la fecha de cierre es (' . $fecha_cierre_real->fecha_fin . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                    
                     $logger->close();
                     echo "error_fecha_cierre";
                 } else {
@@ -656,38 +656,37 @@ $app->post('/inscribir_propuesta', function () use ($app, $config, $logger) {
                         $propuesta->codigo = $codigo_propuesta;
 
                         if ($propuesta->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, Se genero un error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                                                            
                             $logger->close();
                             echo "error";
                         } else {
-
                             //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->info('"token":"{token}","user":"{user}","message":"Retornar en el controlador Propuestas en el método inscribir_propuesta, Se inscribio la propuesta con exito (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                                        
                             $logger->close();
                             echo $propuesta->id;
                         }
                     } else {
                         //Registro la accion en el log de convocatorias           
-                        $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no esta en estado Registrada en el metodo inscribir_propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, la propuesta (' . $request->getPut('id') . ') no esta en estado Registrada"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "error_estado";
                     }
                 }
             } else {
                 //Registro la accion en el log de convocatorias           
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, acceso denegado como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias           
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, token caduco como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo inscribir_propuesta como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Propuestas en el método inscribir_propuesta, error metodo como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -743,13 +742,13 @@ $app->post('/subsanar_propuesta', function () use ($app, $config, $logger) {
                         $post["fecha_subsanacion"] = date("Y-m-d H:i:s");                        
 
                         if ($propuesta->save($post) === false) {
-                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se genero un error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error";
                         } else {
 
                             //Registro la accion en el log de convocatorias
-                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $post["id"] . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se inscribio la propuesta con exito (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo $propuesta->id;
                         }

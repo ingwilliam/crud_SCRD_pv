@@ -274,6 +274,7 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                             . "est.id AS id_estado,"
                             . "c.anio ,"
                             . "e.nombre AS entidad ,"
+                            . "c.programa,"
                             . "c.nombre AS convocatoria,"
                             . "cat.nombre AS categoria,"
                             . "p.id AS id_propuesta,"

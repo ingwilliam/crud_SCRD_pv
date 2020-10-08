@@ -519,6 +519,65 @@ $app->post('/new', function () use ($app, $config) {
 );
 
 // Crear registro
+$app->post('/nombre_convocatoria/{id:[0-9]+}', function ($id) use ($app, $config) {
+    try {
+
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                $convocatoria = Convocatorias::findFirst($id);                
+                $programa=$convocatoria->programa;
+                $nombre_convocatoria="";
+                if(isset($convocatoria->convocatoria_padre_categoria))
+                {
+                    $categoria = Convocatorias::findFirst($convocatoria->convocatoria_padre_categoria);
+                    $programa=$categoria->programa;
+                    $nombre_convocatoria = $categoria->nombre." - <span style='color:red'>".$convocatoria->nombre."<span>";
+                }
+                else
+                {
+                    $nombre_convocatoria = $convocatoria->nombre;
+                }
+                
+                $array=array();
+                $array["nombre_convocatoria"]=$nombre_convocatoria;
+                $array["programa"]=$programa;                
+                if(isset($convocatoria->convocatoria_par))
+                {
+                    $convocatoria_par = Convocatorias::findFirst($convocatoria->convocatoria_par);
+                    $array["nombre_convocatoria_par"]=$convocatoria_par->nombre;
+                }
+                echo json_encode($array);                
+                
+            } else {
+                echo "acceso_denegado";
+            }
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        echo "error_metodo";
+    }
+}
+);
+
+// Crear registro
 $app->post('/new_categoria', function () use ($app, $config) {
     try {
         //Instancio los objetos que se van a manejar

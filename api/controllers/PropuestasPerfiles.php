@@ -63,9 +63,6 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
 
     try {
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a consultar los tipos participantes de la convocatoria"', ['user' => '', 'token' => $request->get('token')]);
-
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
@@ -75,6 +72,9 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             //Validar array del usuario
             $user_current = json_decode($token_actual->user_current, true);
             
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa a consultar los tipos de participantes de la convocatoria ('.$id.')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($id);
 
@@ -223,11 +223,7 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                 
                 $i++;
             }
-            
-            //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Retorna tipos de participantes"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
             $logger->close();
-            
             //retorno el array en json
             echo json_encode($array_tipos_participantes);
                       

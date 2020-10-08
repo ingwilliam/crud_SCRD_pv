@@ -876,6 +876,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $sql_pn = "
                             SELECT 
                                     vwp.convocatoria,
+                                    vwp.id_convocatoria,
                                     vwp.codigo,
                                     vwp.nombre_propuesta,
                                     vwp.tipo_participante,
@@ -897,7 +898,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 foreach ($personas_naturales as $pn) {
                     
                     //Consulto la convocatoria
-                    $convocatoria_pn = Convocatorias::findFirst($pn->convocatoria);
+                    $convocatoria_pn = Convocatorias::findFirst($pn->id_convocatoria);
 
                     //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                     $nombre_convocatoria_pn = $convocatoria_pn->nombre;

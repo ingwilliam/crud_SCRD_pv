@@ -71,6 +71,9 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
+            
+            //Validar array del usuario
+            $user_current = json_decode($token_actual->user_current, true);
 
             //Defino columnas para el orden desde la tabla html
             $columns = array(
@@ -202,98 +205,130 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
 
             $json_convocatorias = array();
             foreach ($array_convocatorias AS $clave => $valor) {
-
-                $valor->estado_convocatoria = "<span class=\"span_C" . $valor->estado . "\">" . $valor->estado . "</span>";
-                if ($valor->tiene_categorias == false) {
-                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
-                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12 AND active=true");
-                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                    if ($fecha_actual > $fecha_cierre) {
-                        $valor->id_estado = 52;
-                        $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
-                    } else {
-                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11 AND active=true");
-                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
-                        if ($fecha_actual < $fecha_apertura) {
-                            $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                
+                $cargar_array=TRUE;
+                
+                if($valor->modalidad==7)
+                {
+                    $usuario_convocatoria = Usuariosconvocatorias::findFirst("username='" . $user_current["username"] . "' AND convocatoria=" . $valor->id . " AND active=true");
+                    $cargar_array=FALSE;
+                    if(isset($usuario_convocatoria->id))
+                    {
+                        $cargar_array=TRUE;
+                    }
+                }
+                
+                //Permite cargar el array a mostrar de las convocatorias
+                if($cargar_array==TRUE)
+                {
+                    $valor->estado_convocatoria = "<span class=\"span_C" . $valor->estado . "\">" . $valor->estado . "</span>";
+                    if ($valor->tiene_categorias == false) {
+                        $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                        $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12 AND active=true");
+                        $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                        if ($fecha_actual > $fecha_cierre) {
+                            $valor->id_estado = 52;
+                            $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
                         } else {
-                            $valor->id_estado = 51;
-                            $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                            $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11 AND active=true");
+                            $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                            if ($fecha_actual < $fecha_apertura) {
+                                $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                            } else {
+                                $valor->id_estado = 51;
+                                $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                            }
                         }
                     }
-                }
 
-                //Realizo el filtro de estados
-                if ($estado_actual=="") {
-                    $json_convocatorias[] = $valor;
-                }
-                else
-                {
-                    if($estado_actual==$valor->id_estado)
-                    {
+                    //Realizo el filtro de estados
+                    if ($estado_actual=="") {
                         $json_convocatorias[] = $valor;
                     }
-                }
-
-            }
-
-            foreach ($array_categorias AS $clave => $valor) {
-                $valor->estado_convocatoria = "<span class=\"span_C" . $valor->estado . "\">" . $valor->estado . "</span>";
-                if ($valor->tiene_categorias == true && $valor->diferentes_categorias == true) {
-                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
-                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12 AND active=true");
-                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                    if ($fecha_actual > $fecha_cierre) {
-                        $valor->id_estado = 52;
-                        $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
-                    } else {
-                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11 AND active=true");
-                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
-                        if ($fecha_actual < $fecha_apertura) {
-                            $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
-                        } else {
-                            $valor->id_estado = 51;
-                            $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                    else
+                    {
+                        if($estado_actual==$valor->id_estado)
+                        {
+                            $json_convocatorias[] = $valor;
                         }
                     }
                 }
                 
-                if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
-                    $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
-                    //$valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
-                    
-                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
-                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
-                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                    if ($fecha_actual > $fecha_cierre) {
-                        $valor->id_estado = 52;
-                        $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
-                    } else {
-                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 11 AND active=true");
-                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
-                        if ($fecha_actual < $fecha_apertura) {
-                            $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+
+            }
+
+            foreach ($array_categorias AS $clave => $valor) {
+                $cargar_array=TRUE;
+                
+                if($valor->modalidad==7)
+                {
+                    $usuario_convocatoria = Usuariosconvocatorias::findFirst("username='" . $user_current["username"] . "' AND convocatoria=" . $valor->id . " AND active=true");
+                    $cargar_array=FALSE;
+                    if(isset($usuario_convocatoria->id))
+                    {
+                        $cargar_array=TRUE;
+                    }
+                }
+                
+                //Permite cargar el array a mostrar de las convocatorias
+                if($cargar_array==TRUE)
+                {                
+                    $valor->estado_convocatoria = "<span class=\"span_C" . $valor->estado . "\">" . $valor->estado . "</span>";
+                    if ($valor->tiene_categorias == true && $valor->diferentes_categorias == true) {
+                        $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                        $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 12 AND active=true");
+                        $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                        if ($fecha_actual > $fecha_cierre) {
+                            $valor->id_estado = 52;
+                            $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
                         } else {
-                            $valor->id_estado = 51;
-                            $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                            $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id . " AND tipo_evento = 11 AND active=true");
+                            $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                            if ($fecha_actual < $fecha_apertura) {
+                                $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                            } else {
+                                $valor->id_estado = 51;
+                                $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                            }
                         }
                     }
-                    
-                }
+
+                    if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
+                        $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
+                        //$valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_tipo_convocatoria('".$valor->modalidad."','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+
+                        $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                        $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
+                        $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                        if ($fecha_actual > $fecha_cierre) {
+                            $valor->id_estado = 52;
+                            $valor->estado_convocatoria = "<span class=\"span_CCerrada\">Cerrada</span>";
+                        } else {
+                            $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 11 AND active=true");
+                            $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                            if ($fecha_actual < $fecha_apertura) {
+                                $valor->estado_convocatoria = "<span class=\"span_CPublicada\">Publicada</span>";
+                            } else {
+                                $valor->id_estado = 51;
+                                $valor->estado_convocatoria = "<span class=\"span_CAbierta\">Abierta</span>";
+                            }
+                        }
+
+                    }
 
 
-                //Realizo el filtro de estados
-                if ($estado_actual=="") {
-                    $json_convocatorias[] = $valor;
-                }
-                else
-                {
-                    if($estado_actual==$valor->id_estado)
-                    {
+                    //Realizo el filtro de estados
+                    if ($estado_actual=="") {
                         $json_convocatorias[] = $valor;
                     }
+                    else
+                    {
+                        if($estado_actual==$valor->id_estado)
+                        {
+                            $json_convocatorias[] = $valor;
+                        }
+                    }
                 }
-
             }
 
             //creo el array
@@ -491,7 +526,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                 //Mostramos el formulario inactivo
                 $conditions = ['id' => $request->getPost('p'), 'active' => true];
                 $propuesta_formulario = Propuestas::findFirst(([
-                            'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24,31,33,34)',
+                            'conditions' => 'id=:id: AND active=:active: AND estado IN (8,20,21,22,23,24,31,33,34,44)',
                             'bind' => $conditions,
                 ]));
 
@@ -644,7 +679,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                         {
                                             //Consulto las propuestas de los participantes
                                             //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
-                                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34)");                                    
+                                            $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34,44)");                                    
                                             if(count($propuestas)<$propuestas_permitidas)
                                             {
                                                 //Registro la accion en el log de convocatorias                                            
@@ -717,7 +752,7 @@ $app->post('/validar_acceso/{id:[0-9]+}', function ($id) use ($app, $config, $lo
                                     {
                                         //Consulto las propuestas de los participantes
                                         //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
-                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34)");
+                                        $propuestas = Propuestas::find("participante IN (".$array_participantes .") AND convocatoria IN (".$in_convocatorias.") AND estado IN (7,8,21,22,23,24,31,33,34,44)");
 
                                         //Valido si ya tiene el maximo de propuestas permitidas
                                         if(count($propuestas)<$propuestas_permitidas)

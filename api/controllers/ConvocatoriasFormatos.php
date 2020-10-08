@@ -1652,6 +1652,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
             $sql_convocatorias = "
                         SELECT 
                                 vwp.convocatoria,
+                                vwp.id_convocatoria,
                                 vwp.codigo,
                                 vwp.nombre_propuesta,
                                 vwp.tipo_participante,
@@ -1680,8 +1681,8 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
                         FROM Viewparticipantes AS vwp
                                 INNER JOIN Entidadescontratistas AS ec ON REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM(vwp.numero_documento),'.','')
                                 INNER JOIN Entidades AS e ON e.id=ec.entidad
-                        WHERE vwp.convocatoria=" . $request->getPut('convocatoria') . " AND vwp.id_tipo_documento<>7
-                        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+                        WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . " AND vwp.id_tipo_documento<>7
+                        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
                         ORDER BY vwp.codigo
                         ";
 
@@ -1815,6 +1816,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
             $sql_convocatorias = "
             SELECT 
                     vwp.convocatoria,
+                    vwp.id_convocatoria,
                     vwp.codigo,
                     vwp.nombre_propuesta,
                     vwp.tipo_participante,
@@ -1843,8 +1845,8 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
             FROM Viewparticipantes AS vwp
                     INNER JOIN Entidadescontratistas AS ec ON REPLACE(TRIM(ec.numero_documento),'.','')= REPLACE(TRIM(vwp.numero_documento),'.','')
                     INNER JOIN Entidades AS e ON e.id=ec.entidad
-            WHERE vwp.convocatoria=" . $request->getPut('convocatoria') . " AND vwp.id_tipo_documento<>7
-            GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+            WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . " AND vwp.id_tipo_documento<>7
+            GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
             ORDER BY vwp.codigo
             ";
 
@@ -2010,6 +2012,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
             $sql_convocatorias = "
                         SELECT 
                                 vwp.convocatoria,
+                                vwp.id_convocatoria,
                                 vwp.codigo,
                                 vwp.nombre_propuesta,
                                 vwp.tipo_participante,
@@ -2035,7 +2038,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                                 vwp.numero_telefono,
                                 vwp.numero_celular
                         FROM Viewparticipantes AS vwp                                
-                        WHERE vwp.convocatoria=" . $request->getPut('convocatoria') . "
+                        WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . "
                         ORDER BY vwp.codigo
                         ";
 
@@ -2163,6 +2166,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
             $sql_convocatorias = "
             SELECT 
                     vwp.convocatoria,
+                    vwp.id_convocatoria,
                     vwp.codigo,
                     vwp.nombre_propuesta,
                     vwp.tipo_participante,
@@ -2188,7 +2192,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     vwp.numero_telefono,
                     vwp.numero_celular
             FROM Viewparticipantes AS vwp                    
-            WHERE vwp.convocatoria=" . $request->getPut('convocatoria') . "
+            WHERE vwp.id_convocatoria=" . $request->getPut('convocatoria') . "
             ORDER BY vwp.codigo
             ";
 
@@ -2487,11 +2491,11 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 }
 
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr>";
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="2">' . $jurado->participante . '</td>';
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="3">' . $jurado->participante . '</td>';                                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';                
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
             }
 
@@ -2533,10 +2537,10 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
 
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<tr>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->entidad . "</td>";
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="2">' . $jurado->participante . '</td>';
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';                
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="3">' . $jurado->participante . '</td>';                                
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';                
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "</tr>";
             }
 
@@ -2545,6 +2549,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         SELECT 
                                 e.nombre AS entidad,
                                 vwp.convocatoria,
+                                vwp.id_convocatoria,
                                 vwp.codigo,
                                 vwp.nombre_propuesta,
                                 vwp.tipo_participante,
@@ -2555,10 +2560,13 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                                 vwp.segundo_nombre,
                                 vwp.primer_apellido,
                                 vwp.segundo_apellido,
-                                vwp.estado_propuesta                                
+                                vwp.estado_propuesta,
+                                es.id AS id_estado_convocatoria,
+                                es.nombre AS estado_convocatoria
                         FROM Viewparticipantes AS vwp                                
-                        INNER JOIN Convocatorias AS c ON c.id=vwp.convocatoria
+                        INNER JOIN Convocatorias AS c ON c.id=vwp.id_convocatoria
                         INNER JOIN Entidades AS e ON e.id=c.entidad
+                        LEFT JOIN Estados AS es ON c.estado=es.id
                         WHERE vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ";
 
@@ -2568,8 +2576,8 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             foreach ($personas_naturales as $pn) {
 
                 //Consulto la convocatoria
-                $convocatoria = Convocatorias::findFirst($pn->convocatoria);
-
+                $convocatoria = Convocatorias::findFirst($pn->id_convocatoria);
+              
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $convocatoria->nombre;
                 $nombre_categoria = "";
@@ -2579,13 +2587,35 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                     $nombre_categoria = " - " . $convocatoria->nombre;
                     $anio_convocatoria = $convocatoria->getConvocatorias()->anio;
                 }
-
-
-                if ($anio_convocatoria == $request->getPut('anio')) {
-                    if ($pn->estado_propuesta == "Ganadora") {
+                
+                
+                if($anio_convocatoria==$request->getPut('anio'))
+                {   
+                    $estado_convocatoria=$pn->estado_convocatoria;
+                            
+                    if($pn->id_estado_convocatoria==5)
+                    {
+                        $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                        $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $pn->id_convocatoria . " AND tipo_evento = 12");
+                        $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                        if ($fecha_actual > $fecha_cierre) {            
+                            $estado_convocatoria="Publicada Cerrada";                            
+                        } else {
+                            $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $pn->id_convocatoria . " AND tipo_evento = 11");
+                            $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                            if ($fecha_actual > $fecha_apertura) {
+                                $estado_convocatoria="Publicada Abierta";                                                                
+                            }
+                        }
+                    }
+                    
+                    
+                    if($pn->estado_propuesta=="Ganadora")
+                    {
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->entidad . "</td>";
-                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";                        
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $estado_convocatoria . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . "</td>";
@@ -2593,8 +2623,9 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
                     } else {
                         $html_propuestas = $html_propuestas . "<tr>";
-                        $html_propuestas = $html_propuestas . "<td>" . $pn->entidad . "</td>";
-                        $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
+                        $html_propuestas = $html_propuestas . "<td>" . $pn->entidad . "</td>";                        
+                        $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";                        
+                        $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria . "</td>";                        
                         $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->codigo . "</td>";
@@ -2620,9 +2651,9 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             foreach ($contratistas as $contratista) {
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<tr>";
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<td>" . $contratista->entidad . "</td>";
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->contratista . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->observaciones . '</td>';
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="2">' . $contratista->contratista . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';                
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->observaciones . '</td>';                
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';                
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "</tr>";
             }
 
@@ -2641,10 +2672,11 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
 
             foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>Adjudicada</td>";                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";                                                                                                    
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . " - " . $ganador_anio_anterior->tipo_rol . "</td>";
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
@@ -2653,23 +2685,24 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
 
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="6" align="center">PARTICIPACIÓN DE PERSONA NATURAL EN CONVOCATORIAS Y JURADOS</td>
+                        <td colspan="7" align="center">PARTICIPACIÓN DE PERSONA NATURAL EN CONVOCATORIAS Y JURADOS</td>
                     </tr>                    
                     <tr>
-                        <td colspan="6" align="center">Año: ' . $request->getPut('anio') . '</td>
+                        <td colspan="7" align="center">Año: '.$request->getPut('anio').'</td>
                     </tr>                    
                     <tr>
-                        <td colspan="6" align="center">Número de documento: ' . $request->getPut('nd') . '</td>
+                        <td colspan="7" align="center">Número de documento: '.$request->getPut('nd').'</td>
                     </tr>                    
                     <tr>
-                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="7" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA PRESENTADO PROPUESTA </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA PRESENTADO PROPUESTA </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>   
+                        <td align="center">Estado Convocatoria</td>
                         <td align="center">Tipo Rol</td>                        
                         <td align="center">Participante</td>
                         <td align="center">Propuesta código</td>                                                                                                                   
@@ -2677,22 +2710,23 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                     </tr>
                     ' . $html_propuestas . '
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE ESTA EN PROCESO PARA SER JURADO </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE ESTA EN PROCESO PARA SER JURADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
-                        <td align="center">Convocatoria - Categoría</td>
+                        <td align="center">Convocatoria - Categoría</td>                        
                         <td align="center">Tipo Rol</td>                        
-                        <td align="center" colspan="2">Participante</td>                        
+                        <td align="center" colspan="3">Participante</td>                        
                         <td align="center">Estado postulación</td>                                                                                                                   
                     </tr>
                     ' . $html_propuestas_jurados_proceso . '        
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS QUE HA GANADO </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS QUE HA GANADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>   
+                        <td align="center">Estado Convocatoria</td>
                         <td align="center">Tipo Rol</td>                        
                         <td align="center">Participante</td>
                         <td align="center">Propuesta código</td>                                                                                                                   
@@ -2700,35 +2734,36 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                     </tr>
                     ' . $html_propuestas_ganadoras . '                          
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA SIDO JURADO </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA SIDO JURADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
-                        <td align="center">Convocatoria - Categoría</td>   
+                        <td align="center">Convocatoria - Categoría</td>                           
                         <td align="center">Tipo Rol</td>                        
-                        <td align="center" colspan="2">Participante</td>                        
+                        <td align="center" colspan="3">Participante</td>                        
                         <td align="center">Estado postulación</td>                                                                                                                   
                     </tr>
                     ' . $html_propuestas_jurados_seleccionados . '                        
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS COMO GANADOR AÑOS ANTERIORES </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS COMO GANADOR AÑOS ANTERIORES </td>
                     </tr>    
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Año</td>
                         <td align="center">Entidad</td>
-                        <td align="center">Convocatoria - Categoría</td>                        
+                        <td align="center">Convocatoria - Categoría</td>     
+                        <td align="center">Estado Convocatoria</td>
                         <td align="center">Propuesta</td>   
                         <td align="center">Participante</td>
                         <td align="center">Tipo participante - Tipo Rol</td>                                                                        
                     </tr>
                     ' . $html_ganadoras_anios_anteriores . '      
                     <tr>
-                        <td colspan="6" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> APARECE EN LA BASE DE DATOS DE CONTRATISTAS O FUNCIONARIOS </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> APARECE EN LA BASE DE DATOS DE CONTRATISTAS O FUNCIONARIOS </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Entidad</td>
-                        <td align="center" colspan="3">Contratista</td>   
-                        <td align="center">Observaciones</td>                                                
+                        <td align="center" colspan="2">Contratista</td>   
+                        <td align="center" colspan="3">Observaciones</td>                                                
                         <td align="center">Fecha de cargue</td>                                                
                     </tr>
                     ' . $html_propuestas_contratistas . '    
@@ -2889,10 +2924,10 @@ $app->post('/reporte_ganadores', function () use ($app, $config, $logger) {
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
 
-
-            $where_entidad = "";
-            if ($request->getPut('entidad') != "" && $request->getPut('entidad') != "null") {
-                $where_entidad = " AND vp.entidad=" . $request->getPut('entidad');
+            $where_entidad="";
+            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
+            {
+                $where_entidad=" AND vp.id_entidad=".$request->getPut('entidad');
             }
 
             //Genero reporte propuestas por estado
@@ -2968,6 +3003,364 @@ $app->post('/reporte_ganadores', function () use ($app, $config, $logger) {
     }
 });
 
+$app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_estado para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Consulto lo necesario
+            $user_current = json_decode($token_actual->user_current, true);
+            
+
+            $in_codigos="";
+        
+            $html_propuestas = "";
+            
+            $codigos = str_replace("'", "",$request->get("codigos"));
+            $codigos = str_replace('"', "",$request->get("codigos"));
+            
+            $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
+                        <tr>
+                            <td colspan="11" align="center">Reporte de inhabilidades por propuestas</td>
+                        </tr>
+                        <tr>
+                            <td colspan="11" align="center">Códigos de propuestas: ' . $codigos . '</td>
+                        </tr>                    
+                        <tr>
+                            <td colspan="11" align="center">Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        </tr>
+                        <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                            <td align="center">Año</td>
+                            <td align="center">Entidad</td>
+                            <td align="center">Convocatoria - Categoría</td>
+                            <td align="center">Estado Convocatoria</td>
+                            <td align="center">Código propuestas</td>
+                            <td align="center">Número de documento</td>
+                            <td align="center">Primer nombre</td>
+                            <td align="center">Segundo nombre</td>
+                            <td align="center">Primer apellido</td>
+                            <td align="center">Segundo apellido</td>                        
+                            <td align="center">Inhabilidad o Reporte</td>
+                        </tr>                    
+                    ';
+            
+            if($request->get("codigos")!="")
+            {                
+                
+                $array_codigos= explode(",",$codigos);                        
+                foreach($array_codigos as $clave)
+                {                    
+                    
+                    $in_codigos=$in_codigos.",'".$clave."'";
+                }
+
+                $in_codigos = trim($in_codigos, ",");                
+                
+                //CONTRATISTAS
+                $sql_convocatorias = "
+                    SELECT 
+                            vcon.anio,
+                            CONCAT(vcon.convocatoria,' ',vcon.categoria) AS convocatoria,
+                            vcon.nombre_entidad,
+                            p.codigo,
+                            par.numero_documento,
+                            par.primer_nombre,
+                            par.segundo_nombre,
+                            par.primer_apellido,
+                            par.segundo_apellido,	 
+                            concat('Contratista ',ent.nombre) AS inhabilidad,
+                            est.id AS id_estado_convocatoria,
+                            est.nombre AS estado_convocatoria,
+                            p.convocatoria AS id_convocatoria                            
+                    FROM 
+                            Propuestas AS p
+                    INNER JOIN Participantes AS par ON par.id=p.participante OR par.participante_padre=p.participante
+                    INNER JOIN Entidadescontratistas AS entcon ON REPLACE(REPLACE(TRIM(entcon.numero_documento),'.',''),' ', '') = REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')
+                    INNER JOIN Entidades AS ent ON ent.id=entcon.entidad
+                    INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=p.convocatoria
+                    LEFT JOIN Estados AS est ON vcon.estado=est.id
+                    WHERE 
+                            p.codigo IN (".$in_codigos.")
+
+                    ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);                
+
+                $array_inhabilidades=array();
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;                
+                }
+
+                //GANADORES AÑOS ANTERIORES
+                $sql_convocatorias = "
+                    SELECT 
+                            gaan.anio,
+                            CONCAT(gaan.convocatoria,' ',gaan.categoria) AS convocatoria,
+                            gaan.entidad AS nombre_entidad,
+                            gaan.codigo_propuesta AS codigo,                        
+                            par.numero_documento,
+                            par.primer_nombre,
+                            par.segundo_nombre,
+                            par.primer_apellido,
+                            par.segundo_apellido,	 
+                            CONCAT(gaan.tipo_rol,' Ganadora') AS inhabilidad,
+                            '7' AS id_estado_convocatoria,
+                            'Adjudicada' AS estado_convocatoria,
+                            '' AS id_convocatoria
+                    FROM 
+                            Propuestas AS p
+                    INNER JOIN Participantes AS par ON par.id=p.participante OR par.participante_padre=p.participante
+                    INNER JOIN Ganadoresantes2020 AS gaan ON REPLACE(REPLACE(TRIM(gaan.numero_documento),'.',''),' ', '') = REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') 
+                    WHERE                 
+                            p.codigo IN (".$in_codigos.")
+
+                    ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;
+                }
+
+                //PARTICIPANTES
+                $sql_convocatorias = "
+                    SELECT 
+                            vcon.anio,
+                            CONCAT(vcon.convocatoria,' ',vcon.categoria) AS convocatoria,
+                            vcon.nombre_entidad,
+                            pro.codigo,
+                            par.numero_documento,
+                            par.primer_nombre,
+                            par.segundo_nombre,
+                            par.primer_apellido,
+                            par.segundo_apellido,
+                            concat(par.tipo,' - ',est.nombre) AS inhabilidad,
+                            estc.id AS id_estado_convocatoria,
+                            estc.nombre AS estado_convocatoria,
+                            pro.convocatoria AS id_convocatoria	
+                    FROM 
+                            Participantes AS par
+                    INNER JOIN Propuestas AS pro ON pro.participante=par.id AND pro.estado NOT IN (7,20)
+                    INNER JOIN Estados AS est ON est.id=pro.estado
+                    INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=pro.convocatoria
+                    LEFT JOIN Estados AS estc ON vcon.estado=estc.id
+                    WHERE 
+                            par.numero_documento 
+                            IN (
+                                    SELECT	
+                                            par.numero_documento	
+                                    FROM 
+                                            Propuestas AS p
+                                    INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
+                                    WHERE 
+                                            p.codigo IN (".$in_codigos.")
+                            )
+                ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;
+                }
+
+                //INTEGRANTES
+                $sql_convocatorias = "
+                    SELECT
+                            vcon.anio,
+                            CONCAT(vcon.convocatoria,' ',vcon.categoria) AS convocatoria,
+                            vcon.nombre_entidad,
+                            pro.codigo,
+                            par.numero_documento,
+                            par.primer_nombre,
+                            par.segundo_nombre,
+                            par.primer_apellido,
+                            par.segundo_apellido,
+                            concat(par.tipo,' - ',est.nombre) AS inhabilidad,
+                            estc.id AS id_estado_convocatoria,
+                            estc.nombre AS estado_convocatoria,
+                            pro.convocatoria AS id_convocatoria
+                    FROM 
+                            Participantes AS par
+                    INNER JOIN Propuestas AS pro ON pro.participante=par.participante_padre AND pro.estado NOT IN (7,20)
+                    INNER JOIN Estados AS est ON est.id=pro.estado
+                    INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=pro.convocatoria
+                    LEFT JOIN Estados AS estc ON vcon.estado=estc.id
+                    WHERE 
+                            par.numero_documento 
+                            IN (
+                                    SELECT	
+                                            par.numero_documento	
+                                    FROM 
+                                            Propuestas AS p
+                                    INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
+                                    WHERE 
+                                            p.codigo IN (".$in_codigos.")
+                            )
+
+                ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;
+                }
+
+                //JURADOS SELECCIONADOS
+                $sql_convocatorias = "
+                    SELECT
+                        vcon.anio,
+                        CONCAT(vcon.convocatoria,' ',vcon.categoria) AS convocatoria,
+                        vcon.nombre_entidad,
+                        pro.codigo,
+                        par.numero_documento,
+                        par.primer_nombre,
+                        par.segundo_nombre,
+                        par.primer_apellido,
+                        par.segundo_apellido,
+                        concat('Seleccionado - ',jp.rol) AS inhabilidad
+                    FROM Juradospostulados as jp
+                        INNER JOIN Evaluadores ev ON jp.id=ev.juradopostulado 
+                        INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                        INNER JOIN Participantes par on pro.participante = par.id    
+                        INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=jp.convocatoria           
+                    WHERE 	
+                        jp.active=true AND
+                        ev.active = true AND	                            
+                        REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') 
+                        IN (
+                                    SELECT	
+                                            REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')
+                                    FROM 
+                                            Propuestas AS p
+                                    INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
+                                    WHERE 
+                                            p.codigo IN (".$in_codigos.")
+                            )
+
+
+                ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;
+                }
+
+                //JURADOS EN PROCESO
+                $sql_convocatorias = "
+                    SELECT
+                        vcon.anio,
+                        CONCAT(vcon.convocatoria,' ',vcon.categoria) AS convocatoria,
+                        vcon.nombre_entidad,
+                        pro.codigo,
+                        par.numero_documento,
+                        par.primer_nombre,
+                        par.segundo_nombre,
+                        par.primer_apellido,
+                        par.segundo_apellido,
+                        concat(e.nombre) AS inhabilidad                    
+                    FROM Juradospostulados as jp
+                        INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                        INNER JOIN Participantes AS par ON pro.participante = par.id    
+                        INNER JOIN viewconvocatorias AS vcon ON vcon.id_categoria=jp.convocatoria
+                        LEFT JOIN Estados AS e ON jp.estado=e.id
+                    WHERE 
+                        jp.active=TRUE AND  
+                        REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')
+                        IN (
+                                    SELECT	
+                                            REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')
+                                    FROM 
+                                            Propuestas AS p
+                                    INNER JOIN participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
+                                    WHERE 
+                                            p.codigo IN (".$in_codigos.")
+                            )
+                ";                        
+
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+                foreach ($convocatorias as $convocatoria) {
+                    $array_inhabilidades[]=(array)$convocatoria;
+                }
+
+                array_sort_by($array_inhabilidades, 'numero_documento', $order = SORT_ASC);
+
+                foreach ($array_inhabilidades as $convocatoria) {
+                    
+                    $estado_convocatoria="";
+
+                    if(isset($convocatoria[id_convocatoria]) AND $convocatoria[id_convocatoria]!="")
+                    {
+                        $estado_convocatoria=$convocatoria[estado_convocatoria];
+                            
+                        if($convocatoria[id_estado_convocatoria]==5)
+                        {
+                            $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                            $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria[id_convocatoria] . " AND tipo_evento = 12");
+                            $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                            if ($fecha_actual > $fecha_cierre) {            
+                                $estado_convocatoria="Publicada Cerrada";                            
+                            } else {
+                                $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria[id_convocatoria] . " AND tipo_evento = 11");
+                                $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                                if ($fecha_actual > $fecha_apertura) {
+                                    $estado_convocatoria="Publicada Abierta";
+                                }
+                            }
+                        }
+                    }                                                            
+                    
+                    $html_propuestas = $html_propuestas . "<tr>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[anio] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[nombre_entidad]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[convocatoria]. "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria. "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[codigo]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[numero_documento]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_nombre]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_nombre]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_apellido]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_apellido]. "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[inhabilidad]. "</td>";                
+                    $html_propuestas = $html_propuestas . "</tr>";
+                }  
+                
+                $html = $html.$html_propuestas;                                
+            }
+            
+            $html = $html.$html_propuestas."</table>";
+
+            $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo $html;
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_estado al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_estado al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
 
     //Instancio los objetos que se van a manejar
@@ -2989,9 +3382,10 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
 
             $anio = $request->getPut('anio');
 
-            $where_entidad = "";
-            if ($request->getPut('entidad') != "" && $request->getPut('entidad') != "null") {
-                $where_entidad = " AND vp.entidad=" . $request->getPut('entidad');
+            $where_entidad="";
+            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
+            {
+                $where_entidad=" AND vp.id_entidad=".$request->getPut('entidad');
             }
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
@@ -3097,5 +3491,16 @@ try {
     $app->handle();
 } catch (\Exception $e) {
     echo 'Excepción: ', $e->getMessage();
+}
+
+function array_sort_by(&$arrIni, $col, $order = SORT_ASC)
+{
+    $arrAux = array();
+    foreach ($arrIni as $key=> $row)
+    {
+        $arrAux[$key] = is_object($row) ? $arrAux[$key] = $row->$col : $row[$col];
+        $arrAux[$key] = strtolower($arrAux[$key]);
+    }
+    array_multisort($arrAux, $order, $arrIni);
 }
 ?>

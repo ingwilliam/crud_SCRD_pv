@@ -750,15 +750,15 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método formulario_integrante, ingresa al formulario de integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
@@ -803,6 +803,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                                 //Creo el array de la propuesta
                                 $array = array();
                                 //Valido si se habilita propuesta por derecho de petición
+                                $array["programa"] = $propuesta->getConvocatorias()->programa;
                                 $array["estado"] = $propuesta->estado;
                                 if($propuesta->habilitar)
                                 {
@@ -828,7 +829,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                                 $array["discapacidades"] = Tiposdiscapacidades::find("active=true");            
 
                                 //Registro la accion en el log de convocatorias
-                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna la información para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador Personasnaturales en el método formulario_integrante, retorna información al formulario de integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                                                
                                 $logger->close();
 
                                 //Retorno el array
@@ -837,7 +838,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                             else
                             {
                                 //Registro la accion en el log de convocatorias
-                                $logger->error('"token":"{token}","user":"{user}","message":"Debe crear la propuesta para el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, la propuesta no existe en el formulario de integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                                                
                                 $logger->close();
                                 echo "crear_propuesta";
                                 exit;
@@ -845,7 +846,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
 
                         } else {
                             //Registro la accion en el log de convocatorias
-                            $logger->error('"token":"{token}","user":"{user}","message":"Error cod de la propuesta no es valido."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, la propuesta no existe en el formulario de integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "error_cod_propuesta";
                             exit;
@@ -854,21 +855,21 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                         //Busco si tiene el perfil asociado de acuerdo al parametro
                         if ($request->get('m') == "pn") {
                             //Registro la accion en el log de convocatorias
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_pn";
                             exit;
                         }
                         if ($request->get('m') == "pj") {
                             //Registro la accion en el log de convocatorias
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_pj";
                             exit;
                         }
                         if ($request->get('m') == "agr") {
                             //Registro la accion en el log de convocatorias
-                            $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                             $logger->close();
                             echo "crear_perfil_agr";
                             exit;
@@ -878,21 +879,21 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                     //Busco si tiene el perfil asociado de acuerdo al parametro
                     if ($request->get('m') == "pn") {
                         //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_pn";
                         exit;
                     }
                     if ($request->get('m') == "pj") {
                         //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_pj";
                         exit;
                     }
                     if ($request->get('m') == "agr") {
                         //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo formulario_integrante"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, debe crear el perfil como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
                         echo "crear_perfil_agr";
                         exit;
@@ -900,19 +901,19 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                 }
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, acceso denegado en el metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, token caduco en el metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método formulario_integrante, error en el metodo formulario_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -930,15 +931,15 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPost('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Consulto el usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método crear_integrante, crear integrante como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
@@ -987,15 +988,16 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                     }
 
                     $post["representante"] = $post["representante"] === 'true'? true: false;
+                    $post["director"] = $post["director"] === 'true'? true: false;
 
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, error al crear el integrante como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);                        
                         $logger->close();
                         echo "error";
                     } else {
                         //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->info('"token":"{token}","user":"{user}","message":"Retorno el controlador Personasnaturales en el método crear_integrante, creo yo edito el integrante con exito como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
 
                         echo $participante->id;
@@ -1004,25 +1006,25 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                 else
                 {
                     //Registro la accion en el log de convocatorias
-                    $logger->error('"token":"{token}","user":"{user}","message":"Ya existe el representante en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, ya existe el representante como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     $logger->close();
                     echo "error_representante";
                 }
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, acceso denegado como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, token caduco como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo crear_integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, error metodo como (' . $request->get('tipo') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1040,15 +1042,15 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
-        //Registro la accion en el log de convocatorias
-        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => '', 'token' => $request->get('token')]);
-
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método cargar_tabla_integrantes, carga la tabla de los integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+        
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
 
@@ -1073,6 +1075,7 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     6 => 'p.rol',
                     7 => 'p.id',
                     8 => 'p.representante',
+                    9 => 'p.director',
                 );
 
                 $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
@@ -1088,9 +1091,19 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
                 }
 
+                if($propuesta->estado==7)
+                {
+                    $check="concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro";
+                }
+                else
+                {
+                    $check="concat('<input disabled readonly title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro";
+                }
+                
+                
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones , concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones ," . $check . "  FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
@@ -1113,22 +1126,25 @@ $app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) 
                     "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
                 );
                 //retorno el array en json
+                $logger->info('"token":"{token}","user":"{user}","message":"Retorna en el controlador Personasnaturales en el método cargar_tabla_integrantes, retorna la tabla de los integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                
                 echo json_encode($json_data);
             } else {
                 //Registro la accion en el log de convocatorias
-                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                 $logger->close();
                 echo "acceso_denegado";
             }
         } else {
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => "", 'token' => $request->get('token')]);
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
             $logger->close();
             echo "error_token";
         }
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias
-        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, error en el metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -1215,11 +1231,12 @@ $app->get('/editar_integrante', function () use ($app, $config) {
 
 
 // Eliminar registro
-$app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $tokens = new Tokens();
+$app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    
+    try {        
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->getPut('token'));
 
@@ -1229,6 +1246,9 @@ $app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $conf
             //Usuario actual
             $user_current = json_decode($token_actual->user_current, true);
 
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método eliminar_integrante, ingreso a inactivar el integrante"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+            
             //verificar si tiene permisos de escritura
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
@@ -1246,19 +1266,32 @@ $app->delete('/eliminar_integrante/{id:[0-9]+}', function ($id) use ($app, $conf
                 }
                 
                 if ($user->save($user) === false) {
+                    //Registro la accion en el log de convocatorias           
+                    $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método eliminar_integrante, error al desactivar el integrante "', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
                     echo "error";
                 } else {
+                    $logger->info('"token":"{token}","user":"{user}","message":"Retorno al controlador Personasnaturales en el método eliminar_integrante, se desactivo el integrante"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                    $logger->close();
                     echo "ok";
                 }
             } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, acceso denegado"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
                 echo "acceso_denegado";
             }
 
             exit;
         } else {
-            echo "error";
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, token caduco"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
         }
     } catch (Exception $ex) {
+        $logger->error('"token":"{token}","user":"{user}","message":"Error al controlador Personasnaturales en el método eliminar_integrante, error metodo ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
         echo "error_metodo";
     }
 });
