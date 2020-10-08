@@ -731,8 +731,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                 $representante = "";
             }
-            
-            
+
+
 
 
             $prom = number_format((float) $propuesta->promedio, 1, '.', '');
@@ -854,6 +854,8 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                     $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
 
 
+                    $td = "";
+                    
                     if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
                         $participantepadre = Participantes::findFirst(
@@ -976,16 +978,16 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                         $usuarioperfil = Usuariosperfiles::findFirst(['id = ' . $participante_actual->usuario_perfil]);
 
                         $perfil = Perfiles::findFirst([' id = ' . $usuarioperfil->perfil]);
-                        
+
                         /*
-                     * 31-07-2020
-                     * WIlmer Gustavo Mogollón Duque
-                     * Se incorpora el tipo y npumero de documento para persona natural
-                     */
+                         * 31-07-2020
+                         * WIlmer Gustavo Mogollón Duque
+                         * Se incorpora el tipo y npumero de documento para persona natural
+                         */
 
-                    $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
+                        $nombre_participante = $participante_actual->primer_nombre . " " . $participante_actual->segundo_nombre . " " . $participante_actual->primer_apellido . " " . $participante_actual->segundo_apellido;
 
-
+                        $td = "";
                         if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
                             $participantepadre = Participantes::findFirst(
