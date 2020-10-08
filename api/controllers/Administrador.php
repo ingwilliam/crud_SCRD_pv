@@ -147,6 +147,20 @@ $app->post('/menu', function () use ($app,$config) {
                 . " WHERE m.nombre='Deliberación' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
 
             $deliberacion = $app->modelsManager->executeQuery($phql);
+            
+            
+            
+            /*
+             * 05-06-2020
+             * Wilmer Gustavo Mogollón Duque
+             * Consultar permisos reportes estadísticos
+             */
+            
+            $phql = "SELECT mpp.* FROM Moduloperfilpermisos AS mpp "
+                . " INNER JOIN Modulos AS m ON m.id=mpp.modulo "
+                . " WHERE m.nombre='Reportes estadísticos' AND mpp.perfil IN (SELECT up.perfil FROM Usuariosperfiles AS up WHERE up.usuario=".$user_current["id"].")";
+
+            $reportes_estadisticos = $app->modelsManager->executeQuery($phql);
 
             ?>
 
@@ -669,6 +683,8 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../administracionpropuestas/subsanacion_propuestas.html">Subsanación de propuestas</a>
 
                                     <a style="" href="../administracionpropuestas/registro_ganadores.html">Registro de ganadores</a>
+                                    
+                                    <a style="" href="../administracionpropuestas/registro_ganadores.html">Registro de ganadores</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -696,6 +712,35 @@ $app->post('/menu', function () use ($app,$config) {
                         <?php
                         }
                         ?>
+                        
+                        <!--Wilmer Mogollón-->
+                        <!--Reportes estadísticos-->
+                        <?php
+                        if( count($reportes_estadisticos) > 0 )
+                        {
+
+                            $style_update="display: none";
+                            $style_new="";
+                            /*if($request->getPost('id')!="")
+                            {
+                                $style_update="";
+                                $style_new="display: none";
+
+                            }*/
+                        ?>
+                        <li>
+                            <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i>Reportes estadísticos<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../reportesestadisticos/estadisticos.html">Generar reportes estadísticos</a>
+                                </li>
+                            </ul>
+                            <!-- /.nav-second-level -->
+                        </li>
+                        <?php
+                        }
+                        ?>
+                        <!--Fin Reportes estadísticos-->
 
                         <?php
                         if(count($permisos_menu_participante)>0)
@@ -934,6 +979,7 @@ $app->post('/menu', function () use ($app,$config) {
                         }
                         ?>
                         <!--Fin Deliberación-->
+                        
 
                     </ul>
                 </div>

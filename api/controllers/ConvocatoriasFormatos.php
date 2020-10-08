@@ -1085,12 +1085,9 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
             $hoja->setCellValueByColumnAndRow(15, 5, "Teléfono fijo");
             $hoja->setCellValueByColumnAndRow(16, 5, "Correo electrónico");
             $hoja->setCellValueByColumnAndRow(17, 5, "Estado de la propuesta");
-            $hoja->setCellValueByColumnAndRow(18, 5, "Convocatoria");
-            $hoja->setCellValueByColumnAndRow(19, 5, "Estado Postulación");
-
-
-
-
+            $hoja->setCellValueByColumnAndRow(18, 5, "Nivel academico");
+//            $hoja->setCellValueByColumnAndRow(19, 5, "Convocatoria");
+//            $hoja->setCellValueByColumnAndRow(20, 5, "Estado Postulación");
             //Registros de la base de datos
             $fila = 6;
             foreach ($convocatorias as $convocatoria) {
@@ -1098,6 +1095,28 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
                 if ($convocatoria->cpnombre) {
                     $nombre_convocatoria = $convocatoria->cpnombre . " - " . $convocatoria->cnombre;
                 }
+
+
+
+                $propuesta = Propuestas::findFirst(
+                                [
+                                    ' codigo = "' . $convocatoria->codigo.'"'
+                                ]
+                );
+
+//                return json_encode($propuesta->id);
+
+                $nivel_academico = Educacionformal::maximum(
+                        [
+                           array("column" => "nivel_educacion"),
+                           "propuesta"=>$propuesta->id
+                        ]
+                                
+                );
+                
+                 return json_encode($propuesta->id);
+                
+//                EbFaqCategoryModel::maximum(array("column" => "faq_order"));
 
 
 
@@ -1237,8 +1256,9 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
                 $hoja->setCellValueByColumnAndRow(15, $fila, $participante->numero_telefono);
                 $hoja->setCellValueByColumnAndRow(16, $fila, $participante->correo_electronico);
                 $hoja->setCellValueByColumnAndRow(17, $fila, $estado_p);
-                $hoja->setCellValueByColumnAndRow(18, $fila, $nombre_convocatoria);
-                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->estado);
+                $hoja->setCellValueByColumnAndRow(18, $fila, $nivel_academico);
+//                $hoja->setCellValueByColumnAndRow(19, $fila, $nombre_convocatoria);
+//                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->estado);
                 $fila++;
             }
 
@@ -1273,6 +1293,170 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
         echo "error_metodo";
     }
 });
+
+/*
+ * 06-10-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Se incorpora acción en el controlador para generar reporte de linea base de jurados general a partir de una vista
+ */
+
+$app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_linea_base_jurados_general_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+//            $entidad = Entidades::findFirst($request->getPut('entidad'));
+            $anio = $request->getPut('anio');
+            
+                        
+            //Genero reporte invocando a la vista
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=". $anio;
+            
+
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+            
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Listado de jurados por convocatoria')
+                    ->setSubject('SICON')
+                    ->setDescription('Listado de jurados por convocatoria')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Línea base de jurados general");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Línea base de jurados general");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 3, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 3, $anio);
+
+            //Cabezote de la tabla
+//            $hoja->setCellValueByColumnAndRow(1, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(1, 5, "CC");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Tipo");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Codigo hoja de vida");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Jurado");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Edad");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Etnia");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Genero");
+            $hoja->setCellValueByColumnAndRow(8, 5, "Dirección de residencia");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Ciudad de residencia");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Localidad");
+            $hoja->setCellValueByColumnAndRow(11, 5, "UPZ");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Barrio de residencia");
+            $hoja->setCellValueByColumnAndRow(13, 5, "Estrato");
+            $hoja->setCellValueByColumnAndRow(14, 5, "Celular");
+            $hoja->setCellValueByColumnAndRow(15, 5, "Teléfono fijo");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Correo electrónico");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Estado de la propuesta");
+//            $hoja->setCellValueByColumnAndRow(18, 5, "Nivel academico");
+//            $hoja->setCellValueByColumnAndRow(19, 5, "Convocatoria");
+//            $hoja->setCellValueByColumnAndRow(20, 5, "Estado Postulación");
+            //Registros de la base de datos
+            $fila = 6;
+            foreach ($convocatorias as $convocatoria) {
+                
+               
+
+
+                //calculamos la edad
+                $fechanacimiento = $convocatoria->fecha_nacimiento;
+
+                list($ano, $mes, $dia) = explode("-", $fechanacimiento);
+                $ano_diferencia = date("Y") - $ano;
+                $mes_diferencia = date("m") - $mes;
+                $dia_diferencia = date("d") - $dia;
+                if ($dia_diferencia < 0 || $mes_diferencia < 0) {
+                    $ano_diferencia--;
+                }
+
+                $edad = $ano_diferencia;
+
+//                $hoja->setCellValueByColumnAndRow(1, $fila, $entidad->descripcion);
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->num_doc);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->tipo_doc);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->jurado);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $edad);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->etnia);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->genero);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->direccion);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->ciudad);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->localidad);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->upz);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->barrio);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->estrato);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->celular);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->telefono);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->email);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->estado_propuesta);
+//                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->$nivel_academico);
+//                $hoja->setCellValueByColumnAndRow(19, $fila, $nombre_convocatoria);
+//                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->estado);
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "linea_base_jurados_" . $anio . ".xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+
+
+
+
 
 // Editar registro
 $app->put('/editar_contratista/{id:[0-9]+}', function ($id) use ($app, $config) {
