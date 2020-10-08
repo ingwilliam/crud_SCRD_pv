@@ -323,7 +323,7 @@ $app->post('/edit_participante', function () use ($app, $config, $logger) {
             if ($permiso_escritura == "ok") {
 
                 $post = $app->request->getPost();
-                
+
                 //(return $request->get('idp');
                 $participante = Participantes::findFirst($request->get('idp'));
 
@@ -764,7 +764,7 @@ $app->post('/new_educacion_formal', function () use ($app, $config, $logger) {
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
                 $post = $app->request->getPost();
-                
+
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
                                 [
@@ -981,7 +981,7 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -1005,7 +1005,7 @@ $app->post('/edit_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $conf
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -1185,7 +1185,7 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
-                $post = $app->request->getPut();                
+                $post = $app->request->getPut();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -1209,7 +1209,7 @@ $app->delete('/delete_educacion_formal/{id:[0-9]+}', function ($id) use ($app, $
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -1577,7 +1577,7 @@ $app->post('/new_educacion_no_formal', function () use ($app, $config, $logger) 
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -1793,7 +1793,7 @@ $app->post('/edit_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app, $c
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -1939,7 +1939,7 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
-                $post = $app->request->getPut();                
+                $post = $app->request->getPut();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -1963,7 +1963,7 @@ $app->delete('/delete_educacion_no_formal/{id:[0-9]+}', function ($id) use ($app
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -2338,7 +2338,7 @@ $app->post('/new_experiencia_laboral', function () use ($app, $config, $logger) 
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -2504,7 +2504,7 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -2527,7 +2527,7 @@ $app->post('/edit_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app, $c
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -2700,7 +2700,7 @@ $app->delete('/delete_experiencia_laboral/{id:[0-9]+}', function ($id) use ($app
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -3067,7 +3067,7 @@ $app->post('/new_experiencia_jurado', function () use ($app, $config, $logger) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -3229,7 +3229,7 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -3254,7 +3254,7 @@ $app->post('/edit_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app, $co
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -3400,7 +3400,7 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
-                $post = $app->request->getPut();                
+                $post = $app->request->getPut();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -3424,7 +3424,7 @@ $app->delete('/delete_experiencia_jurado/{id:[0-9]+}', function ($id) use ($app,
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -3768,7 +3768,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -3792,7 +3792,7 @@ $app->post('/new_reconocimiento', function () use ($app, $config) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -3907,7 +3907,7 @@ $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -3932,7 +3932,7 @@ $app->post('/edit_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $config
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -4038,7 +4038,7 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
-                $post = $app->request->getPut();            
+                $post = $app->request->getPut();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -4062,7 +4062,7 @@ $app->delete('/delete_reconocimiento/{id:[0-9]+}', function ($id) use ($app, $co
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -4415,7 +4415,7 @@ $app->post('/new_publicacion', function () use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();                
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -4439,7 +4439,7 @@ $app->post('/new_publicacion', function () use ($app, $config) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -4583,7 +4583,7 @@ $app->post('/edit_publicacion/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -4714,7 +4714,7 @@ $app->delete('/delete_publicacion/{id:[0-9]+}', function ($id) use ($app, $confi
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -4823,7 +4823,7 @@ $app->get('/postular', function () use ($app, $config, $logger) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->get();            
+                $post = $app->request->get();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -4981,7 +4981,7 @@ $app->get('/propuesta', function () use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->get();           
+                $post = $app->request->get();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -5327,7 +5327,7 @@ $app->post('/new_documento', function () use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();            
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -5351,7 +5351,7 @@ $app->post('/new_documento', function () use ($app, $config) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -5469,7 +5469,7 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();            
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -5494,7 +5494,7 @@ $app->post('/edit_documento/{id:[0-9]+}', function ($id) use ($app, $config) {
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -5624,7 +5624,7 @@ $app->delete('/delete_documento/{id:[0-9]+}', function ($id) use ($app, $config)
 
                     //valido si la propuesta tiene el estado registrada
                     //9	jurados	Registrado
-                     /*
+                    /*
                      * 04-05-2020
                      * Wilmer Gustavo Mogollón Duque
                      * Se modifica el condicional con el fin de permitir actualizaciones 
@@ -5964,6 +5964,8 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
         $tokens = new Tokens();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
         $contador = 0;
+        $contador1 = 0;
+        $contador2 = 0;
 
 
         $logger->info(
@@ -5988,7 +5990,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
             //Verifico que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
                 //Consulto el usuario actual
-                $post = $app->request->getPost();            
+                $post = $app->request->getPost();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(
@@ -6022,10 +6024,37 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
                     foreach ($postulaciones as $postulacion) {
 
                         //la convocatoria está activa y está publicada
-                        if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active) {
-                            $contador++;
+                        if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active && $postulacion->convocatorias->convocatoria_padre_categoria == null) {
+                            $contador1++;
                         }
                     }
+                    
+                    
+                    
+                    
+                     $postulaciones_categorias = Juradospostulados::query()
+                            ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
+                            ->where("Juradospostulados.propuesta = ". $participante->propuestas->id)
+                            ->andWhere("Juradospostulados.active")
+                            ->andWhere("Convocatorias.active")
+                            ->andWhere("Convocatorias.estado=5")
+                            ->andWhere("Convocatorias.convocatoria_padre_categoria is not null")
+                            ->groupBy("Convocatorias.convocatoria_padre_categoria")
+                            ->columns("count(*)")
+                            ->execute();
+                     
+                     
+//                     return json_encode($postulaciones_categorias);
+
+
+
+                    foreach ($postulaciones_categorias as $postulaciones_categoria) {
+                        $contador2++;
+                    }
+
+
+                    $contador=$contador1+$contador2;
+
 
                     $nummax = Tablasmaestras::findFirst(
                                     [
@@ -6269,7 +6298,7 @@ $app->delete('/delete_postulacion/{id:[0-9]+}', function ($id) use ($app, $confi
             if ($permiso_escritura == "ok") {
 
                 //Consulto el usuario actual
-                $post = $app->request->getPut();            
+                $post = $app->request->getPut();
 
                 // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                 $usuario_perfil = Usuariosperfiles::findFirst(

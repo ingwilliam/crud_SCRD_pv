@@ -306,7 +306,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -314,7 +314,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -322,7 +322,7 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                               p.estado
                               FROM
@@ -465,7 +465,7 @@ $app->post('/deliberar/ronda/{ronda:[0-9]+}', function ($ronda) use ($app, $conf
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
             if ($permiso_escritura == "ok") {
-                
+
                 $ronda = Convocatoriasrondas::findFirst('id = ' . $ronda);
 
                 if (isset($ronda->id)) {
@@ -609,47 +609,52 @@ $app->get('/validar_confirmacion/ronda/{id:[0-9]+}', function ($id) use ($app, $
 
                 if (isset($ronda->id)) {
 
-                    /**
-                     * Listar las propuestas que estan registradas para evaluar
-                     */
-                    //fase de evaluación o de deliberación
-                    $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación' :
-                            ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación' : "" ) );
+                    //Se agerra el if para evitar que confirmen top general sin enviar a deliberar previamente.
+                    if ($ronda->estado == 36 || $ronda->estado == 35) {
+                        /**
+                         * Listar las propuestas que estan registradas para evaluar
+                         */
+                        //fase de evaluación o de deliberación
+                        $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación' :
+                                ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación' : "" ) );
 
-                    //Propuestas habilitadas
-                    //Estado propuestas	Habilitada
-                    $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
+                        //Propuestas habilitadas
+                        //Estado propuestas	Habilitada
+                        $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
 
-                    //todas las propuestas
-                    $allpropuestas = Propuestas::find(
-                                    [
-                                        ' convocatoria = ' . $ronda->convocatoria
-                                        . ' AND estado = ' . $estado_habilitada->id,
-                                        'order' => 'id ASC',
-                                        'offset' => 0,
-                                        'limit' => ( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes')) )
-                                    ]
-                    );
+                        //todas las propuestas
+                        $allpropuestas = Propuestas::find(
+                                        [
+                                            ' convocatoria = ' . $ronda->convocatoria
+                                            . ' AND estado = ' . $estado_habilitada->id,
+                                            'order' => 'id ASC',
+                                            'offset' => 0,
+                                            'limit' => ( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes')) )
+                                        ]
+                        );
 
-                    $response = array();
-                    // propuestas_evaluacion	Confirmada
-                    $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
-                    $estado_impedimento = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
+                        $response = array();
+                        // propuestas_evaluacion	Confirmada
+                        $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+                        $estado_impedimento = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
 
 
-                    //se verifica que todas las evaluaciones esten confirmadas
-                    $propuestas_evaluacion = Evaluacionpropuestas::find([
-                                " ronda = " . $ronda->id
-                                . " AND fase = '" . $fase . "'"
-                    ]);
-                    foreach ($propuestas_evaluacion as $key => $evaluacion) {
+                        //se verifica que todas las evaluaciones esten confirmadas
+                        $propuestas_evaluacion = Evaluacionpropuestas::find([
+                                    " ronda = " . $ronda->id
+                                    . " AND fase = '" . $fase . "'"
+                        ]);
+                        foreach ($propuestas_evaluacion as $key => $evaluacion) {
 
-                        if ($evaluacion->estado != $estado_confirmada->id && $evaluacion->estado != $estado_impedimento->id) {
-                            return "error_confirmacion";
+                            if ($evaluacion->estado != $estado_confirmada->id && $evaluacion->estado != $estado_impedimento->id) {
+                                return "error_confirmacion";
+                            }
                         }
-                    }
 
-                    return "exito";
+                        return "exito";
+                    } else {
+                        return "error_deliberacion";
+                    }
                 } else {
                     $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
                             ['user' => $user_current, 'token' => $request->get('token')]
@@ -742,7 +747,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -750,7 +755,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -758,7 +763,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                             p.estado,
                           'ganador' as rol
@@ -783,7 +788,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                    WHERE
                                       e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS suma,
                                   (	SELECT
                                       count(e.id) AS cantidad
@@ -791,7 +796,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                         e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS cantidad,
                                   (	SELECT
                                       avg(total) AS promedio
@@ -799,7 +804,7 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                                       Evaluacionpropuestas e
                                     WHERE
                                     e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query2 .= " ) AS promedio,
                             p.estado,
                           'suplente' as rol
@@ -825,6 +830,149 @@ $app->get('/recomendacion_ganadores', function () use ($app, $logger) {
                         }
                         //Se redondea a 3 cifras el promedio
                         foreach ($suplentes as $key => $row) {
+                            $row->promedio = round($row->promedio, 1);
+                            $row->estado = (Estados::findFirst("id = " . $row->estado))->nombre;
+                            array_push($response, $row);
+                        }
+                    } else {
+                        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error"',
+                                ['user' => $user_current, 'token' => $request->get('token')]
+                        );
+                        $logger->close();
+
+                        return "error";
+                    }
+                }
+            }
+
+            //creo el array
+            $json_data = array(
+                "draw" => intval($request->get("draw")),
+                "recordsTotal" => count($allpropuestas),
+                "recordsFiltered" => count($allpropuestas),
+                "data" => $response   // total data array
+            );
+            //retorno el array en json
+            return json_encode($json_data);
+        } else {
+            $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_token"',
+                    ['user' => '', 'token' => $request->get('token')]);
+            $logger->close();
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        return "error_metodo" . $ex->getMessage();
+        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas error_metodo ' . json_encode($ex) . '"',
+                ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+        //return "error_metodo";
+    }
+});
+
+
+$app->get('/recomendacion_ganadores_asignar', function () use ($app, $logger) {
+
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $response = array();
+        $allpropuestas = array();
+        $resultset = array();
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/all_propuestas ' . json_encode($request->get()) . '"',
+                ['user' => '', 'token' => $request->get('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //se establecen los valores del usuario
+            $user_current = json_decode($token_actual->user_current, true);
+
+            if ($user_current["id"]) {
+
+                if ($request->get('total_ganadores')) {
+
+                    $ronda = Convocatoriasrondas::findFirst('id = ' . $request->get('ronda'));
+
+                    if (isset($ronda->id)) {
+
+                        /**
+                         * Listar las propuestas que estan registradas para evaluar
+                         */
+                        //fase de evaluación o de deliberación
+                        $fase = ( $ronda->getEstado_nombre() == "Habilitada" ? 'Evaluación' :
+                                ( ($ronda->getEstado_nombre() == "En deliberación" || $ronda->getEstado_nombre() == "Evaluada") ? 'Deliberación' : "" ) );
+
+                        //Propuestas habilitadas
+                        //Estado propuestas	Habilitada
+                        $estado_habilitada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Habilitada' ");
+
+                        //todas las propuestas
+                        $allpropuestas = Propuestas::find(
+                                        [
+                                            ' convocatoria = ' . $ronda->convocatoria
+                                            . ' AND estado = ' . $estado_habilitada->id,
+                                            'order' => 'id ASC',
+                                            'offset' => 0,
+                                            'limit' => ( intval($request->get('total_ganadores')) + intval($request->get('total_suplentes')) )
+                                        ]
+                        );
+
+                        $response = array();
+                        // propuestas_evaluacion	Confirmada
+                        $estado_confirmada = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Confirmada' ");
+
+                        $query = " SELECT
+                                  distinct p.id,p.codigo,p.nombre,
+                                  (	SELECT
+                                      sum(total) AS total
+                                    FROM
+                                      Evaluacionpropuestas e
+                                   WHERE
+                                      e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
+                        $query .= " ) AS suma,
+                                  (	SELECT
+                                      count(e.id) AS cantidad
+                                    FROM
+                                      Evaluacionpropuestas e
+                                    WHERE
+                                        e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
+                        $query .= " ) AS cantidad,
+                                  (	SELECT
+                                      avg(total) AS promedio
+                                    FROM
+                                      Evaluacionpropuestas e
+                                    WHERE
+                                    e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
+                        $query .= " ) AS promedio,
+                            p.estado,
+                          'ganador' as rol
+                              FROM
+                                Propuestas AS p
+                                INNER JOIN
+                                   Evaluacionpropuestas as ep2
+                                ON p.id = ep2.propuesta
+                              WHERE
+                                p.convocatoria  = " . $ronda->convocatoria . " AND p.estado in (24,33)"; //.$estado_habilitada->id;
+                        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
+                        $query .= "  ORDER BY promedio DESC limit " . $request->get('total_ganadores');
+                        $query .= " offset " . $request->get('start');
+
+                        $ganadores = $this->modelsManager->executeQuery($query);
+
+
+                        //$resultset = array_merge($ganadores, $suplentes);
+                        //Se redondea a 3 cifras el promedio
+                        foreach ($ganadores as $key => $row) {
                             $row->promedio = round($row->promedio, 1);
                             $row->estado = (Estados::findFirst("id = " . $row->estado))->nombre;
                             array_push($response, $row);
@@ -935,7 +1083,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                            WHERE
                                               e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS suma,
                                           (	SELECT
                                               count(e.id) AS cantidad
@@ -943,7 +1091,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                                 e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS cantidad,
                                           (	SELECT
                                               avg(total) AS promedio
@@ -951,7 +1099,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                               Evaluacionpropuestas e
                                             WHERE
                                             e.propuesta = p.id AND e.estado = " . $estado_confirmada->id
-                                . " AND fase = '" . $fase . "'";
+                                . " AND fase = '" . $fase . "' AND ronda = '" . $ronda->id . "'"; //Se agrega la ronda
                         $query .= " ) AS promedio,
                                     p.estado,
                                   'ganador' as rol
@@ -963,6 +1111,7 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                                       WHERE
                                         p.convocatoria  = " . $ronda->convocatoria . " AND p.estado = " . $estado_habilitada->id;
                         $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' ";
+                        $query .= "  AND ep2.estado = " . $estado_confirmada->id . " AND fase = '" . $fase . "' AND ep2.ronda = " . $ronda->id;
                         $query .= "  ORDER BY promedio DESC limit " . $request->getPut('total_ganadores');
                         $query .= " offset 0";
 
@@ -984,17 +1133,24 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
 
                         foreach ($rondas as $r) {
                             if ($r->id == $ronda->id) {
-                                $rondas->next();
-                                //se establece la siguiente ronda
-                                $ronda_siguiente = $rondas->current();
-//                                break;
+
+
+
+                                if ($r->tipo_acta == 'Preselección') {
+                                    $rondas->next();
+                                    //se establece la siguiente ronda
+                                    $ronda_siguiente = $rondas->current(); //Asigno a $ronda_siguiente $rondas->next() para determinar si hay una siguiente ronda
+                                    break;
+                                }
                             }
                         }
 
 
+//                        return json_encode($ronda_siguiente->id);
                         //se le cambia al ganador el estado
                         //33	propuestas	Recomendada como Ganadora
                         foreach ($ganadores as $key => $row) {
+
 
                             $propuesta = Propuestas::findFirst(" id = " . $row->id);
                             $propuesta->estado = (Estados::findFirst(" tipo_estado = 'propuestas' AND	nombre = 'Recomendada como Ganadora'"))->id;
@@ -1017,9 +1173,8 @@ $app->put('/confirmar_top_general/ronda/{id:[0-9]+}', function ($id) use ($app, 
                             }
 
 
+
                             //si existe la ronda siguiente
-                            //agrego el tipo de acta para validar que tipo de ronda es
-//                            if ($ronda->tipo_acta == 'Preselección' && isset($ronda_siguiente->id) && ($ronda_siguiente->id != null)) {
                             if (isset($ronda_siguiente->id) && ($ronda_siguiente->id != null)) {
 
                                 //se establece el grupo evaluador de la siguiente ronda
@@ -1141,7 +1296,7 @@ $app->put('/declarar_desierta_convocatoria/ronda/{id:[0-9]+}', function ($id) us
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {               
+            if ($permiso_escritura == "ok") {
 
                 if ($user_current["id"]) {
 
@@ -1275,26 +1430,27 @@ $app->put('/asignar_monto/propuesta/{id:[0-9]+}', function ($id) use ($app, $con
 
                 if ($user_current["id"]) {
 
-                    $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
+//                    $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
+                    $prop = Propuestas::findFirst('id = ' . $id);
 
-                    if (isset($ronda->id)) {
+                    if (isset($prop->id)) {
                         // Start a transaction
                         $this->db->begin();
 
 
                         // Actualizar la convocatoria
-                        $propuesta = Propuestas::findFirst(" id = " . $ronda->convocatoria);
+                        $propuesta = Propuestas::findFirst(" id = " . $prop->id);
                         //43 convocatorias	Desierta
-                        $convocatoria->estado = (Estados::findFirst(" tipo_estado = 'convocatorias' AND	nombre = 'Desierta'  "))->id;
-                        $convocatoria->fecha_actualizacion = date("Y-m-d H:i:s");
-                        $convocatoria->actualizado_por = $user_current["id"];
+                        $propuesta->monto_asignado = $request->getPut('monto_asignado');
+                        $propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
+                        $propuesta->actualizado_por = $user_current["id"];
 
-                        if ($convocatoria->save() === false) {
+                        if ($propuesta->save() === false) {
                             //Para auditoria en versión de pruebas
                             /* foreach ($ronda->getMessages() as $message) {
                               echo $message;
                               } */
-                            $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+} error:"' . $convocatoria->getMessages(),
+                            $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $propuesta->getMessages(),
                                     ['user' => $user_current, 'token' => $request->getPut('token')]
                             );
                             $logger->close();
@@ -1310,7 +1466,7 @@ $app->put('/asignar_monto/propuesta/{id:[0-9]+}', function ($id) use ($app, $con
 
                         return "exito";
                     } else {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/declarar_desierta_convocatoria/ronda/{id:[0-9]+}"',
+                        $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
                                 ['user' => $user_current, 'token' => $request->getPut('token')]
                         );
                         $logger->close();
@@ -1332,6 +1488,233 @@ $app->put('/asignar_monto/propuesta/{id:[0-9]+}', function ($id) use ($app, $con
         return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
     }
 });
+
+
+
+$app->put('/asignar_monto1/propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase = '';
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} ' . json_encode($request->getPut()) . '"',
+                ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
+
+//            return $permiso_escritura;
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+
+                if ($user_current["id"]) {
+
+                    $prop = Propuestas::findFirst(['id = ' . $id]);
+
+                    if (isset($prop->id)) {
+                        // Start a transaction
+                        $this->db->begin();
+
+
+                        // Actualizar la convocatoria
+                        $propuesta = Propuestas::findFirst(" id = " . $prop->id);
+                        //43 convocatorias	Desierta
+                        $propuesta->monto_asignado = $request->getPut('monto_asignado');
+                        $propuesta->fecha_actualizacion = date("Y-m-d H:i:s");
+                        $propuesta->actualizado_por = $user_current["id"];
+
+                        if ($propuesta->save() === false) {
+                            //Para auditoria en versión de pruebas
+                            /* foreach ($ronda->getMessages() as $message) {
+                              echo $message;
+                              } */
+                            $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+} error:"' . $propuesta->getMessages(),
+                                    ['user' => $user_current, 'token' => $request->getPut('token')]
+                            );
+                            $logger->close();
+
+                            $this->db->rollback();
+
+                            return "error";
+                        }
+
+
+                        // Commit the transaction
+                        $this->db->commit();
+
+                        return "exito";
+                    } else {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/asignar_monto/propuesta/{id:[0-9]+}"',
+                                ['user' => $user_current, 'token' => $request->getPut('token')]
+                        );
+                        $logger->close();
+
+                        return "error";
+                    }
+                } else {
+                    return "error";
+                }
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
+    }
+});
+
+
+
+
+
+/*
+ * 22-06-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Agrego metodo anular deliberación
+ */
+
+$app->put('/anular_deliberacion/ronda/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        $fase = '';
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} ' . json_encode($request->getPut()) . '"',
+                ['user' => '', 'token' => $request->getPut('token')]);
+        $logger->close();
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifica que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+
+                if ($user_current["id"]) {
+
+                    $ronda = Convocatoriasrondas::findFirst('id = ' . $id);
+
+
+
+                    if (isset($ronda->id)) {
+
+                        if ($ronda->estado == 36) {
+                            // Start a transaction
+                            $this->db->begin();
+
+                            $evaluaciones = Evaluacionpropuestas::find(
+                                            [
+                                                'ronda =' . $ronda->id
+                                                . " AND fase = 'Deliberación'"
+                                            ]
+                            );
+
+                            /*
+                             * Se establece el estado en evaluación de la evaluacion en fase de Deliberación,
+                              para que pueda ser evaluada
+                             */
+                            $evaluacion_estado = (Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'En evaluación' "))->id;
+
+                            foreach ($evaluaciones as $evaluacion) {
+
+                                $evaluacion->estado = $evaluacion_estado;
+                                $evaluacion->fecha_actualizacion = date("Y-m-d H:i:s");
+                                $evaluacion->actualizado_por = $user_current["id"];
+
+                                if (!$evaluacion->save()) {
+
+                                    //Para auditoria en versión de pruebas
+                                    /* foreach ($evaluacion->getMessages() as $message) {
+                                      echo $message;
+                                      } */
+
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} error:"' . $evaluacion->getMessages(),
+                                            ['user' => $user_current, 'token' => $request->getPut('token')]
+                                    );
+                                    $logger->close();
+
+                                    $this->db->rollback();
+                                    return "error";
+                                }
+                            }
+
+
+                            if ($ronda->save() === false) {
+                                //Para auditoria en versión de pruebas
+                                /* foreach ($ronda->getMessages() as $message) {
+                                  echo $message;
+                                  } */
+                                $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/anular_deliberacion/ronda/{id:[0-9]+} error:"' . $ronda->getMessages(),
+                                        ['user' => $user_current, 'token' => $request->getPut('token')]
+                                );
+                                $logger->close();
+
+                                $this->db->rollback();
+
+                                return "error";
+                            }
+                            // Commit the transaction
+                            $this->db->commit();
+                            return "exito";
+                        } else {
+                            return "confirmo_top"; //Indica que no puede anular la deliberación porque ya confirmó su top general.
+                        }
+                    } else {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Deliberacion/confirmar_top_general error"',
+                                ['user' => $user_current, 'token' => $request->getPut('token')]
+                        );
+                        $logger->close();
+
+                        return "error";
+                    }
+                } else {
+                    return "error";
+                }
+            } else {
+                return "acceso_denegado";
+            }
+        } else {
+            return "error_token";
+        }
+    } catch (Exception $ex) {
+        //return "error_metodo";
+        //Para auditoria en versión de pruebas
+        return "error_metodo" . $ex->getMessage() . json_encode($ex->getTrace());
+    }
+});
+
+
+
+
+
 
 /**
  * Funcionalidad Descargar archivos
