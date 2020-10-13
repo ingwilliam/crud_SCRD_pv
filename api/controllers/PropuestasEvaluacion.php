@@ -80,7 +80,7 @@ $app->get('/select_convocatorias', function () use ($app, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-
+          
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
@@ -601,6 +601,8 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
         //Consulto si al menos hay un token
         $token_actual = $tokens->verificar_token($request->get('token'));
 
+
+
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
@@ -624,6 +626,50 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
                 }
 
 
+                /*
+                 * 14-09-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora el id de la evaluación para determinar la ronda
+                 */
+                //Para las convocatorias que no tengan el valor de tipo_evaluacion --- Anteriores
+                $tipo_requisito = 'Tecnicos';
+                if ($request->get('evaluacion')) {
+
+                    $id_evaluacion = $request->get('evaluacion');
+
+                    $evaluacion = Evaluacionpropuestas::findFirst(
+                                    [
+                                        'id = ' . $id_evaluacion
+                                    ]
+                    );
+
+                    $ronda = Convocatoriasrondas::findFirst(
+                                    [
+                                        'id = '.$evaluacion->ronda
+                                    ]
+                    );
+                    
+                    
+                    switch ($ronda->tipo_evaluacion) {
+                        case 'Técnica':
+                            $tipo_requisito = 'Tecnicos';
+
+                            break;
+                        
+                        case 'Administrativa':
+                            $tipo_requisito = 'Administrativos';
+
+                            break;
+
+                        default:
+                            break;
+                    }
+                    
+                }
+                
+               
+
+
                 //Documentos técnicos de la propuesta
                 //Propuestasdocumentos
                 $query = " SELECT
@@ -637,10 +683,10 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
                             	ON p.convocatoriadocumento = c.id
                              	INNER JOIN  Requisitos AS r
                              	ON c.requisito = r.id
-                             	AND r.tipo_requisito LIKE 'Tecnicos'
-                          WHERE
+                             	AND r.tipo_requisito LIKE " ."'".$tipo_requisito."'".
+                          " WHERE
                               	p.propuesta = " . $propuesta->id
-                                ." AND p.active=true ";
+                        . " AND p.active=true ";
 
                 $documentos = $this->modelsManager->executeQuery($query);
 
@@ -797,7 +843,7 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPost('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {               
+            if ($permiso_escritura == "ok") {
 
                 //Se consulta la evalaucaión
                 $evaluacion = Evaluacionpropuestas::findFirst(" id = " . $request->getPost('evaluacion'));
@@ -832,11 +878,11 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         //evaluacion_propuesta	Sin evaluar
                         //evaluacion_propuesta	En evaluación
                         //05-06-2020 Wilmer Mogollón --- Se agrega el estado Deliberación para quew pueda ajustar puntajes
-                        
+                      
                         if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación" || $evaluacion->getEstado_nombre() == "En deliberación")) {
-
+                          
                             
-                            
+                          
                             
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
@@ -1276,18 +1322,18 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
                         //30	evaluacion_propuesta	Evaluada
-                        
-                       
-                        
+                      
+                      
+                      
                         if ($evaluacion->fase == $fase && ( $evaluacion->getEstado_nombre() == 'Sin evaluar' || $evaluacion->getEstado_nombre() == 'En evaluación' || $evaluacion->getEstado_nombre() == 'Evaluada' )) {
-                             
+
                             // Start a transaction
                             $this->db->begin();
-                            
-                            
+
+
                             $evaluador = Evaluadores::findFirst('id = ' . $evaluacion->evaluador);
-                            
-                            
+
+
                             $juradopostulado = Juradospostulados::findFirst(' id = ' . $evaluador->juradopostulado);
 
                             //retorno el array en json
@@ -1305,9 +1351,6 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $evaluacion->estado = $array_estado_actual_5->id;
                             
 //                            return json_encode($evaluacion->id);
-
-                            
-
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
                                 //Para auditoria en versión de pruebas
@@ -1331,9 +1374,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 //                                $html_jurado_notificacion_impedimento = str_replace("**nombre_propuesta**", $evaluacion->Propuestas->nombre, $html_jurado_notificacion_impedimento);
 //                                $html_jurado_notificacion_impedimento = str_replace("**correo_jurado**", $participante->correo_electronico, $html_jurado_notificacion_impedimento);
 //                                $html_jurado_notificacion_impedimento = str_replace("**motivo_impedimento**", $request->getPut('observacion_impedimento'), $html_jurado_notificacion_impedimento);
-
                                 //servidor smtp ambiente de prueba
-                                
 //                                  $mail = new PHPMailer();
 //                                  $mail->IsSMTP();
 //                                  $mail->SMTPAuth = true;
@@ -1353,8 +1394,6 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 //                                  $mail->AddBCC("ejercol45@hotmail.com");//direccion de prueba
 //                                  $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
 //                                  $mail->Body = $html_jurado_notificacion_impedimento;
-                                 
-
 //                                /* Servidor SMTP producción */
 //                                $mail = new PHPMailer();
 //                                $mail->IsSMTP();
@@ -1379,11 +1418,9 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
 //                                    return "error_email";
 //                                }
                             }
-                            
+
                             // Commit the transaction
-                            $this->db->commit();
-                            
-                            
+                            $this->db->commit();                          
                         } else {
                             return 'deshabilitado';
                         }
