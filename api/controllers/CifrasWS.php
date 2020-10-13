@@ -615,31 +615,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["propuestas_localidadeje_anio"]["value"] = $array_value;
         $array["propuestas_localidadeje_anio"]["label"] = $array_label;
         $array["table_propuestas_localidadeje_anio"] = $propuestas_localidadeje;
-        
-        //Participante por localidades de residencia
-        $sql_propuestas = "
-            SELECT
-                vwc.label,
-                vwc.total_propuestas
-            FROM Viewlocalidaesresidencia AS vwc
-            WHERE ".$where."
-            ORDER BY 2
-            ";
-
-        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
-        
-        $array_value = array();
-        $array_label = array();
-        foreach ($convocatorias_anio AS $clave => $valor) {
-            $array_value[] = $valor->total_propuestas;
-            $array_label[] = $valor->label;
-        }
-
-        $array["propuestas_localidadres_anio"]["value"] = $array_value;
-        $array["propuestas_localidadres_anio"]["label"] = $array_label;
-        
-        $array["table_propuestas_localidadres_anio"] = $convocatorias_anio;
-        
+                
         //Propuestas por localidad de ejecucion
         $sql_propuestas = "
             select 
