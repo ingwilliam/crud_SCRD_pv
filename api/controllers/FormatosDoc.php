@@ -731,10 +731,10 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $nombre_participante = $nombre_participante . " -- " . $td_pn . " " . $participante_actual->numero_documento;
                 $representante = "";
             }
+            
+            
 
-
-
-
+            
             $prom = number_format((float) $propuesta->promedio, 1, '.', '');
 
             $table->addRow();
@@ -763,9 +763,9 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
                 $seccion->addText('Analizados los resultados de la evaluación y realizada la deliberación de la convocatoria '
                         . $nombrec . ' el jurado recomienda la siguiente preselección:');
 
-
                 $seccion->addTextBreak(2);
 
+              
                 //Propuestas habilitadas
                 //Estado propuestas	Habilitada
                 $estado_recomendada = Estados::findFirst(" tipo_estado = 'propuestas' AND nombre = 'Recomendada como Ganadora' ");
@@ -855,7 +855,7 @@ $app->get('/acta_recomendacion_preseleccionados/ronda/{ronda:[0-9]+}', function 
 
 
                     $td = "";
-                    
+                  
                     if ($perfil->nombre == 'Agrupación' || $perfil->nombre == 'Persona Jurídica') {
 
                         $participantepadre = Participantes::findFirst(

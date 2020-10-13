@@ -76,7 +76,39 @@ $app->post('/total_propuestas_inscritas', function () use ($app, $config, $logge
             {
                 //Valido si la clave es igual al token del usuario
                 if ($this->security->checkHash($this->request->getPost('password'), $usuario_validar->password)) {
-                    //Genero reporte
+                    //Genero reporte                    
+                    if($this->request->getPost('agrupar')=='entidad')
+                    {
+                        if($this->request->getPost('entidad')=="")
+                        {
+                            $entidades = Entidades::find("active=TRUE");
+                            $entidad="";
+                            foreach($entidades as $clave => $valor)
+                            {
+                                $entidad=$entidad.",'".$valor->nombre."'";
+                            }
+                            $entidad=trim($entidad,",");
+                            
+                        }
+                        else
+                        {
+                            $entidad="'".$this->request->getPost('entidad')."'";
+                        }
+                        
+                        $sql = "
+                        SELECT 
+                            NOW() AS fecha_consulta,
+                            c.anio,                            
+                            UPPER(l.nombre) AS localidad,                            
+                            COUNt(p.id) AS total_propuestas 
+                        FROM Propuestas AS p 
+                            INNER JOIN Convocatorias AS c ON c.id=p.convocatoria
+                            INNER JOIN Entidades AS e ON e.id=c.entidad
+                            LEFT JOIN Localidades AS l ON l.id=p.localidad                                                        
+                        WHERE p.estado NOT IN (7,20) AND c.anio<>'2016' AND e.nombre IN (".$entidad.")
+                        GROUP BY 1,2,3
+                        ORDER BY 3,4 DESC";
+                    }
                     
                     if($this->request->getPost('agrupar')=='localidad')
                     {
