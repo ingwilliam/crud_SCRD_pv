@@ -80,7 +80,7 @@ $app->get('/select_convocatorias', function () use ($app, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-
+          
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
@@ -155,7 +155,7 @@ $app->get('/select_convocatorias_dev', function () use ($app, $logger) {
                  * Se incorpora consulta para listar unicamente las convocatorias a las que 
                  * el jurado este postulado y ademas que haya sido seleccionado
                  */
-
+                
                 $query = 'SELECT
                             j.convocatoria
                             FROM
@@ -878,12 +878,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         //evaluacion_propuesta	Sin evaluar
                         //evaluacion_propuesta	En evaluación
                         //05-06-2020 Wilmer Mogollón --- Se agrega el estado Deliberación para quew pueda ajustar puntajes
-
+                      
                         if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación" || $evaluacion->getEstado_nombre() == "En deliberación")) {
-
-
-
-
+                          
+                            
+                          
+                            
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
                                             [
@@ -1322,9 +1322,9 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
                         //30	evaluacion_propuesta	Evaluada
-
-
-
+                      
+                      
+                      
                         if ($evaluacion->fase == $fase && ( $evaluacion->getEstado_nombre() == 'Sin evaluar' || $evaluacion->getEstado_nombre() == 'En evaluación' || $evaluacion->getEstado_nombre() == 'Evaluada' )) {
 
                             // Start a transaction
@@ -1349,7 +1349,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $array_estado_actual_5 = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
 
                             $evaluacion->estado = $array_estado_actual_5->id;
-
+                            
 //                            return json_encode($evaluacion->id);
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
@@ -1420,7 +1420,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             }
 
                             // Commit the transaction
-                            $this->db->commit();
+                            $this->db->commit();                          
                         } else {
                             return 'deshabilitado';
                         }

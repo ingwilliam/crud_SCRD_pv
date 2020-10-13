@@ -256,7 +256,7 @@ $app->put('/edit/{id:[0-9]+}', function ($id) use ($app, $config,$logger) {
                 // Consultar el usuario que se esta editando
                 $convocatoriacronograma = Convocatoriascronogramas::findFirst(json_decode($id));
                 //Si es periodo por defecto es hasta la media noche
-                $tipo_evento= Tiposeventos::findFirst($put["tipo_evento"]);                
+                $tipo_evento= Tiposeventos::findFirst($convocatoriacronograma->tipo_evento);                
                 if($tipo_evento->periodo)
                 {
                     $tabla_maestra= Tablasmaestras::find("active=true AND nombre='hora_cierre'");            
