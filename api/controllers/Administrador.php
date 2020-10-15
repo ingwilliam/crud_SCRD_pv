@@ -705,6 +705,7 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="" href="../reportes/entidades.html">Entidades</a>
                                     <a style="" href="../reportes/propuestas.html">Convocatorias</a>
                                     <a style="" href="../reportes/contratistas.html">Contratistas</a>
+                                    <a style="" href="../reportesestadisticos/estadisticos.html">Estadísticos</a>
                                 </li>
                             </ul>
                             <!-- /.nav-second-level -->
@@ -716,30 +717,30 @@ $app->post('/menu', function () use ($app,$config) {
                         <!--Wilmer Mogollón-->
                         <!--Reportes estadísticos-->
                         <?php
-                        if( count($reportes_estadisticos) > 0 )
-                        {
-
-                            $style_update="display: none";
-                            $style_new="";
-                            /*if($request->getPost('id')!="")
-                            {
-                                $style_update="";
-                                $style_new="display: none";
-
-                            }*/
-                        ?>
-                        <li>
+//                        if( count($reportes_estadisticos) > 0 )
+//                        {
+//
+//                            $style_update="display: none";
+//                            $style_new="";
+//                            /*if($request->getPost('id')!="")
+//                            {
+//                                $style_update="";
+//                                $style_new="display: none";
+//
+//                            }*/
+//                        ?>
+<!--                        <li>
                             <a href="#"><i class="fa  fa-bar-chart-o fa-fw"></i>Reportes estadísticos<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
-                                    <a style="<?php echo $style_new;?>" href="../reportesestadisticos/estadisticos.html">Generar reportes estadísticos</a>
+                                    <a style="//<?php //echo $style_new;?>" href="../reportesestadisticos/estadisticos.html">Generar reportes estadísticos</a>
                                 </li>
                             </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
+                             /.nav-second-level 
+                        </li>-->
                         <?php
-                        }
-                        ?>
+//                        }
+//                        ?>
                         <!--Fin Reportes estadísticos-->
 
                         <?php
