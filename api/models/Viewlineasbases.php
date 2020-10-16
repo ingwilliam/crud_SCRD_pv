@@ -1,7 +1,8 @@
 <?php
 use Phalcon\Mvc\Model;
 
-class Viewlineabase extends Model
+
+class Viewlineasbases extends Model
 {
     public $id;
 }
