@@ -1137,6 +1137,123 @@ $app->post('/reemplazar_integrante', function () use ($app, $config, $logger) {
 );
 
 // Carga los integrantes de las agrupaciones
+$app->get('/cargar_tabla_integrantes', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador Personasnaturales en el método cargar_tabla_integrantes, carga la tabla de los integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+
+                //Consulto la propuesta solicitada
+                $conditions = ['id' => $request->get('p'), 'active' => true];
+                $propuesta = Propuestas::findFirst(([
+                            'conditions' => 'id=:id: AND active=:active:',
+                            'bind' => $conditions,
+                ]));
+
+                //Defino columnas para el orden desde la tabla html
+                $columns = array(
+                    0 => 'p.tipo_documento',
+                    1 => 'p.numero_documento',
+                    2 => 'p.primer_nombre',
+                    3 => 'p.segundo_nombre',
+                    4 => 'p.primer_apellido',
+                    5 => 'p.segundo_apellido',
+                    6 => 'p.rol',
+                    7 => 'p.id',
+                    8 => 'p.representante',
+                    9 => 'p.director',
+                );
+
+                $where .= " INNER JOIN Tiposdocumentos AS td ON td.id=p.tipo_documento";
+                $where .= " WHERE p.id <> " . $propuesta->participante . " AND p.participante_padre = " . $propuesta->participante . " AND tipo='" . $request->get('tipo') . "'";
+                //Condiciones para la consulta
+
+                if (!empty($request->get("search")['value'])) {
+                    $where .= " AND ( UPPER(" . $columns[1] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[2] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[3] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[4] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[5] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' ";
+                    $where .= " OR UPPER(" . $columns[6] . ") LIKE '%" . strtoupper($request->get("search")['value']) . "%' )";
+                }
+
+                if ($propuesta->estado == 7) {
+                    $check = "concat('<input title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro";
+                } else {
+                    $check = "concat('<input disabled readonly title=\"',p.id,'\" type=\"checkbox\" class=\"check_activar_',p.active,' activar_categoria\" />') as activar_registro";
+                }
+
+
+                //Defino el sql del total y el array de datos
+                $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-warning cargar_formulario\" data-toggle=\"modal\" data-target=\"#nuevo_evento\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones ," . $check . "  FROM Participantes AS p";
+
+                //concarnar search sql if value exist
+                if (isset($where) && $where != '') {
+
+                    $sqlTot .= $where;
+                    $sqlRec .= $where;
+                }
+
+                //Concarno el orden y el limit para el paginador
+                $sqlRec .= " ORDER BY p.representante DESC  LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+
+                //ejecuto el total de registros actual
+                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                //creo el array
+                $json_data = array(
+                    "draw" => intval($request->get("draw")),
+                    "recordsTotal" => intval($totalRecords["total"]),
+                    "recordsFiltered" => intval($totalRecords["total"]),
+                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                );
+                //retorno el array en json
+                $logger->info('"token":"{token}","user":"{user}","message":"Retorna en el controlador Personasnaturales en el método cargar_tabla_integrantes, retorna la tabla de los integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+
+                echo json_encode($json_data);
+            } else {
+                //Registro la accion en el log de convocatorias
+                $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, acceso denegado en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, token caduco en el metodo cargar_tabla_integrantes como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método cargar_tabla_integrantes, error en el metodo como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
+// Carga los integrantes de las agrupaciones
 $app->get('/cargar_tabla_integrantes_cambio', function () use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
     $request = new Request();
@@ -1200,7 +1317,7 @@ $app->get('/cargar_tabla_integrantes_cambio', function () use ($app, $config, $l
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-danger cargar_cambio_integrante\" data-toggle=\"modal\" data-target=\"#nuevo_integrante\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" lang=\"',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido,'\" class=\"btn btn-danger cargar_cambio_integrante\" data-toggle=\"modal\" data-target=\"#confirmar_nuevo_integrante\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {

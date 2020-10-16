@@ -559,6 +559,9 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+            
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
             if (isset($propuesta->id)) {
@@ -1472,6 +1475,14 @@ foreach ($consulta_territorios as $territorio) {
     <tr>
         <td>Mecanismos de evaluación cuantitativa</td>
         <td colspan="3">' . $propuesta->mecanismos_cuantitativa . '</td>        
+    </tr>
+    <tr>
+        <td>Proyección y reconocimiento nacional o internacional</td>
+        <td colspan="3">' . $propuesta->proyeccion_reconocimiento . '</td>        
+    </tr>
+    <tr>
+        <td>Impacto que ha tenido el proyecto</td>
+        <td colspan="3">' . $propuesta->impacto_proyecto . '</td>        
     </tr>
     <tr>
         <td>Medio por el cual se enteró de esta convocatoria</td>
