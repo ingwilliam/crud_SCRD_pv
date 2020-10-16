@@ -195,7 +195,7 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
                 WHERE c.modalidad<>2 AND c.anio='" . $request->getPut('anio') . "' AND c.entidad=" . $request->getPut('entidad') . "
                 GROUP BY 1,2,3
                 ORDER BY 1,2,3,4";
-            
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $html_propuestas = "";
@@ -240,6 +240,549 @@ $app->post('/reporte_listado_entidades_convocatorias_estado', function () use ($
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_estado al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+
+/*
+ * 13-10-2020
+ * Wilmer GUstavo Mogollón Duque
+ * Se incorpora método reporte_linea_base_jurados_xls
+ */
+
+
+$app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_linea_base_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+            $entidad = Entidades::findFirst($request->getPut('entidad'));
+            
+            $anio = $request->getPut('anio');
+
+
+            //Genero reporte invocando a la vista
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio = " . $anio . " AND vlb.entidad_id = " . $entidad->id ;
+
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Listado de jurados por convocatoria')
+                    ->setSubject('SICON')
+                    ->setDescription('Listado de jurados por convocatoria')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Jurados por convocatoria");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Listado de jurados por convocatoria");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 3, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 3, $anio);
+            $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
+            $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
+
+            //Cabezote de la tabla
+//            $hoja->setCellValueByColumnAndRow(1, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(1, 5, "Modalidad participa");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Convocatoria padre");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Diferentes categorias");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Año");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Tipo");
+            $hoja->setCellValueByColumnAndRow(8, 5, "CC");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Código hoja de vida");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Primer nombre");
+            $hoja->setCellValueByColumnAndRow(11, 5, "Segundo nombre");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Primer apellido");
+            $hoja->setCellValueByColumnAndRow(13, 5, "Segundo apellido");
+            $hoja->setCellValueByColumnAndRow(14, 5, "Fecha nacimiento");
+            $hoja->setCellValueByColumnAndRow(15, 5, "Edad");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Étnia");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Género");
+            $hoja->setCellValueByColumnAndRow(18, 5, "Dirección de residencia");
+            $hoja->setCellValueByColumnAndRow(19, 5, "Ciudad de residencia");
+            $hoja->setCellValueByColumnAndRow(20, 5, "Localidad");
+            $hoja->setCellValueByColumnAndRow(21, 5, "UPZ");
+            $hoja->setCellValueByColumnAndRow(22, 5, "Barrio de residencia");
+            $hoja->setCellValueByColumnAndRow(23, 5, "Estrato");
+            $hoja->setCellValueByColumnAndRow(24, 5, "Celular");
+            $hoja->setCellValueByColumnAndRow(25, 5, "Teléfono fijo");
+            $hoja->setCellValueByColumnAndRow(26, 5, "Correo electrónico");
+            $hoja->setCellValueByColumnAndRow(27, 5, "Estado de la propuesta");
+            $hoja->setCellValueByColumnAndRow(28, 5, "Estado de la postulación");
+            $hoja->setCellValueByColumnAndRow(29, 5, "Monto asignado");
+            $hoja->setCellValueByColumnAndRow(30, 5, "Número resolución");
+            $hoja->setCellValueByColumnAndRow(31, 5, "Fecha resolución");
+            $hoja->setCellValueByColumnAndRow(32, 5, "Código presupuestal");
+            $hoja->setCellValueByColumnAndRow(33, 5, "Código proyecto de inversión");
+            $hoja->setCellValueByColumnAndRow(34, 5, "CDP");
+            $hoja->setCellValueByColumnAndRow(35, 5, "CRP");
+            $fila = 6;
+            
+            foreach ($convocatorias as $convocatoria) {
+
+
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->modalidad_participa);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->entidad);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->convocatoria);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->convocatoria_padre);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->diferentes_cat);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->anio);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->primer_nombre);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->segundo_nombre);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->primer_apellido);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->fecha_nacimiento);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->anios);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->etnia);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->genero);
+                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->direccion_residencia);
+                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->ciudad_residencia);
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->localidad_residencia);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->upz_residencia);
+                $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->barrio_residencia);
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->estrato);
+                $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->numero_celular);
+                $hoja->setCellValueByColumnAndRow(25, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->correo_electronico);
+                $hoja->setCellValueByColumnAndRow(27, $fila, $convocatoria->estado_propuesta);
+                $hoja->setCellValueByColumnAndRow(28, $fila, $convocatoria->estado_postulacion);
+                $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->monto_asignado);
+                $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->numero_resolucion);
+                $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->fecha_resolucion);
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->codigo_presupuestal);
+                $hoja->setCellValueByColumnAndRow(33, $fila, $convocatoria->codigo_proyecto_inversion);
+                $hoja->setCellValueByColumnAndRow(34, $fila, $convocatoria->crp);
+                $hoja->setCellValueByColumnAndRow(35, $fila, $convocatoria->cdp);
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "linea_base_jurados_" . $entidad->id . "_" . $anio . ".xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+
+/*
+ * 14-10-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Se incorpora acción en el controlador para generar reporte de linea base de jurados general a partir de una vista
+ */
+
+$app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_linea_base_jurados_general_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+//            $entidad = Entidades::findFirst($request->getPut('entidad'));
+            $anio = $request->getPut('anio');
+
+
+            //Genero reporte invocando a la vista
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=" . $anio;
+
+
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Listado de jurados por convocatoria')
+                    ->setSubject('SICON')
+                    ->setDescription('Listado de jurados por convocatoria')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Línea base de jurados general");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Línea base de jurados general");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 3, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 3, $anio);
+
+            //Cabezote de la tabla
+//            $hoja->setCellValueByColumnAndRow(1, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(1, 5, "Modalidad participa");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Convocatoria padre");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Diferentes categorias");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Año");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Tipo");
+            $hoja->setCellValueByColumnAndRow(8, 5, "CC");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Código hoja de vida");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Primer nombre");
+            $hoja->setCellValueByColumnAndRow(11, 5, "Segundo nombre");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Primer apellido");
+            $hoja->setCellValueByColumnAndRow(13, 5, "Segundo apellido");
+            $hoja->setCellValueByColumnAndRow(14, 5, "Fecha nacimiento");
+            $hoja->setCellValueByColumnAndRow(15, 5, "Edad");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Étnia");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Género");
+            $hoja->setCellValueByColumnAndRow(18, 5, "Dirección de residencia");
+            $hoja->setCellValueByColumnAndRow(19, 5, "Ciudad de residencia");
+            $hoja->setCellValueByColumnAndRow(20, 5, "Localidad");
+            $hoja->setCellValueByColumnAndRow(21, 5, "UPZ");
+            $hoja->setCellValueByColumnAndRow(22, 5, "Barrio de residencia");
+            $hoja->setCellValueByColumnAndRow(23, 5, "Estrato");
+            $hoja->setCellValueByColumnAndRow(24, 5, "Celular");
+            $hoja->setCellValueByColumnAndRow(25, 5, "Teléfono fijo");
+            $hoja->setCellValueByColumnAndRow(26, 5, "Correo electrónico");
+            $hoja->setCellValueByColumnAndRow(27, 5, "Estado de la propuesta");
+            $hoja->setCellValueByColumnAndRow(28, 5, "Estado de la postulación");
+            $hoja->setCellValueByColumnAndRow(29, 5, "Monto asignado");
+            $hoja->setCellValueByColumnAndRow(30, 5, "Número resolución");
+            $hoja->setCellValueByColumnAndRow(31, 5, "Fecha resolución");
+            $hoja->setCellValueByColumnAndRow(32, 5, "Código presupuestal");
+            $hoja->setCellValueByColumnAndRow(33, 5, "Código proyecto de inversión");
+            $hoja->setCellValueByColumnAndRow(34, 5, "CDP");
+            $hoja->setCellValueByColumnAndRow(35, 5, "CRP");
+            $fila = 6;
+
+
+            foreach ($convocatorias as $convocatoria) {
+
+
+
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->modalidad_participa);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->entidad);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->convocatoria);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->convocatoria_padre);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->diferentes_cat);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->anio);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->primer_nombre);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->segundo_nombre);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->primer_apellido);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->fecha_nacimiento);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->anios);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->etnia);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->genero);
+                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->direccion_residencia);
+                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->ciudad_residencia);
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->localidad_residencia);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->upz_residencia);
+                $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->barrio_residencia);
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->estrato);
+                $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->numero_celular);
+                $hoja->setCellValueByColumnAndRow(25, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->correo_electronico);
+                $hoja->setCellValueByColumnAndRow(27, $fila, $convocatoria->estado_propuesta);
+                $hoja->setCellValueByColumnAndRow(28, $fila, $convocatoria->estado_postulacion);
+                $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->monto_asignado);
+                $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->numero_resolucion);
+                $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->fecha_resolucion);
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->codigo_presupuestal);
+                $hoja->setCellValueByColumnAndRow(33, $fila, $convocatoria->codigo_proyecto_inversion);
+                $hoja->setCellValueByColumnAndRow(34, $fila, $convocatoria->crp);
+                $hoja->setCellValueByColumnAndRow(35, $fila, $convocatoria->cdp);
+
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "linea_base_jurados_" . $anio . ".xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+
+/*
+ * 14-10-2020
+ * Wilmer Gustavo Mogollón Duque
+ * Se incorpora acción en el controlador para generar reporte de linea base de convocatorias a partir de una vista
+ */
+
+$app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_linea_base_convocatorias_xls para generar línea base de convocatorias (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+            
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+//            $entidad = Entidades::findFirst($request->getPut('entidad'));
+            $anio = $request->getPut('anio');
+
+
+            //Genero reporte invocando a la vista
+            $sql_convocatorias = "SELECT * from Viewlineabase as vlb WHERE vlb.anio=" . $anio;
+
+
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Línea base de convocatorias')
+                    ->setSubject('SICON')
+                    ->setDescription('Listado de jurados por convocatoria')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Línea base de convocatorias");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Línea base de convocatorias");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 3, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 3, $anio);
+
+            //Cabezote de la tabla
+//            $hoja->setCellValueByColumnAndRow(1, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(1, 5, "Entidad");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Estado");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Fecha cierre");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Categoria");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Area");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Línea estratégica");
+            $hoja->setCellValueByColumnAndRow(8, 5, "Enfoque");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Estado de la propuesta");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Código");
+            $hoja->setCellValueByColumnAndRow(11, 5, "Nombre de la propuesta");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Localidad ejecución propuesta");
+            $hoja->setCellValueByColumnAndRow(13, 5, "UPZ ejecución propuesta");
+            $hoja->setCellValueByColumnAndRow(14, 5, "Barrio ejecución propuesta");
+            $hoja->setCellValueByColumnAndRow(15, 5, "Tipo participante");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Representante");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Tipo rol");
+            $hoja->setCellValueByColumnAndRow(18, 5, "Rol");
+            $hoja->setCellValueByColumnAndRow(19, 5, "Número documento");
+            $hoja->setCellValueByColumnAndRow(20, 5, "Primer nombre");
+            $hoja->setCellValueByColumnAndRow(21, 5, "Segundo nombre");
+            $hoja->setCellValueByColumnAndRow(22, 5, "Primer apellido");
+            $hoja->setCellValueByColumnAndRow(23, 5, "Segundo apellido");
+            $hoja->setCellValueByColumnAndRow(24, 5, "Id tipo doc");
+            $hoja->setCellValueByColumnAndRow(25, 5, "Tipo doc");
+            $hoja->setCellValueByColumnAndRow(26, 5, "Fecha nacimiento");
+            $hoja->setCellValueByColumnAndRow(27, 5, "Sexo");
+            $hoja->setCellValueByColumnAndRow(28, 5, "Dirección residencia");
+            $hoja->setCellValueByColumnAndRow(29, 5, "Ciudad residencia");
+            $hoja->setCellValueByColumnAndRow(30, 5, "Localidad residencia");
+            $hoja->setCellValueByColumnAndRow(31, 5, "UPZ residencia");
+            $hoja->setCellValueByColumnAndRow(32, 5, "Barrio residencia");
+            $hoja->setCellValueByColumnAndRow(33, 5, "Estrato");
+            $hoja->setCellValueByColumnAndRow(34, 5, "Correo electrónico");
+            $hoja->setCellValueByColumnAndRow(35, 5, "Número teléfono");
+            $hoja->setCellValueByColumnAndRow(36, 5, "Número celular");
+            $hoja->setCellValueByColumnAndRow(37, 5, "Año");
+            $fila = 6;
+
+
+            foreach ($convocatorias as $convocatoria) {
+
+
+
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->nombre_entidad);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->estado);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->fecha_cierre);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->convocatoria);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->categoria);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->area);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->linea_estrategica);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->enfoque);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->estado_propuesta);
+                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->nombre_propuesta);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->localidad_ejecucion_propuesta);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->upz_ejecucion_propuesta);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->barrio_ejecucion_propuesta);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->tipo_participante);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->representante);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->tipo_rol);
+                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->rol);
+                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_documento);
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->primer_nombre);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->segundo_nombre);
+                $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->primer_apellido);
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->id_tipo_documento);
+                $hoja->setCellValueByColumnAndRow(25, $fila, $convocatoria->tipo_documento);
+                $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->fecha_nacimiento);
+                $hoja->setCellValueByColumnAndRow(27, $fila, $convocatoria->sexo);
+                $hoja->setCellValueByColumnAndRow(28, $fila, $convocatoria->direccion_residencia);
+                $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->ciudad_residencia);
+                $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->localidad_residencia);
+                $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->upz_residencia);
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->barrio_residencia);
+                $hoja->setCellValueByColumnAndRow(33, $fila, $convocatoria->estrato);
+                $hoja->setCellValueByColumnAndRow(34, $fila, $convocatoria->correo_electronico);
+                $hoja->setCellValueByColumnAndRow(35, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(36, $fila, $convocatoria->numero_celular);
+                $hoja->setCellValueByColumnAndRow(37, $fila, $convocatoria->anio);
+
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "linea_base_convocatorias_" . $anio . ".xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_linea_base_convocatorias_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_linea_base_convocatorias_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
         $logger->close();
         echo "error_metodo";
     }
@@ -966,87 +1509,74 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+
             $user_current = json_decode($token_actual->user_current, true);
-            
+
             $linea = 0;
             $cabecera = "";
             $numero_documentos_error = "Número de documentos no cargados:";
             //Abrimos nuestro archivo
             $archivo = fopen($request->getPut("srcData"), "r");
             //Lo recorremos            
-            while (($datos = fgetcsv($archivo,1000, "\t")) == true) {
+            while (($datos = fgetcsv($archivo, 1000, "\t")) == true) {
                 $num = count($datos);
                 if ($num != 7) {
-                    $error=1;
+                    $error = 1;
                     break;
-                } else {                                        
+                } else {
                     //Recorremos las columnas de esa linea                    
-                    if($linea==0)
-                    {
+                    if ($linea == 0) {
                         for ($columna = 0; $columna < $num; $columna++) {
-                                $cabecera=$cabecera.$datos[$columna].";";                               
+                            $cabecera = $cabecera . $datos[$columna] . ";";
                         }
                     }
-                    
-                    if($linea==0)
-                    {
-                        if($cabecera!="numero_documento;primer_nombre;segundo_nombre;primer_apellido;segundo_apellido;activo;observaciones;")
-                        {
-                            $error=2;
+
+                    if ($linea == 0) {
+                        if ($cabecera != "numero_documento;primer_nombre;segundo_nombre;primer_apellido;segundo_apellido;activo;observaciones;") {
+                            $error = 2;
                             break;
                         }
-                    }
-                    else
-                    {
-                        
+                    } else {
+
                         //WILLIAM OJO BUSCAR Y SI ESTA EDITAR                                                
-                        $comsulta_contratista = Entidadescontratistas::findFirst("numero_documento='".$datos[0]."' AND entidad = ".$request->getPut("entidad"));
-                        
+                        $comsulta_contratista = Entidadescontratistas::findFirst("numero_documento='" . $datos[0] . "' AND entidad = " . $request->getPut("entidad"));
+
                         if (isset($comsulta_contratista->id)) {
                             $contratista = $comsulta_contratista;
                             $contratista->actualizado_por = $user_current["id"];
-                            $contratista->fecha_actualizacion = date("Y-m-d H:i:s");                            
-                        }
-                        else
-                        {              
+                            $contratista->fecha_actualizacion = date("Y-m-d H:i:s");
+                        } else {
                             $contratista = new Entidadescontratistas();
-                            $contratista->entidad=$request->getPut("entidad");
+                            $contratista->entidad = $request->getPut("entidad");
                             $contratista->creado_por = $user_current["id"];
-                            $contratista->fecha_creacion = date("Y-m-d H:i:s");                                                    
-                        }                        
-                        $contratista->numero_documento=$datos[0];
-                        $contratista->primer_nombre=utf8_encode($datos[1]);
-                        $contratista->segundo_nombre=utf8_encode($datos[2]);
-                        $contratista->primer_apellido=utf8_encode($datos[3]);
-                        $contratista->segundo_apellido=utf8_encode($datos[4]);
-                        $contratista->active = $datos[5]; 
-                        $contratista->observaciones = utf8_encode($datos[6]); 
-                        if ($contratista->save() === false) {                        
-                            $numero_documentos_error=$numero_documentos_error.",".$datos[0];
-                        }                                                
+                            $contratista->fecha_creacion = date("Y-m-d H:i:s");
+                        }
+                        $contratista->numero_documento = $datos[0];
+                        $contratista->primer_nombre = utf8_encode($datos[1]);
+                        $contratista->segundo_nombre = utf8_encode($datos[2]);
+                        $contratista->primer_apellido = utf8_encode($datos[3]);
+                        $contratista->segundo_apellido = utf8_encode($datos[4]);
+                        $contratista->active = $datos[5];
+                        $contratista->observaciones = utf8_encode($datos[6]);
+                        if ($contratista->save() === false) {
+                            $numero_documentos_error = $numero_documentos_error . "," . $datos[0];
+                        }
                     }
-                    $linea++;                    
+                    $linea++;
                 }
             }
             //Cerramos el archivo
             fclose($archivo);
-            
-            if($error==1)
-            {
+
+            if ($error == 1) {
                 echo "error_columnas";
-            }
-            else
-            {
-                if($error==2)
-                {
+            } else {
+                if ($error == 2) {
                     echo "error_cabecera";
-                }
-                else
-                {
+                } else {
                     echo $numero_documentos_error;
                 }
-            }                                    
+            }
         } else {
             //Registro la accion en el log de convocatorias           
             $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo cargar_contratistas_csv al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
@@ -1128,18 +1658,17 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
-                $value_representante="No";
-                if($convocatoria->representante)
-                {
-                    $value_representante="Sí";
+                $value_representante = "No";
+                if ($convocatoria->representante) {
+                    $value_representante = "Sí";
                 }
                 $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
@@ -1151,10 +1680,10 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";
-                $value_contratista=str_replace("{","",$convocatoria->contratista);
-                $value_contratista=str_replace("}","",$value_contratista);
-                $value_contratista=str_replace('"',"",$value_contratista);
-                $value_contratista=str_replace(',',"<br/><br/>",$value_contratista);
+                $value_contratista = str_replace("{", "", $convocatoria->contratista);
+                $value_contratista = str_replace("}", "", $value_contratista);
+                $value_contratista = str_replace('"', "", $value_contratista);
+                $value_contratista = str_replace(',', "<br/><br/>", $value_contratista);
                 $html_propuestas = $html_propuestas . '<td colspan="4">' . $value_contratista . '</td>';
                 $html_propuestas = $html_propuestas . "</tr>";
             }
@@ -1164,11 +1693,11 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas', func
             //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
             $nombre_convocatoria = $convocatoria->nombre;
             $nombre_categoria = "";
-            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+            if ($convocatoria->convocatoria_padre_categoria > 0) {
                 $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                $nombre_categoria = $convocatoria->nombre;                                
+                $nombre_categoria = $convocatoria->nombre;
             }
-            
+
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
                         <td colspan="24" align="center">  Integrantes, Representantes y Participantes Contratistas  </td>
@@ -1286,7 +1815,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
             GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
             ORDER BY vwp.codigo
             ";
-            
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $documento = new Spreadsheet();
@@ -1315,17 +1844,17 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
             $hoja->setCellValueByColumnAndRow(2, 3, $anio);
             $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
             $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
-            
+
             //Consulto la convocatoria
             $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
             //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
             $nombre_convocatoria = $convocatoria->nombre;
             $nombre_categoria = "";
-            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+            if ($convocatoria->convocatoria_padre_categoria > 0) {
                 $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                $nombre_categoria = $convocatoria->nombre;                                
+                $nombre_categoria = $convocatoria->nombre;
             }
-            
+
             //Cabezote de la tabla
             $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
             $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
@@ -1364,17 +1893,16 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
                 $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->tipo_participante);
                 $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->tipo_rol);
                 $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->rol);
-                $value_representante="No";
-                if($convocatoria->representante)
-                {
-                    $value_representante="Sí";
+                $value_representante = "No";
+                if ($convocatoria->representante) {
+                    $value_representante = "Sí";
                 }
                 $hoja->setCellValueByColumnAndRow(6, $fila, $value_representante);
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
-                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
                 $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->fecha_nacimiento);
-                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);                
+                $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);
                 $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->direccion_residencia);
                 $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->ciudad_residencia);
                 $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->localidad_residencia);
@@ -1383,12 +1911,12 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_contratistas_xls', 
                 $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->estrato);
                 $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->correo_electronico);
                 $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_telefono);
-                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular );
-                $value_contratista=str_replace("{","",$convocatoria->contratista);
-                $value_contratista=str_replace("}","",$value_contratista);
-                $value_contratista=str_replace('"',"",$value_contratista);
-                $value_contratista=str_replace(',',"\n\n",$value_contratista);
-                $hoja->setCellValueByColumnAndRow(21, $fila, $value_contratista );
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular);
+                $value_contratista = str_replace("{", "", $convocatoria->contratista);
+                $value_contratista = str_replace("}", "", $value_contratista);
+                $value_contratista = str_replace('"', "", $value_contratista);
+                $value_contratista = str_replace(',', "\n\n", $value_contratista);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $value_contratista);
                 $fila++;
             }
 
@@ -1442,16 +1970,15 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
 
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
-            
+
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
             $entidad = Entidades::findFirst($request->getPut('entidad'));
-            $convocatoria=$request->getPut('convocatoria');
+            $convocatoria = $request->getPut('convocatoria');
 
             $html_propuestas = "";
 
-            if($convocatoria>0)
-            {
+            if ($convocatoria > 0) {
                 //Genero reporte propuestas por estado
                 $sql_convocatorias = "
                             SELECT 
@@ -1487,23 +2014,22 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                             ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
-                
+
                 foreach ($convocatorias as $convocatoria) {
                     $html_propuestas = $html_propuestas . "<tr>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
-                    $value_representante="No";
-                    if($convocatoria->representante)
-                    {
-                        $value_representante="Sí";
+                    $value_representante = "No";
+                    if ($convocatoria->representante) {
+                        $value_representante = "Sí";
                     }
                     $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
@@ -1514,7 +2040,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estrato . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";
                     $html_propuestas = $html_propuestas . "</tr>";
                 }
 
@@ -1523,9 +2049,9 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $convocatoria->nombre;
                 $nombre_categoria = "";
-                if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                if ($convocatoria->convocatoria_padre_categoria > 0) {
                     $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                    $nombre_categoria = $convocatoria->nombre;                                
+                    $nombre_categoria = $convocatoria->nombre;
                 }
 
                 $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
@@ -1567,10 +2093,8 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                         </tr> 
                         ' . $html_propuestas . '
                     </table>';
-            }
-            else
-            {
-                
+            } else {
+
                 //Genero reporte propuestas por estado
                 $sql_convocatorias = "
                             SELECT 
@@ -1614,18 +2138,17 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->categoria . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->codigo . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->nombre_propuesta . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";                                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_participante . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_rol . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->rol . "</td>";
-                    $value_representante="No";
-                    if($convocatoria->representante)
-                    {
-                        $value_representante="Sí";
+                    $value_representante = "No";
+                    if ($convocatoria->representante) {
+                        $value_representante = "Sí";
                     }
                     $html_propuestas = $html_propuestas . "<td>" . $value_representante . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->tipo_documento . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->fecha_nacimiento . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->sexo . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->direccion_residencia . "</td>";
@@ -1636,7 +2159,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->estrato . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";
                     $html_propuestas = $html_propuestas . "</tr>";
                 }
 
@@ -1677,9 +2200,8 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes', fun
                         </tr> 
                         ' . $html_propuestas . '
                     </table>';
-                
             }
-            
+
             $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
             $logger->close();
             echo $html;
@@ -1718,13 +2240,12 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
 
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
-            
+
             $entidad = Entidades::findFirst($request->getPut('entidad'));
             $anio = $request->getPut('anio');
-            $convocatoria=$request->getPut('convocatoria');
-            
-            if($convocatoria>0)
-            {
+            $convocatoria = $request->getPut('convocatoria');
+
+            if ($convocatoria > 0) {
                 //Genero reporte propuestas por estado
                 $sql_convocatorias = "
                 SELECT 
@@ -1758,9 +2279,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 WHERE vwp.id_convocatoria=" . $convocatoria . "
                 ORDER BY vwp.codigo
                 ";
-            }
-            else
-            {
+            } else {
                 //Genero reporte propuestas por estado
                 $sql_convocatorias = "
                 SELECT 
@@ -1794,9 +2313,9 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 FROM Viewparticipantes AS vwp                    
                 WHERE vwp.id_entidad=" . $entidad->id . "
                 ORDER BY vwp.codigo
-                ";                
+                ";
             }
-            
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $documento = new Spreadsheet();
@@ -1825,18 +2344,17 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
             $hoja->setCellValueByColumnAndRow(2, 3, $anio);
             $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
             $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
-            
-            
-            if($convocatoria>0)
-            {
+
+
+            if ($convocatoria > 0) {
                 //Consulto la convocatoria
                 $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $convocatoria->nombre;
                 $nombre_categoria = "";
-                if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                if ($convocatoria->convocatoria_padre_categoria > 0) {
                     $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                    $nombre_categoria = $convocatoria->nombre;                                
+                    $nombre_categoria = $convocatoria->nombre;
                 }
 
                 //Cabezote de la tabla
@@ -1844,7 +2362,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
                 $hoja->setCellValueByColumnAndRow(3, 4, "Categoría");
                 $hoja->setCellValueByColumnAndRow(4, 4, $nombre_categoria);
-                
+
                 //Cabezote de la tabla
                 $hoja->setCellValueByColumnAndRow(1, 6, "Código Propuesta");
                 $hoja->setCellValueByColumnAndRow(2, 6, "Propuesta Nombre");
@@ -1865,7 +2383,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 $hoja->setCellValueByColumnAndRow(17, 6, "Estrato");
                 $hoja->setCellValueByColumnAndRow(18, 6, "Correo electrónico");
                 $hoja->setCellValueByColumnAndRow(19, 6, "Tel Fijo");
-                $hoja->setCellValueByColumnAndRow(20, 6, "Tel Celular");            
+                $hoja->setCellValueByColumnAndRow(20, 6, "Tel Celular");
 
                 //Registros de la base de datos
                 $fila = 7;
@@ -1876,17 +2394,16 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->tipo_participante);
                     $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->tipo_rol);
                     $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->rol);
-                    $value_representante="No";
-                    if($convocatoria->representante)
-                    {
-                        $value_representante="Sí";
+                    $value_representante = "No";
+                    if ($convocatoria->representante) {
+                        $value_representante = "Sí";
                     }
                     $hoja->setCellValueByColumnAndRow(6, $fila, $value_representante);
                     $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
                     $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
-                    $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                    $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
                     $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->fecha_nacimiento);
-                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);                
+                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->sexo);
                     $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->direccion_residencia);
                     $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->ciudad_residencia);
                     $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->localidad_residencia);
@@ -1895,13 +2412,10 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->estrato);
                     $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->correo_electronico);
                     $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_telefono);
-                    $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular );                
+                    $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular);
                     $fila++;
                 }
-                
-            }
-            else            
-            {
+            } else {
                 //Cabezote de la tabla
                 $hoja->setCellValueByColumnAndRow(1, 6, "Convocatoria");
                 $hoja->setCellValueByColumnAndRow(2, 6, "Categoría");
@@ -1924,7 +2438,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 $hoja->setCellValueByColumnAndRow(19, 6, "Estrato");
                 $hoja->setCellValueByColumnAndRow(20, 6, "Correo electrónico");
                 $hoja->setCellValueByColumnAndRow(21, 6, "Tel Fijo");
-                $hoja->setCellValueByColumnAndRow(22, 6, "Tel Celular");            
+                $hoja->setCellValueByColumnAndRow(22, 6, "Tel Celular");
 
                 //Registros de la base de datos
                 $fila = 7;
@@ -1932,23 +2446,22 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
 
                     $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->convocatoria);
                     $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->categoria);
-                    
+
                     $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->codigo);
                     $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->nombre_propuesta);
                     $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->tipo_participante);
                     $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->tipo_rol);
                     $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->rol);
-                    $value_representante="No";
-                    if($convocatoria->representante)
-                    {
-                        $value_representante="Sí";
+                    $value_representante = "No";
+                    if ($convocatoria->representante) {
+                        $value_representante = "Sí";
                     }
                     $hoja->setCellValueByColumnAndRow(8, $fila, $value_representante);
                     $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->tipo_documento);
                     $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->numero_documento);
-                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                    $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
                     $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->fecha_nacimiento);
-                    $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->sexo);                
+                    $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->sexo);
                     $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->direccion_residencia);
                     $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->ciudad_residencia);
                     $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->localidad_residencia);
@@ -1957,13 +2470,12 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->estrato);
                     $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->correo_electronico);
                     $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->numero_telefono);
-                    $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->numero_celular );                
+                    $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->numero_celular);
                     $fila++;
                 }
-                
             }
 
-            
+
 
             $nombreDelDocumento = "listado_entidades_convocatorias_listado_contratistas_" . $entidad->id . "_" . $anio . ".xlsx";
 
@@ -2032,18 +2544,18 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
                             INNER JOIN Participantes AS par ON par.id=p.participante
                             LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
-                        WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";
-            
+                        WHERE p.convocatoria=" . $request->getPut('convocatoria') . " AND p.estado=7";
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             foreach ($convocatorias as $convocatoria) {
                 $html_propuestas = $html_propuestas . "<tr>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->propuesta . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->participante . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->usuario_registro . "</td>";                                
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->usuario_registro . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular_tercero . "</td>";
-                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";                
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
                 $html_propuestas = $html_propuestas . "</tr>";
             }
 
@@ -2052,11 +2564,11 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
             //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
             $nombre_convocatoria = $convocatoria->nombre;
             $nombre_categoria = "";
-            if ($convocatoria->convocatoria_padre_categoria > 0) {                
+            if ($convocatoria->convocatoria_padre_categoria > 0) {
                 $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                $nombre_categoria = $convocatoria->nombre;                                
+                $nombre_categoria = $convocatoria->nombre;
             }
-            
+
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
                         <td colspan="6" align="center">  Listado de propuestas Guardada - No Inscrita   </td>
@@ -2115,14 +2627,14 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
         if (isset($token_actual->id)) {
 
             //Consulto el usuario
-            $user_current = json_decode($token_actual->user_current, true);            
+            $user_current = json_decode($token_actual->user_current, true);
 
             $html_propuestas = "";
             $html_propuestas_ganadoras = "";
             $html_propuestas_contratistas = "";
-            $html_propuestas_jurados_seleccionados = "";                        
-            $html_propuestas_jurados_proceso = "";                        
-            
+            $html_propuestas_jurados_seleccionados = "";
+            $html_propuestas_jurados_proceso = "";
+
             //Genero reporte de jurados seleccionados
             $sql_jurados_seleccionado = "
                         SELECT 
@@ -2148,30 +2660,28 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                             ev.active = true AND	                            
                             REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')= REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ";
-            
+
             $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
-            
-            foreach ($jurados_seleccionados as $jurado) {                    
-                if($jurado->convocatoria=="")
-                {
-                    $jurado->convocatoria=$jurado->categoria;
-                    $jurado->categoria="";
+
+            foreach ($jurados_seleccionados as $jurado) {
+                if ($jurado->convocatoria == "") {
+                    $jurado->convocatoria = $jurado->categoria;
+                    $jurado->categoria = "";
                 }
-                
-                if($jurado->categoria!="")
-                {
-                    $jurado->categoria="- ".$jurado->categoria;
+
+                if ($jurado->categoria != "") {
+                    $jurado->categoria = "- " . $jurado->categoria;
                 }
-                
+
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr>";
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";                
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';                
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="3">' . $jurado->participante . '</td>';                                
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';                
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="3">' . $jurado->participante . '</td>';
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
             }
-            
+
             //Genero reporte de jurados proceso
             $sql_jurados_proceso = "
                         SELECT 
@@ -2195,30 +2705,28 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                             jp.active=TRUE AND  
                             REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ORDER BY 1,2,3,4,5,6,7,8";
-            
+
             $jurados_procesos = $app->modelsManager->executeQuery($sql_jurados_proceso);
-            
-            foreach ($jurados_procesos as $jurado) {                    
-                if($jurado->convocatoria=="")
-                {
-                    $jurado->convocatoria=$jurado->categoria;
-                    $jurado->categoria="";
+
+            foreach ($jurados_procesos as $jurado) {
+                if ($jurado->convocatoria == "") {
+                    $jurado->convocatoria = $jurado->categoria;
+                    $jurado->categoria = "";
                 }
-                
-                if($jurado->categoria!="")
-                {
-                    $jurado->categoria="- ".$jurado->categoria;
+
+                if ($jurado->categoria != "") {
+                    $jurado->categoria = "- " . $jurado->categoria;
                 }
-                
+
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<tr>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->entidad . "</td>";
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";                
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';                
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="3">' . $jurado->participante . '</td>';                                
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';                
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="3">' . $jurado->participante . '</td>';
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "</tr>";
             }
-            
+
             //Genero reporte personas naturales
             $sql_pn = "
                         SELECT 
@@ -2244,74 +2752,69 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         LEFT JOIN Estados AS es ON c.estado=es.id
                         WHERE vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')
                         ";
-            
+
             $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
-            
-            
+
+
             foreach ($personas_naturales as $pn) {
-                
+
                 //Consulto la convocatoria
                 $convocatoria = Convocatorias::findFirst($pn->id_convocatoria);
-                
+
                 //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                 $nombre_convocatoria = $convocatoria->nombre;
                 $nombre_categoria = "";
                 $anio_convocatoria = $convocatoria->anio;
-                if ($convocatoria->convocatoria_padre_categoria > 0) {                
+                if ($convocatoria->convocatoria_padre_categoria > 0) {
                     $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
-                    $nombre_categoria = " - ".$convocatoria->nombre;                                
+                    $nombre_categoria = " - " . $convocatoria->nombre;
                     $anio_convocatoria = $convocatoria->getConvocatorias()->anio;
                 }
-                
-                
-                if($anio_convocatoria==$request->getPut('anio'))
-                {   
-                    $estado_convocatoria=$pn->estado_convocatoria;
-                            
-                    if($pn->id_estado_convocatoria==5)
-                    {
+
+
+                if ($anio_convocatoria == $request->getPut('anio')) {
+                    $estado_convocatoria = $pn->estado_convocatoria;
+
+                    if ($pn->id_estado_convocatoria == 5) {
                         $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                         $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $pn->id_convocatoria . " AND tipo_evento = 12");
                         $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                        if ($fecha_actual > $fecha_cierre) {            
-                            $estado_convocatoria="Publicada Cerrada";                            
+                        if ($fecha_actual > $fecha_cierre) {
+                            $estado_convocatoria = "Publicada Cerrada";
                         } else {
                             $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $pn->id_convocatoria . " AND tipo_evento = 11");
                             $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
                             if ($fecha_actual > $fecha_apertura) {
-                                $estado_convocatoria="Publicada Abierta";                                                                
+                                $estado_convocatoria = "Publicada Abierta";
                             }
                         }
                     }
-                    
-                    
-                    if($pn->estado_propuesta=="Ganadora")
-                    {
+
+
+                    if ($pn->estado_propuesta == "Ganadora") {
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->entidad . "</td>";
-                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";                        
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $estado_convocatoria . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
-                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " ". $pn->segundo_nombre . " ". $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";                
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->estado_propuesta . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
-                    }
-                    else
-                    {
+                    } else {
                         $html_propuestas = $html_propuestas . "<tr>";
-                        $html_propuestas = $html_propuestas . "<td>" . $pn->entidad . "</td>";                        
-                        $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";                        
-                        $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria . "</td>";                        
+                        $html_propuestas = $html_propuestas . "<td>" . $pn->entidad . "</td>";
+                        $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
+                        $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";
-                        $html_propuestas = $html_propuestas . "<td>" . $pn->primer_nombre . " ". $pn->segundo_nombre . " ". $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";                
+                        $html_propuestas = $html_propuestas . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->codigo . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->estado_propuesta . "</td>";
                         $html_propuestas = $html_propuestas . "</tr>";
-                    }                
+                    }
                 }
             }
-            
+
             //Consulto si es contratista            
             $sql_contratistas = "
                 SELECT 
@@ -2324,16 +2827,16 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 WHERE ec.active=TRUE AND REPLACE(REPLACE(TRIM(ec.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $request->getPut('nd') . "'),'.',''),' ', '')";
 
             $contratistas = $app->modelsManager->executeQuery($sql_contratistas);
-            
-            foreach ($contratistas as $contratista) {                    
+
+            foreach ($contratistas as $contratista) {
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<tr>";
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "<td>" . $contratista->entidad . "</td>";
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="2">' . $contratista->contratista . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';                
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->observaciones . '</td>';                
-                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';                
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="2">' . $contratista->contratista . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido . '</td>';
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td colspan="3">' . $contratista->observaciones . '</td>';
+                $html_propuestas_contratistas = $html_propuestas_contratistas . '<td>' . $contratista->fecha_creacion . '</td>';
                 $html_propuestas_contratistas = $html_propuestas_contratistas . "</tr>";
             }
-            
+
             //Genero reporte de jurados seleccionados
             $sql_ganadores_anios_anteriores = "
                         SELECT 
@@ -2347,28 +2850,28 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
 
             $ganadores_anios_anteriores = $app->modelsManager->executeQuery($sql_ganadores_anios_anteriores);
 
-            foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {                    
+            foreach ($ganadores_anios_anteriores as $ganador_anio_anterior) {
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";                    
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";                    
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";                                    
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>Adjudicada</td>";                                    
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";                                                                                                    
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->anio . "</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->entidad . "</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->convocatoria . " - " . $ganador_anio_anterior->categoria . "</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>Adjudicada</td>";
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->codigo_propuesta . " - " . $ganador_anio_anterior->estado_propuesta . " - " . $ganador_anio_anterior->nombre_propuesta . "</td>";
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->primer_nombre . " " . $ganador_anio_anterior->segundo_nombre . " " . $ganador_anio_anterior->primer_apellido . " " . $ganador_anio_anterior->segundo_apellido . "</td>";
-                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . " - " . $ganador_anio_anterior->tipo_rol . "</td>";                
+                $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $ganador_anio_anterior->tipo_participante . " - " . $ganador_anio_anterior->tipo_rol . "</td>";
                 $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
             }
-            
-            
+
+
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
                         <td colspan="7" align="center">PARTICIPACIÓN DE PERSONA NATURAL EN CONVOCATORIAS Y JURADOS</td>
                     </tr>                    
                     <tr>
-                        <td colspan="7" align="center">Año: '.$request->getPut('anio').'</td>
+                        <td colspan="7" align="center">Año: ' . $request->getPut('anio') . '</td>
                     </tr>                    
                     <tr>
-                        <td colspan="7" align="center">Número de documento: '.$request->getPut('nd').'</td>
+                        <td colspan="7" align="center">Número de documento: ' . $request->getPut('nd') . '</td>
                     </tr>                    
                     <tr>
                         <td colspan="7" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
@@ -2396,7 +2899,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         <td align="center" colspan="3">Participante</td>                        
                         <td align="center">Estado postulación</td>                                                                                                                   
                     </tr>
-                    ' . $html_propuestas_jurados_proceso. '        
+                    ' . $html_propuestas_jurados_proceso . '        
                     <tr>
                         <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS QUE HA GANADO </td>
                     </tr>
@@ -2443,7 +2946,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         <td align="center" colspan="3">Observaciones</td>                                                
                         <td align="center">Fecha de cargue</td>                                                
                     </tr>
-                    ' . $html_propuestas_contratistas. '    
+                    ' . $html_propuestas_contratistas . '    
                 </table>';
 
             $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de la persona natural (' . $request->getPut('pn') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
@@ -2498,7 +3001,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
                             INNER JOIN Participantes AS par ON par.id=p.participante
                             LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
-                        WHERE p.convocatoria=".$request->getPut('convocatoria')." AND p.estado=7";            
+                        WHERE p.convocatoria=" . $request->getPut('convocatoria') . " AND p.estado=7";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -2600,22 +3103,21 @@ $app->post('/reporte_ganadores', function () use ($app, $config, $logger) {
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
-            
 
-            $where_entidad="";
-            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
-            {
-                $where_entidad=" AND vp.id_entidad=".$request->getPut('entidad');
+
+            $where_entidad = "";
+            if ($request->getPut('entidad') != "" && $request->getPut('entidad') != "null") {
+                $where_entidad = " AND vp.id_entidad=" . $request->getPut('entidad');
             }
-            
+
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
                 SELECT 
                     vp.*
                 FROM
                     Viewpropuestas AS vp
-                WHERE vp.anio='" . $request->getPut('anio') . "' AND vp.id_estado=34 ".$where_entidad;
-            
+                WHERE vp.anio='" . $request->getPut('anio') . "' AND vp.id_estado=34 " . $where_entidad;
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $html_propuestas = "";
@@ -2700,15 +3202,15 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
 
             //Consulto lo necesario
             $user_current = json_decode($token_actual->user_current, true);
-            
 
-            $in_codigos="";
-        
+
+            $in_codigos = "";
+
             $html_propuestas = "";
-            
-            $codigos = str_replace("'", "",$request->get("codigos"));
-            $codigos = str_replace('"', "",$request->get("codigos"));
-            
+
+            $codigos = str_replace("'", "", $request->get("codigos"));
+            $codigos = str_replace('"', "", $request->get("codigos"));
+
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                         <tr>
                             <td colspan="11" align="center">Reporte de inhabilidades por propuestas</td>
@@ -2733,19 +3235,17 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                             <td align="center">Inhabilidad o Reporte</td>
                         </tr>                    
                     ';
-            
-            if($request->get("codigos")!="")
-            {                
-                
-                $array_codigos= explode(",",$codigos);                        
-                foreach($array_codigos as $clave)
-                {                    
-                    
-                    $in_codigos=$in_codigos.",'".$clave."'";
+
+            if ($request->get("codigos") != "") {
+
+                $array_codigos = explode(",", $codigos);
+                foreach ($array_codigos as $clave) {
+
+                    $in_codigos = $in_codigos . ",'" . $clave . "'";
                 }
 
-                $in_codigos = trim($in_codigos, ",");                
-                
+                $in_codigos = trim($in_codigos, ",");
+
                 //CONTRATISTAS
                 $sql_convocatorias = "
                     SELECT 
@@ -2770,16 +3270,16 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                     INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=p.convocatoria
                     LEFT JOIN Estados AS est ON vcon.estado=est.id
                     WHERE 
-                            p.codigo IN (".$in_codigos.")
+                            p.codigo IN (" . $in_codigos . ")
 
-                    ";                        
+                    ";
 
-                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);                
+                $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
-                $array_inhabilidades=array();
+                $array_inhabilidades = array();
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;                
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 //GANADORES AÑOS ANTERIORES
@@ -2803,14 +3303,14 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                     INNER JOIN Participantes AS par ON par.id=p.participante OR par.participante_padre=p.participante
                     INNER JOIN Ganadoresantes2020 AS gaan ON REPLACE(REPLACE(TRIM(gaan.numero_documento),'.',''),' ', '') = REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') 
                     WHERE                 
-                            p.codigo IN (".$in_codigos.")
+                            p.codigo IN (" . $in_codigos . ")
 
-                    ";                        
+                    ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 //PARTICIPANTES
@@ -2844,14 +3344,14 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                                             Propuestas AS p
                                     INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
                                     WHERE 
-                                            p.codigo IN (".$in_codigos.")
+                                            p.codigo IN (" . $in_codigos . ")
                             )
-                ";                        
+                ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 //INTEGRANTES
@@ -2885,15 +3385,15 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                                             Propuestas AS p
                                     INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
                                     WHERE 
-                                            p.codigo IN (".$in_codigos.")
+                                            p.codigo IN (" . $in_codigos . ")
                             )
 
-                ";                        
+                ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 //JURADOS SELECCIONADOS
@@ -2925,16 +3425,16 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                                             Propuestas AS p
                                     INNER JOIN Participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
                                     WHERE 
-                                            p.codigo IN (".$in_codigos.")
+                                            p.codigo IN (" . $in_codigos . ")
                             )
 
 
-                ";                        
+                ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 //JURADOS EN PROCESO
@@ -2965,62 +3465,60 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                                             Propuestas AS p
                                     INNER JOIN participantes AS par ON par.tipo_documento IS NOT NULL AND (par.id=p.participante OR par.participante_padre=p.participante) 
                                     WHERE 
-                                            p.codigo IN (".$in_codigos.")
+                                            p.codigo IN (" . $in_codigos . ")
                             )
-                ";                        
+                ";
 
                 $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
                 foreach ($convocatorias as $convocatoria) {
-                    $array_inhabilidades[]=(array)$convocatoria;
+                    $array_inhabilidades[] = (array) $convocatoria;
                 }
 
                 array_sort_by($array_inhabilidades, 'numero_documento', $order = SORT_ASC);
 
                 foreach ($array_inhabilidades as $convocatoria) {
-                    
-                    $estado_convocatoria="";
 
-                    if(isset($convocatoria[id_convocatoria]) AND $convocatoria[id_convocatoria]!="")
-                    {
-                        $estado_convocatoria=$convocatoria[estado_convocatoria];
-                            
-                        if($convocatoria[id_estado_convocatoria]==5)
-                        {
+                    $estado_convocatoria = "";
+
+                    if (isset($convocatoria[id_convocatoria]) AND $convocatoria[id_convocatoria] != "") {
+                        $estado_convocatoria = $convocatoria[estado_convocatoria];
+
+                        if ($convocatoria[id_estado_convocatoria] == 5) {
                             $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                             $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria[id_convocatoria] . " AND tipo_evento = 12");
                             $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                            if ($fecha_actual > $fecha_cierre) {            
-                                $estado_convocatoria="Publicada Cerrada";                            
+                            if ($fecha_actual > $fecha_cierre) {
+                                $estado_convocatoria = "Publicada Cerrada";
                             } else {
                                 $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria[id_convocatoria] . " AND tipo_evento = 11");
                                 $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
                                 if ($fecha_actual > $fecha_apertura) {
-                                    $estado_convocatoria="Publicada Abierta";
+                                    $estado_convocatoria = "Publicada Abierta";
                                 }
                             }
                         }
-                    }                                                            
-                    
+                    }
+
                     $html_propuestas = $html_propuestas . "<tr>";
                     $html_propuestas = $html_propuestas . "<td>" . $convocatoria[anio] . "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[nombre_entidad]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[convocatoria]. "</td>";                                
-                    $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria. "</td>";                                
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[codigo]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[numero_documento]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_nombre]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_nombre]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_apellido]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_apellido]. "</td>";
-                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[inhabilidad]. "</td>";                
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[nombre_entidad] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[convocatoria] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[codigo] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[numero_documento] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_nombre] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_nombre] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[primer_apellido] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[segundo_apellido] . "</td>";
+                    $html_propuestas = $html_propuestas . "<td>" . $convocatoria[inhabilidad] . "</td>";
                     $html_propuestas = $html_propuestas . "</tr>";
-                }  
-                
-                $html = $html.$html_propuestas;                                
+                }
+
+                $html = $html . $html_propuestas;
             }
-            
-            $html = $html.$html_propuestas."</table>";
+
+            $html = $html . $html_propuestas . "</table>";
 
             $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de inscripcion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
             $logger->close();
@@ -3060,10 +3558,9 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
 
             $anio = $request->getPut('anio');
 
-            $where_entidad="";
-            if($request->getPut('entidad')!="" && $request->getPut('entidad')!="null")
-            {
-                $where_entidad=" AND vwp.id_entidad=".$request->getPut('entidad');
+            $where_entidad = "";
+            if ($request->getPut('entidad') != "" && $request->getPut('entidad') != "null") {
+                $where_entidad = " AND vwp.id_entidad=" . $request->getPut('entidad');
             }
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
@@ -3105,9 +3602,9 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
                         vwp.cdp,
                         vwp.crp
                 FROM Viewparticipantes AS vwp  
-                WHERE vwp.anio='" . $anio . "' AND vwp.estado_propuesta='Ganadora' ".$where_entidad."
+                WHERE vwp.anio='" . $anio . "' AND vwp.estado_propuesta='Ganadora' " . $where_entidad . "
                 ORDER BY vwp.convocatoria, vwp.nombre_propuesta, vwp.tipo_participante, vwp.representante DESC";
-            
+
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             $documento = new Spreadsheet();
@@ -3164,7 +3661,7 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
             $hoja->setCellValueByColumnAndRow(30, 5, "Correo electrónico");
             $hoja->setCellValueByColumnAndRow(31, 5, "Tel Fijo");
             $hoja->setCellValueByColumnAndRow(32, 5, "Tel Celular");
-            
+
             //Registros de la base de datos
             $fila = 6;
             foreach ($convocatorias as $convocatoria) {
@@ -3185,17 +3682,16 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
                 $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->tipo_participante);
                 $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->tipo_rol);
                 $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->rol);
-                $value_representante="No";
-                if($convocatoria->representante)
-                {
-                    $value_representante="Sí";
+                $value_representante = "No";
+                if ($convocatoria->representante) {
+                    $value_representante = "Sí";
                 }
                 $hoja->setCellValueByColumnAndRow(18, $fila, $value_representante);
                 $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->tipo_documento);
                 $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_documento);
-                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->primer_nombre . " ". $convocatoria->segundo_nombre . " ". $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->primer_nombre . " " . $convocatoria->segundo_nombre . " " . $convocatoria->primer_apellido . " " . $convocatoria->segundo_apellido);
                 $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->fecha_nacimiento);
-                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->sexo);                
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->sexo);
                 $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->direccion_residencia);
                 $hoja->setCellValueByColumnAndRow(25, $fila, $convocatoria->ciudad_residencia);
                 $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->localidad_residencia);
@@ -3204,10 +3700,10 @@ $app->post('/reporte_ganadores_xls', function () use ($app, $config, $logger) {
                 $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->estrato);
                 $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->correo_electronico);
                 $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->numero_telefono);
-                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->numero_celular );
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->numero_celular);
                 $fila++;
             }
-            
+
             $nombreDelDocumento = "reporte_ganadores.xlsx";
 
             // Redirect output to a client’s web browser (Xlsx)
@@ -3246,14 +3742,13 @@ try {
     echo 'Excepción: ', $e->getMessage();
 }
 
-function array_sort_by(&$arrIni, $col, $order = SORT_ASC)
-{
+function array_sort_by(&$arrIni, $col, $order = SORT_ASC) {
     $arrAux = array();
-    foreach ($arrIni as $key=> $row)
-    {
+    foreach ($arrIni as $key => $row) {
         $arrAux[$key] = is_object($row) ? $arrAux[$key] = $row->$col : $row[$col];
         $arrAux[$key] = strtolower($arrAux[$key]);
     }
     array_multisort($arrAux, $order, $arrIni);
 }
+
 ?>

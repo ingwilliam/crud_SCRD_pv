@@ -438,6 +438,8 @@ $app->get('/generar_reportes_generales', function () use ($app, $config, $logger
                 $array_retorno["reporte_inhabilidades_propuesta"]='<div class="row"><div class="col-lg-12"><div class="form-group"><label>Códigos de propuestas</label><input type="text" id="inhabilidades_codigos" class="form-control"></div></div></div><div class="row"><div class="col-lg-12" style="text-align: right"><button id="btn_inhabilidades" type="submit" class="btn btn-default">Generar reporte</button></div></div>';                                
                 //06-10-2020 Se incorpora botón para reporte de linea base de jurados general 
                 $array_retorno["reporte_linea_base_jurados_general"]="<a href='javascript:void(0);' rel='". json_encode($params1)."' class='btn reporte_linea_base_general_btn'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";
+                //14-10-2020 Se incorpora botón para reporte de linea base de convocatorias 
+                $array_retorno["reporte_linea_base_convocatorias"]="<a href='javascript:void(0);' rel='". json_encode($params1)."' class='btn reporte_linea_base_convocatorias_btn'>Generar Reporte <i class='fa fa-file-excel-o'></i></a>";
                 $array_retorno["fecha_actual"]= date("Y-m-d H:i:s");                
                 echo json_encode($array_retorno);                                                                                       
             } else {
