@@ -1317,7 +1317,7 @@ $app->get('/cargar_tabla_integrantes_cambio', function () use ($app, $config, $l
 
                 //Defino el sql del total y el array de datos
                 $sqlTot = "SELECT count(*) as total FROM Participantes AS p";
-                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" class=\"btn btn-danger cargar_cambio_integrante\" data-toggle=\"modal\" data-target=\"#nuevo_integrante\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Participantes AS p";
+                $sqlRec = "SELECT td.descripcion AS tipo_documento," . $columns[1] . "," . $columns[2] . "," . $columns[3] . " ," . $columns[4] . "," . $columns[5] . "," . $columns[6] . "," . $columns[7] . "," . $columns[8] . "," . $columns[9] . ",concat('<button title=\"',p.id,'\" type=\"button\" lang=\"',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido,'\" class=\"btn btn-danger cargar_cambio_integrante\" data-toggle=\"modal\" data-target=\"#confirmar_nuevo_integrante\"><span class=\"glyphicon glyphicon-edit\"></span></button>') as acciones FROM Participantes AS p";
 
                 //concarnar search sql if value exist
                 if (isset($where) && $where != '') {
