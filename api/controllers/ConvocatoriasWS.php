@@ -936,7 +936,7 @@ $app->get('/convocatoria_qr/{id:[0-9]+}', function ($id) use ($app,$config) {
         $tamaño = 10; //Tamaño de Pixel
         $level = 'L'; //Precisión Baja
         $framSize = 3; //Tamaño en blanco
-        $contenido = $config->sitio->url.$id; //Texto
+        $contenido = $config->sitio->url."publicar.html?id=".$id; //Texto
         //Enviamos los parametros a la Función para generar código QR 
         QRcode::png($contenido, $filename, $level, $tamaño, $framSize);
         
