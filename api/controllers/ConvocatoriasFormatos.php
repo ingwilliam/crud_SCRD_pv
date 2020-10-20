@@ -281,7 +281,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
 
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio = " . $anio . " AND vlb.entidad_id = " . $entidad->id ;
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio = " . $anio . " AND vlb.entidad_id = " . $entidad->id ." LIMIT 10";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -458,7 +458,7 @@ $app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $co
 
 
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=" . $anio;
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=" . $anio." LIMIT 10";
 
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
@@ -638,24 +638,10 @@ $app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $conf
 
             
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineasbases as vlb WHERE vlb.anio=" . $anio;
+            $sql_convocatorias = "SELECT * from Viewlineasbases as vlb WHERE vlb.anio=" . $anio." LIMIT 10";
 
 
-            $dbAdapter = new DbAdapter(array(
-                "host" => $config->database->host, "port" => $config->database->port,
-                "username" => $config->database->username,
-                "password" => $config->database->password,
-                "dbname" => $config->database->name
-            ));
-            
-            $dbAdapter->setDialect(new YourCustomDialect());
-                        
-            //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT vlb.* from Viewlineasbases as vlb WHERE vlb.anio=" . $anio;
-            
-            $result = $dbAdapter->query($sql_convocatorias);
-            
-            $result->setFetchMode(Phalcon\Db::FETCH_OBJ);
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
 
             $documento = new Spreadsheet();
@@ -725,7 +711,7 @@ $app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $conf
             $fila = 6;
 
 
-            while ($convocatoria  = $result->fetch()) {
+            foreach ($convocatorias as $convocatoria) {
 
                 $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->nombre_entidad);
                 $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->estado);
