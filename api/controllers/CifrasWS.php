@@ -384,13 +384,13 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         }
 
         //Convocatorias ofertadas por anio
-        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        //Entidad        
         $sql_propuestas = "
             SELECT 
                 vwc.nombre_entidad AS label,
                 count(vwc.id) AS total_propuestas
             FROM 
-                Viewconvocatorias AS vwc
+                Viewconvocatoriaspublicas AS vwc
             WHERE
                 ".$where." AND vwc.estado IN (5,6,32,43,45)
             GROUP BY 1
@@ -408,8 +408,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["estados_convocatoria_anio"] = $array_value;
         $array["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
         
-        //Convocatorias ofertadas por anio
-        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        //Convocatorias estado        
         //Propuestas Inscritas
         $sql_propuestas = "
             SELECT 
@@ -417,7 +416,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             count(vwp.id_propuesta) AS total_propuestas
         FROM 
             Viewpropuestas AS vwp
-        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_diferente=vwp.id_convocatoria
+        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_categoria=vwp.id_convocatoria_propuesta_inscrita
         INNER JOIN Estados AS es ON es.id=vwc.estado 
         WHERE
             ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwp.id_estado NOT IN (7,20)
@@ -438,38 +437,16 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["estados_convocatoria_propuestas_anio"]["label"] = $array_label;
         $array["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
         
-        //Participante por rango etareo
-        $sql_propuestas = "
-            SELECT
-                vwc.rango AS label,
-                vwc.total AS total_propuestas
-            FROM Viewrangosetareos AS vwc
-            WHERE ".$where."
-            ORDER BY 2
-            ";
-
-        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
-        
-        $array_value = array();
-        $array_label = array();
-        foreach ($convocatorias_anio AS $clave => $valor) {
-            $array_value[] = $valor->total_propuestas;
-            $array_label[] = $valor->label;
-        }
-
-        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
-        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
-        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
-        
         //Propuestas por entidad
         $sql_propuestas = "
             SELECT 
                     vwc.nombre_entidad AS label,
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
-                    viewpropuestas AS vwc 
+                    Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." AND vwc.id_estado NOT IN (7,20)
+                    ".$where." AND vwp.estado IN (5,6,32,43,45) AND vwc.id_estado NOT IN (7,20)
             GROUP BY 1
             ORDER BY 2
             ";
@@ -485,6 +462,30 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["propuestas_entidad_anio"]["value"] = $array_value;
         $array["propuestas_entidad_anio"]["label"] = $array_label;
         $array["tabla_propuestas_entidad_anio"] = $propuestas_entidad;
+        
+        //Participante por rango etareo
+        $sql_propuestas = "
+            SELECT
+                vwc.rango AS label,
+                SUM(vwc.count) AS total_propuestas
+            FROM Viewrangosetareos AS vwc
+            WHERE ".$where."
+            GROUP BY 1
+            ORDER BY 2            
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
+        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;                
         
         //Propuestas por area
         $sql_propuestas = "
@@ -597,9 +598,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     vwc.localidad_ejecucion_propuesta as label,
                     COUNT(vwc.id_convocatoria) as total_propuestas
             from 
-                    Viewparticipantes as vwc 
+                    Viewpropuestas as vwc 
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND tipo_rol='Participante' AND vwc.localidad_ejecucion_propuesta is not NULL
+                    ".$where." and vwc.id_estado NOT IN (7,20)
             group by 1
             ORDER BY 2
             ";
