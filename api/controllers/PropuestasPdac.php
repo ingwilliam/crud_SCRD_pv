@@ -225,6 +225,10 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 $tabla_maestra = Tablasmaestras::find("active=true AND nombre='relacion_plan'");
                                 $array["relacion_plan"] = explode(",", $tabla_maestra[0]->valor);
                                 
+                                //alcance_territorial
+                                $tabla_maestra = Tablasmaestras::find("active=true AND nombre='alcance_territorial'");
+                                $array["alcance_territorial"] = explode(",", $tabla_maestra[0]->valor);
+                                
                                 //Lineas estrategicas
                                 $conditions = ['active' => true];
                                 $array["linea_estrategica"] = Lineasestrategicas::find(([
@@ -360,6 +364,11 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                                 "validators" => array(
                                                     "notEmpty" => array("message" => "El mecanismos de evaluación cuantitativa: cobertura poblacional y territorial es requerido."),
                                                     "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "alcance_territorial[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El alcance territorial del proyecto es requerido.")
                                                 )
                                             ),
                                             "proyeccion_reconocimiento" => array(
@@ -775,6 +784,7 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                 $post["porque_medio"] = json_encode($post["porque_medio"]);
                 $post["relacion_plan"] = json_encode($post["relacion_plan"]);
                 $post["linea_estrategica"] = json_encode($post["linea_estrategica"]);
+                $post["alcance_territorial"] = json_encode($post["alcance_territorial"]);
                 $post["area"] = json_encode($post["area"]);
                 $post["actualizado_por"] = $user_current["id"];
                 $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
@@ -1161,28 +1171,60 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
                 
                 if($propuesta->estado==7)
                 {
-                    if(isset($propuesta_documento->id))
+                    if($post["id"]!="")
                     {
+                        $validar_total_objetivos=false;
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                     }
                     else
                     {
+                        $validar_total_objetivos=true;
                         $propuesta_documento = new Propuestasobjetivos();
                         $post["creado_por"] = $user_current["id"];
                         $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                    }                                                
-
-                    if ($propuesta_documento->save($post) === false) {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error";
-                    } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();                    
-                        echo $propuesta_documento->id;
+                    }                                 
+                    
+                    $guardar_objetivo=true;
+                    if($validar_total_objetivos)
+                    {
+                        //consulto si tiene el maximo de objetivos
+                        $total_objetivos = Propuestasobjetivos::find("propuesta=".$post["propuesta"]);                        
+                        $post["orden"] = count($total_objetivos)+1;
+                        //maximo_objetivos_especificos
+                        $tabla_maestra = Tablasmaestras::find("active=true AND nombre='maximo_objetivos_especificos'");
+                        $maximo_objetivos_especificos = $tabla_maestra[0]->valor;
+                        
+                        if(count($total_objetivos)<=$maximo_objetivos_especificos)
+                        {
+                            $guardar_objetivo=true;
+                        }
+                        else
+                        {
+                            $guardar_objetivo=false;
+                        }                        
                     }
+                    
+                    if( $guardar_objetivo )
+                    {
+                        if ($propuesta_documento->save($post) === false) {                            
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();                    
+                            echo $propuesta_documento->id;
+                        }
+                    }
+                    else
+                    {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, ya cuenta con el maximo de objetivos especificos como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error_maximo_objetivos";
+                    }
+                    
                 }
                 else
                 {
@@ -1879,7 +1921,7 @@ $app->get('/cargar_tabla_objetivos', function () use ($app, $config, $logger) {
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY p.orden";
+                $sqlRec .= " ORDER BY p.objetivo";
 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -1989,7 +2031,7 @@ $app->get('/cargar_tabla_actividades', function () use ($app, $config, $logger) 
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY p.orden";
+                $sqlRec .= " ORDER BY po.objetivo,p.actividad";
                 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
