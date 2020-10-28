@@ -164,7 +164,11 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 foreach ($consulta_documentos_administrativos as $documento) {
                                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                         if ($documento->etapa == "Registro") {
-                                            if($documento->getRequisitos()->perfiles==$propuesta->getParticipantes()->getUsuariosperfiles()->perfil)
+
+                                            //cuento si existe que el requisto aplica para el perfil de la categoria
+                                            $resultado = substr_count($documento->getRequisitos()->perfiles, $propuesta->getParticipantes()->getUsuariosperfiles()->perfil);
+                                            
+                                            if($resultado>0)
                                             {                                            
                                                 $documentos_administrativos[$documento->orden]["id"] = $documento->id;
                                                 $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
