@@ -161,6 +161,9 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 ]));
                                 $documentos_administrativos=array();
                                 $documentos_tecnicos=array();
+                                //solo aplica para agregar el link del reporte de inscripcion de PDAC
+                                $id_convocatoria_documento_pdac=null;
+                                    
                                 foreach ($consulta_documentos_administrativos as $documento) {
                                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                         if ($documento->etapa == "Registro") {
@@ -181,6 +184,10 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                     }
 
                                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
+                                        if($documento->requisito==809){
+                                            $id_convocatoria_documento_pdac=$documento->id;
+                                        }
+                                        
                                         $documentos_tecnicos[$documento->orden]["id"] = $documento->id;
                                         $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
                                         $documentos_tecnicos[$documento->orden]["descripcion"] = $documento->descripcion;
@@ -189,11 +196,39 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                         $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
                                     }
                                 }
-
+                               
                                 $array["administrativos"] = $documentos_administrativos;
 
                                 $array["tecnicos"] = $documentos_tecnicos;
 
+                                //solo aplica para agregar el link del reporte de inscripcion de PDAC
+                                if($array["programa"]==2)
+                                {
+                                    //Consulto la propuesta solicitada
+                                    $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $id_convocatoria_documento_pdac ];
+                                    $propuestaslinks_pdac = Propuestaslinks::findFirst(([
+                                                'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                                'bind' => $conditions,
+                                    ]));
+                                    
+                                    if (!isset($propuestaslinks_pdac->id)) {
+                                        $propuestaslinks = new Propuestaslinks();
+                                        $propuestaslinks->creado_por = $user_current["id"];
+                                        $propuestaslinks->fecha_creacion = date("Y-m-d H:i:s");
+                                        $propuestaslinks->active = true;
+                                        $propuestaslinks->propuesta = $propuesta->id;
+                                        $propuestaslinks->convocatoriadocumento = $id_convocatoria_documento_pdac;
+                                        $propuestaslinks->link = $config->sistema->url_report."reporte_propuesta_inscrita_pdac.php?id=".$propuesta->id."&token=".$request->get('token')."&vi=1";
+                                        $propuestaslinks->cargue_subsanacion = false;                                    
+                                        if ($propuestaslinks->save() === false) {
+                                            //Registro la accion en el log de convocatorias           
+                                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, error al crear el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                        
+                                        } else {
+                                            $logger->info('"token":"{token}","user":"{user}","message":"Retorno el controlador PropuestasDocumentacion en el método guardar_link, se creo el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                        
+                                        }
+                                    }
+                                }                                                                
+                                
                                 //Registro la accion en el log de convocatorias
                                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador PropuestasDocumentacion en el método buscar_documentacion, retorna la información de la documentacion de la propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
@@ -621,7 +656,7 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                                 foreach(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id) as $actividad)
                                 {
                                     
-                                    $sql_totales = 'SELECT SUM(valortotal) AS total_proyecto, SUM(aportesolicitado) AS total_concertacion FROM Propuestaspresupuestos WHERE active=TRUE';
+                                    $sql_totales = 'SELECT SUM(valortotal) AS total_proyecto, SUM(aportesolicitado) AS total_concertacion FROM Propuestaspresupuestos WHERE active=TRUE AND propuestaactividad='.$actividad->id;
 
                                     $totales = $app->modelsManager->executeQuery($sql_totales)->getFirst();
                                     
