@@ -544,8 +544,10 @@ $app->post('/nombre_convocatoria/{id:[0-9]+}', function ($id) use ($app, $config
                 $convocatoria = Convocatorias::findFirst($id);                
                 $programa=$convocatoria->programa;
                 $nombre_convocatoria="";
+                $array=array();
                 if(isset($convocatoria->convocatoria_padre_categoria))
                 {
+                    $array["convocatoria_padre"]=$convocatoria->convocatoria_padre_categoria;                    
                     $categoria = Convocatorias::findFirst($convocatoria->convocatoria_padre_categoria);
                     $programa=$categoria->programa;
                     $nombre_convocatoria = $categoria->nombre." - <span style='color:red'>".$convocatoria->nombre."<span>";
@@ -553,11 +555,9 @@ $app->post('/nombre_convocatoria/{id:[0-9]+}', function ($id) use ($app, $config
                 else
                 {
                     $nombre_convocatoria = $convocatoria->nombre;
-                }
-                
-                $array=array();
+                }                                
                 $array["nombre_convocatoria"]=$nombre_convocatoria;
-                $array["programa"]=$programa;                
+                $array["programa"]=$programa;                                
                 if(isset($convocatoria->convocatoria_par))
                 {
                     $convocatoria_par = Convocatorias::findFirst($convocatoria->convocatoria_par);

@@ -79,8 +79,10 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
             $convocatoria = Convocatorias::findFirst($id);
 
             //Si la convocatoria seleccionada es categoria y no es especial invierto los id
+            $condiciones="";
             if ($convocatoria->convocatoria_padre_categoria > 0 && $convocatoria->getConvocatorias()->tiene_categorias == true && $convocatoria->getConvocatorias()->diferentes_categorias == false) {
                 $id = $convocatoria->getConvocatorias()->id;                    
+                $condiciones = $convocatoria->getConvocatorias()->link_condiciones;
             }
                         
             //generar las siglas del programa
@@ -158,7 +160,8 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                     else
                     {
                         $terminos_condiciones= Tablasmaestras::findFirst("active=true AND nombre='tc_td_au_pj_".date("Y")."'");   
-                    }                                        
+                    }
+                    
                     $array_tipos_participantes[$i]["terminos_condiciones"] = str_replace("/view?usp=sharing", "/preview", $terminos_condiciones->valor);                
                     
                     //Busco si tiene el perfil de persona juridica
@@ -225,7 +228,14 @@ $app->post('/consultar_tipos_participantes/{id:[0-9]+}', function ($id) use ($ap
                     
                 }                
                 
-                $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");   
+                if($condiciones!="")
+                {
+                    $condiciones_participancion->valor = $condiciones;      
+                }
+                else
+                {
+                    $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");   
+                }                
                 $array_tipos_participantes[$i]["condiciones_participacion"] = str_replace("/view?usp=sharing", "/preview", $condiciones_participancion->valor);                
                 
                 $i++;
