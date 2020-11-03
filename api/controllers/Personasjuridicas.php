@@ -157,6 +157,16 @@ $app->post('/new', function () use ($app, $config, $logger) {
                         $participante->active = TRUE;                     
                     }
                     
+                    if($post["cuenta_sede"]=="false")
+                    {
+                        $post["cuenta_sede"]=FALSE;
+                        $post["tipo_sede"]="";
+                    }
+                    else
+                    {
+                        $post["cuenta_sede"]=TRUE;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona jurídica"',['user' => "",'token'=>$request->get('token')]);
@@ -752,7 +762,16 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                 } else {
                     $post["actualizado_por"] = $user_current["id"];
                     $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-
+                    if($post["cuenta_sede"]=="false")
+                    {
+                        $post["cuenta_sede"]=FALSE;
+                        $post["tipo_sede"]="";
+                    }
+                    else
+                    {
+                        $post["cuenta_sede"]=TRUE;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método editar_participante, al editar el participante pj hijo ('.$request->getPost('id').') PJ en la convocatoria(' . $request->getPost('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                        
                         $logger->close();
