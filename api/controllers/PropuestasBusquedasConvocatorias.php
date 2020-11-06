@@ -316,6 +316,8 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                 }
             }
 
+            array_sort_by($json_convocatorias, 'programa', $order = SORT_ASC);
+            
             //creo el array
             $json_data = array(
                 "draw" => intval($request->get("draw")),
@@ -805,4 +807,14 @@ try {
 } catch (\Exception $e) {
     echo 'Excepción: ', $e->getMessage();
 }
+
+function array_sort_by(&$arrIni, $col, $order = SORT_ASC) {
+    $arrAux = array();
+    foreach ($arrIni as $key => $row) {
+        $arrAux[$key] = is_object($row) ? $arrAux[$key] = $row->$col : $row[$col];
+        $arrAux[$key] = strtolower($arrAux[$key]);
+    }
+    array_multisort($arrAux, $order, $arrIni);
+}
+
 ?>

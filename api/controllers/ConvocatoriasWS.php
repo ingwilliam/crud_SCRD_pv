@@ -818,6 +818,7 @@ $app->get('/all_view', function () use ($app) {
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id_diferente . " AND tipo_evento = 12");
                 $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                $valor->fecha_cierre=$fecha_cierre_real->fecha_fin;
                 if ($fecha_actual > $fecha_cierre) {
                     $valor->estado = 52;
                     $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Publicada Cerrada</span>";
@@ -840,6 +841,7 @@ $app->get('/all_view', function () use ($app) {
             $json_convocatorias[] = $valor;
         }
 
+        array_sort_by($json_convocatorias, 'programa', $order = SORT_ASC);
 
         //creo el array
         $json_data = array(
@@ -957,6 +959,16 @@ try {
     // Gestionar la consulta
     $app->handle();
 } catch (\Exception $e) {
-    echo 'Excepción: ', $e->getMessage();
+    echo 'Excepción: ', $e->getMessage();    
 }
+
+function array_sort_by(&$arrIni, $col, $order = SORT_ASC) {
+    $arrAux = array();
+    foreach ($arrIni as $key => $row) {
+        $arrAux[$key] = is_object($row) ? $arrAux[$key] = $row->$col : $row[$col];
+        $arrAux[$key] = strtolower($arrAux[$key]);
+    }
+    array_multisort($arrAux, $order, $arrIni);
+}
+
 ?>
