@@ -399,7 +399,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                 vwc.nombre_entidad AS label,
                 count(vwc.id) AS total_propuestas
             FROM 
-                Viewconvocatoriaspublicas AS vwc
+                Viewconvocatoriascifras AS vwc
             WHERE
                 ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.")
             GROUP BY 1
