@@ -934,6 +934,15 @@ $app->post('/menu', function () use ($app,$config) {
                                     <a style="<?php echo $style_new;?>" href="../jurados/gruposevaluacion.html">Grupos de evaluación</a>
 
                                 </li>
+                                <!--
+                                23-10-2020
+                                Wilmer Gustavo Mogollón Duque
+                                Se agrega al menú la opción de registro de ganadores
+                                -->
+                                <li>
+                                    <a style="<?php echo $style_new;?>" href="../jurados/registroganadoresjurados.html">Registro de ganadores</a>
+
+                                </li>
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>

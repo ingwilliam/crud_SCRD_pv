@@ -2518,9 +2518,15 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
 
                                 foreach ($postulaciones as $postulacion) {
 
-                                    $notificacion = Juradosnotificaciones::findFirst(
+                                    /*
+                                     * 28-10-2020
+                                     * Wilmer gustavo Mogollón Duque
+                                     * Se selecciona la última notificación de cada postulación
+                                     */
+                                    $notificacion = Juradosnotificaciones::maximum(
                                                     [
-                                                        'juradospostulado = ' . $postulacion->id
+                                                        'column' => 'id',
+                                                        'conditions' => "juradospostulado = " . $postulacion->id
                                                     ]
                                     );
 
@@ -2748,20 +2754,19 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                                     vwp.segundo_apellido,
                                     vwp.estado_propuesta                                
                             FROM Viewparticipantes AS vwp                                
-                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '". $participante->numero_documento."'"
-                            ;
+                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '" . $participante->numero_documento . "'"
+                    ;
 
                     $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
-                    
-                   
+
+
 
                     foreach ($personas_naturales as $pn) {
 
                         //Consulto la convocatoria -- Se ajusta la consulta, pues no siempre traia la información correcta.
-                        $convocatoria_pn = Convocatorias::findFirst([" nombre = '".$pn->convocatoria."'"]);
-                        
-//                         return json_encode($convocatoria_pn);
+                        $convocatoria_pn = Convocatorias::findFirst([" nombre = '" . $pn->convocatoria . "'"]);
 
+//                         return json_encode($convocatoria_pn);
                         //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                         $nombre_convocatoria_pn = $convocatoria_pn->nombre;
                         $nombre_categoria_pn = "";
