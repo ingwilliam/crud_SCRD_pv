@@ -789,6 +789,11 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                 $post["actualizado_por"] = $user_current["id"];
                 $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                 
+                if($post["localidad"]=="")
+                {
+                    $post["localidad"]=null;
+                }
+                
                 if ($propuesta->save($post) === false) {
                     $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta, error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                    
                     $logger->close();
