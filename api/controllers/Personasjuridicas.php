@@ -157,6 +157,16 @@ $app->post('/new', function () use ($app, $config, $logger) {
                         $participante->active = TRUE;                     
                     }
                     
+                    if($post["cuenta_sede"]=="false")
+                    {
+                        $post["cuenta_sede"]=FALSE;
+                        $post["tipo_sede"]="";
+                    }
+                    else
+                    {
+                        $post["cuenta_sede"]=TRUE;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error al crear el participante como persona jurídica"',['user' => "",'token'=>$request->get('token')]);
@@ -545,7 +555,12 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                             //Valido si el programa es PDAC
                             $crear_propuesta=true;
                             if($programa==2)
-                            {                   
+                            { 
+                                $alianza_sectorial='false';
+                                if($request->get('alianza_sectorial')!="")
+                                {                                    
+                                    $alianza_sectorial=$request->get('alianza_sectorial');
+                                }
                                 //Valido que no este tenga otra propuesta inscrita en la
                                 //Convocatoria par
                                 $phql = "SELECT COUNT(p.id) AS total_propuestas  FROM Propuestas AS p
@@ -559,12 +574,12 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                     $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método crear_propuesta_pj, ya cuenta con una propuesta inscrita en la otra convocatoria ('.$in_convocatorias_par.') del PDAC."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 }
                                 else
-                                {
+                                {                                    
                                     //Consulto las propuestas de los participantes
                                     //con el estado Registrada, Inscrita,Por Subsanar, Subsanación Recibida, Rechazada, Habilitada
                                     $phql = "SELECT COUNT(p.id) AS total_alianza  FROM Propuestas AS p
                                             INNER JOIN Participantes AS par ON par.id=p.participante AND par.participante_padre=".$participante->id."
-                                            WHERE p.convocatoria IN (".$in_convocatorias.") AND p.alianza_sectorial=".$request->get('alianza_sectorial')." AND p.estado IN (7,8,21,22,23,24,31,33,34,44)";
+                                            WHERE p.convocatoria IN (".$in_convocatorias.") AND p.alianza_sectorial=".$alianza_sectorial." AND p.estado IN (7,8,21,22,23,24,31,33,34,44)";
                                     $propuestas_pdac_alianza = $app->modelsManager->executeQuery($phql)->getFirst();                                    
                                     if($propuestas_pdac_alianza->total_alianza>0)
                                     {
@@ -609,7 +624,7 @@ $app->get('/crear_propuesta_pj', function () use ($app, $config, $logger) {
                                     //Valido si el programa es PDAC
                                     if($programa==2)
                                     { 
-                                        $propuesta->alianza_sectorial=$request->get('alianza_sectorial');
+                                        $propuesta->alianza_sectorial=$alianza_sectorial;
                                     }
                                     if ($propuesta->save() === false) {
                                         //Registro la accion en el log de convocatorias           
@@ -747,7 +762,16 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                 } else {
                     $post["actualizado_por"] = $user_current["id"];
                     $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
-
+                    if($post["cuenta_sede"]=="false")
+                    {
+                        $post["cuenta_sede"]=FALSE;
+                        $post["tipo_sede"]="";
+                    }
+                    else
+                    {
+                        $post["cuenta_sede"]=TRUE;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasjuridicas en el método editar_participante, al editar el participante pj hijo ('.$request->getPost('id').') PJ en la convocatoria(' . $request->getPost('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                        
                         $logger->close();
