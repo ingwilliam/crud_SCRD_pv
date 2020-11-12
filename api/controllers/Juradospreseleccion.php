@@ -1897,10 +1897,10 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
                                     ' id = ' . $user_current["id"]
                                 ]
                 );
-                
-                $nombre_misional=$misional->primer_nombre." ".$misional->segundo_nombre." ".$misional->primer_apellido." ".$misional->segundo_apellido;
 
-                $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion')." "."Verificado por ".$nombre_misional. " El día ".date("Y-m-d H:i:s");
+                $nombre_misional = $misional->primer_nombre . " " . $misional->segundo_nombre . " " . $misional->primer_apellido . " " . $misional->segundo_apellido;
+
+                $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion') . " " . "Verificado por " . $nombre_misional . " El día " . date("Y-m-d H:i:s");
                 $postulacion->aplica_perfil = $request->getPut('option_aplica_perfil');
                 $postulacion->estado = 11; //11	jurados	Verificado
                 $postulacion->active = true;
@@ -2709,6 +2709,14 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
                                                 ]
                                 );
 
+//                                $juradospostulados = Juradospostulados::find(
+//                                                [
+//                                                    " convocatoria = " . $request->get('convocatoria')
+//                                                    . " AND active = true ",
+//                                                    "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
+//                                                ]
+//                                );
+
                                 $rechazada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Rechazada' "))->id;
                                 $declinada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Declinada' "))->id;
 
@@ -2723,10 +2731,13 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
                                                     [
                                                         'column' => 'id',
                                                         'conditions' => "juradospostulado = " . $postulacion->id
+//                                                        'conditions' => "juradospostulado = " . 5330
                                                     ]
                                     );
 
-                                    if (isset($notificacion->id)) {
+//                                    return json_encode($notificacion);
+
+                                    if (isset($notificacion)) {
 
                                         if ($notificacion->estado == $rechazada || $notificacion->estado == $declinada) {
                                             $postulacion->active = false;
