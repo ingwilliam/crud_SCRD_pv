@@ -392,6 +392,18 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         if ($request->getPost('entidad') != "") {
             $in_entidades = $request->getPost('entidad');
         }
+        
+        
+        $array_programas = Programas::find("active = true");
+        $in_programas = "";
+        foreach ($array_programas as $programa) {
+            $in_programas = $in_programas.$programa->id.",";
+        }
+        $in_programas = trim($in_programas,",");
+        if ($request->getPost('programa') != "") {
+            $in_programas = $request->getPost('programa');
+        }
+        
         //Convocatorias ofertadas por anio
         //Entidad        
         $sql_propuestas = "
@@ -401,7 +413,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             FROM 
                 Viewconvocatoriascifras AS vwc
             WHERE
-                ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.")
+                ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.") AND vwc.programa IN (".$in_programas.") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2 DESC
             ";
@@ -418,19 +430,17 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
         
         //Convocatorias estado        
-        //Propuestas Inscritas
+        //Propuestas Inscritas        
         $sql_propuestas = "
             SELECT 
-            es.nombre AS label,
-            count(vwp.id_propuesta) AS total_propuestas
-        FROM 
-            Viewpropuestas AS vwp
-        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_categoria=vwp.id_convocatoria_propuesta_inscrita
-        INNER JOIN Estados AS es ON es.id=vwc.estado 
-        WHERE
-            ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwp.id_estado NOT IN (7,20) AND vwp.id_entidad IN (".$in_entidades.")
-        GROUP BY 1
-        ORDER BY 2 ASC
+                vwc.estado_convocatoria AS label,
+                count(vwc.id) AS total_propuestas
+            FROM 
+                Viewconvocatoriascifras AS vwc
+            WHERE
+                ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.") AND vwc.programa IN (".$in_programas.") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
+            GROUP BY 1
+            ORDER BY 2 DESC
             ";
 
         $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
@@ -455,7 +465,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     Viewpropuestas AS vwc 
             INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." AND vwp.estado IN (5,6,32,43,45) AND vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." AND vwp.estado IN (5,6,32,43,45) AND vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -478,7 +488,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                 vwc.rango AS label,
                 SUM(vwc.count) AS total_propuestas
             FROM Viewrangosetareos AS vwc
-            WHERE ".$where." AND vwc.entidad IN (".$in_entidades.")
+            WHERE ".$where." AND vwc.entidad IN (".$in_entidades.")  AND vwc.programa IN (".$in_programas.")
             GROUP BY 1
             ORDER BY 2            
             ";
@@ -503,8 +513,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -529,8 +540,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%'
             GROUP BY 1
             ORDER BY 2
             ";
@@ -554,8 +566,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -583,8 +596,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             INNER JOIN Participantes AS par ON par.id=p.participante
             INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
             INNER JOIN Perfiles AS per ON per.id=up.perfil	
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -608,8 +622,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_convocatoria) as total_propuestas
             from 
                     Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.id_estado NOT IN (7,20)  AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.id_estado NOT IN (7,20)  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             ORDER BY 2
             ";
@@ -633,8 +648,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     sum(vwc.monto_asignado) as total_propuestas
             from 
                     Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             order by 2 ASC
             ";
@@ -659,8 +675,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     sum(vwc.monto_asignado) as total_propuestas
             from 
                     Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND vwc.id_entidad IN (".$in_entidades.")
+                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             order by 2 ASC
             ";
@@ -686,7 +703,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             from 
                     Viewofertado as vwc 
             where 
-                    ".$where." AND vwc.id_entidad IN (".$in_entidades.")            
+                    ".$where." AND vwc.id_entidad IN (".$in_entidades.")  AND vwc.programa IN (".$in_programas.")           
             order by 2 ASC
             ";
         
