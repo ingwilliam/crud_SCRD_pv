@@ -805,8 +805,8 @@ $app->get('/all_documento', function () use ($app, $config) {
 
                 $documentos = Propuestajuradodocumento::find(
                                 [
-                                    " propuesta = " . $participante->propuestas->id
-                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                    " propuesta = " . $participante->propuestas->id,
+//                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
                                     "order" => 'id ASC',
                                     "limit" => $request->get('length'),
                                     "offset" => $request->get('start'),
@@ -913,13 +913,19 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
 
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
@@ -929,7 +935,8 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                 $plazocargar = date('Y-m-j H:i:s', $plazocargar);
 
-
+//                return json_encode($convocatoria->id);
+                
                 $educacionformales = Educacionformal::find(
                                 [
                                     " propuesta = " . $participante->propuestas->id
@@ -1039,13 +1046,20 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
-
+                
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
+                
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
@@ -1153,6 +1167,7 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                     $participante = $postulacion->propuestas->participantes;
                     $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
+                
 
                 /*
                  * 09-11-2020
@@ -1160,13 +1175,20 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
+                
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
 
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
@@ -1296,13 +1318,20 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
+                
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
 
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
@@ -1424,13 +1453,20 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
+                
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
 
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
@@ -1550,13 +1586,20 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
+                
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if($convocatoria->convocatoria_padre_categoria!=null){
+                    $id_convocatoria=$convocatoria->convocatoria_padre_categoria;
+                }else{
+                    $id_convocatoria=$convocatoria->id;
+                }
 
                 $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
 
                 $cronograma = Convocatoriascronogramas::findFirst(
                                 [
                                     ' tipo_evento = ' . $tipo_evento->id
-                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
                                     . ' AND active = true'
                                 ]
                 );
