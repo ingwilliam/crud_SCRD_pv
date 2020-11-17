@@ -699,11 +699,12 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $sql_propuestas = "
             select 
                     vwc.nombre_entidad as label,
-                    vwc.sum as total_propuestas
+                    SUM(vwc.sum) as total_propuestas
             from 
                     Viewofertado as vwc 
             where 
                     ".$where." AND vwc.id_entidad IN (".$in_entidades.")  AND vwc.programa IN (".$in_programas.")           
+            GROUP BY 1
             order by 2 ASC
             ";
         
