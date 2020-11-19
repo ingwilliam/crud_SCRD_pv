@@ -650,7 +650,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     Viewpropuestas as vwc 
             INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             order by 2 ASC
             ";
@@ -677,7 +677,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     Viewpropuestas as vwc 
             INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             order by 2 ASC
             ";
