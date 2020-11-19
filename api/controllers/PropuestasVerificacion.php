@@ -707,14 +707,15 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                         'order' => 'fecha_creacion ASC',
                             ]));
                             
-                            $url_archivo = explode("/alfresco/", $config->alfresco->api);
+                            $url_archivo = $config->sistema->url_admin;
                             
                             foreach ($consulta_archivos_propuesta as $archivo) {
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
-                                $id_alfreco=explode(";1.0", $archivo->id_alfresco);
-                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo[0]."/share/proxy/alfresco/slingshot/node/content/workspace/SpacesStore/".$id_alfreco[0]."/".$archivo->nombre;                                                                
+                                $ext_array = explode('.', $archivo->nombre);
+                                $ext = end($ext_array);
+                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo."pages/administracionpropuestas/visor.html?id=".$archivo->id_alfresco."&ext=".$ext."&name=".$archivo->nombre;
                             }
                             
                             //Consulto todos los link cargados por el usuario
@@ -760,14 +761,16 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                     'order' => 'fecha_creacion ASC',
                         ]));
 
-                        $url_archivo = explode("/alfresco/", $config->alfresco->api);
+                        $url_archivo = $config->sistema->url_admin;
+                        
                         foreach ($consulta_archivos_propuesta as $archivo) {
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["barbosa"] = $archivo->id_alfresco;                                
-                            $id_alfreco=explode(";1.0", $archivo->id_alfresco);
-                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo[0]."/share/proxy/alfresco/slingshot/node/content/workspace/SpacesStore/".$id_alfreco[0]."/".$archivo->nombre;
+                            $ext_array = explode('.', $archivo->nombre);
+                            $ext = end($ext_array);
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo."pages/administracionpropuestas/visor.html?id=".$archivo->id_alfresco."&ext=".$ext."&name=".$archivo->nombre;
                         }
 
                         $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
