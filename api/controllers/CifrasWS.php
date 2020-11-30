@@ -645,6 +645,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $sql_propuestas = "
             select 
                     vwc.localidad_ejecucion_propuesta as label,
+                    count(vwc.id_propuesta) as total_entidad,
                     sum(vwc.monto_asignado) as total_propuestas
             from 
                     Viewpropuestas as vwc 
@@ -652,7 +653,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             where 
                     ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
-            order by 2 ASC
+            order by 3 ASC
             ";
         
         $propuestas_localidadeje = $app->modelsManager->executeQuery($sql_propuestas);
@@ -668,10 +669,72 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
 
         $array["table_valor_localidadeje_anio"] = $propuestas_localidadeje;
         
+        //Propuestas por tipo de participante de ejecucion
+        $sql_propuestas = "
+            select 
+                    per.nombre as label,
+                    count(vwc.id_propuesta) as total_entidad,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+            INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
+            INNER JOIN Participantes AS par ON par.id=p.participante
+            INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
+            INNER JOIN Perfiles AS per ON per.id=up.perfil
+            where 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+            group by 1
+            order by 3 ASC
+            ";
+        
+        $propuestas_participanteeje = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_participanteeje AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_eje_tipo_participante"]["value"] = $array_value;
+        $array["valor_eje_tipo_participante"]["label"] = $array_label;
+
+        $array["table_valor_eje_tipo_participante"] = $propuestas_participanteeje;
+        
+        //Propuestas por area de ejecucion
+        $sql_propuestas = "
+            select 
+                    a.nombre as label,
+                    count(vwc.id_propuesta) as total_entidad,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+            INNER JOIN Areas AS a ON a.id=vwp.area
+            where 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+            group by 1
+            order by 3 ASC
+            ";
+        
+        $propuestas_area = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_area AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_eje_area"]["value"] = $array_value;
+        $array["valor_eje_area"]["label"] = $array_label;
+
+        $array["table_valor_eje_area"] = $propuestas_area;
+        
         //Propuestas por entidad de ejecucion
         $sql_propuestas = "
             select 
                     vwc.nombre_entidad as label,
+                    count(vwc.id_propuesta) as total_entidad,
                     sum(vwc.monto_asignado) as total_propuestas
             from 
                     Viewpropuestas as vwc 
@@ -679,7 +742,7 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             where 
                     ".$where." and vwc.estado_propuesta IN ('Ganadora') AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
-            order by 2 ASC
+            order by 3 ASC
             ";
         
         $propuestas_entidadeje = $app->modelsManager->executeQuery($sql_propuestas);
