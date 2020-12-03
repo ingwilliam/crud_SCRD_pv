@@ -786,8 +786,16 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         ]));
 
                         foreach ($consulta_links_propuesta as $link) {
+                            //link para el formulario del pdac
+                            $link_actual=$link->link;
+                            if(strpos($link->link,"/report_SCRD_pv/reporte_propuesta_inscrita_pdac.php"))
+                            {
+                                $link_cortado = explode("&token=",$link->link);
+                                $link_actual = $link_cortado[0]."&token=".$request->get('token');
+                            }
+                            
                             $documentos_tecnicos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
-                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
+                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["link"] = $link_actual;                                                                
                         }
                         
                     }

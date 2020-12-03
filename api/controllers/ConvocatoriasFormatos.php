@@ -2531,29 +2531,33 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
 
             //Genero reporte propuestas por estado
             $sql_convocatorias = "
-                        SELECT     	
+                        SELECT
                             p.nombre AS propuesta,
                             CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido) AS participante,
                             u.username AS usuario_registro,
+                            par.numero_documento,
                             par.numero_celular,
                             par.numero_celular_tercero,
-                            par.numero_telefono
+                            par.numero_telefono,
+                            par.correo_electronico
                         FROM Propuestas AS p 
-                            INNER JOIN Participantes AS par ON par.id=p.participante
-                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                            INNER JOIN Participantes AS par ON par.id=p.participante                            
                             INNER JOIN Usuarios AS u ON u.id=p.creado_por
+                            LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento                            
                         WHERE p.convocatoria=" . $request->getPut('convocatoria') . " AND p.estado=7";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
             foreach ($convocatorias as $convocatoria) {
                 $html_propuestas = $html_propuestas . "<tr>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_documento . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->propuesta . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->participante . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->usuario_registro . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_celular_tercero . "</td>";
                 $html_propuestas = $html_propuestas . "<td>" . $convocatoria->numero_telefono . "</td>";
+                $html_propuestas = $html_propuestas . "<td>" . $convocatoria->correo_electronico . "</td>";
                 $html_propuestas = $html_propuestas . "</tr>";
             }
 
@@ -2569,26 +2573,28 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas', function () 
 
             $html = '<table border="1" cellpadding="2" cellspacing="2" nobr="true">
                     <tr>
-                        <td colspan="6" align="center">  Listado de propuestas Guardada - No Inscrita   </td>
+                        <td colspan="8" align="center">  Listado de propuestas Guardada - No Inscrita   </td>
                     </tr>                    
                     <tr>
-                        <td colspan="6" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
+                        <td colspan="8" align="center"> Fecha de corte ' . date("Y-m-d H:i:s") . '</td>
                     </tr>
                     <tr>
-                        <td colspan="3">Año: ' . $request->getPut('anio') . '</td>
-                        <td colspan="3">Entidad: ' . $entidad->descripcion . '</td>
+                        <td colspan="4">Año: ' . $request->getPut('anio') . '</td>
+                        <td colspan="4">Entidad: ' . $entidad->descripcion . '</td>
                     </tr>                                    
                     <tr>
-                        <td colspan="3">Convocatoria: ' . $nombre_convocatoria . '</td>
-                        <td colspan="3">Categoría: ' . $nombre_categoria . '</td>
+                        <td colspan="4">Convocatoria: ' . $nombre_convocatoria . '</td>
+                        <td colspan="4">Categoría: ' . $nombre_categoria . '</td>
                     </tr>                                    
                     <tr style="background-color:#BDBDBD;color:#OOOOOO;">
+                        <td align="center">Número de Documento</td>                        
+                        <td align="center">Participante</td>      
                         <td align="center">Propuesta</td>
-                        <td align="center">Participante</td>                        
                         <td align="center">Usuario de registro</td>
                         <td align="center">Número celular</td>
-                        <td align="center">Número celular tercero</td>
-                        <td align="center">Teléfono fijo</td>                                                                      
+                        <td align="center">Número celular tercero</td>                        
+                        <td align="center">Teléfono fijo</td>         
+                        <td align="center">Correo electrónico</td>
                     </tr> 
                     ' . $html_propuestas . '
                 </table>';
@@ -2992,9 +2998,11 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
                             p.nombre AS propuesta,
                             CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido) AS participante,
                             u.username AS usuario_registro,
+                            par.numero_documento,
                             par.numero_celular,
                             par.numero_celular_tercero,
-                            par.numero_telefono
+                            par.numero_telefono,
+                            par.correo_electronico
                         FROM Propuestas AS p 
                             INNER JOIN Participantes AS par ON par.id=p.participante
                             LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
@@ -3017,6 +3025,16 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
             $hoja = $documento->getActiveSheet();
             $hoja->setTitle("Pro Guardada - No Inscrita");
 
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            if ($convocatoria->convocatoria_padre_categoria > 0) {
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;
+            }
+            
             //Cabezote de la tabla
             $hoja->setCellValueByColumnAndRow(1, 1, "Listado de propuestas Guardada - No Inscrita");
 
@@ -3029,24 +3047,34 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
             $hoja->setCellValueByColumnAndRow(2, 3, $anio);
             $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
             $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
+            
+            //Convocatoria
+            $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
+            $hoja->setCellValueByColumnAndRow(3, 4, "Categoría");
+            $hoja->setCellValueByColumnAndRow(4, 4, $nombre_categoria);
 
             //Cabezote de la tabla
-            $hoja->setCellValueByColumnAndRow(1, 5, "Propuesta");
+            $hoja->setCellValueByColumnAndRow(1, 5, "Número de Documento");
             $hoja->setCellValueByColumnAndRow(2, 5, "Participante");
-            $hoja->setCellValueByColumnAndRow(3, 5, "Usuario de registro");
-            $hoja->setCellValueByColumnAndRow(4, 5, "Número celular");
-            $hoja->setCellValueByColumnAndRow(5, 5, "Número celular tercero");
-            $hoja->setCellValueByColumnAndRow(6, 5, "Teléfono fijo");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Propuesta");            
+            $hoja->setCellValueByColumnAndRow(4, 5, "Usuario de registro");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Número celular");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Número celular tercero");
+            $hoja->setCellValueByColumnAndRow(7, 5, "Teléfono fijo");
+            $hoja->setCellValueByColumnAndRow(8, 5, "Correo electrónico");            
 
             //Registros de la base de datos
             $fila = 6;
             foreach ($convocatorias as $convocatoria) {
-                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->propuesta);
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->numero_documento);
                 $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->participante);
-                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->usuario_registro);
-                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->numero_celular);
-                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->numero_celular_tercero);
-                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->propuesta);                
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->usuario_registro);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->numero_celular);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->numero_celular_tercero);
+                $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->correo_electronico);
                 $fila++;
             }
 
