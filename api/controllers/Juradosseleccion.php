@@ -220,6 +220,7 @@ $app->get('/all_seleccionados', function () use ($app) {
             if ($user_current["id"]) {
 
                 $total_evaluacion = Tablasmaestras::findFirst([" nombre = 'puntaje_minimo_jurado_seleccionar' "]);
+                $evaluado = Estados::findFirst(["tipo_estado = 'jurados' AND nombre='Evaluado' "]);
 
                 //busca los que se postularon
                 if ($request->get('convocatoria')) {
@@ -233,6 +234,7 @@ $app->get('/all_seleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('categoria')
                                             . " AND total_evaluacion >= " . $total_evaluacion->valor
+                                            . " AND estado = " . $evaluado->id
                                         ]
                         );
                     } elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && $request->get('categoria')) {
@@ -240,6 +242,7 @@ $app->get('/all_seleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('categoria')
                                             . " AND total_evaluacion >= " . $total_evaluacion->valor
+                                            . " AND estado = " . $evaluado->id
                                         ]
                         );
                     } elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias && !$request->get('categoria')) {
@@ -247,6 +250,7 @@ $app->get('/all_seleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('convocatoria')
                                             . " AND total_evaluacion >= " . $total_evaluacion->valor
+                                            . " AND estado = " . $evaluado->id
                                         ]
                         );
                     } else {
@@ -254,6 +258,7 @@ $app->get('/all_seleccionados', function () use ($app) {
                                         [
                                             " convocatoria = " . $request->get('convocatoria')
                                             . " AND total_evaluacion >= " . $total_evaluacion->valor
+                                            . " AND estado = " . $evaluado->id
                                         ]
                         );
                     }
@@ -722,7 +727,7 @@ $app->get('/notificacion', function () use ($app) {
                     "fecha_aceptacion" => $notificacion->fecha_aceptacion,
                     "fecha_rechazo" => $notificacion->fecha_rechazo,
                     "valor_estimulo" => $notificacion->valor_estimulo
-                        ]);
+                ]);
 
                 return json_encode($notificacion);
             } else {
@@ -1863,7 +1868,7 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
             $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
 
             //Verifica que la respuesta es ok, para poder realizar la escritura
-            if ($permiso_escritura == "ok") {                
+            if ($permiso_escritura == "ok") {
 
                 if ($request->getPut('postulacion') && $request->getPut('postulacion') != '') {
 

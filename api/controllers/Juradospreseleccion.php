@@ -776,12 +776,37 @@ $app->get('/all_documento', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
+
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
+                                [
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $convocatoria->id
+                                    . ' AND active = true'
+                                ]
+                );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+
 
 
                 $documentos = Propuestajuradodocumento::find(
                                 [
                                     " propuesta = " . $participante->propuestas->id,
+//                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
                                     "order" => 'id ASC',
                                     "limit" => $request->get('length'),
                                     "offset" => $request->get('start'),
@@ -879,19 +904,74 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
 
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
+                }
+
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
+                                [
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
+                                ]
+                );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+
+//                return json_encode($convocatoria->id);
+
+
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $educacionformales = Educacionformal::find(
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%')"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
+                    $educacionformales = Educacionformal::find(
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%')",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
                 }
 
 
-                $educacionformales = Educacionformal::find(
-                                [
-                                    " propuesta = " . $participante->propuestas->id
-                                    . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR institucion LIKE '%" . $request->get("search")['value'] . "%')",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
+
+
 
                 foreach ($educacionformales as $educacionformal) {
 
@@ -981,19 +1061,71 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
 
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
 
-                $educacionnoformales = Educacionnoformal::find(
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
                                 [
-                                    " propuesta = " . $participante->propuestas->id
-                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR institucion LIKE '%" . $request->get("search")['value'] . "%' )",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
                                 ]
                 );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+
+
+
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $educacionnoformales = Educacionnoformal::find(
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%' )"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
+                    $educacionnoformales = Educacionnoformal::find(
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%' )",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                }
+
 
                 foreach ($educacionnoformales as $educacionnoformal) {
 
@@ -1078,18 +1210,73 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
 
-                $experiencialaborales = Experiencialaboral::find(
+
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
+
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
                                 [
-                                    " propuesta= " . $participante->propuestas->id
-                                    . " AND ( entidad LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR cargo LIKE '%" . $request->get("search")['value'] . "%' )",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
                                 ]
                 );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+
+
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $experiencialaborales = Experiencialaboral::find(
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( entidad LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR cargo LIKE '%" . $request->get("search")['value'] . "%' )"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
+                    $experiencialaborales = Experiencialaboral::find(
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( entidad LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR cargo LIKE '%" . $request->get("search")['value'] . "%' )",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                }
+
+
+
 
                 foreach ($experiencialaborales as $experiencialaboral) {
 
@@ -1177,10 +1364,60 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
 
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
 
-                $experienciajurados = Experienciajurado::find(
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
+                                [
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
+                                ]
+                );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+
+
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $experienciajurados = Experienciajurado::find(
+                                [
+                                    " propuesta = " . $participante->propuestas->id
+                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR entidad LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                    "order" => 'id ASC',
+                                    "limit" => $request->get('length'),
+                                    "offset" => $request->get('start'),
+                                ]
+                );
+                }else{
+                    $experienciajurados = Experienciajurado::find(
                                 [
                                     " propuesta = " . $participante->propuestas->id
                                     . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
@@ -1191,6 +1428,8 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                                     "offset" => $request->get('start'),
                                 ]
                 );
+                }
+                
 
                 foreach ($experienciajurados as $experienciajurado) {
 
@@ -1281,9 +1520,59 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
 
-                $reconocimientos = Propuestajuradoreconocimiento::find(
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
+
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
+                                [
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
+                                ]
+                );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+                
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $reconocimientos = Propuestajuradoreconocimiento::find(
+                                [
+                                    " propuesta= " . $participante->propuestas->id
+                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR institucion LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                    "order" => 'id ASC',
+                                    "limit" => $request->get('length'),
+                                    "offset" => $request->get('start'),
+                                ]
+                );
+                }else{
+                    $reconocimientos = Propuestajuradoreconocimiento::find(
                                 [
                                     " propuesta= " . $participante->propuestas->id
                                     . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
@@ -1294,6 +1583,9 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                                     "offset" => $request->get('start'),
                                 ]
                 );
+                }
+
+                
 
                 foreach ($reconocimientos as $reconocimiento) {
 
@@ -1383,9 +1675,59 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                 } elseif ($request->get('postulacion') && $request->get('postulacion') != 'null') {
                     $postulacion = Juradospostulados::findFirst($request->get('postulacion'));
                     $participante = $postulacion->propuestas->participantes;
+                    $convocatoria = Convocatorias::findFirst([' id = ' . $postulacion->convocatoria]); //Se crea el objeto convocatoria
                 }
 
-                $publicaciones = Propuestajuradopublicacion::find(
+                /*
+                 * 09-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora a la funcionalidad la condición de que muestre unicamente 
+                 * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
+                 */
+
+                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                if ($convocatoria->convocatoria_padre_categoria != null) {
+                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                } else {
+                    $id_convocatoria = $convocatoria->id;
+                }
+
+                $tipo_evento = Tiposeventos::findFirst(['nombre = "Fecha de cierre"']);
+
+                $cronograma = Convocatoriascronogramas::findFirst(
+                                [
+                                    ' tipo_evento = ' . $tipo_evento->id
+                                    . ' AND convocatoria = ' . $id_convocatoria
+                                    . ' AND active = true'
+                                ]
+                );
+
+                //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
+                $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+
+                $plazocargar = date('Y-m-j H:i:s', $plazocargar);
+                
+                /*
+                 * 17-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora validación para determinar si el tipo de postulación es inscrita.
+                 */
+
+                if ($postulacion->tipo_postulacion == 'Inscrita') {
+                    $publicaciones = Propuestajuradopublicacion::find(
+                                [
+                                    " propuesta= " . $participante->propuestas->id
+                                    . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR tema LIKE '%" . $request->get("search")['value'] . "%'"
+                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                    "order" => 'id ASC',
+                                    "limit" => $request->get('length'),
+                                    "offset" => $request->get('start'),
+                                ]
+                );
+                }else{
+                    $publicaciones = Propuestajuradopublicacion::find(
                                 [
                                     " propuesta= " . $participante->propuestas->id
                                     . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
@@ -1396,6 +1738,9 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                                     "offset" => $request->get('start'),
                                 ]
                 );
+                }
+
+                
 
                 foreach ($publicaciones as $publicacion) {
 
@@ -1704,7 +2049,21 @@ $app->put('/evaluar_perfil', function () use ($app, $config) {
                     $postulacion->convocatoria = $request->getPut('idc');
                 }
 
-                $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion');
+                /*
+                 * 10-11-2020
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se incorpora información del misional y la fecha en la que se realiza la verificación del perfil.
+                 */
+
+                $misional = Usuarios::findFirst(
+                                [
+                                    ' id = ' . $user_current["id"]
+                                ]
+                );
+
+                $nombre_misional = $misional->primer_nombre . " " . $misional->segundo_nombre . " " . $misional->primer_apellido . " " . $misional->segundo_apellido;
+
+                $postulacion->descripcion_evaluacion = $request->getPut('descripcion_evaluacion') . " " . "Verificado por " . $nombre_misional . " El día " . date("Y-m-d H:i:s");
                 $postulacion->aplica_perfil = $request->getPut('option_aplica_perfil');
                 $postulacion->estado = 11; //11	jurados	Verificado
                 $postulacion->active = true;
@@ -2513,18 +2872,35 @@ $app->put('/liberar_postulaciones/convocatoria/{id:[0-9]+}', function ($id) use 
                                                 ]
                                 );
 
+//                                $juradospostulados = Juradospostulados::find(
+//                                                [
+//                                                    " convocatoria = " . $request->get('convocatoria')
+//                                                    . " AND active = true ",
+//                                                    "order" => "aplica_perfil desc, total_evaluacion desc, estado desc"
+//                                                ]
+//                                );
+
                                 $rechazada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Rechazada' "))->id;
                                 $declinada = (Estados::findFirst(" tipo_estado = 'jurado_notificaciones' AND nombre = 'Declinada' "))->id;
 
                                 foreach ($postulaciones as $postulacion) {
 
-                                    $notificacion = Juradosnotificaciones::findFirst(
+                                    /*
+                                     * 28-10-2020
+                                     * Wilmer gustavo Mogollón Duque
+                                     * Se selecciona la última notificación de cada postulación
+                                     */
+                                    $notificacion = Juradosnotificaciones::maximum(
                                                     [
-                                                        'juradospostulado = ' . $postulacion->id
+                                                        'column' => 'id',
+                                                        'conditions' => "juradospostulado = " . $postulacion->id
+//                                                        'conditions' => "juradospostulado = " . 5330
                                                     ]
                                     );
 
-                                    if (isset($notificacion->id)) {
+//                                    return json_encode($notificacion);
+
+                                    if (isset($notificacion)) {
 
                                         if ($notificacion->estado == $rechazada || $notificacion->estado == $declinada) {
                                             $postulacion->active = false;
@@ -2748,20 +3124,19 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                                     vwp.segundo_apellido,
                                     vwp.estado_propuesta                                
                             FROM Viewparticipantes AS vwp                                
-                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '". $participante->numero_documento."'"
-                            ;
+                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '" . $participante->numero_documento . "'"
+                    ;
 
                     $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
-                    
-                   
+
+
 
                     foreach ($personas_naturales as $pn) {
 
                         //Consulto la convocatoria -- Se ajusta la consulta, pues no siempre traia la información correcta.
-                        $convocatoria_pn = Convocatorias::findFirst([" nombre = '".$pn->convocatoria."'"]);
-                        
-//                         return json_encode($convocatoria_pn);
+                        $convocatoria_pn = Convocatorias::findFirst([" nombre = '" . $pn->convocatoria . "'"]);
 
+//                         return json_encode($convocatoria_pn);
                         //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                         $nombre_convocatoria_pn = $convocatoria_pn->nombre;
                         $nombre_categoria_pn = "";
