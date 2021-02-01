@@ -271,7 +271,6 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
             
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
-            
 
 
             require_once("../library/phpspreadsheet/autoload.php");
@@ -2239,7 +2238,6 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
 
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
-            ini_set('max_execution_time', 0);
 
             $entidad = Entidades::findFirst($request->getPut('entidad'));
             $anio = $request->getPut('anio');
@@ -2274,9 +2272,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                         vwp.estrato,
                         vwp.correo_electronico,
                         vwp.numero_telefono,
-                        vwp.numero_celular,
-                        vwp.redes_sociales,
-                        vwp.links
+                        vwp.numero_celular
                 FROM Viewparticipantes AS vwp                    
                 WHERE vwp.id_convocatoria=" . $convocatoria . "
                 ORDER BY vwp.codigo
@@ -2311,9 +2307,7 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                         vwp.estrato,
                         vwp.correo_electronico,
                         vwp.numero_telefono,
-                        vwp.numero_celular,
-                        vwp.redes_sociales,
-                        vwp.links
+                        vwp.numero_celular
                 FROM Viewparticipantes AS vwp                    
                 WHERE vwp.id_entidad=" . $entidad->id . "
                 ORDER BY vwp.codigo
@@ -2388,8 +2382,6 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 $hoja->setCellValueByColumnAndRow(18, 6, "Correo electrónico");
                 $hoja->setCellValueByColumnAndRow(19, 6, "Tel Fijo");
                 $hoja->setCellValueByColumnAndRow(20, 6, "Tel Celular");
-                $hoja->setCellValueByColumnAndRow(21, 6, "Redes sociales");
-                $hoja->setCellValueByColumnAndRow(20, 6, "Página web");
 
                 //Registros de la base de datos
                 $fila = 7;
@@ -2419,8 +2411,6 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->correo_electronico);
                     $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->numero_telefono);
                     $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->numero_celular);
-                    $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->redes_sociales);
-                    $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->links);
                     $fila++;
                 }
             } else {
@@ -2447,8 +2437,6 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                 $hoja->setCellValueByColumnAndRow(20, 6, "Correo electrónico");
                 $hoja->setCellValueByColumnAndRow(21, 6, "Tel Fijo");
                 $hoja->setCellValueByColumnAndRow(22, 6, "Tel Celular");
-                $hoja->setCellValueByColumnAndRow(23, 6, "Redes sociales");
-                $hoja->setCellValueByColumnAndRow(24, 6, "Página web");
 
                 //Registros de la base de datos
                 $fila = 7;
@@ -2481,8 +2469,6 @@ $app->post('/reporte_listado_entidades_convocatorias_listado_participantes_xls',
                     $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->correo_electronico);
                     $hoja->setCellValueByColumnAndRow(21, $fila, $convocatoria->numero_telefono);
                     $hoja->setCellValueByColumnAndRow(22, $fila, $convocatoria->numero_celular);
-                    $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->redes_sociales);
-                    $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->links);
                     $fila++;
                 }
             }
