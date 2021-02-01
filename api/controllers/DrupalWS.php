@@ -1042,8 +1042,8 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                 "descripcion" => $array_convocatoria["descripcion"],
                 "linea_estrategica" => $array_convocatoria["linea"],
                 "area" => $array_convocatoria["area"],
-                "total_recursos" => $array_convocatoria["valor_total_estimulos"],
-                "descripcion_general_recursos_a_otorgar" => $array_convocatoria["descripcion_bolsa"]
+                //"total_recursos" => $array_convocatoria["valor_total_estimulos"],
+                //"descripcion_general_recursos_a_otorgar" => $array_convocatoria["descripcion_bolsa"]
             ];
             $array["cronograma"] = $cronogramas;
             $array["objeto"] = $array_convocatoria['objeto'];
@@ -1054,7 +1054,23 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array["criterios_evaluacion"] = $rondas_evaluacion;
             $array["derechos_especificos_ganadores"] = $array_convocatoria["derechos_ganadores"];
             $array["deberes_especificos_ganadores"] = $array_convocatoria["deberes_ganadores"];
-            $array["categorias_estimulos"] = $categorias_estimulos;
+            if (!$convocatoria->diferentes_categorias) {
+                $array["distribucion_estimulos"] = [
+                    $convocatoria->id => [
+                        "estimulos" => [
+                            $convocatoria->id=> [
+                                "numero_estimulos" => $convocatoria->numero_estimulos,
+                                "valor_total_estimulos" => "$ " . number_format($convocatoria->valor_total_estimulos, 0, '', '.'),
+                                "bolsa_concursable" => $convocatoria->bolsa_concursable,
+                                "descripcion_bolsa" => $convocatoria->descripcion_bolsa
+                            ]
+                        ]
+                    ]
+                ];
+            } else {
+                $array["distribucion_estimulos"] = $categorias_estimulos;
+            }
+
 
             //documentos
             $array["anexos"] = $anexos;
@@ -1119,7 +1135,7 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
             $fechaTruncada = $anio . "-" . $mes . "-" . $dia;
 
             $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
-                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id
+                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                     left join Estados on convocatoriaspublicas.estado = Estados.id 
                     left join Entidades on convocatoriaspublicas.entidad = Entidades.id
                     where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha . "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) = '" . $fechaTruncada . "'";
