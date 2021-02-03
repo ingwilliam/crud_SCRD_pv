@@ -1187,8 +1187,96 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 }
 );
 
-$app->post('/download_file', function () use ($app, $config) {
+//convocatorias_publicadas_preview
+$app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) {
+
+    //Cabecera y respuesta
+    $response = new Response();
+    $headers = $response->getHeaders();
+    $headers->set('Content-Type', 'application/json');
+    $response->setHeaders($headers);
+
+    //Retorno el array
+    $array_return = array();
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+
     try {
+
+        //Consulto el unico token de consulta
+        $token_validar = Tokens::findFirst("token = '" . $this->request->getPost('token') . "'");
+
+        //Valido si existe el token
+        if (isset($token_validar->id)) {
+
+            //de esta forma recibo el parametro fecha
+            $fecha = $this->request->getPost('fecha');
+            $fechaComoEntero = strtotime($fecha);
+            $anio = date("Y", $fechaComoEntero);
+            $mes = date("m", $fechaComoEntero);
+            //$dia = date("d", $fechaComoEntero);
+
+            //$fechaTruncada = $anio . "-" . $mes . "-" . $dia;
+            
+            $primerDiaSiguienteMes = date("Y-m-d",strtotime($anio. "-". $mes. "-01"."+ 1 month"));
+            
+            $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
+                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
+                    left join Estados on convocatoriaspublicas.estado = Estados.id 
+                    left join Entidades on convocatoriaspublicas.entidad = Entidades.id
+                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha . 
+                    "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+
+            $array = $app->modelsManager->executeQuery($sql);
+
+            $array_return["error"] = 0;
+            foreach ($array as $convocatoria) {
+                $array_return["respuesta"][] = [
+                    "id" => $convocatoria['id'],
+                    "convocatoria" => $convocatoria['convocatoria'],
+                    "estado" => $convocatoria['estado'],
+                    "entidad" => $convocatoria['entidad'],
+                    "anio" => $convocatoria['anio'],
+                ];
+            }
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador intercambio información en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->close();
+            return $response;
+        } else {
+            $array_return["error"] = 2;
+            $array_return["respuesta"] = "El token no es correcto";
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+            $logger->close();
+            return $response;
+        }
+    } catch (Exception $ex) {
+        $array_return["error"] = 1;
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método cierre_convocatoria.";
+
+        //Set value return
+        $response->setContent(json_encode($array_return));
+
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"' . $ex->getMessage() . ' en el controlador DrupalWS en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+        $logger->close();
+        return $response;
+    }
+}
+);
+
+$app->post('/download_file', function () use ($app, $config) {
+    try {       
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
