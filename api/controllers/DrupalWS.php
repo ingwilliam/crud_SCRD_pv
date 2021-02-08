@@ -267,7 +267,7 @@ $app->post('/convocatorias_publicadas_preview', function () use ($app, $config, 
 }
 );
 
-
+//convocatorias publicadas
 $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger) {
 
     //buscar como poner limite al numero de registros que devuelve
@@ -277,7 +277,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
     $headers->set('Content-Type', 'application/json');
     $response->setHeaders($headers);
 
-    //Retorno el array
+    //array de respuesta
     $array_return = array();
 
     //Instancio los objetos que se van a manejar
@@ -311,7 +311,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
             $offset = $this->request->getPost('offset');
             //limit es el número de registros que se devuelven
             $limit = $this->request->getPost('limit');
-
+            
             $where = '';
             if (isset($nombre)) {
                 $where = " LOWER(convocatorias.convocatoria) like LOWER('%" . $nombre . "%') ";
@@ -1124,7 +1124,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
     }
 });
 
-//convocatorias_publicadas_preview
+//cierre_convocatoria
 $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 
     //Cabecera y respuesta
@@ -1209,7 +1209,7 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 }
 );
 
-//convocatorias_publicadas_preview
+//cierre_convocatoria_mes
 $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) {
 
     //Cabecera y respuesta
@@ -1369,8 +1369,8 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
             //de esta forma recibo parametros
             $anio = $this->request->getPost('anio');
             $tipo_programa = $this->request->getPost('tipo_programa');
-            $entidades = json_decode($this->request->getPost('entidad'));
-            $tipos_graficas = json_decode($this->request->getPost('tipo_grafica'));
+            $entidades = $this->request->getPost('entidad');
+            $tipos_graficas = $this->request->getPost('tipo_grafica');
 
             //Inicio el where
             $where = "vwc.anio=" . date("Y");
