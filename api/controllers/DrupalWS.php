@@ -384,7 +384,6 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             if (isset($perfiles)) {
                 if (!empty($where)) {
-                    //c2.tipo_participante in (2,4)
                     $where .= " and c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
                 } else {
                     $where .= " c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
@@ -414,7 +413,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
             $sql = "SELECT distinct convocatorias.id, e.nombre as estado, e2.nombre as entidad, convocatorias.anio, convocatorias.convocatoria as nombre, p.nombre as tipo_programa, convocatorias.categoria, a.nombre as area, e3.nombre as enfoque, l.nombre as linea_estrategica, c.fecha_actualizacion FROM Viewconvocatoriaspublicas convocatorias 
                     left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id 
                     left join Estados e on e.id = convocatorias.estado 
-                    left join Entidades e2 on e2.id = convocatorias.estado 
+                    left join Entidades e2 on e2.id = convocatorias.entidad 
                     left join Programas p on p.id = convocatorias.programa 
                     left join Enfoques e3 on e3.id = convocatorias.enfoque
                     left join Areas a on a.id = convocatorias.area 
@@ -1238,12 +1237,12 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
 
             $primerDiaSiguienteMes = date("Y-m-d", strtotime($anio . "-" . $mes . "-01" . "+ 1 month"));
 
-            $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
+            $sql = "SELECT distinct convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin as fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                     left join Estados on convocatoriaspublicas.estado = Estados.id 
                     left join Entidades on convocatoriaspublicas.entidad = Entidades.id
-                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha .
-                    "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
+                    "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
 
             $array = $app->modelsManager->executeQuery($sql);
 
@@ -1255,6 +1254,7 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
                     "estado" => $convocatoria['estado'],
                     "entidad" => $convocatoria['entidad'],
                     "anio" => $convocatoria['anio'],
+                    "fecha_cierre" => $convocatoria['fecha_fin']
                 ];
             }
 
