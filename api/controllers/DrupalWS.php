@@ -211,6 +211,7 @@ $app->post('/convocatorias_publicadas_preview', function () use ($app, $config, 
             //de esta forma recibo parametros
             $limit = $this->request->getPost('cantidad');
 
+
             //estado 5 para solo traer los registro de las convocatorias publicadas y tipo_evento 25 para ordenar por la fecha de publicación
             $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_inicio FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id
@@ -267,7 +268,7 @@ $app->post('/convocatorias_publicadas_preview', function () use ($app, $config, 
 }
 );
 
-
+//convocatorias publicadas
 $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger) {
 
     //buscar como poner limite al numero de registros que devuelve
@@ -277,7 +278,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
     $headers->set('Content-Type', 'application/json');
     $response->setHeaders($headers);
 
-    //Retorno el array
+    //array de respuesta
     $array_return = array();
 
     //Instancio los objetos que se van a manejar
@@ -291,16 +292,17 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
         //Valido si existe el token
         if (isset($token_validar->id)) {
 
-
             //de esta forma recibo parametros
             $nombre = $this->request->getPost('nombre');
             $anio = $this->request->getPost('anio');
             $tipo_programa = $this->request->getPost('tipo_programa');
-            $entidad = $this->request->getPost('entidad');
+            $entidades = $this->request->getPost('entidad');
             $area = $this->request->getPost('area');
             $linea_estrategica = $this->request->getPost('linea_estrategica');
             $enfoque = $this->request->getPost('enfoque');
-            $estado = $this->request->getPost('estado');
+            $estados = $this->request->getPost('estado');
+            $modalidad = $this->request->getPost('modalidad');
+            $perfiles = $this->request->getPost('perfil');
 
             //parametros de orden
             $orden_nombre = $this->request->getPost('orden_nombre');
@@ -332,11 +334,11 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
                 }
             }
 
-            if (isset($entidad)) {
+            if (isset($entidades)) {
                 if (!empty($where)) {
-                    $where .= " and convocatorias.entidad = " . $entidad;
+                    $where .= " and convocatorias.entidad in (" . implode(", ", $entidades) . ")";
                 } else {
-                    $where .= " convocatorias.entidad = " . $entidad;
+                    $where .= " convocatorias.entidad in (" . implode(", ", $entidades) . ")";
                 }
             }
 
@@ -364,11 +366,27 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
                 }
             }
 
-            if (isset($estado)) {
+            if (isset($estados)) {
                 if (!empty($where)) {
-                    $where .= " and convocatorias.estado = " . $estado;
+                    $where .= " and convocatorias.estado in (" . implode(", ", $estados) . ")";
                 } else {
-                    $where .= " convocatorias.estado = " . $estado;
+                    $where .= " convocatorias.estado in (" . implode(", ", $estados) . ")";
+                }
+            }
+
+            if (isset($modalidad)) {
+                if (!empty($where)) {
+                    $where .= " and convocatorias.modalidad = " . $modalidad;
+                } else {
+                    $where .= " convocatorias.modalidad = " . $modalidad;
+                }
+            }
+
+            if (isset($perfiles)) {
+                if (!empty($where)) {
+                    $where .= " and c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
+                } else {
+                    $where .= " c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
                 }
             }
 
@@ -388,30 +406,27 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             //se agregan los parametros de limit y offset
             $rango = '';
-            if (isset($limit)) {
-                $rango .= " LIMIT " . $limit;
+            if (isset($limit) and isset($offset)) {
+                $rango .= " LIMIT " . $limit . " OFFSET " . $offset;
             }
 
-            if (isset($offset)) {
-                $rango .= " OFFSET " . $offset;
-            }
-
-            $sql = "SELECT convocatorias.id, e.nombre as estado, e2.nombre as entidad, convocatorias.anio, convocatorias.convocatoria as nombre, p.nombre as tipo_programa, convocatorias.categoria, a.nombre as area, e3.nombre as enfoque, l.nombre as linea_estrategica, c.fecha_actualizacion FROM Viewconvocatoriaspublicas convocatorias 
-left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id 
-left join Estados e on e.id = convocatorias.estado 
-left join Entidades e2 on e2.id = convocatorias.estado 
-left join Programas p on p.id = convocatorias.programa 
-left join Enfoques e3 on e3.id = convocatorias.enfoque
-left join Areas a on a.id = convocatorias.area 
-left join Lineasestrategicas l on l.id = convocatorias.linea_estrategica "
-                    . "WHERE c.tipo_evento = 25 and " . $where . $orderby . " LIMIT " . $limit . " OFFSET " . $offset;
-
-            $convocatorias = $app->modelsManager->executeQuery($sql);
+            $sql = "SELECT distinct convocatorias.id, e.nombre as estado, e2.nombre as entidad, convocatorias.anio, convocatorias.convocatoria as nombre, p.nombre as tipo_programa, convocatorias.categoria, a.nombre as area, e3.nombre as enfoque, l.nombre as linea_estrategica, c.fecha_actualizacion FROM Viewconvocatoriaspublicas convocatorias 
+                    left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id 
+                    left join Estados e on e.id = convocatorias.estado 
+                    left join Entidades e2 on e2.id = convocatorias.entidad 
+                    left join Programas p on p.id = convocatorias.programa 
+                    left join Enfoques e3 on e3.id = convocatorias.enfoque
+                    left join Areas a on a.id = convocatorias.area 
+                    left join Lineasestrategicas l on l.id = convocatorias.linea_estrategica 
+                    left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
+                    . "WHERE c.tipo_evento = 25 and " . $where . $orderby . " " . $rango;
 
             $sql_total_registros = "SELECT count(*) as total FROM Viewconvocatoriaspublicas convocatorias "
                     . "left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id "
+                    . "left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
                     . "WHERE c.tipo_evento = 25 and " . $where;
 
+            $convocatorias = $app->modelsManager->executeQuery($sql);
             $total_registros = $app->modelsManager->executeQuery($sql_total_registros);
 
 
@@ -598,7 +613,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array_convocatoria["convocatoria"] = $convocatoria->nombre;
             $array_convocatoria["entidad"] = $convocatoria->getEntidades()->nombre;
             $array_convocatoria["descripcion"] = $convocatoria->descripcion;
-            $array_convocatoria["estado"] = "Estado : " . $convocatoria->getEstados()->nombre;
+            $array_convocatoria["estado"] = $convocatoria->getEstados()->nombre;
             $array_convocatoria["linea"] = $convocatoria->getLineasestrategicas()->nombre;
             $array_convocatoria["area"] = $convocatoria->getAreas()->nombre;
             $array_convocatoria["tiene_categorias"] = $convocatoria->tiene_categorias;
@@ -767,15 +782,15 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
 
                                 //Creo el array del estimulo
                                 $categorias_estimulos[$categoria->id]["categoria"] = $categoria->nombre;
-                                $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = $categoria->numero_estimulos;
-                                $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["valor_total_estimulos"] = "$ " . number_format($categoria->valor_total_estimulos, 0, '', '.');
-                                $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["bolsa_concursable"] = $categoria->bolsa_concursable;
-                                $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["descripcion_bolsa"] = $categoria->descripcion_bolsa;
+                                $categorias_estimulos[$categoria->id]["numero_estimulos"] = $categoria->numero_estimulos;
+                                $categorias_estimulos[$categoria->id]["valor_total_estimulos"] = "$ " . number_format($categoria->valor_total_estimulos, 0, '', '.');
+                                $categorias_estimulos[$categoria->id]["bolsa_concursable"] = $categoria->bolsa_concursable;
+                                $categorias_estimulos[$categoria->id]["descripcion_bolsa"] = $categoria->descripcion_bolsa;
                                 //Verifico si el bolsa y su dritribucion
                                 if ($categoria->bolsa_concursable) {
                                     //Si es Dinero
                                     if ($categoria->tipo_estimulo == 1) {
-                                        $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
+                                        $categorias_estimulos[$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
                                                     'tipo_recurso = :tipo_recurso:',
                                                     'bind' => [
                                                         'tipo_recurso' => 'Bolsa'
@@ -786,7 +801,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
 
                                     //Si es especie
                                     if ($categoria->tipo_estimulo == 2) {
-                                        $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
+                                        $categorias_estimulos[$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos([
                                                     'tipo_recurso = :tipo_recurso:',
                                                     'bind' => [
                                                         'tipo_recurso' => 'Especie'
@@ -797,7 +812,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
 
                                     //Si es mixta
                                     if ($categoria->tipo_estimulo == 3) {
-                                        $categorias_estimulos[$categoria->id]["estimulos"][$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos());
+                                        $categorias_estimulos[$categoria->id]["numero_estimulos"] = count($categoria->getConvocatoriasrecursos());
                                     }
                                 }
 
@@ -830,7 +845,6 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                                     }
                                 }
 
-
                                 //Se crea todo el array de participantes por convocatoria
                                 $consulta_participantes = Convocatoriasparticipantes::find(([
                                             'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_participante IN (1,2,3)',
@@ -841,7 +855,6 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                                     $participantes[$categoria->id]["participantes"][$participante->id]["participante"] = $participante->getTiposParticipantes()->nombre;
                                     $participantes[$categoria->id]["participantes"][$participante->id]["descripcion"] = $participante->descripcion_perfil;
                                 }
-
 
                                 //consulto los tipos anexos listados
                                 $tabla_maestra = Tablasmaestras::findFirst("active=true AND nombre='listados'");
@@ -1037,13 +1050,17 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             //Creo todos los array del registro
             $respuesta["error"] = 0;
 
-            $array["informacion_basica"] = $array_convocatoria;
+            // $array["informacion_basica"] = $array_convocatoria;
             $array["informacion_basica"] = [
+                "nombre" => $array_convocatoria["convocatoria"],
                 "descripcion" => $array_convocatoria["descripcion"],
                 "linea_estrategica" => $array_convocatoria["linea"],
                 "area" => $array_convocatoria["area"],
-                "total_recursos" => $array_convocatoria["valor_total_estimulos"],
-                "descripcion_general_recursos_a_otorgar" => $array_convocatoria["descripcion_bolsa"]
+                "estado" => $array_convocatoria["estado"],
+                "tipo_programa" => $array_convocatoria["programa"],
+                "entidad" => $array_convocatoria["entidad"],
+                    //"total_recursos" => $array_convocatoria["valor_total_estimulos"],
+                    //"descripcion_general_recursos_a_otorgar" => $array_convocatoria["descripcion_bolsa"]
             ];
             $array["cronograma"] = $cronogramas;
             $array["objeto"] = $array_convocatoria['objeto'];
@@ -1054,7 +1071,23 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array["criterios_evaluacion"] = $rondas_evaluacion;
             $array["derechos_especificos_ganadores"] = $array_convocatoria["derechos_ganadores"];
             $array["deberes_especificos_ganadores"] = $array_convocatoria["deberes_ganadores"];
-            $array["categorias_estimulos"] = $categorias_estimulos;
+            if (!$convocatoria->diferentes_categorias) {
+                $array["distribucion_estimulos"] = [
+//                    $convocatoria->id => [
+//                        "estimulos" => [
+                    $convocatoria->id => [
+                        "numero_estimulos" => $convocatoria->numero_estimulos,
+                        "valor_total_estimulos" => "$ " . number_format($convocatoria->valor_total_estimulos, 0, '', '.'),
+                        "bolsa_concursable" => $convocatoria->bolsa_concursable,
+                        "descripcion_bolsa" => $convocatoria->descripcion_bolsa
+                    ]
+//                        ]
+//                    ]
+                ];
+            } else {
+                $array["distribucion_estimulos"] = $categorias_estimulos;
+            }
+
 
             //documentos
             $array["anexos"] = $anexos;
@@ -1086,7 +1119,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
     }
 });
 
-//convocatorias_publicadas_preview
+//cierre_convocatoria
 $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 
     //Cabecera y respuesta
@@ -1119,7 +1152,7 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
             $fechaTruncada = $anio . "-" . $mes . "-" . $dia;
 
             $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
-                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id
+                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                     left join Estados on convocatoriaspublicas.estado = Estados.id 
                     left join Entidades on convocatoriaspublicas.entidad = Entidades.id
                     where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha . "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) = '" . $fechaTruncada . "'";
@@ -1171,16 +1204,546 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 }
 );
 
-$app->post('/download_file', function () use ($app, $config) {
-    try {
-        //Instancio los objetos que se van a manejar
-        $request = new Request();
-        $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+//cierre_convocatoria_mes
+$app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) {
 
-        echo $chemistry_alfresco->download($request->getPost('cod'));
+    //Cabecera y respuesta
+    $response = new Response();
+    $headers = $response->getHeaders();
+    $headers->set('Content-Type', 'application/json');
+    $response->setHeaders($headers);
+
+    //Retorno el array
+    $array_return = array();
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+
+    try {
+
+        //Consulto el unico token de consulta
+        $token_validar = Tokens::findFirst("token = '" . $this->request->getPost('token') . "'");
+
+        //Valido si existe el token
+        if (isset($token_validar->id)) {
+
+            //de esta forma recibo el parametro fecha
+            $fecha = $this->request->getPost('fecha');
+            $fechaComoEntero = strtotime($fecha);
+            $anio = date("Y", $fechaComoEntero);
+            $mes = date("m", $fechaComoEntero);
+            //$dia = date("d", $fechaComoEntero);
+            //$fechaTruncada = $anio . "-" . $mes . "-" . $dia;
+
+            $primerDiaSiguienteMes = date("Y-m-d", strtotime($anio . "-" . $mes . "-01" . "+ 1 month"));
+
+            $sql = "SELECT distinct convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin as fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
+                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
+                    left join Estados on convocatoriaspublicas.estado = Estados.id 
+                    left join Entidades on convocatoriaspublicas.entidad = Entidades.id
+                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
+                    "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+
+            $array = $app->modelsManager->executeQuery($sql);
+
+            $array_return["error"] = 0;
+            foreach ($array as $convocatoria) {
+                $array_return["respuesta"][] = [
+                    "id" => $convocatoria['id'],
+                    "convocatoria" => $convocatoria['convocatoria'],
+                    "estado" => $convocatoria['estado'],
+                    "entidad" => $convocatoria['entidad'],
+                    "anio" => $convocatoria['anio'],
+                    "fecha_cierre" => $convocatoria['fecha_fin']
+                ];
+            }
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador intercambio información en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->close();
+            return $response;
+        } else {
+            $array_return["error"] = 2;
+            $array_return["respuesta"] = "El token no es correcto";
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+            $logger->close();
+            return $response;
+        }
     } catch (Exception $ex) {
-        //retorno el array en json null
-        echo "error_metodo";
+        $array_return["error"] = 1;
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método cierre_convocatoria.";
+
+        //Set value return
+        $response->setContent(json_encode($array_return));
+
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"' . $ex->getMessage() . ' en el controlador DrupalWS en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+        $logger->close();
+        return $response;
+    }
+}
+);
+
+$app->post('/download_file', function () use ($app, $config, $logger) {
+
+    //Cabecera y respuesta
+    $response = new Response();
+    $headers = $response->getHeaders();
+    //$headers->set('Content-Type', 'application/json');
+    $response->setHeaders($headers);
+
+    try {
+
+        //Consulto el unico token de consulta
+        $token_validar = Tokens::findFirst("token = '" . $this->request->getPost('token') . "'");
+
+        if (isset($token_validar->id)) {
+            //Instancio los objetos que se van a manejar
+            $request = new Request();
+            $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+
+            echo $chemistry_alfresco->download($request->getPost('cod'));
+        } else {
+            $array_return["error"] = 2;
+            $array_return["respuesta"] = "El token no es correcto";
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método download_file"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+            $logger->close();
+            return $response;
+        }
+    } catch (Exception $ex) {
+        $array_return["error"] = 1;
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método cierre_convocatoria.";
+
+        //Set value return
+        $response->setContent(json_encode($array_return));
+
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"' . $ex->getMessage() . ' en el controlador DrupalWS en el método download_file"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+        $logger->close();
+        return $response;
+    }
+}
+);
+
+$app->post('/datos_cifras', function () use ($app, $config, $logger) {
+
+    //buscar como poner limite al numero de registros que devuelve
+    //Cabecera y respuesta
+    $response = new Response();
+    $headers = $response->getHeaders();
+    $headers->set('Content-Type', 'application/json');
+    $response->setHeaders($headers);
+
+    //Retorno el array
+    $array_return = array();
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+
+    try {
+
+        //Consulto el unico token de consulta
+        $token_validar = Tokens::findFirst("token = '" . $this->request->getPost('token') . "'");
+
+        //Valido si existe el token
+        if (isset($token_validar->id)) {
+
+
+            //de esta forma recibo parametros
+            $anio = $this->request->getPost('anio');
+            $tipo_programa = $this->request->getPost('tipo_programa');
+            $entidades = $this->request->getPost('entidad');
+            $tipos_graficas = $this->request->getPost('tipo_grafica');
+
+            //Inicio el where
+            $where = "vwc.anio=" . date("Y");
+
+            //Valido el anio
+            if ($anio != "") {
+                $where = "vwc.anio=" . $anio;
+            }
+
+            //Valido el programa
+            if ($tipo_programa != "") {
+                $where = "vwc.programa=" . $tipo_programa;
+            }
+
+            //Valido las entidades
+            $in_entidades = "";
+            foreach ($entidades as $entidad) {
+                $in_entidades = $in_entidades . $entidad . ",";
+            }
+            $in_entidades = trim($in_entidades, ",");
+
+            //Reemplazo la consulta del programa
+            $where2 = str_replace("vwc.programa", "vwp.programa", $where);
+
+            //Creo las graficas para las respuestas
+            $respuesta = array();
+
+            //(tabla_estados_convocatoria_anio) Convocatorias publicadas
+            if (in_array("tabla_estados_convocatoria_anio", $tipos_graficas)) {
+                $sql_propuestas = "
+                    SELECT 
+                        vwc.nombre_entidad AS label,
+                        count(vwc.id) AS total_propuestas
+                    FROM 
+                        Viewconvocatoriascifras AS vwc
+                    WHERE
+                        " . $where . " AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (" . $in_entidades . ") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
+                    GROUP BY 1
+                    ORDER BY 2 DESC
+                    ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
+            }
+
+            //(tabla_convocatoria_propuestas_anio) Estado de convocatorias
+            if (in_array("tabla_convocatoria_propuestas_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                    SELECT 
+                        vwc.estado_convocatoria AS label,
+                        count(vwc.id) AS total_propuestas
+                    FROM 
+                        Viewconvocatoriascifras AS vwc
+                    WHERE
+                        " . $where . " AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (" . $in_entidades . ") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
+                    GROUP BY 1
+                    ORDER BY 2 DESC
+                    ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
+            }
+
+            //(tabla_propuestas_entidad_anio) Estado de convocatorias
+            if (in_array("tabla_propuestas_entidad_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                    SELECT 
+                            vwc.nombre_entidad AS label,
+                            COUNT(vwc.id_propuesta) AS total_propuestas
+                    FROM 
+                            Viewpropuestas AS vwc 
+                    INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                    WHERE 
+                            " . $where2 . " AND vwp.estado IN (5,6,32,43,45) AND vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                    GROUP BY 1
+                    ORDER BY 2
+                    ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["tabla_propuestas_entidad_anio"] = $convocatorias_anio;
+            }
+
+            //(tabla_propuestas_rango_etareo_anio) Rango etario del representante
+            if (in_array("tabla_propuestas_rango_etareo_anio", $tipos_graficas)) {
+
+
+                $sql_propuestas = "
+                SELECT
+                    vwc.rango AS label,
+                    SUM(vwc.count) AS total_propuestas
+                FROM Viewrangosetareos AS vwc
+                WHERE " . $where . " AND vwc.entidad IN (" . $in_entidades . ")
+                GROUP BY 1
+                ORDER BY 2            
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
+            }
+
+            //(table_propuestas_area_anio) Propuestas Inscritas por área
+            if (in_array("table_propuestas_area_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                SELECT 
+                        vwc.area AS label,
+                        COUNT(vwc.id_propuesta) AS total_propuestas
+                FROM 
+                        Viewpropuestas AS vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                WHERE 
+                        " . $where2 . " and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                GROUP BY 1
+                ORDER BY 2
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_propuestas_area_anio"] = $convocatorias_anio;
+            }
+
+            //(table_propuestas_lineaestrategica_anio) Propuestas Inscritas por línea estratégica
+            if (in_array("table_propuestas_lineaestrategica_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                SELECT 
+                        vwc.lineaestrategica AS label,
+                        COUNT(vwc.id_propuesta) AS total_propuestas
+                FROM 
+                        Viewpropuestas AS vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                WHERE 
+                        " . $where2 . " and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%'
+                GROUP BY 1
+                ORDER BY 2
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_propuestas_lineaestrategica_anio"] = $convocatorias_anio;
+            }
+
+            //(table_propuestas_enfoque_anio) Propuestas Inscritas por enfoque
+            if (in_array("table_propuestas_enfoque_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                SELECT 
+                        vwc.enfoque AS label,
+                        COUNT(vwc.id_propuesta) AS total_propuestas
+                FROM 
+                        Viewpropuestas AS vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                WHERE 
+                        " . $where2 . " and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                GROUP BY 1
+                ORDER BY 2
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_propuestas_enfoque_anio"] = $convocatorias_anio;
+            }
+
+            //(table_propuestas_tipoparticipante_anio) Propuestas Inscritas por tipo de participante
+            if (in_array("table_propuestas_tipoparticipante_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                SELECT 
+                        per.nombre AS label,
+                        COUNT(vwc.id_propuesta) as total_propuestas
+                FROM 
+                        Viewpropuestas AS vwc
+                INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
+                INNER JOIN Participantes AS par ON par.id=p.participante
+                INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
+                INNER JOIN Perfiles AS per ON per.id=up.perfil	
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                WHERE 
+                        " . $where2 . " and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                GROUP BY 1
+                ORDER BY 2
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_propuestas_tipoparticipante_anio"] = $convocatorias_anio;
+            }
+
+            //(table_propuestas_localidadeje_anio) Propuestas Inscritas por localidad de ejecución
+            if (in_array("table_propuestas_localidadeje_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                select 
+                        vwc.localidad_ejecucion_propuesta as label,
+                        COUNT(vwc.id_convocatoria) as total_propuestas
+                from 
+                        Viewpropuestas as vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                where 
+                        " . $where2 . " and vwc.id_estado NOT IN (7,20)  AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                group by 1
+                ORDER BY 2
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_propuestas_localidadeje_anio"] = $convocatorias_anio;
+            }
+
+            //(table_valor_localidadeje_anio) recursos adjudicados por localidad
+            if (in_array("table_valor_localidadeje_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                select 
+                        vwc.localidad_ejecucion_propuesta as label,
+                        count(vwc.id_propuesta) as total_entidad,
+                        sum(vwc.monto_asignado) as total_propuestas
+                from 
+                        Viewpropuestas as vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                where 
+                        " . $where2 . " and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                group by 1
+                order by 3 ASC
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_valor_localidadeje_anio"] = $convocatorias_anio;
+            }
+
+            //(table_valor_eje_tipo_participante) recursos adjudicados por tipo de participante
+            if (in_array("table_valor_eje_tipo_participante", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                select 
+                        per.nombre as label,
+                        count(vwc.id_propuesta) as total_entidad,
+                        sum(vwc.monto_asignado) as total_propuestas
+                from 
+                        Viewpropuestas as vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+                INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
+                INNER JOIN Participantes AS par ON par.id=p.participante
+                INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
+                INNER JOIN Perfiles AS per ON per.id=up.perfil
+                where 
+                        " . $where2 . " and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                group by 1
+                order by 3 ASC
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_valor_eje_tipo_participante"] = $convocatorias_anio;
+            }
+
+            //(table_valor_eje_area) recursos adjudicados por area
+            if (in_array("table_valor_eje_area", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                select 
+                        a.nombre as label,
+                        count(vwc.id_propuesta) as total_entidad,
+                        sum(vwc.monto_asignado) as total_propuestas
+                from 
+                        Viewpropuestas as vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+                INNER JOIN Areas AS a ON a.id=vwp.area
+                where 
+                        " . $where2 . " and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                group by 1
+                order by 3 ASC
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_valor_eje_area"] = $convocatorias_anio;
+            }
+
+            //(table_valor_entidadeje_anio) recursos adjudicados por entidad
+            if (in_array("table_valor_entidadeje_anio", $tipos_graficas)) {
+
+                $sql_propuestas = "
+                select 
+                        vwc.nombre_entidad as label,
+                        count(vwc.id_propuesta) as total_entidad,
+                        sum(vwc.monto_asignado) as total_propuestas
+                from 
+                        Viewpropuestas as vwc 
+                INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+                where 
+                        " . $where2 . " and vwc.estado_propuesta IN ('Ganadora') AND vwc.id_entidad IN (" . $in_entidades . ") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+                group by 1
+                order by 3 ASC
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_valor_entidadeje_anio"] = $convocatorias_anio;
+            }
+
+            //(table_valor_ofertado_entidad) recursos asignados por entidad
+            if (in_array("table_valor_ofertado_entidad", $tipos_graficas)) {
+
+
+                $sql_propuestas = "
+                select 
+                        vwc.nombre_entidad as label,
+                        SUM(vwc.sum) as total_propuestas
+                from 
+                        Viewofertado as vwc 
+                where 
+                        " . $where . " AND vwc.id_entidad IN (" . $in_entidades . ")
+                GROUP BY 1
+                order by 2 ASC
+                ";
+
+                $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+
+                //Agrego la respuesta de la tabla
+                $respuesta[]["table_valor_ofertado_entidad"] = $convocatorias_anio;
+            }
+
+            $array_return["error"] = 0;
+
+            $array_return["respuesta"] = $respuesta;
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la conculta con éxito en el controlador DrupalWS en el método datos_cifras"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->close();
+            return $response;
+        } else {
+            $array_return["error"] = 2;
+            $array_return["respuesta"] = "El token no es correcto";
+
+            //Set value return
+            $response->setContent(json_encode($array_return));
+
+            //Registro la accion en el log de convocatorias
+            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método datos_cifras"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+            $logger->close();
+            return $response;
+        }
+    } catch (Exception $ex) {
+        $array_return["error"] = 1;
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método datos_cifras." . $ex->getMessage();
+
+        //Set value return
+        $response->setContent(json_encode($array_return));
+
+        //Registro la accion en el log de convocatorias
+        $logger->error('"token":"{token}","user":"{user}","message":"' . $ex->getMessage() . ' en el controlador DrupalWS en el método datos_cifras"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+        $logger->close();
+        return $response;
     }
 }
 );
