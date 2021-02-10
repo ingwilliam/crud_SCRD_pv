@@ -211,6 +211,7 @@ $app->post('/convocatorias_publicadas_preview', function () use ($app, $config, 
             //de esta forma recibo parametros
             $limit = $this->request->getPost('cantidad');
 
+
             //estado 5 para solo traer los registro de las convocatorias publicadas y tipo_evento 25 para ordenar por la fecha de publicación
             $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_inicio FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id
@@ -311,7 +312,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
             $offset = $this->request->getPost('offset');
             //limit es el número de registros que se devuelven
             $limit = $this->request->getPost('limit');
-            
+
             $where = '';
             if (isset($nombre)) {
                 $where = " LOWER(convocatorias.convocatoria) like LOWER('%" . $nombre . "%') ";
@@ -383,7 +384,6 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             if (isset($perfiles)) {
                 if (!empty($where)) {
-                    //c2.tipo_participante in (2,4)
                     $where .= " and c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
                 } else {
                     $where .= " c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
@@ -406,32 +406,27 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             //se agregan los parametros de limit y offset
             $rango = '';
-            if (isset($limit)) {
-                $rango .= " LIMIT " . $limit;
-            }
-
-            if (isset($offset)) {
-                $rango .= " OFFSET " . $offset;
+            if (isset($limit) and isset($offset)) {
+                $rango .= " LIMIT " . $limit . " OFFSET " . $offset;
             }
 
             $sql = "SELECT distinct convocatorias.id, e.nombre as estado, e2.nombre as entidad, convocatorias.anio, convocatorias.convocatoria as nombre, p.nombre as tipo_programa, convocatorias.categoria, a.nombre as area, e3.nombre as enfoque, l.nombre as linea_estrategica, c.fecha_actualizacion FROM Viewconvocatoriaspublicas convocatorias 
                     left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id 
                     left join Estados e on e.id = convocatorias.estado 
-                    left join Entidades e2 on e2.id = convocatorias.estado 
+                    left join Entidades e2 on e2.id = convocatorias.entidad 
                     left join Programas p on p.id = convocatorias.programa 
                     left join Enfoques e3 on e3.id = convocatorias.enfoque
                     left join Areas a on a.id = convocatorias.area 
                     left join Lineasestrategicas l on l.id = convocatorias.linea_estrategica 
                     left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
-                    . "WHERE c.tipo_evento = 25 and " . $where . $orderby . " LIMIT " . $limit . " OFFSET " . $offset;
-
-            $convocatorias = $app->modelsManager->executeQuery($sql);
+                    . "WHERE c.tipo_evento = 25 and " . $where . $orderby . " " . $rango;
 
             $sql_total_registros = "SELECT count(*) as total FROM Viewconvocatoriaspublicas convocatorias "
                     . "left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id "
                     . "left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
                     . "WHERE c.tipo_evento = 25 and " . $where;
 
+            $convocatorias = $app->modelsManager->executeQuery($sql);
             $total_registros = $app->modelsManager->executeQuery($sql_total_registros);
 
 
@@ -1242,12 +1237,12 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
 
             $primerDiaSiguienteMes = date("Y-m-d", strtotime($anio . "-" . $mes . "-01" . "+ 1 month"));
 
-            $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
+            $sql = "SELECT distinct convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin as fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                     left join Estados on convocatoriaspublicas.estado = Estados.id 
                     left join Entidades on convocatoriaspublicas.entidad = Entidades.id
-                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha .
-                    "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
+                    "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
 
             $array = $app->modelsManager->executeQuery($sql);
 
@@ -1259,6 +1254,7 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
                     "estado" => $convocatoria['estado'],
                     "entidad" => $convocatoria['entidad'],
                     "anio" => $convocatoria['anio'],
+                    "fecha_cierre" => $convocatoria['fecha_fin']
                 ];
             }
 
