@@ -104,8 +104,17 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
 
             //Condiciones para la consulta del select del buscador principal
             $estado_actual = "";
+            
+            $array_json_param = json_decode($request->get("params"));
+        
+            //Valido que exita un año
+            if($array_json_param->anio=="")
+            {
+               $array_json_param->anio=date("Y"); 
+            }
+            
             if (!empty($request->get("params"))) {
-                foreach (json_decode($request->get("params")) AS $clave => $valor) {
+                foreach ($array_json_param AS $clave => $valor) {
                     if ($clave == "nombre" && $valor != "") {
                         //$where_convocatorias .= " AND ( UPPER(c.nombre) LIKE '%" . strtoupper($valor) . "%' ";
                         //$where_convocatorias .= " OR UPPER(cpad.nombre) LIKE '%" . strtoupper($valor) . "%' )";

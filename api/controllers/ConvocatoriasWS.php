@@ -762,6 +762,13 @@ $app->get('/all_view', function () use ($app) {
         //Condiciones para la consulta del select del buscador principal        
         $estado_actual = "";
         $array_json_param = json_decode($request->get("params"));
+        
+        //Valido que exita un año
+        if($array_json_param->anio=="")
+        {
+           $array_json_param->anio=date("Y"); 
+        }
+        
         $estado_actual = $array_json_param->estado;
         if ($array_json_param->estado == 52 || $array_json_param->estado == 51) {
             $array_json_param->estado = 5;

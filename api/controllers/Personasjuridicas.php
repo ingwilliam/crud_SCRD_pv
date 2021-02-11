@@ -251,6 +251,8 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
             
+            $array["ciius"] = Ciius::find("active=true");
+            
             $array["pais_residencia_id"] = "";
             $array["departamento_residencia_id"] = "";
             $array["ciudad_residencia_id"] = "";
@@ -362,6 +364,9 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
                             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
 
+                            $array["ciius"] = Ciius::find("active=true");
+                            
+                            
                             $array["pais_residencia_id"] = "";
                             $array["departamento_residencia_id"] = "";
                             $array["ciudad_residencia_id"] = "";

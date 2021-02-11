@@ -69,6 +69,13 @@ class Participantes extends Model
             'id'
         );
 
+        //Se define relacion de N a 1 con Ciius
+        $this->belongsTo(
+            'ciiu',
+            'Ciius',
+            'id'
+        );
+        
         //Se define relacion de N a 1 con Sexos
         $this->belongsTo(
             'sexo',
