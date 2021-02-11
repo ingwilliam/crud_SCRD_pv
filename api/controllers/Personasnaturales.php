@@ -169,6 +169,11 @@ $app->post('/new', function () use ($app, $config, $logger) {
                         $participante->active = TRUE;
                     }
 
+                    //Valido si tiene rut para setear el codigo
+                    if ($post["tiene_rut"] == 'No') {
+                        $post["ciiu"] = null;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias           
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método new, al crear o editar"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -259,6 +264,7 @@ $app->get('/search', function () use ($app, $config, $logger) {
             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
             $array["discapacidades"] = Tiposdiscapacidades::find("active=true");
+            $array["ciius"] = Ciius::find("active=true");
 
             $array["pais_residencia_id"] = "";
             $array["departamento_residencia_id"] = "";
@@ -312,6 +318,7 @@ $app->get('/search', function () use ($app, $config, $logger) {
             $array["participante"] = $participante;
 
             $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
+            
             $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
 
             //Registro la accion en el log de convocatorias           
@@ -408,6 +415,7 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $array["identidad_genero"] = Identidadesgeneros::find("active=true");
                             $array["grupo_etnico"] = Gruposetnicos::find("active=true");
                             $array["discapacidades"] = Tiposdiscapacidades::find("active=true");
+                            $array["ciius"] = Ciius::find("active=true");
 
                             $array["pais_residencia_id"] = $propuesta->getParticipantes()->getCiudadesresidencia()->getDepartamentos()->getPaises()->id;
                             $array["ciudad_residencia_id"] = $propuesta->getParticipantes()->ciudad_residencia;
@@ -696,6 +704,12 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                     $post["actualizado_por"] = $user_current["id"];
                     $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
 
+                    
+                    //Valido si tiene rut para setear el codigo
+                    if ($post["tiene_rut"] == 'No') {
+                        $post["ciiu"] = null;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pn hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                         $logger->close();
@@ -816,6 +830,7 @@ $app->get('/formulario_integrante', function () use ($app, $config, $logger) {
                                 $tabla_maestra = Tablasmaestras::find("active=true AND nombre='estrato'");
                                 $array["estrato"] = explode(",", $tabla_maestra[0]->valor);
                                 $array["discapacidades"] = Tiposdiscapacidades::find("active=true");
+                                $array["ciius"] = Ciius::find("active=true");
 
                                 //Registro la accion en el log de convocatorias
                                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador Personasnaturales en el método formulario_integrante, retorna información al formulario de integrante como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -973,6 +988,11 @@ $app->post('/crear_integrante', function () use ($app, $config, $logger) {
                     $post["representante"] = $post["representante"] === 'true' ? true : false;
                     $post["director"] = $post["director"] === 'true' ? true : false;
 
+                    //Valido si tiene rut para setear el codigo
+                    if ($post["tiene_rut"] == 'No') {
+                        $post["ciiu"] = null;
+                    }
+                    
                     if ($participante->save($post) === false) {
                         //Registro la accion en el log de convocatorias
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador Personasnaturales en el método crear_integrante, error al crear el integrante como (' . $request->getPost('tipo') . ') en la convocatoria(' . $request->getPost('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
@@ -1512,3 +1532,4 @@ try {
     echo 'Excepción: ', $e->getMessage();
 }
 ?>
+
