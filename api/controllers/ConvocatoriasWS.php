@@ -64,6 +64,8 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["valor_total_estimulos"] = "$ " . number_format($convocatoria->valor_total_estimulos, 0, '', '.');
         $array_convocatoria["bolsa_concursable"] = $convocatoria->bolsa_concursable;
         $array_convocatoria["descripcion_bolsa"] = $convocatoria->descripcion_bolsa;
+        $array_convocatoria["justificacion"] = $convocatoria->justificacion;
+        $array_convocatoria["modalidad"] = $convocatoria->modalidad;
         $array_convocatoria["objeto"] = $convocatoria->objeto;
         $array_convocatoria["no_pueden_participar"] = $convocatoria->no_pueden_participar;
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
