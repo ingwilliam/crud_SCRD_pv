@@ -443,9 +443,9 @@ $app->get('/search', function () use ($app, $config) {
             $array["convocatoriadocumento"]=$convocatoriadocumento;
             $programa=$convocatoria->programa;
             //Documentos administrativos para LEP
-            if($convocatoria->modalidad==6){
-                $programa=$convocatoria->modalidad;
-            }
+            //if($convocatoria->modalidad==6){
+            //    $programa=$convocatoria->modalidad;
+            //}
             
             $array["requisitos"]= Requisitos::find([
                                                         'conditions' => "active=true AND programas LIKE '%".$programa."%' AND tipo_requisito='".$request->get('tipo_requisito')."'",
