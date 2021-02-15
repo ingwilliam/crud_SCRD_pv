@@ -425,8 +425,22 @@ $app->get('/search', function () use ($app, $config) {
             $array["ciudad_residencia_name"] = $participante->Ciudadesresidencia->nombre;
             $array["pais_residencia_id"] = $participante->Ciudadesresidencia->Departamentos->Paises->id;
             $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
-            $array["barrio_residencia_name"] = $participante->Barriosresidencia->nombre;
+            $array["barrio_residencia"] = $participante->Barriosresidencia->id;
             $array["participante"] = $participante;
+            
+            $array["barrios"] = array();
+            
+            if (isset($participante->id)) 
+            {
+
+
+                if (isset($participante->localidad_residencia)) 
+                {
+                    $array["barrios"] = Barrios::find("active=true AND localidad=" . $participante->localidad_residencia);
+                }
+              
+            }
+            
 
             //Retorno el array
             echo json_encode($array);
