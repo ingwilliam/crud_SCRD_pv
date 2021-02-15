@@ -6028,13 +6028,13 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
                             $contador1++;
                         }
                     }
-                    
-                    
-                    
-                    
-                     $postulaciones_categorias = Juradospostulados::query()
+
+
+
+
+                    $postulaciones_categorias = Juradospostulados::query()
                             ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
-                            ->where("Juradospostulados.propuesta = ". $participante->propuestas->id)
+                            ->where("Juradospostulados.propuesta = " . $participante->propuestas->id)
                             ->andWhere("Juradospostulados.active")
                             ->andWhere("Convocatorias.active")
                             ->andWhere("Convocatorias.estado=5")
@@ -6042,8 +6042,8 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
                             ->groupBy("Convocatorias.convocatoria_padre_categoria")
                             ->columns("count(*)")
                             ->execute();
-                     
-                     
+
+
 //                     return json_encode($postulaciones_categorias);
 
 
@@ -6053,7 +6053,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
                     }
 
 
-                    $contador=$contador1+$contador2;
+                    $contador = $contador1 + $contador2;
 
 
                     $nummax = Tablasmaestras::findFirst(
@@ -6424,6 +6424,42 @@ $app->get('/download_condiciones', function () use ($app, $config) {
     }
 }
 );
+
+/*
+ * 12-02-2021
+ * Wilmer Gustavo Mogollón Duque
+ * //Se agrega para mostrar documento de tratamiento de datos
+  $("#tratamiento_datos_pdf").attr("src", json.archivo);
+ */
+
+$app->get('/download_tratamiento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if (isset($token_actual->id)) {
+
+            $condiciones = Tablasmaestras::findFirst("active=true AND nombre='Tratamiento de datos'");
+
+            echo json_encode(["archivo" => str_replace("/view?usp=sharing", "/preview", $condiciones->valor)]);
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        //  echo "error_metodo";
+
+        return "error_metodo " . $ex->getMessage() . $ex->getTraceAsString();
+    }
+}
+);
+
+
 
 //Busca los registros de postulaciones
 $app->get('/select_categoria', function () use ($app, $config) {
