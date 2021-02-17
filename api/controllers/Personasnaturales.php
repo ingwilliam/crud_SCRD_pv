@@ -715,10 +715,23 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                         $logger->close();
                         echo "error";
                     } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pn hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo $participante->id;
+                        //Consulto el participante principal
+                        $participante_principal = Participantes::findFirst($participante->participante_padre);
+                        //Elimino las posiciones importantes del principal
+                        unset($post["id"]);
+                        unset($post["participante_padre"]);
+                        unset($post["tipo"]);
+                        unset($post["correo_electronico"]);
+                        if ($participante_principal->save($post) === false) {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pn hijo."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Se edito el participante pn hijo en la convocatoria(' . $request->get('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();                           
+                            echo $participante->id;   
+                        }
                     }
                 }
             } else {
