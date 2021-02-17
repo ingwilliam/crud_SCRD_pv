@@ -686,6 +686,26 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                         $array_retorno[] = array('id' => "FPropuesta", 'nombre' => "FPropuesta");
                         $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado información en el formulario de la propuesta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                     }
+                    
+                    //No ha actualizado la información del participante PN
+                    if( $propuesta->getParticipantes()->getUsuariosperfiles()->perfil === 6 )
+                    {
+                        if( $propuesta->getParticipantes()->tiene_rut === "" )
+                        {
+                            $array_retorno[] = array('id' => "FParticipantePN", 'nombre' => "FParticipantePN");
+                            $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha actualizado información en el formulario del participante PN en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        }
+                    }
+                    
+                    //No ha actualizado la información del participante
+                    if( $propuesta->getParticipantes()->getUsuariosperfiles()->perfil === 7 )
+                    {
+                        if( $propuesta->getParticipantes()->tiene_rut === "" )
+                        {
+                            $array_retorno[] = array('id' => "FParticipantePJ", 'nombre' => "FParticipantePJ");
+                            $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha actualizado información en el formulario del participante PJ en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        }
+                    }
                                         
                     $logger->close();                    
                     echo json_encode($array_retorno);
