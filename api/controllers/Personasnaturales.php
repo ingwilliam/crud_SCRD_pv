@@ -718,6 +718,7 @@ $app->post('/editar_participante', function () use ($app, $config, $logger) {
                         //Consulto el participante principal
                         $participante_principal = Participantes::findFirst($participante->participante_padre);
                         //Elimino las posiciones importantes del principal
+                        
                         unset($post["id"]);
                         unset($post["participante_padre"]);
                         unset($post["tipo"]);
