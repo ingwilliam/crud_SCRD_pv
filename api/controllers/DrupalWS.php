@@ -315,7 +315,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             $where = '';
             if (isset($nombre)) {
-                $where = " LOWER(convocatorias.convocatoria) like LOWER('%" . $nombre . "%') ";
+                $where = " UPPER(TRANSLATE(convocatorias.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE UPPER(TRANSLATE('%". $nombre ."%','ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) ";
             }
 
             if (isset($anio)) {
