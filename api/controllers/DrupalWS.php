@@ -315,7 +315,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             $where = '';
             if (isset($nombre)) {
-                $where = " UPPER(TRANSLATE(convocatorias.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE UPPER(TRANSLATE('%". $nombre ."%','ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) ";
+                $where = " UPPER(TRANSLATE(convocatorias.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE UPPER(TRANSLATE('%" . $nombre . "%','ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) ";
             }
 
             if (isset($anio)) {
@@ -810,9 +810,16 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                 if ($convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == false) {
 
                     $tipo_convocatoria = "general";
+                     $j = 1;
+
 
                     //Se crea todo el array de las rondas de evaluacion
                     foreach ($categorias as $categoria) {
+                        
+                        $informacion_categorias[$j]['nombre'] = $categoria->nombre;
+                        $informacion_categorias[$j]['descripcion'] = $categoria->descripcion;
+                        $j++;
+
                         $conditions = ['convocatoria' => $categoria->id, 'active' => true];
                         $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
                                     'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
@@ -1156,6 +1163,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array["criterios_evaluacion"] = $rondas_evaluacion;
             $array["derechos_especificos_ganadores"] = $array_convocatoria["derechos_ganadores"];
             $array["deberes_especificos_ganadores"] = $array_convocatoria["deberes_ganadores"];
+            $array["informacion_categorias"] = $informacion_categorias;
             if (!$convocatoria->diferentes_categorias) {
                 $array["distribucion_estimulos"] = [
 //                    $convocatoria->id => [
@@ -1170,9 +1178,10 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
 //                    ]
                 ];
             } else {
-                $array["informacion_categorias"] = $informacion_categorias;
+                
                 $array["distribucion_estimulos"] = $categorias_estimulos;
             }
+       
 
 
             //documentos
@@ -1248,7 +1257,7 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
                     FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                     where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha . "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) = '" . $fechaTruncada . "'";
-            
+
             $array = $app->modelsManager->executeQuery($sql);
 
             $array_return["error"] = 0;
@@ -1339,7 +1348,9 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
                 FROM Viewconvocatoriaspublicas convocatoriaspublicas
                 left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
                 where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
-                "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+                    "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+
+//            return $sql;
 
             $array = $app->modelsManager->executeQuery($sql);
 
