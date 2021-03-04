@@ -85,6 +85,7 @@ $app->get('/init', function () use ($app, $config) {
                                     "modalidad = 2" //busca las convocatorias de jurados
                                     . " AND active = true"
                                     . " AND estado =  5" //publicada
+                                    . " AND anio =  ".date("Y") //solo listar el banco de jurados correspondiente al año en curso
                                 ]
                 );
 
