@@ -244,7 +244,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -332,7 +332,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -399,7 +399,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 
@@ -730,7 +730,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -1067,7 +1067,7 @@ foreach ($consulta_territorios as $territorio) {
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -1339,7 +1339,7 @@ foreach ($consulta_territorios as $territorio) {
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 
@@ -2389,7 +2389,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -2447,7 +2447,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -2470,7 +2470,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 

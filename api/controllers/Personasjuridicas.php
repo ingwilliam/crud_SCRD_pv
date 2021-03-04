@@ -251,6 +251,8 @@ $app->get('/search', function () use ($app, $config) {
             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
             
+            $array["ciius"] = Ciius::find("active=true");
+            
             $array["pais_residencia_id"] = "";
             $array["departamento_residencia_id"] = "";
             $array["ciudad_residencia_id"] = "";
@@ -362,6 +364,9 @@ $app->get('/buscar_participante', function () use ($app, $config, $logger) {
                             $tabla_maestra= Tablasmaestras::find("active=true AND nombre='tipo_sede'");            
                             $array["tipo_sede"] = explode(",", $tabla_maestra[0]->valor);
 
+                            $array["ciius"] = Ciius::find("active=true");
+                            
+                            
                             $array["pais_residencia_id"] = "";
                             $array["departamento_residencia_id"] = "";
                             $array["ciudad_residencia_id"] = "";
@@ -777,10 +782,23 @@ $app->post('/editar_participante', function () use ($app, $config,$logger) {
                         $logger->close();
                         echo "error";
                     } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Personasjuridicas en el método editar_participante, edita el participante ('.$request->getPost('id').') PJ en la convocatoria(' . $request->getPost('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo $participante->id;
+                        //Consulto el participante principal
+                        $participante_principal = Participantes::findFirst($participante->participante_padre);
+                        //Elimino las posiciones importantes del principal
+                        unset($post["id"]);
+                        unset($post["participante_padre"]);
+                        unset($post["tipo"]);
+                        unset($post["correo_electronico"]);                        
+                        if ($participante_principal->save($post) === false) {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Se creo un error al editar el participante pj padre."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {                        
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Edito en el controlador Personasjuridicas en el método editar_participante, edita el participante ('.$request->getPost('id').') PJ en la convocatoria(' . $request->getPost('conv') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo $participante->id;
+                        }
                     }                    
                 }
             } else {

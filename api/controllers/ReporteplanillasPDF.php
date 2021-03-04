@@ -123,7 +123,7 @@ $app->post('/evaluacionpropuestas/ronda/{ronda:[0-9]+}', function ($ronda) use (
             echo "<b>Nombre Participante:</b>" . $participantes->primer_nombre . " "
             . $participantes->segundo_nombre . " "
             . $participantes->primer_apellido . " "
-            . $participantes->primer_apellido . "<br/>";
+            . $participantes->segundo_apellido . "<br/>";
             echo "<b>Nombre Propuesta:</b>" . $row->p->nombre . "<br/><br/>";
             
             echo "<b>CRITERIOS DE EVALUACIÓN</b><br/><br/>";

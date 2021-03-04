@@ -245,8 +245,13 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                         $where .= " AND p.codigo='" . $params["codigo"] . "'";
                     }
 
+                    //Si no hay parametro de anio, se coloca el actual
                     if ($params["anio"] != "") {
                         $where .= " AND c.anio='" . $params["anio"] . "'";
+                    }
+                    else
+                    {
+                        $where .= " AND c.anio='" . date("Y") . "'";
                     }
 
                     if ($params["entidad"] != "") {
