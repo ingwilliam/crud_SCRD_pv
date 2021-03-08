@@ -383,20 +383,41 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
             $where = "vwc.anio=".$request->getPost('anio');            
         }
 
+        $array_entidades =  Entidades::find("active = true");
+        $in_entidades = "";
+        foreach ($array_entidades as $entidad) {
+            $in_entidades = $in_entidades.$entidad->id.",";
+        }
+        $in_entidades = trim($in_entidades,",");
+        if ($request->getPost('entidad') != "") {
+            $in_entidades = $request->getPost('entidad');
+        }
+        
+        
+        $array_programas = Programas::find("active = true");
+        $in_programas = "";
+        foreach ($array_programas as $programa) {
+            $in_programas = $in_programas.$programa->id.",";
+        }
+        $in_programas = trim($in_programas,",");
+        if ($request->getPost('programa') != "") {
+            $in_programas = $request->getPost('programa');
+        }
+        
         //Convocatorias ofertadas por anio
-        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
+        //Entidad        
         $sql_propuestas = "
             SELECT 
                 vwc.nombre_entidad AS label,
                 count(vwc.id) AS total_propuestas
             FROM 
-                Viewconvocatorias AS vwc
+                Viewconvocatoriascifras AS vwc
             WHERE
-                ".$where." AND vwc.estado IN (5,6,32,43,45)
+                ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.") AND vwc.programa IN (".$in_programas.") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2 DESC
             ";
-
+        
         $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
         $array_value = array();
         $i = 0;
@@ -408,21 +429,18 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["estados_convocatoria_anio"] = $array_value;
         $array["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
         
-        //Convocatorias ofertadas por anio
-        //Estado Publicada Adjudicada Cancelada Desierta Suspendida
-        //Propuestas Inscritas
+        //Convocatorias estado        
+        //Propuestas Inscritas        
         $sql_propuestas = "
             SELECT 
-            es.nombre AS label,
-            count(vwp.id_propuesta) AS total_propuestas
-        FROM 
-            Viewpropuestas AS vwp
-        INNER JOIN Viewconvocatorias AS vwc ON vwc.id_diferente=vwp.id_convocatoria
-        INNER JOIN Estados AS es ON es.id=vwc.estado 
-        WHERE
-            ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwp.id_estado NOT IN (7,20)
-        GROUP BY 1
-        ORDER BY 2 ASC
+                vwc.estado_convocatoria AS label,
+                count(vwc.id) AS total_propuestas
+            FROM 
+                Viewconvocatoriascifras AS vwc
+            WHERE
+                ".$where." AND vwc.estado IN (5,6,32,43,45) AND vwc.entidad IN (".$in_entidades.") AND vwc.programa IN (".$in_programas.") AND UPPER(vwc.convocatoria) NOT LIKE '%JURADOS%' 
+            GROUP BY 1
+            ORDER BY 2 DESC
             ";
 
         $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
@@ -438,38 +456,16 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["estados_convocatoria_propuestas_anio"]["label"] = $array_label;
         $array["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
         
-        //Participante por rango etareo
-        $sql_propuestas = "
-            SELECT
-                vwc.rango AS label,
-                vwc.total AS total_propuestas
-            FROM Viewrangosetareos AS vwc
-            WHERE ".$where."
-            ORDER BY 2
-            ";
-
-        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
-        
-        $array_value = array();
-        $array_label = array();
-        foreach ($convocatorias_anio AS $clave => $valor) {
-            $array_value[] = $valor->total_propuestas;
-            $array_label[] = $valor->label;
-        }
-
-        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
-        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
-        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
-        
         //Propuestas por entidad
         $sql_propuestas = "
             SELECT 
                     vwc.nombre_entidad AS label,
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
-                    viewpropuestas AS vwc 
+                    Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." AND vwc.id_estado NOT IN (7,20)
+                    ".$where." AND vwp.estado IN (5,6,32,43,45) AND vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -486,6 +482,30 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["propuestas_entidad_anio"]["label"] = $array_label;
         $array["tabla_propuestas_entidad_anio"] = $propuestas_entidad;
         
+        //Participante por rango etareo
+        $sql_propuestas = "
+            SELECT
+                vwc.rango AS label,
+                SUM(vwc.count) AS total_propuestas
+            FROM Viewrangosetareos AS vwc
+            WHERE ".$where." AND vwc.entidad IN (".$in_entidades.")  AND vwc.programa IN (".$in_programas.")
+            GROUP BY 1
+            ORDER BY 2            
+            ";
+
+        $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
+        
+        $array_value = array();
+        $array_label = array();
+        foreach ($convocatorias_anio AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["propuestas_rango_etareo_anio"]["value"] = $array_value;
+        $array["propuestas_rango_etareo_anio"]["label"] = $array_label;
+        $array["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;                
+        
         //Propuestas por area
         $sql_propuestas = "
             SELECT 
@@ -493,8 +513,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20)
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -519,8 +540,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20)
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%'
             GROUP BY 1
             ORDER BY 2
             ";
@@ -544,8 +566,9 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     COUNT(vwc.id_propuesta) AS total_propuestas
             FROM 
                     Viewpropuestas AS vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20)
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -568,13 +591,14 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     per.nombre AS label,
                     COUNT(vwc.id_propuesta) as total_propuestas
             FROM 
-                    viewpropuestas AS vwc
+                    Viewpropuestas AS vwc
             INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
             INNER JOIN Participantes AS par ON par.id=p.participante
             INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
             INNER JOIN Perfiles AS per ON per.id=up.perfil	
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             WHERE 
-                    ".$where." and vwc.id_estado NOT IN (7,20)
+                    ".$where." and vwc.id_estado NOT IN (7,20) AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             GROUP BY 1
             ORDER BY 2
             ";
@@ -597,9 +621,10 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
                     vwc.localidad_ejecucion_propuesta as label,
                     COUNT(vwc.id_convocatoria) as total_propuestas
             from 
-                    Viewparticipantes as vwc 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') AND tipo_rol='Participante' AND vwc.localidad_ejecucion_propuesta is not NULL
+                    ".$where." and vwc.id_estado NOT IN (7,20)  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
             ORDER BY 2
             ";
@@ -620,13 +645,15 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $sql_propuestas = "
             select 
                     vwc.localidad_ejecucion_propuesta as label,
+                    count(vwc.id_propuesta) as total_entidad,
                     sum(vwc.monto_asignado) as total_propuestas
             from 
                     Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
             where 
-                    ".$where." and vwc.estado_propuesta NOT IN ('Guardada - No Inscrita','Anulada') and vwc.localidad_ejecucion_propuesta is not null
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
             group by 1
-            order by 2 ASC
+            order by 3 ASC
             ";
         
         $propuestas_localidadeje = $app->modelsManager->executeQuery($sql_propuestas);
@@ -641,6 +668,121 @@ $app->post('/general_anio', function () use ($app, $config, $logger) {
         $array["valor_localidadeje_anio"]["label"] = $array_label;
 
         $array["table_valor_localidadeje_anio"] = $propuestas_localidadeje;
+        
+        //Propuestas por tipo de participante de ejecucion
+        $sql_propuestas = "
+            select 
+                    per.nombre as label,
+                    count(vwc.id_propuesta) as total_entidad,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+            INNER JOIN Propuestas AS p ON p.id=vwc.id_propuesta
+            INNER JOIN Participantes AS par ON par.id=p.participante
+            INNER JOIN Usuariosperfiles AS up ON up.id=par.usuario_perfil
+            INNER JOIN Perfiles AS per ON per.id=up.perfil
+            where 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+            group by 1
+            order by 3 ASC
+            ";
+        
+        $propuestas_participanteeje = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_participanteeje AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_eje_tipo_participante"]["value"] = $array_value;
+        $array["valor_eje_tipo_participante"]["label"] = $array_label;
+
+        $array["table_valor_eje_tipo_participante"] = $propuestas_participanteeje;
+        
+        //Propuestas por area de ejecucion
+        $sql_propuestas = "
+            select 
+                    a.nombre as label,
+                    count(vwc.id_propuesta) as total_entidad,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita
+            INNER JOIN Areas AS a ON a.id=vwp.area
+            where 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') and vwc.localidad_ejecucion_propuesta is not null  AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+            group by 1
+            order by 3 ASC
+            ";
+        
+        $propuestas_area = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_area AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_eje_area"]["value"] = $array_value;
+        $array["valor_eje_area"]["label"] = $array_label;
+
+        $array["table_valor_eje_area"] = $propuestas_area;
+        
+        //Propuestas por entidad de ejecucion
+        $sql_propuestas = "
+            select 
+                    vwc.nombre_entidad as label,
+                    count(vwc.id_propuesta) as total_entidad,
+                    sum(vwc.monto_asignado) as total_propuestas
+            from 
+                    Viewpropuestas as vwc 
+            INNER JOIN Viewconvocatorias AS vwp ON vwp.id_categoria=vwc.id_convocatoria_propuesta_inscrita               
+            where 
+                    ".$where." and vwc.estado_propuesta IN ('Ganadora') AND vwc.id_entidad IN (".$in_entidades.") AND vwp.programa IN (".$in_programas.") AND UPPER(vwp.convocatoria) NOT LIKE '%JURADOS%' 
+            group by 1
+            order by 3 ASC
+            ";
+        
+        $propuestas_entidadeje = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($propuestas_entidadeje AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_entidadeje_anio"]["value"] = $array_value;
+        $array["valor_entidadeje_anio"]["label"] = $array_label;
+
+        $array["table_valor_entidadeje_anio"] = $propuestas_entidadeje;
+        
+        //Ofertado por entidad
+        $sql_propuestas = "
+            select 
+                    vwc.nombre_entidad as label,
+                    SUM(vwc.sum) as total_propuestas
+            from 
+                    Viewofertado as vwc 
+            where 
+                    ".$where." AND vwc.id_entidad IN (".$in_entidades.")  AND vwc.programa IN (".$in_programas.")           
+            GROUP BY 1
+            order by 2 ASC
+            ";
+        
+        $ofertado_entidad = $app->modelsManager->executeQuery($sql_propuestas);
+        $array_value = array();
+        $array_label = array();
+        foreach ($ofertado_entidad AS $clave => $valor) {
+            $array_value[] = $valor->total_propuestas;
+            $array_label[] = $valor->label;
+        }
+
+        $array["valor_ofertado_entidad"]["value"] = $array_value;
+        $array["valor_ofertado_entidad"]["label"] = $array_label;
+
+        $array["table_valor_ofertado_entidad"] = $ofertado_entidad;
         
         $array["fecha_corte"] = date("Y-m-d H:i:s");
 

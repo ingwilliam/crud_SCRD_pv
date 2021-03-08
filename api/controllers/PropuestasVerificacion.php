@@ -707,10 +707,15 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                         'order' => 'fecha_creacion ASC',
                             ]));
                             
+                            $url_archivo = $config->sistema->url_admin;
+                            
                             foreach ($consulta_archivos_propuesta as $archivo) {
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
                                 $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                                $ext_array = explode('.', $archivo->nombre);
+                                $ext = end($ext_array);
+                                $documentos_administrativos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo."pages/administracionpropuestas/visor.html?id=".$archivo->id_alfresco."&ext=".$ext."&name=".$archivo->nombre;
                             }
                             
                             //Consulto todos los link cargados por el usuario
@@ -756,10 +761,16 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                                     'order' => 'fecha_creacion ASC',
                         ]));
 
+                        $url_archivo = $config->sistema->url_admin;
+                        
                         foreach ($consulta_archivos_propuesta as $archivo) {
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id"] = $archivo->id;                                
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["nombre"] = $archivo->nombre;                                
                             $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["id_alfresco"] = $archivo->id_alfresco;                                
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["barbosa"] = $archivo->id_alfresco;                                
+                            $ext_array = explode('.', $archivo->nombre);
+                            $ext = end($ext_array);
+                            $documentos_tecnicos[$documento->orden]["archivos"][$archivo->id]["url_alfresco"] = $url_archivo."pages/administracionpropuestas/visor.html?id=".$archivo->id_alfresco."&ext=".$ext."&name=".$archivo->nombre;
                         }
 
                         $conditions = ['propuesta' => $propuesta->id, 'active' => true, 'convocatoriadocumento' => $documento->id, 'cargue_subsanacion' => 'false'];
@@ -775,8 +786,16 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         ]));
 
                         foreach ($consulta_links_propuesta as $link) {
+                            //link para el formulario del pdac
+                            $link_actual=$link->link;
+                            if(strpos($link->link,"/report_SCRD_pv/reporte_propuesta_inscrita_pdac.php"))
+                            {
+                                $link_cortado = explode("&token=",$link->link);
+                                $link_actual = $link_cortado[0]."&token=".$request->get('token');
+                            }
+                            
                             $documentos_tecnicos[$documento->orden]["links"][$link->id]["id"] = $link->id;                                
-                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["link"] = $link->link;                                                                
+                            $documentos_tecnicos[$documento->orden]["links"][$link->id]["link"] = $link_actual;                                                                
                         }
                         
                     }

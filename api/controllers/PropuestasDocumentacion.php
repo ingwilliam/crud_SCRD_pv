@@ -161,10 +161,17 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                 ]));
                                 $documentos_administrativos=array();
                                 $documentos_tecnicos=array();
+                                //solo aplica para agregar el link del reporte de inscripcion de PDAC
+                                $id_convocatoria_documento_pdac=null;
+                                    
                                 foreach ($consulta_documentos_administrativos as $documento) {
                                     if ($documento->getRequisitos()->tipo_requisito == "Administrativos") {
                                         if ($documento->etapa == "Registro") {
-                                            if($documento->getRequisitos()->perfiles==$propuesta->getParticipantes()->getUsuariosperfiles()->perfil)
+
+                                            //cuento si existe que el requisto aplica para el perfil de la categoria
+                                            $resultado = substr_count($documento->getRequisitos()->perfiles, $propuesta->getParticipantes()->getUsuariosperfiles()->perfil);
+                                            
+                                            if($resultado>0)
                                             {                                            
                                                 $documentos_administrativos[$documento->orden]["id"] = $documento->id;
                                                 $documentos_administrativos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
@@ -177,6 +184,10 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                     }
 
                                     if ($documento->getRequisitos()->tipo_requisito == "Tecnicos") {
+                                        if($documento->requisito==809){
+                                            $id_convocatoria_documento_pdac=$documento->id;
+                                        }
+                                        
                                         $documentos_tecnicos[$documento->orden]["id"] = $documento->id;
                                         $documentos_tecnicos[$documento->orden]["requisito"] = $documento->getRequisitos()->nombre;
                                         $documentos_tecnicos[$documento->orden]["descripcion"] = $documento->descripcion;
@@ -185,11 +196,39 @@ $app->get('/buscar_documentacion', function () use ($app, $config, $logger) {
                                         $documentos_tecnicos[$documento->orden]["orden"] = $documento->orden;
                                     }
                                 }
-
+                               
                                 $array["administrativos"] = $documentos_administrativos;
 
                                 $array["tecnicos"] = $documentos_tecnicos;
 
+                                //solo aplica para agregar el link del reporte de inscripcion de PDAC
+                                if($array["programa"]==2)
+                                {
+                                    //Consulto la propuesta solicitada
+                                    $conditions = ['propuesta' => $propuesta->id, 'active' => true , 'convocatoriadocumento' => $id_convocatoria_documento_pdac ];
+                                    $propuestaslinks_pdac = Propuestaslinks::findFirst(([
+                                                'conditions' => 'propuesta=:propuesta: AND active=:active: AND convocatoriadocumento=:convocatoriadocumento:',
+                                                'bind' => $conditions,
+                                    ]));
+                                    
+                                    if (!isset($propuestaslinks_pdac->id)) {
+                                        $propuestaslinks = new Propuestaslinks();
+                                        $propuestaslinks->creado_por = $user_current["id"];
+                                        $propuestaslinks->fecha_creacion = date("Y-m-d H:i:s");
+                                        $propuestaslinks->active = true;
+                                        $propuestaslinks->propuesta = $propuesta->id;
+                                        $propuestaslinks->convocatoriadocumento = $id_convocatoria_documento_pdac;
+                                        $propuestaslinks->link = $config->sistema->url_report."reporte_propuesta_inscrita_pdac.php?id=".$propuesta->id."&token=".$request->get('token')."&vi=1";
+                                        $propuestaslinks->cargue_subsanacion = false;                                    
+                                        if ($propuestaslinks->save() === false) {
+                                            //Registro la accion en el log de convocatorias           
+                                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasDocumentacion en el método guardar_link, error al crear el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                        
+                                        } else {
+                                            $logger->info('"token":"{token}","user":"{user}","message":"Retorno el controlador PropuestasDocumentacion en el método guardar_link, se creo el link como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                                        
+                                        }
+                                    }
+                                }                                                                
+                                
                                 //Registro la accion en el log de convocatorias
                                 $logger->info('"token":"{token}","user":"{user}","message":"Retorna al controlador PropuestasDocumentacion en el método buscar_documentacion, retorna la información de la documentacion de la propuesta como (' . $request->get('m') . ') en la convocatoria(' . $request->get('conv') . '), en el metodo buscar_documentacion"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
                                 $logger->close();
@@ -484,24 +523,31 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     $id_perfil = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->id;
                     
                     if( $id_perfil==7 || $id_perfil==8)
-                    {
-                        
-                        //Se valida que al menos tenga registrado un integrante
-                        $participantes = Participantes::find("tipo IN ('Junta','Integrante') AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
-                        
-                        if( count($participantes) <= 0 )
-                        {                                                
-                            if( $id_perfil==7)
-                            {
-                                $array_retorno[] = array('id' => "Junta", 'nombre' => "Junta");
-                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes de la junta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    {                        
+                        //Juridica
+                        if( $id_perfil==7)
+                        {
+                            //Se valida que al menos tenga registrado un integrante
+                            $participantes = Participantes::find("tipo IN ('Junta','Integrante') AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
+
+                            if( count($participantes) <= 0 )
+                            {                                                
+                                    $array_retorno[] = array('id' => "Junta", 'nombre' => "Junta");
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes de la junta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                                                                        
                             }
-                            
-                            if($id_perfil==8)
-                            {
-                                $array_retorno[] = array('id' => "Integrante", 'nombre' => "Integrante");                                                                                                                                
-                                $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado los integrantes de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                            }                                                        
+                        }
+                        
+                        //Agrupación 
+                        if( $id_perfil==8)
+                        {
+                            //Se valida que al menos tenga registrado un integrante
+                            $participantes = Participantes::find("tipo IN ('Junta','Integrante') AND active = TRUE AND participante_padre=" . $propuesta->participante . "");
+
+                            if( count($participantes) < $convocatoria->cantidad_integrantes )
+                            {                                                
+                                    $array_retorno[] = array('id' => "Integrante", 'nombre' => "Integrante");                                                                                                                                
+                                    $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado el minimo integrantes de la agrupación en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);                                                                                        
+                            }
                         }
                         
                         //Se valida que al menos tenga un representante de la junta o agrupación
@@ -617,7 +663,7 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                                 foreach(Propuestasactividades::find("active=true AND propuestaobjetivo = ".$objetivo->id) as $actividad)
                                 {
                                     
-                                    $sql_totales = 'SELECT SUM(valortotal) AS total_proyecto, SUM(aportesolicitado) AS total_concertacion FROM Propuestaspresupuestos WHERE active=TRUE';
+                                    $sql_totales = 'SELECT SUM(valortotal) AS total_proyecto, SUM(aportesolicitado) AS total_concertacion FROM Propuestaspresupuestos WHERE active=TRUE AND propuestaactividad='.$actividad->id;
 
                                     $totales = $app->modelsManager->executeQuery($sql_totales)->getFirst();
                                     
@@ -646,6 +692,26 @@ $app->get('/validar_requisitos', function () use ($app, $config, $logger) {
                     {
                         $array_retorno[] = array('id' => "FPropuesta", 'nombre' => "FPropuesta");
                         $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha ingresado información en el formulario de la propuesta en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                    }
+                    
+                    //No ha actualizado la información del participante PN
+                    if( $propuesta->getParticipantes()->getUsuariosperfiles()->perfil === 6 )
+                    {
+                        if( $propuesta->getParticipantes()->tiene_rut === "" )
+                        {
+                            $array_retorno[] = array('id' => "FParticipantePN", 'nombre' => "FParticipantePN");
+                            $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha actualizado información en el formulario del participante PN en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        }
+                    }
+                    
+                    //No ha actualizado la información del participante
+                    if( $propuesta->getParticipantes()->getUsuariosperfiles()->perfil === 7 )
+                    {
+                        if( $propuesta->getParticipantes()->tiene_rut === "" )
+                        {
+                            $array_retorno[] = array('id' => "FParticipantePJ", 'nombre' => "FParticipantePJ");
+                            $logger->error('"token":"{token}","user":"{user}","message":"Validar en el controlador PropuestasDocumentacion en el método validar_requisitos, no ha actualizado información en el formulario del participante PJ en la propuesta (' . $request->get('propuesta') . ')."', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        }
                     }
                                         
                     $logger->close();                    
@@ -1198,6 +1264,50 @@ $app->post('/download_file', function () use ($app, $config, $logger) {
             if ($permiso_escritura == "ok") {
                 $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
                 echo $chemistry_alfresco->download($request->getPost('cod'));
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ') ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/visor', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->getPut('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+                echo $chemistry_alfresco->view_base_64($request->getPost('cod'));
             } else {
                 //Registro la accion en el log de convocatorias           
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo download_file como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => "", 'token' => $request->getPut('token')]);

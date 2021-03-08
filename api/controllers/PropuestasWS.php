@@ -244,7 +244,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -332,7 +332,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -399,7 +399,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 
@@ -559,6 +559,9 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
+            //Le permito mas memoria a la accion
+            ini_set('memory_limit', '-1');
+            
             $propuesta = Propuestas::findFirst($request->getPut('id'));
 
             if (isset($propuesta->id)) {
@@ -727,7 +730,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -826,7 +829,7 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_objetivo = $html_objetivo . '<td colspan="2" bgcolor="#BDBDBD"><b>Actividades</b></td>';
                             $html_objetivo = $html_objetivo . "</tr>";
                             $html_objetivo = $html_objetivo . '<tr><td colspan="2">';                            
-                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
+                            foreach ($objetivo->getPropuestasactividades(['conditions' => 'active=TRUE',"order" => 'orden DESC']) as $actividad) {
                             $html_objetivo = $html_objetivo . "" . $actividad->actividad . "<br/><br/>";                                                                                                                
                             }                            
                             $html_objetivo = $html_objetivo . "</td></tr>";                                                        
@@ -855,9 +858,9 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_cronograma = $html_cronograma . "</tr>";         
                             $html_cronograma = $html_cronograma . '<tr><td colspan="4" align="center" bgcolor="#BDBDBD">Mes</td><td colspan="5" align="center" bgcolor="#BDBDBD">Enero</td><td colspan="5" align="center" bgcolor="#BDBDBD">Febrero</td><td colspan="5" align="center" bgcolor="#BDBDBD">Marzo</td><td colspan="5" align="center" bgcolor="#BDBDBD">Abril</td><td colspan="5" align="center" bgcolor="#BDBDBD">Mayo</td><td colspan="5" align="center" bgcolor="#BDBDBD">Junio</td><td colspan="5" align="center" bgcolor="#BDBDBD">Julio</td><td colspan="5" align="center" bgcolor="#BDBDBD">Agosto</td><td colspan="5" align="center" bgcolor="#BDBDBD">Septiembre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Octubre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Noviembre</td><td colspan="5" align="center" bgcolor="#BDBDBD">Diciembre</td></tr>';
                             $html_cronograma = $html_cronograma . '<tr><td colspan="4" align="center" bgcolor="#BDBDBD">Semana</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td><td align="center" bgcolor="#BDBDBD">1</td><td align="center" bgcolor="#BDBDBD">2</td><td align="center" bgcolor="#BDBDBD">3</td><td align="center" bgcolor="#BDBDBD">4</td><td align="center" bgcolor="#BDBDBD">5</td></tr>';
-                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
+                            foreach ($objetivo->getPropuestasactividades(['conditions' => 'active=TRUE',"order" => 'orden DESC']) as $actividad) {                                                                                        
                             $html_cronograma = $html_cronograma . '<tr><td colspan="64">' . $actividad->actividad . '</td></tr>';
-                                foreach ($actividad->getPropuestascronogramas(["order" => 'fecha DESC']) as $fecha) {
+                                foreach ($actividad->getPropuestascronogramas(['conditions' => 'active=TRUE',"order" => 'fecha DESC']) as $fecha) {
                                     $numero_semana=weekOfMonth($fecha->fecha);
                                     $numero_mes=$mes = (Integer)date("m", strtotime($fecha->fecha));                                                                        
                                     $array_ejecucion[$numero_mes][$numero_semana]="X";
@@ -911,13 +914,13 @@ $app->post('/reporte_propuesta_inscrita_pdac', function () use ($app, $config, $
                             $html_presupuesto = $html_presupuesto . "<br/><br/><table>";                            
                             $html_presupuesto = $html_presupuesto . '<tr><td align="center" bgcolor="#BDBDBD">Insumo</td><td align="center" bgcolor="#BDBDBD">Cantidad</td><td align="center" bgcolor="#BDBDBD">Valor Total</td><td align="center" bgcolor="#BDBDBD">Valor Solicitado</td><td align="center" bgcolor="#BDBDBD">Valor Cofinanciado</td><td align="center" bgcolor="#BDBDBD">Valor Aportado Participante</td></tr>';                            
                             $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">Objetivo especifico: ' . $objetivo->objetivo . '</td></tr>';                            
-                            foreach ($objetivo->getPropuestasactividades(["order" => 'orden DESC']) as $actividad) {                                                                                        
+                            foreach ($objetivo->getPropuestasactividades(['conditions' => 'active=TRUE',"order" => 'orden DESC']) as $actividad) {                                                                                        
                             $html_presupuesto = $html_presupuesto . '<tr><td colspan="4">' . $actividad->actividad . '</td></tr>';
                                 $valortotal=0;
                                 $aportesolicitado=0;
                                 $aportecofinanciado=0;
                                 $aportepropio=0;
-                                foreach ($actividad->getPropuestaspresupuestos(["order" => 'insumo DESC']) as $presupuesto) {
+                                foreach ($actividad->getPropuestaspresupuestos(['conditions' => 'active=TRUE',"order" => 'insumo DESC']) as $presupuesto) {
                                     $valortotal=$valortotal+$presupuesto->valortotal;
                                     $aportesolicitado=$aportesolicitado+$presupuesto->aportesolicitado;
                                     $aportecofinanciado=$aportecofinanciado+$presupuesto->aportecofinanciado;
@@ -1064,7 +1067,7 @@ foreach ($consulta_territorios as $territorio) {
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -1336,7 +1339,7 @@ foreach ($consulta_territorios as $territorio) {
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 
@@ -1472,6 +1475,14 @@ foreach ($consulta_territorios as $territorio) {
     <tr>
         <td>Mecanismos de evaluación cuantitativa</td>
         <td colspan="3">' . $propuesta->mecanismos_cuantitativa . '</td>        
+    </tr>
+    <tr>
+        <td>Proyección y reconocimiento nacional o internacional</td>
+        <td colspan="3">' . $propuesta->proyeccion_reconocimiento . '</td>        
+    </tr>
+    <tr>
+        <td>Impacto que ha tenido el proyecto</td>
+        <td colspan="3">' . $propuesta->impacto_proyecto . '</td>        
     </tr>
     <tr>
         <td>Medio por el cual se enteró de esta convocatoria</td>
@@ -2378,7 +2389,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
     </tr>    
     <tr>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr>           
@@ -2436,7 +2447,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
         <td>Tipo de sede</td>
         <td>' . $propuesta->getParticipantes()->tipo_sede . '</td>
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>        
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>        
     </tr> 
     <tr>
         <td>Página web, vínculo o blog</td>
@@ -2459,7 +2470,7 @@ $app->post('/reporte_propuesta_subsanacion', function () use ($app, $config, $lo
     </tr>    
     <tr>        
         <td>Redes sociales</td>
-        <td>' . $propuesta->getParticipantes()->redes_sociales . '</td>            
+        <td>' . $propuesta->getParticipantes()->facebook . '</td>            
         <td>Página web, vínculo o blog</td>
         <td>' . $propuesta->getParticipantes()->links . '</td>
     </tr> 

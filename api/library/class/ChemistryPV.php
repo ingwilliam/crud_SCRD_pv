@@ -87,6 +87,18 @@ class ChemistryPV {
         }
     }
     
+    function view_base_64($object_id) {
+        try {            
+            return base64_encode($this->client->getContentStream($object_id));                         
+        } catch (CmisObjectNotFoundException $e) {
+            return "Error 2: ".$e->getCode();
+        } catch (CmisRuntimeException $e) {
+            return "Error 1: ".$e->getCode();
+        } catch (Exception $ex) {
+            return "Error: método";
+        }
+    }
+    
     function view_objet($object_id) {
         try {
             return $this->client->getObject($object_id);            

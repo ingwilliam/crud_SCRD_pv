@@ -34,7 +34,7 @@ $di = new FactoryDefault();
 $di->set('db', function () use ($config) {
     return new DbAdapter(
             array(
-        "host" => $config->database->host,"port" => $config->database->port,
+        "host" => $config->database->host, "port" => $config->database->port,
         "port" => $config->database->port,
         "username" => $config->database->username,
         "password" => $config->database->password,
@@ -64,38 +64,34 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
         $array_convocatoria["valor_total_estimulos"] = "$ " . number_format($convocatoria->valor_total_estimulos, 0, '', '.');
         $array_convocatoria["bolsa_concursable"] = $convocatoria->bolsa_concursable;
         $array_convocatoria["descripcion_bolsa"] = $convocatoria->descripcion_bolsa;
+        $array_convocatoria["justificacion"] = $convocatoria->justificacion;
+        $array_convocatoria["modalidad"] = $convocatoria->modalidad;
         $array_convocatoria["objeto"] = $convocatoria->objeto;
         $array_convocatoria["no_pueden_participar"] = $convocatoria->no_pueden_participar;
         $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
         $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
-        
+
         //generar las siglas del programa
-        if($convocatoria->programa==1)
-        {
-            $siglas_programa="pde";
+        if ($convocatoria->programa == 1) {
+            $siglas_programa = "pde";
         }
-        if($convocatoria->programa==2)
-        {
-            $siglas_programa="pdac";
+        if ($convocatoria->programa == 2) {
+            $siglas_programa = "pdac";
         }
-        if($convocatoria->programa==3)
-        {
-            $siglas_programa="pdsc";
+        if ($convocatoria->programa == 3) {
+            $siglas_programa = "pdsc";
         }
-        
-        $condiciones_participancion= Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_".$siglas_programa."_".date("Y")."'");                           
-        
+
+        $condiciones_participancion = Tablasmaestras::findFirst("active=true AND nombre='condiciones_participacion_" . $siglas_programa . "_" . date("Y") . "'");
+
         //Valido si la convocatoria cuenta con información de
         //condiciones especificas
-        if($convocatoria->link_condiciones!="")
-        {
+        if ($convocatoria->link_condiciones != "") {
             $array_convocatoria["condiciones_participacion"] = $convocatoria->link_condiciones;
-        }
-        else
-        {
+        } else {
             $array_convocatoria["condiciones_participacion"] = $condiciones_participancion->valor;
         }
-        
+
 
         $tipo_convocatoria = "";
 
@@ -141,7 +137,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         'order' => 'orden ASC',
             ]));
-            
+
             //Se crea todo el array de las rondas de evaluacion
             $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
@@ -159,8 +155,6 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                                 ]
                 );
             }
-            
-            
         } else {
             //Array para consultar las convocatorias generales
             $conditions = ['convocatoria_padre_categoria' => $id, 'active' => true];
@@ -274,22 +268,19 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                             ]));
 
                             //Creo el cronograma de las categorias especiales
-                            $i=0;
+                            $i = 0;
                             foreach ($consulta_cronogramas as $evento) {
-                                if($evento->getTiposeventos()->publico)
-                                {                                                                
+                                if ($evento->getTiposeventos()->publico) {
                                     $cronogramas[$categoria->id]["categoria"] = $categoria->nombre;
                                     $cronogramas[$categoria->id]["eventos"][$i]["tipo_evento"] = $evento->getTiposeventos()->nombre;
                                     if ($evento->getTiposeventos()->periodo) {
                                         $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');
                                     } else {
-                                        if ($evento->tipo_evento==12) {
-                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y H:i:s');   
+                                        if ($evento->tipo_evento == 12) {
+                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y H:i:s');
+                                        } else {
+                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');
                                         }
-                                        else
-                                        {
-                                            $cronogramas[$categoria->id]["eventos"][$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');   
-                                        }                                                                                
                                     }
                                     $cronogramas[$categoria->id]["eventos"][$i]["descripcion"] = $evento->descripcion;
                                     $cronogramas[$categoria->id]["eventos"][$i]["convocatoria"] = $categoria->id;
@@ -369,7 +360,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                                         'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
                                         'bind' => $conditions,
                             ]));
-                            
+
                             foreach ($consulta_rondas_evaluacion as $ronda) {
                                 $rondas_evaluacion[$ronda->id]["ronda"] = $ronda->numero_ronda;
                                 $rondas_evaluacion[$ronda->id]["nombre"] = "<b>Categoría:</b> " . $categoria->nombre . " <br/><b>Ronda:</b> " . $ronda->nombre_ronda;
@@ -396,26 +387,23 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'bind' => $conditions,
                         'order' => 'fecha_inicio ASC',
             ]));
-            $i=0;
+            $i = 0;
             foreach ($consulta_cronogramas as $evento) {
-                if($evento->getTiposeventos()->publico)
-                {
+                if ($evento->getTiposeventos()->publico) {
                     $cronogramas[$i]["tipo_evento"] = $evento->getTiposeventos()->nombre;
                     if ($evento->getTiposeventos()->periodo) {
                         $cronogramas[$i]["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');
                     } else {
-                        if ($evento->tipo_evento==12) {
+                        if ($evento->tipo_evento == 12) {
                             $cronogramas[$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y H:i:s');
-                        }
-                        else
-                        {
+                        } else {
                             $cronogramas[$i]["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');
                         }
                     }
                     $cronogramas[$i]["descripcion"] = $evento->descripcion;
                     $cronogramas[$i]["convocatoria"] = $id;
                     $i++;
-                }                                                
+                }
             }
 
             //Se crea todo el array de participantes
@@ -466,7 +454,7 @@ $app->post('/search/{id:[0-9]+}', function ($id) use ($app, $config) {
                         'conditions' => 'convocatoria=:convocatoria: AND active=:active: AND tipo_documento IN (' . $tipo_documento_avisos . ')',
                         'bind' => $conditions,
                         'order' => 'orden ASC',
-            ]));                        
+            ]));
         }
 
         //consulto los tipos anexos documentacion, aplica para las convocatorias sencillas, categorias generales y especiales
@@ -548,7 +536,7 @@ $app->get('/all', function () use ($app) {
 
 
         //Condiciones para la consulta del select del buscador principal
-        $estado_actual="";
+        $estado_actual = "";
         if (!empty($request->get("params"))) {
             foreach (json_decode($request->get("params")) AS $clave => $valor) {
                 if ($clave == "nombre" && $valor != "") {
@@ -559,11 +547,10 @@ $app->get('/all', function () use ($app) {
                 if ($valor != "" && $clave != "nombre" && $clave != "estado") {
                     $where_convocatorias = $where_convocatorias . " AND c." . $clave . " = " . $valor;
                 }
-                
+
                 if ($clave == "estado") {
-                    $estado_actual=$valor;                        
+                    $estado_actual = $valor;
                 }
-                    
             }
         }
 
@@ -645,7 +632,7 @@ $app->get('/all', function () use ($app) {
 
         $json_convocatorias = array();
         foreach ($array_convocatorias AS $clave => $valor) {
-            
+
             $valor->estado_convocatoria = "<span class=\"span_" . $valor->estado . "\">" . $valor->estado . "</span>";
             if ($valor->tiene_categorias == false) {
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
@@ -666,15 +653,12 @@ $app->get('/all', function () use ($app) {
                 }
             }
             //Realizo el filtro de estados
-            if ($estado_actual=="") {                    
-                $json_convocatorias[] = $valor;                    
-            }
-            else
-            {
-                if($estado_actual==$valor->id_estado)
-                {                        
+            if ($estado_actual == "") {
+                $json_convocatorias[] = $valor;
+            } else {
+                if ($estado_actual == $valor->id_estado) {
                     $json_convocatorias[] = $valor;
-                }                    
+                }
             }
         }
 
@@ -698,10 +682,10 @@ $app->get('/all', function () use ($app) {
                     }
                 }
             }
-            
+
             if ($valor->tiene_categorias == true && $valor->diferentes_categorias == false) {
-                $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"".$valor->idd."\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
-                $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page('2','".$valor->idd."')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";                                        
+                $valor->ver_cronograma = "<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"" . $valor->idd . "\"><span class=\"glyphicon glyphicon-calendar\"></span></button>";
+                $valor->ver_convocatoria = "<button type=\"button\" class=\"btn btn-warning\" onclick=\"form_edit_page('2','" . $valor->idd . "')\"><span class=\"glyphicon glyphicon-new-window\"></span></button>";
 
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->idd . " AND tipo_evento = 12 AND active=true");
@@ -719,19 +703,15 @@ $app->get('/all', function () use ($app) {
                         $valor->estado_convocatoria = "<span class=\"span_Abierta\">Abierta</span>";
                     }
                 }
-
             }
 
             //Realizo el filtro de estados
-            if ($estado_actual=="") {                    
-                $json_convocatorias[] = $valor;                    
-            }
-            else
-            {
-                if($estado_actual==$valor->id_estado)
-                {                        
+            if ($estado_actual == "") {
+                $json_convocatorias[] = $valor;
+            } else {
+                if ($estado_actual == $valor->id_estado) {
                     $json_convocatorias[] = $valor;
-                }                    
+                }
             }
         }
 
@@ -777,43 +757,49 @@ $app->get('/all_view', function () use ($app) {
         $where .= " LEFT JOIN Areas AS a ON a.id=view.area";
         $where .= " LEFT JOIN Lineasestrategicas AS l ON l.id=view.linea_estrategica";
         $where .= " LEFT JOIN Enfoques AS en ON en.id=view.enfoque";
-        $where .= " INNER JOIN Estados AS es ON es.id=view.estado";        
+        $where .= " INNER JOIN Estados AS es ON es.id=view.estado";
         $where .= " WHERE view.modalidad NOT IN (2,7) AND es.id IN (5, 6, 32, 43 ,45) AND view.active IN (true) ";
 
 
         //Condiciones para la consulta del select del buscador principal        
-        $estado_actual="";
-        $array_json_param=json_decode($request->get("params"));
-        $estado_actual=$array_json_param->estado;                        
-        if($array_json_param->estado==52||$array_json_param->estado==51)
+        $estado_actual = "";
+        $array_json_param = json_decode($request->get("params"));
+        
+        //Valido que exita un año
+        if($array_json_param->anio=="")
         {
-            $array_json_param->estado=5;
+           $array_json_param->anio=date("Y"); 
+        }
+        
+        $estado_actual = $array_json_param->estado;
+        if ($array_json_param->estado == 52 || $array_json_param->estado == 51) {
+            $array_json_param->estado = 5;
         }
         if (!empty($request->get("params"))) {
             foreach ($array_json_param AS $clave => $valor) {
                 if ($clave == "nombre" && $valor != "") {
-                    $where .= " AND ( UPPER(TRANSLATE(view.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ";
-                    $where .= " OR UPPER(TRANSLATE(view.categoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%".$valor."%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') )";
+                    $where .= " AND ( UPPER(TRANSLATE(view.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $valor . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ";
+                    $where .= " OR UPPER(TRANSLATE(view.categoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $valor . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') )";
                 }
-                
+
                 if ($valor != "" && $clave != "nombre") {
                     $where = $where . " AND view." . $clave . " = " . $valor;
-                }                                          
+                }
             }
         }
 
         //Defino el sql del total y el array de datos
         $sqlTot = "SELECT count(*) as total FROM Viewconvocatoriaspublicas AS view";
         $sqlRec = "SELECT
-                        ". $columns[8] . " AS estado_convocatoria, 
-                        ". $columns[0] . " AS anio , 
-                        ". $columns[7] . " AS programa , 
-                        ". $columns[1] . " AS entidad , 
-                        ". $columns[2] . " AS area , 
-                        ". $columns[3] . " AS linea_estrategica , 
-                        ". $columns[4] . " AS enfoque , 
-                        ". $columns[5] . " AS convocatoria , 
-                        ". $columns[6] . " AS categoria ,                         
+                        " . $columns[8] . " AS estado_convocatoria, 
+                        " . $columns[0] . " AS anio , 
+                        " . $columns[7] . " AS programa , 
+                        " . $columns[1] . " AS entidad , 
+                        " . $columns[2] . " AS area , 
+                        " . $columns[3] . " AS linea_estrategica , 
+                        " . $columns[4] . " AS enfoque , 
+                        " . $columns[5] . " AS convocatoria , 
+                        " . $columns[6] . " AS categoria ,                         
                         view.id_diferente , 
                         view.estado , 
                         concat('<button type=\"button\" class=\"btn btn-warning cargar_cronograma\" data-toggle=\"modal\" data-target=\"#ver_cronograma\" title=\"',view.id_diferente,'\"><span class=\"glyphicon glyphicon-calendar\"></span></button>') as ver_cronograma,
@@ -829,20 +815,20 @@ $app->get('/all_view', function () use ($app) {
 
         //Concateno el orden y el limit para el paginador
         $sqlRec .= " ORDER BY " . $columns[8] . " DESC LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
-        
+
         //ejecuto el total de registros actual
         $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
         $array_convocatorias = $app->modelsManager->executeQuery($sqlRec);
-        
+
         $json_convocatorias = array();
         foreach ($array_convocatorias AS $clave => $valor) {
-            
-            if($valor->estado==5)
-            {
+
+            if ($valor->estado == 5) {
                 $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
                 $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $valor->id_diferente . " AND tipo_evento = 12");
                 $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
-                if ($fecha_actual > $fecha_cierre) {            
+                $valor->fecha_cierre=$fecha_cierre_real->fecha_fin;
+                if ($fecha_actual > $fecha_cierre) {
                     $valor->estado = 52;
                     $valor->estado_convocatoria = "<span class=\"span_Cerrada\">Publicada Cerrada</span>";
                 } else {
@@ -851,21 +837,21 @@ $app->get('/all_view', function () use ($app) {
                     if ($fecha_actual < $fecha_apertura) {
                         $valor->estado = 5;
                         $valor->estado_convocatoria = "<span class=\"span_Publicada\">Publicada</span>";
-                    } else {               
+                    } else {
                         $valor->estado = 51;
                         $valor->estado_convocatoria = "<span class=\"span_Abierta\">Publicada Abierta</span>";
                     }
                 }
-            }
-            else {
+            } else {
                 $valor->estado_convocatoria = "<span class=\"span_" . $valor->estado_convocatoria . "\">" . $valor->estado_convocatoria . "</span>";
-            }            
-            
+            }
+
             //Realizo el filtro de estados
-            $json_convocatorias[] = $valor;                        
+            $json_convocatorias[] = $valor;
         }
-        
-        
+
+        array_sort_by($json_convocatorias, 'programa', $order = SORT_ASC);
+
         //creo el array
         $json_data = array(
             "draw" => intval($request->get("draw")),
@@ -925,17 +911,16 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config) 
         //Creo el cronograma        
         foreach ($consulta_cronogramas as $evento) {
             //Solo cargo los eventos publicos
-            if($evento->getTiposeventos()->publico)
-            {
-                $array_evento=array();
+            if ($evento->getTiposeventos()->publico) {
+                $array_evento = array();
                 $array_evento["tipo_evento"] = $evento->getTiposeventos()->nombre;
                 if ($evento->getTiposeventos()->periodo) {
-                    $array_evento["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');                
+                    $array_evento["fecha"] = "desde " . date_format(new DateTime($evento->fecha_inicio), 'd/m/Y') . " hasta " . date_format(new DateTime($evento->fecha_fin), 'd/m/Y');
                 } else {
-                    $array_evento["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');                
+                    $array_evento["fecha"] = date_format(new DateTime($evento->fecha_inicio), 'd/m/Y');
                 }
-                $array_evento["descripcion"] = $evento->descripcion;            
-                $cronogramas[]=$array_evento;
+                $array_evento["descripcion"] = $evento->descripcion;
+                $cronogramas[] = $array_evento;
             }
         }
 
@@ -947,10 +932,52 @@ $app->post('/cargar_cronograma/{id:[0-9]+}', function ($id) use ($app, $config) 
 }
 );
 
+$app->get('/convocatoria_qr/{id:[0-9]+}', function ($id) use ($app,$config) {
+    try {
+
+        require "../library/phpqrcode/qrlib.php";    
+                        
+        //Declaramos una carpeta temporal para guardar la imagenes generadas
+        $dir = '/tmp/';
+
+        //Declaramos la ruta y nombre del archivo a generar
+        $filename = $dir . 'test.png';
+
+        //Parametros de Condiguración
+        $tamaño = 10; //Tamaño de Pixel
+        $level = 'L'; //Precisión Baja
+        $framSize = 3; //Tamaño en blanco
+        $contenido = $config->sitio->url."publicar.html?id=".$id; //Texto
+        //Enviamos los parametros a la Función para generar código QR 
+        QRcode::png($contenido, $filename, $level, $tamaño, $framSize);
+        
+        $QR = imagecreatefromstring(file_get_contents($filename));
+
+        //Mostramos la imagen generada
+        header('Content-type:image/png');
+        echo imagepng($QR);
+             
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        echo "error_metodo";
+    }
+}
+);
+
 try {
     // Gestionar la consulta
     $app->handle();
 } catch (\Exception $e) {
-    echo 'Excepción: ', $e->getMessage();
+    echo 'Excepción: ', $e->getMessage();    
 }
+
+function array_sort_by(&$arrIni, $col, $order = SORT_ASC) {
+    $arrAux = array();
+    foreach ($arrIni as $key => $row) {
+        $arrAux[$key] = is_object($row) ? $arrAux[$key] = $row->$col : $row[$col];
+        $arrAux[$key] = strtolower($arrAux[$key]);
+    }
+    array_multisort($arrAux, $order, $arrIni);
+}
+
 ?>

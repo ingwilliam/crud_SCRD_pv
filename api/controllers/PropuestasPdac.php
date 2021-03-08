@@ -191,6 +191,8 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 $array["propuesta"]["impacto"] = $propuesta->impacto;
                                 $array["propuesta"]["mecanismos_cualitativa"] = $propuesta->mecanismos_cualitativa;
                                 $array["propuesta"]["mecanismos_cuantitativa"] = $propuesta->mecanismos_cuantitativa;
+                                $array["propuesta"]["proyeccion_reconocimiento"] = $propuesta->proyeccion_reconocimiento;
+                                $array["propuesta"]["impacto_proyecto"] = $propuesta->impacto_proyecto;
                                 $array["propuesta"]["localidades"] = $propuesta->localidades;
                                 $array["propuesta"]["poblacion_objetivo"] = $propuesta->poblacion_objetivo;
                                 $array["propuesta"]["comunidad_objetivo"] = $propuesta->comunidad_objetivo;
@@ -223,6 +225,10 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 $tabla_maestra = Tablasmaestras::find("active=true AND nombre='relacion_plan'");
                                 $array["relacion_plan"] = explode(",", $tabla_maestra[0]->valor);
                                 
+                                //alcance_territorial
+                                $tabla_maestra = Tablasmaestras::find("active=true AND nombre='alcance_territorial'");
+                                $array["alcance_territorial"] = explode(",", $tabla_maestra[0]->valor);
+                                
                                 //Lineas estrategicas
                                 $conditions = ['active' => true];
                                 $array["linea_estrategica"] = Lineasestrategicas::find(([
@@ -241,125 +247,268 @@ $app->get('/buscar_propuesta', function () use ($app, $config, $logger) {
                                 
 
                                 //Creo los parametros obligatorios del formulario
-                                $options = array(
-                                    "fields" => array(
-                                        "localidad" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La localidad principal en donde el proyecto desarrollará las acciones es requerido.")
+                                //Validacion para metropolitana   
+                                $array["convocatoria_padre_categoria"] = $convocatoria->convocatoria_padre_categoria;
+                                if($convocatoria->convocatoria_padre_categoria==621)
+                                {
+                                    $options = array(
+                                        "fields" => array(
+                                            "localidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La localidad principal en donde el proyecto desarrollará las acciones es requerido.")
+                                                )
+                                            ),
+                                            "nombre" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
+                                                )
+                                            ),
+                                            "alianza_sectorial" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Proyecto de alianza sectorial? es requerido.")
+                                                )
+                                            ),
+                                            "primera_vez_pdac" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Es la primera vez que la propuesta se presenta al PDAC? es requerido.")
+                                                )
+                                            ),
+                                            "relacion_plan[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La relación del proyecto con el Plan de Desarrollo de Bogotá es requerido.")                                                
+
+                                                )
+                                            ),
+                                            "linea_estrategica[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La línea estratégica del proyecto es requerido.")
+                                                )
+                                            ),
+                                            "area[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El área del proyecto es requerido.")
+                                                )
+                                            ),
+                                            "trayectoria_entidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La trayectoria de la entidad participante es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "problema_necesidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El problema o necesidad es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "diagnostico_problema" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Cómo se diagnosticó el problema o necesidad? es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "justificacion" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La justificacion es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "atencedente" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "Los antecedentes generales del proyecto es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "objetivo_general" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El objetivo general es requerido."),
+                                                    "stringLength" => array("max" => 1000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 1000.")
+                                                )
+                                            ),
+                                            "objetivo_especifico" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El objetivo específico es requerido."),
+                                                    "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
+                                                )
+                                            ),
+                                            "meta" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La meta es requerido."),
+                                                    "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
+                                                )
+                                            ),
+                                            "actividad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La actividades es requerido.")
+                                                )
+                                            ),
+                                            "metodologia" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La metodología es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "impacto" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El impacto esperado es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "mecanismos_cualitativa" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El mecanismos de evaluación cualitativa: objetivos e impactos es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "mecanismos_cuantitativa" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El mecanismos de evaluación cuantitativa: cobertura poblacional y territorial es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "alcance_territorial[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El alcance territorial del proyecto es requerido.")
+                                                )
+                                            ),
+                                            "proyeccion_reconocimiento" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La proyección y reconocimiento nacional o internacional es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "impacto_proyecto" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El impacto que ha tenido el proyecto es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
                                             )
-                                        ),
-                                        "nombre" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
-                                            )
-                                        ),
-                                        "alianza_sectorial" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El ¿Proyecto de alianza sectorial? es requerido.")
-                                            )
-                                        ),
-                                        "primera_vez_pdac" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El ¿Es la primera vez que la propuesta se presenta al PDAC? es requerido.")
-                                            )
-                                        ),
-                                        "relacion_plan[]" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La relación del proyecto con el Plan de Desarrollo de Bogotá es requerido.")                                                
-                                                
-                                            )
-                                        ),
-                                        "linea_estrategica[]" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La línea estratégica del proyecto es requerido.")
-                                            )
-                                        ),
-                                        "area[]" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El área del proyecto es requerido.")
-                                            )
-                                        ),
-                                        "trayectoria_entidad" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La trayectoria de la entidad participante es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "problema_necesidad" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El problema o necesidad es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "diagnostico_problema" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El ¿Cómo se diagnosticó el problema o necesidad? es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "justificacion" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La justificacion es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "atencedente" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El antecedentes del proyecto es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "objetivo_general" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El objetivo general es requerido."),
-                                                "stringLength" => array("max" => 1000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 1000.")
-                                            )
-                                        ),
-                                        "objetivo_especifico" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El objetivo específico es requerido."),
-                                                "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
-                                            )
-                                        ),
-                                        "meta" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La meta es requerido."),
-                                                "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
-                                            )
-                                        ),
-                                        "actividad" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La actividades es requerido.")
-                                            )
-                                        ),
-                                        "metodologia" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "La metodología es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "impacto" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El impacto esperado es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "mecanismos_cualitativa" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El mecanismos de evaluación cualitativa: objetivos e impactos es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
-                                        ),
-                                        "mecanismos_cuantitativa" => array(
-                                            "validators" => array(
-                                                "notEmpty" => array("message" => "El mecanismos de evaluación cuantitativa: cobertura poblacional y territorial es requerido."),
-                                                "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
-                                            )
+
+
                                         )
-                                        
-                                        
-                                    )
-                                );
+                                    );
+                                }
+                                else{
+                                    $options = array(
+                                        "fields" => array(
+                                            "localidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La localidad principal en donde el proyecto desarrollará las acciones es requerido.")
+                                                )
+                                            ),
+                                            "nombre" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El nombre de la propuesta es requerido.")
+                                                )
+                                            ),
+                                            "alianza_sectorial" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Proyecto de alianza sectorial? es requerido.")
+                                                )
+                                            ),
+                                            "primera_vez_pdac" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Es la primera vez que la propuesta se presenta al PDAC? es requerido.")
+                                                )
+                                            ),
+                                            "relacion_plan[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La relación del proyecto con el Plan de Desarrollo de Bogotá es requerido.")                                                
+
+                                                )
+                                            ),
+                                            "linea_estrategica[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La línea estratégica del proyecto es requerido.")
+                                                )
+                                            ),
+                                            "area[]" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El área del proyecto es requerido.")
+                                                )
+                                            ),
+                                            "trayectoria_entidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La trayectoria de la entidad participante es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "problema_necesidad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El problema o necesidad es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "diagnostico_problema" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El ¿Cómo se diagnosticó el problema o necesidad? es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "justificacion" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La justificacion es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "atencedente" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "Los antecedentes generales del proyecto es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "objetivo_general" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El objetivo general es requerido."),
+                                                    "stringLength" => array("max" => 1000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 1000.")
+                                                )
+                                            ),
+                                            "objetivo_especifico" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El objetivo específico es requerido."),
+                                                    "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
+                                                )
+                                            ),
+                                            "meta" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La meta es requerido."),
+                                                    "stringLength" => array("max" => 500,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 500.")
+                                                )
+                                            ),
+                                            "actividad" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La actividades es requerido.")
+                                                )
+                                            ),
+                                            "metodologia" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "La metodología es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "impacto" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El impacto esperado es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "mecanismos_cualitativa" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El mecanismos de evaluación cualitativa: objetivos e impactos es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            ),
+                                            "mecanismos_cuantitativa" => array(
+                                                "validators" => array(
+                                                    "notEmpty" => array("message" => "El mecanismos de evaluación cuantitativa: cobertura poblacional y territorial es requerido."),
+                                                    "stringLength" => array("max" => 2000,"message" => "Ya cuenta con el máximo de caracteres permitidos, los cuales son 2000.")
+                                                )
+                                            )
+
+
+                                        )
+                                    );
+                                }
 
                                 if ($modalidad != 4) {
                                     $options["fields"] += array(
@@ -635,9 +784,15 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                 $post["porque_medio"] = json_encode($post["porque_medio"]);
                 $post["relacion_plan"] = json_encode($post["relacion_plan"]);
                 $post["linea_estrategica"] = json_encode($post["linea_estrategica"]);
+                $post["alcance_territorial"] = json_encode($post["alcance_territorial"]);
                 $post["area"] = json_encode($post["area"]);
                 $post["actualizado_por"] = $user_current["id"];
                 $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
+                
+                if($post["localidad"]=="")
+                {
+                    $post["localidad"]=null;
+                }
                 
                 if ($propuesta->save($post) === false) {
                     $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta, error al editar la propuesta (' . $request->getPut('id') . ') como (' . $request->getPut('m') . ') en la convocatoria(' . $request->getPut('conv') . ')"', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);                    
@@ -1021,28 +1176,60 @@ $app->post('/editar_propuesta_objetivo_especifico', function () use ($app, $conf
                 
                 if($propuesta->estado==7)
                 {
-                    if(isset($propuesta_documento->id))
+                    if($post["id"]!="")
                     {
+                        $validar_total_objetivos=false;
                         $post["actualizado_por"] = $user_current["id"];
                         $post["fecha_actualizacion"] = date("Y-m-d H:i:s");
                     }
                     else
                     {
+                        $validar_total_objetivos=true;
                         $propuesta_documento = new Propuestasobjetivos();
                         $post["creado_por"] = $user_current["id"];
                         $post["fecha_creacion"] = date("Y-m-d H:i:s");
-                    }                                                
-
-                    if ($propuesta_documento->save($post) === false) {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();
-                        echo "error";
-                    } else {
-                        //Registro la accion en el log de convocatorias
-                        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
-                        $logger->close();                    
-                        echo $propuesta_documento->id;
+                    }                                 
+                    
+                    $guardar_objetivo=true;
+                    if($validar_total_objetivos)
+                    {
+                        //consulto si tiene el maximo de objetivos
+                        $total_objetivos = Propuestasobjetivos::find("propuesta=".$post["propuesta"]);                        
+                        $post["orden"] = count($total_objetivos)+1;
+                        //maximo_objetivos_especificos
+                        $tabla_maestra = Tablasmaestras::find("active=true AND nombre='maximo_objetivos_especificos'");
+                        $maximo_objetivos_especificos = $tabla_maestra[0]->valor;
+                        
+                        if(count($total_objetivos)<=$maximo_objetivos_especificos)
+                        {
+                            $guardar_objetivo=true;
+                        }
+                        else
+                        {
+                            $guardar_objetivo=false;
+                        }                        
                     }
+                    
+                    if( $guardar_objetivo )
+                    {
+                        if ($propuesta_documento->save($post) === false) {                            
+                            $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se genero un error al editar o crear el objetivo especifico como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();
+                            echo "error";
+                        } else {
+                            //Registro la accion en el log de convocatorias
+                            $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, se edito o creo el objetivo especifico con exito como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                            $logger->close();                    
+                            echo $propuesta_documento->id;
+                        }
+                    }
+                    else
+                    {
+                        $logger->error('"token":"{token}","user":"{user}","message":"Error en el controlador PropuestasPdac en el método editar_propuesta_objetivo_especifico, ya cuenta con el maximo de objetivos especificos como (' . $request->getPut('m') . ') en la propuesta(' . $request->getPut('propuesta') . ')"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
+                        $logger->close();
+                        echo "error_maximo_objetivos";
+                    }
+                    
                 }
                 else
                 {
@@ -1739,7 +1926,7 @@ $app->get('/cargar_tabla_objetivos', function () use ($app, $config, $logger) {
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY p.orden";
+                $sqlRec .= " ORDER BY p.objetivo";
 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
@@ -1849,7 +2036,7 @@ $app->get('/cargar_tabla_actividades', function () use ($app, $config, $logger) 
                 }
 
                 //Concarno el orden y el limit para el paginador
-                $sqlRec .= " ORDER BY p.orden";
+                $sqlRec .= " ORDER BY po.objetivo,p.actividad";
                 
                 //ejecuto el total de registros actual
                 $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
