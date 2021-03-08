@@ -427,6 +427,8 @@ $app->get('/search', function () use ($app, $config) {
             $array["ciudad_nacimiento_name"] = $participante->Ciudadesnacimiento->nombre;
             $array["barrio_residencia"] = $participante->Barriosresidencia->id;
             $array["participante"] = $participante;
+            //08-03-2021 -- Wilmer Mogollón -- Se ajusta para incorporar los campos de RUT, CIIU Y MATRÍCULA MERCANTIL
+            $array["ciius"] = Ciius::find("active=true");
             
             $array["barrios"] = array();
             
