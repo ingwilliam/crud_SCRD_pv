@@ -631,6 +631,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $array=array();
                 $array["propuesta"]["nombre_estado"]=$propuesta->getEstados()->nombre;
                 $array["propuesta"]["estado"]=$propuesta->estado;
+                $array["programa"]=$convocatoria->programa;
                 $array["propuesta"]["codigo_propuesta"]=$propuesta->codigo;
                 $array["propuesta"]["tipo_participante"]=$propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
                 $array["propuesta"]["nombre_participante"]=$participante;                                
