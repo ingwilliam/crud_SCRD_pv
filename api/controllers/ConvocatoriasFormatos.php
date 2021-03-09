@@ -3296,7 +3296,7 @@ $app->post('/reporte_inhabilidades_propuestas', function () use ($app, $config, 
                     INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=p.convocatoria
                     LEFT JOIN Estados AS est ON vcon.estado=est.id
                     WHERE 
-                            p.codigo IN (" . $in_codigos . ")
+                            p.codigo IN (" . $in_codigos . ") AND entcon.active=TRUE
 
                     ";
 
