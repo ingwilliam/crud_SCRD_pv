@@ -59,6 +59,409 @@ $logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
+$app->post('/certificacion', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo certificacion para generar reporte de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        //if (isset($token_actual->id)) {
+        if (true) {
+
+            $propuesta = Propuestas::findFirst($request->getPut('id'));
+
+            if (isset($propuesta->id)) {
+                
+                //Valido si fue ganador y que contenga las fechas de ejecución de cada propuesta
+                $ganador=false;                
+                if($propuesta->estado==34 && $propuesta->fecha_inicio_ejecuacion != null && $propuesta->fecha_fin_ejecuacion != null)
+                {
+                    $ganador=true;
+                }
+            
+                if($ganador)
+                {
+                    //como persona natural
+                    if($request->getPut('tp')=='PN')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                328 del 
+                                17 de julio de 2020
+                                “
+                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Arte para la Trans-Formación Social” del programa Distrital de Estímulos 2020, de la Secretaría Distrital de Cultura, Recreación y Deporte y se ordena el desembolso del estímulo económico
+                                ”
+                                , la 
+                                persona natural Daniel Fernando Vargas Moreno 
+                                identificado con 
+                                cédula de ciudadanía No.1.032.377.330
+                                , fue seleccionado como uno de los ganadores de la citada convocatoria por la propuesta 
+                                “
+                                Los Colores Del Sonido
+                                ” 
+                                (Código 472-085)
+                                , y se le otorgó como valor del estímulo económico la suma de 
+                                NUEVE MILLONES DE  PESOS ($9.000.000) M/CTE. 
+                                ejecutados en el proyecto desde 
+                                el 12 de agosto el 05 de diciembre del 2020.
+                                </div>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+
+                    //como persona natural
+                    if($request->getPut('tp')=='PJ')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                446 
+                                del 
+                                03 de septiembre de 2020
+                                “
+                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Beca para la realización de eventos Artísticos y Culturales con Enfoque Poblacional en la Localidad de Bosa ” ,  en el marco del Programa Distrital de Estímulos 2020 y el Convenio Interadministrativo 232-289 de 2019 celebrado con el Fondo de Desarrollo Local de Bosa, y se ordena el desembolso de los estímulos económicos
+                                ”, 
+                                la persona jurídica 
+                                “
+                                Fundación Tolerar y Convivir
+                                ” 
+                                fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
+                                “
+                                Creando Soluciones
+                                ”, 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                QUINCE MILLINES DE PESOS ($15.000.000) M/CTE, 
+                                ejecutados en el proyecto desde 
+                                el 21 de agosto al 10 de diciembre del 2020 
+                                y cumpliendo con los deberes como ganadores del 
+                                Programa Distrital de Estímulos.
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la agrupación en el Sistema de Convocatorias Públicas del 
+                                Sector Cultura, Recreación y Deporte 
+                                -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Rol</td>                            
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>                            
+                                        <td></td>                            
+                                    </tr>
+                                </table>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+
+                    //como persona natural
+                    if($request->getPut('tp')=='AGRU')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                328 
+                                del 
+                                17 de julio de 2020
+                                “
+                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Arte para la Trans-Formación Social” del programa Distrital de Estímulos 2020, de la Secretaría Distrital de Cultura, Recreación y Deporte y se ordena el desembolso del estímulo económico
+                                ”, 
+                                la agrupación
+                                “
+                                + Arte local
+                                ” 
+                                fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
+                                “
+                                +Arte Local - Módulos de Formación inicial en la Producción General,  Artística, Técnica, Comunicaciones y Administración de las Artes Escénicas
+                                ”, 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                VEINTICINCO MILLONES DE PESOS ($25.000.000) M/CTE,
+                                ejecutados en el proyecto desde 
+                                el 21 de agosto al 10 de diciembre del 2020 
+                                y cumpliendo con los deberes como ganadores del 
+                                Programa Distrital de Estímulos.
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la agrupación en el Sistema de Convocatorias Públicas del 
+                                Sector Cultura, Recreación y Deporte 
+                                -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Rol</td>                            
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>                            
+                                        <td></td>                            
+                                    </tr>
+                                </table>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    } 
+
+                    //como persona natural
+                    if($request->getPut('tp')=='JUR')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                244 del 
+                                22 de mayo de 2020
+                                “Por medio de la cual se designan los jurados que tendrán a cargo la evaluación de las propuestas habilitadas para la “Beca de Circulación en los Distritos Creativos de Bogotá” en el marco del Programa Distrital de Estímulos 2020 y se ordena el desembolso de los estímulos económicos”
+                                , el señor(a)
+                                Francisco Javier Tapiero Jiménez
+                                identificado con 
+                                cédula de ciudadanía No 79.688.483
+                                , fue designado como uno de los jurados de la citada convocatoria y se le otorgó como valor del estímulo económico la suma de 
+                                DOS MILLONES QUINIENTOS MIL PESOS ($2.500.000) M/CTE. 
+                                </div>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+                }
+                else
+                {
+                    //como persona natural
+                    if($request->getPut('tp')=='AGRU')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
+                                la agrupación 
+                                “Entretelones Producciones” 
+                                en la convocatoria 
+                                “Agenda Cultural y Artística de Navidad” 
+                                con la propuesta “EN BUSCA DE LA NAVIDAD”
+                                (Código 658-168).
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
+                                la agrupación 
+                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>                            
+                                        <td></td>                            
+                                    </tr>
+                                </table>
+                                <br/>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+                    
+                    //como persona juridica
+                    if($request->getPut('tp')=='PJ')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
+                                la persona jurídica 
+                                “Entretelones Producciones” 
+                                en la convocatoria 
+                                “Agenda Cultural y Artística de Navidad” 
+                                con la propuesta “EN BUSCA DE LA NAVIDAD”
+                                (Código 658-168).
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
+                                la agrupación 
+                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>                            
+                                        <td></td>                            
+                                    </tr>
+                                </table>
+                                <br/>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+                    
+                    //como persona natural
+                    if($request->getPut('tp')=='PN')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
+                                la persona natural
+                                “Entretelones Producciones” 
+                                en la convocatoria 
+                                “Agenda Cultural y Artística de Navidad” 
+                                con la propuesta “EN BUSCA DE LA NAVIDAD”
+                                (Código 658-168).
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
+                                la agrupación 
+                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>                            
+                                        <td></td>                            
+                                    </tr>
+                                </table>
+                                <br/>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
+                                <br/><br/><br/><br/><br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
+                                <b>VANESSA BARRENECHE SAMUR</b><br/>
+                                Directora de Fomento</div>
+                                ';                                
+                    }
+
+                
+                }
+                
+                
+                
+
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de certificacion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo certificacion', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logger) {
 
 //Instancio los objetos que se van a manejar
