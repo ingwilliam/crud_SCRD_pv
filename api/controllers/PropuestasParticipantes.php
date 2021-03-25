@@ -346,6 +346,137 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
 }
 );
 
+$app->get('/buscar_certificaciones', function () use ($app, $config, $logger) {
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo buscar_propuestas con los siguientes parametros de busqueda (' . $request->get('params') . ')"', ['user' => '', 'token' => $request->get('token')]);
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+            //Usuario actual
+            $user_current = json_decode($token_actual->user_current, true);
+
+            //verificar si tiene permisos de escritura
+            $permiso_escritura = $tokens->permiso_lectura($user_current["id"], $request->get('modulo'));
+
+            //Verifico que la respuesta es ok, para poder realizar la escritura
+            if ($permiso_escritura == "ok") {
+                
+                $params = json_decode($request->get('params'), true);
+                
+                //Valido si la busqueda la realizo por medio del codigo de la propuesta unicamente
+                //o con los parametros filtrados por año entidad etc
+                //Consulto los perfiles del usuario, los cuales contienen propuestas
+                $usuario_perfiles = Usuariosperfiles::find("usuario=" . $user_current["id"] . "");
+                $array_usuarios_perfiles = "";
+                foreach ($usuario_perfiles as $perfil) {
+                    $array_usuarios_perfiles = $array_usuarios_perfiles . $perfil->id . ",";
+                }
+                $array_usuarios_perfiles = substr($array_usuarios_perfiles, 0, -1);
+
+                //Consulto los participantes del usuario, los cuales contienen propuestas
+                $participantes = Participantes::find("usuario_perfil IN (" . $array_usuarios_perfiles . ") AND tipo='Inicial'");
+                $array_participantes = "";
+                foreach ($participantes as $participante) {
+                    if($participante->numero_documento!="")
+                    {
+                        $array_participantes = $array_participantes ."'".str_replace(" ", "", str_replace(".", "", $participante->numero_documento)) . "',";
+                    }
+                }
+                
+                $array_participantes = substr($array_participantes, 0, -1);
+                
+                
+                //Consulto todas las propuestas
+                $propuestas = Propuestas::find("creado_por = " . $user_current["id"]);
+                $array_propuestas = "";
+                foreach ($propuestas as $propuesta) {
+                        $array_propuestas = $array_propuestas ."'".$propuesta->codigo. "',";                    
+                }
+                
+                $array_propuestas = substr($array_propuestas, 0, -1);
+                
+                if($array_participantes!="")
+                {
+                    $array_participantes = "p.numero_documento IN (".$array_participantes.") OR ";
+                }
+                
+                
+                //Creo el where para traer todas las propuestas asociadas con el usuario logueado
+                $where .= " WHERE ".$array_participantes." (p.codigo IN (".$array_propuestas.") AND tipo_rol = 'Participante')";
+                
+                $participante = "CONCAT(p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido)";
+
+                //Defino el sql del total y el array de datos
+                $sqlTot = "SELECT count(*) as total FROM Viewparticipantes AS p ";
+                
+                $sqlRec = "SELECT "
+                        . "p.estado_propuesta AS estado,"                        
+                        . "p.anio ,"
+                        . "p.entidad ,"
+                        . "p.convocatoria ,"
+                        . "p.categoria ,"
+                        . "p.nombre_propuesta ,"
+                        . "p.codigo ,"
+                        . "p.tipo_participante ,"
+                        . "$participante AS participante,"
+                        . "'".$request->get('token')."' AS token,"
+                        . "'a' AS ver_certificado"                        
+                        . " FROM Viewparticipantes AS p ";
+                
+                //concatenate search sql if value exist
+                if (isset($where) && $where != '') {
+
+                    $sqlTot .= $where;
+                    $sqlRec .= $where;
+                }
+
+                //Concateno el orden y el limit para el paginador
+                $sqlRec .= " LIMIT " . $request->get('length') . " offset " . $request->get('start') . " ";
+                
+                
+                //ejecuto el total de registros actual
+                $totalRecords = $app->modelsManager->executeQuery($sqlTot)->getFirst();
+
+                //creo el array
+                $json_data = array(
+                    "draw" => intval($request->get("draw")),
+                    "recordsTotal" => intval($totalRecords["total"]),
+                    "recordsFiltered" => intval($totalRecords["total"]),
+                    "data" => $app->modelsManager->executeQuery($sqlRec)   // total data array
+                );
+                //retorno el array en json
+                echo json_encode($json_data);                                                
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado en el metodo buscar_propuesta  con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => "", 'token' => $request->get('token')]);
+                $logger->close();
+                echo "acceso_denegado";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo buscar_propuesta con los siguientes parametros de busqueda (' . $request->get('params') . ')" ', ['user' => "", 'token' => $request->get('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo buscar_propuesta con los siguientes parametros de busqueda (' . $request->get('params') . ')" ' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->get('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+}
+);
+
 //Cargar cronograma de cada convocatoria
 $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $logger) {
     //Instancio los objetos que se van a manejar
