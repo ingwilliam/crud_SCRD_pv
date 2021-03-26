@@ -5682,7 +5682,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $id_convocatorias_postuladas = array(0);
+        $id_convocatorias_postuladas = array();
 
         //  $fecha_actual = date("d-m-Y");
         $fecha_actual = date("Y-m-d H:i:s");
@@ -5739,6 +5739,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                         }
                     }//fin foreach
 
+
                     $query = Convocatorias::query();
 
                     //$convocatorias = Convocatorias::query()
@@ -5761,7 +5762,14 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                     //palabra clave tabla
                     //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
                     //palabra clave formulario
-                    $query->andWhere(" ( lower(Convocatorias.nombre) LIKE '%" . strtolower($request->get("pclave")) . "%' OR lower(Convocatorias.descripcion) LIKE '%" . strtolower($request->get("pclave")) . "%') ")
+                    /*
+                     * 26-03-2021
+                     * Wilmer Gustavo Mogollín Duque
+                     * Se modifica la consulta con el fin de permitir búsquedas sin tildes y en minúsculas 
+                     * o mayúsculas con palabra clave en la descripción o en el nombre de la convocatoria
+                     */
+                    $query->andWhere(" UPPER(TRANSLATE(Convocatorias.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
+                            ->orWhere(" UPPER(TRANSLATE(Convocatorias.descripcion,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
                             //5	convocatorias	Publicada
                             ->andWhere(" Convocatorias.estado = 5 ")
                             ->andWhere(" Convocatorias.active = true  ")
@@ -6003,7 +6011,7 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
 
 
                 if (json_encode($banco_jurados->anio) == date("Y")) {
-                   
+
                     // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
                     $usuario_perfil = Usuariosperfiles::findFirst(
                                     [
