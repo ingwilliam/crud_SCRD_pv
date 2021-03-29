@@ -5682,7 +5682,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $id_convocatorias_postuladas = array();
+        $id_convocatorias_postuladas = array(0);//lleva un cero para cuando no tiene ninguna postulación tenga un valor 
 
         //  $fecha_actual = date("d-m-Y");
         $fecha_actual = date("Y-m-d H:i:s");
