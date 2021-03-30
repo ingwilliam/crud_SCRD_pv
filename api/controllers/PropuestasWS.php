@@ -614,8 +614,8 @@ $app->get('/validar_certificado/{cod}', function ($cod) use ($app, $config, $log
     //Instancio los objetos que se van a manejar
     $request = new Request();    
     try {
-        $cod = str_replace('ZXXY', '-', $_GET["id"]);
-        $propuesta = Propuestas::findFirst("codigo='".$cod."'");
+        $codigo = str_replace('ZXXY', '-', $cod);
+        $propuesta = Propuestas::findFirst("codigo='".$codigo."'");
 
         if (isset($propuesta->id)) {
             echo "SICON reporta que es un certificado Valido";
