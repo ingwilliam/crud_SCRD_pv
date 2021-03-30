@@ -5745,6 +5745,9 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                     //$convocatorias = Convocatorias::query()
                     $query->join("Convocatoriascronogramas", "Convocatoriascronogramas.convocatoria = Convocatorias.id")
                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+                    //Se agrega join para establecer convocatoriapadrecategoria
+                    $query->leftJoin("Convocatorias", "cpad.id = Convocatorias.convocatoria_padre_categoria", "cpad")
+                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
 
                     if ($request->get('enfoque')) {
                         $query->andWhere(" Convocatorias.enfoque = " . $request->get('enfoque'));
@@ -5770,6 +5773,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                      */
                     $query->andWhere(" UPPER(TRANSLATE(Convocatorias.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
                             ->orWhere(" UPPER(TRANSLATE(Convocatorias.descripcion,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
+                            ->orWhere(" UPPER(TRANSLATE(cpad.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
                             //5	convocatorias	Publicada
                             ->andWhere(" Convocatorias.estado = 5 ")
                             ->andWhere(" Convocatorias.active = true  ")
