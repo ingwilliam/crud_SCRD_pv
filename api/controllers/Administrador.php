@@ -1008,7 +1008,9 @@ $app->post('/menu', function () use ($app,$config) {
                         }
                         ?>
                         <!--Fin Deliberación-->
-                        
+                        <li>
+                            <a href="../propuestas/certificaciones.html"><i class="fa  fa-download fa-fw"></i> Generar Certificaciones</a>                                                        
+                        </li>
 
                     </ul>
                 </div>

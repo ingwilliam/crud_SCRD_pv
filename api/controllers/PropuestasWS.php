@@ -77,17 +77,47 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
         //if (isset($token_actual->id)) {
         if (true) {
 
-            $propuesta = Propuestas::findFirst($request->getPut('id'));
+            $propuesta = Propuestas::findFirst("codigo = '".$request->getPut('id')."'");
 
             if (isset($propuesta->id)) {
                 
                 //Valido si fue ganador y que contenga las fechas de ejecución de cada propuesta
                 $ganador=false;                
-                if($propuesta->estado==34 && $propuesta->fecha_inicio_ejecuacion != null && $propuesta->fecha_fin_ejecuacion != null)
+                if($propuesta->estado==34 && $propuesta->fecha_inicio_ejecucion != null && $propuesta->fecha_fin_ejecucion != null && $propuesta->nombre_resolucion != "")
                 {
                     $ganador=true;
                 }
-            
+                
+                //Consulto quien firma por entidad                
+                $sql_firma = "
+                    select u.* from Usuarios as u
+                    inner join Usuariosentidades as ue on ue.usuario=u.id
+                    where u.certifica=true and ue.entidad=".$propuesta->getConvocatorias()->entidad;
+
+                $usuarios_firmas = $app->modelsManager->executeQuery($sql_firma);
+                
+                $cargo_firma="";
+                $nombre_firma="";
+                foreach ($usuarios_firmas as $usuario_firma) {
+                    $cargo_firma=$usuario_firma->cargo;
+                    $nombre_firma=$usuario_firma->primer_nombre." ".$usuario_firma->segundo_nombre." ".$usuario_firma->primer_apellido." ".$usuario_firma->segundo_apellido;
+                }
+                
+                //Meses
+                $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
+                
+                //Dia en letras
+                $formatter = new NumeroALetras();
+                $dia_actual = mb_strtolower($formatter->toMoney(date("d")));
+                
+                //Nombre del participante
+                $nombre_participante = $propuesta->getParticipantes()->primer_nombre." ".$propuesta->getParticipantes()->segundo_nombre." ".$propuesta->getParticipantes()->primer_apellido." ".$propuesta->getParticipantes()->segundo_apellido;
+                $documento_participante = $propuesta->getParticipantes()->numero_documento;
+                $tipo_documento_participante = $propuesta->getParticipantes()->getTiposdocumentos()->descripcion;
+                $tipo_participante_participante = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
+                
+                $valor_letras = mb_strtolower($formatter->toMoney($propuesta->monto_asignado));
+                
                 if($ganador)
                 {
                     //como persona natural
@@ -97,77 +127,94 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
                                 <br/>
                                 <br/>
                                 <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align: justify">Según Resolución No. 
-                                328 del 
-                                17 de julio de 2020
-                                “
-                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Arte para la Trans-Formación Social” del programa Distrital de Estímulos 2020, de la Secretaría Distrital de Cultura, Recreación y Deporte y se ordena el desembolso del estímulo económico
-                                ”
-                                , la 
-                                persona natural Daniel Fernando Vargas Moreno 
-                                identificado con 
-                                cédula de ciudadanía No.1.032.377.330
-                                , fue seleccionado como uno de los ganadores de la citada convocatoria por la propuesta 
-                                “
-                                Los Colores Del Sonido
-                                ” 
-                                (Código 472-085)
-                                , y se le otorgó como valor del estímulo económico la suma de 
-                                NUEVE MILLONES DE  PESOS ($9.000.000) M/CTE. 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                '.$nombre_participante.' identificado(a) con 
+                                '.$tipo_documento_participante.' No. '.$documento_participante.',                                 
+                                fue seleccionado(a) como ganador de la citada convocatoria por la propuesta 
+                                “'.$propuesta->nombre.'”, (Código '.$propuesta->codigo.'), 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
                                 ejecutados en el proyecto desde 
-                                el 12 de agosto el 05 de diciembre del 2020.
-                                </div>
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
+                                y cumpliendo con los deberes como ganadores del 
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
+                                </div>                                
                                 <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                                                                  
                     }
 
                     //como persona natural
                     if($request->getPut('tp')=='PJ')
                     {
+                        
+                        //Integrantes de la PJ
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'representante DESC'
+                        ]));
+
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";                            
+                        }
+                        
+                        
                         $html = '
                                 <br/>
                                 <br/>
                                 <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align: justify">Según Resolución No. 
-                                446 
-                                del 
-                                03 de septiembre de 2020
-                                “
-                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Beca para la realización de eventos Artísticos y Culturales con Enfoque Poblacional en la Localidad de Bosa ” ,  en el marco del Programa Distrital de Estímulos 2020 y el Convenio Interadministrativo 232-289 de 2019 celebrado con el Fondo de Desarrollo Local de Bosa, y se ordena el desembolso de los estímulos económicos
-                                ”, 
-                                la persona jurídica 
-                                “
-                                Fundación Tolerar y Convivir
-                                ” 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                “'.$nombre_participante.'” 
                                 fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
-                                “
-                                Creando Soluciones
-                                ”, 
+                                “'.$propuesta->nombre.'”, 
                                 y se le otorgó como valor del estímulo económico la suma de 
-                                QUINCE MILLINES DE PESOS ($15.000.000) M/CTE, 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
                                 ejecutados en el proyecto desde 
-                                el 21 de agosto al 10 de diciembre del 2020 
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
                                 y cumpliendo con los deberes como ganadores del 
-                                Programa Distrital de Estímulos.
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
                                 </div>
-                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la agrupación en el Sistema de Convocatorias Públicas del 
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                '.$tipo_participante_participante.'  
+                                en el Sistema de Convocatorias Públicas del 
                                 Sector Cultura, Recreación y Deporte 
                                 -SICON se certifica la siguiente participación:
                                 </div>
@@ -178,57 +225,73 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
                                         <td bgcolor="#cccccc" align="center">No Identificación</td>                            
                                         <td bgcolor="#cccccc" align="center">Rol</td>                            
                                     </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>                            
-                                        <td></td>                            
-                                    </tr>
+                                    '.$html_integrantes.'
                                 </table>
                                 <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
                                 ';                                
                     }
 
                     //como persona natural
                     if($request->getPut('tp')=='AGRU')
                     {
+                        //Integrantes de la Agrupacion
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'representante DESC'
+                        ]));
+
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";                            
+                        }
+                        
+                        
                         $html = '
                                 <br/>
                                 <br/>
                                 <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align: justify">Según Resolución No. 
-                                328 
-                                del 
-                                17 de julio de 2020
-                                “
-                                Por medio de la cual se acoge la recomendación de los jurados designados para seleccionar a los ganadores de la convocatoria: “Arte para la Trans-Formación Social” del programa Distrital de Estímulos 2020, de la Secretaría Distrital de Cultura, Recreación y Deporte y se ordena el desembolso del estímulo económico
-                                ”, 
-                                la agrupación
-                                “
-                                + Arte local
-                                ” 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                “'.$nombre_participante.'” 
                                 fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
-                                “
-                                +Arte Local - Módulos de Formación inicial en la Producción General,  Artística, Técnica, Comunicaciones y Administración de las Artes Escénicas
-                                ”, 
+                                “'.$propuesta->nombre.'”, 
                                 y se le otorgó como valor del estímulo económico la suma de 
-                                VEINTICINCO MILLONES DE PESOS ($25.000.000) M/CTE,
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
                                 ejecutados en el proyecto desde 
-                                el 21 de agosto al 10 de diciembre del 2020 
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
                                 y cumpliendo con los deberes como ganadores del 
-                                Programa Distrital de Estímulos.
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
                                 </div>
-                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la agrupación en el Sistema de Convocatorias Públicas del 
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                '.$tipo_participante_participante.'  
+                                en el Sistema de Convocatorias Públicas del 
                                 Sector Cultura, Recreación y Deporte 
                                 -SICON se certifica la siguiente participación:
                                 </div>
@@ -239,19 +302,15 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
                                         <td bgcolor="#cccccc" align="center">No Identificación</td>                            
                                         <td bgcolor="#cccccc" align="center">Rol</td>                            
                                     </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>                            
-                                        <td></td>                            
-                                    </tr>
+                                    '.$html_integrantes.'
                                 </table>
                                 <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                 
                     } 
 
                     //como persona natural
@@ -261,178 +320,266 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
                                 <br/>
                                 <br/>
                                 <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
                                 <br/>
                                 <br/>
                                 <div style="text-align: justify">Según Resolución No. 
-                                244 del 
-                                22 de mayo de 2020
-                                “Por medio de la cual se designan los jurados que tendrán a cargo la evaluación de las propuestas habilitadas para la “Beca de Circulación en los Distritos Creativos de Bogotá” en el marco del Programa Distrital de Estímulos 2020 y se ordena el desembolso de los estímulos económicos”
-                                , el señor(a)
-                                Francisco Javier Tapiero Jiménez
-                                identificado con 
-                                cédula de ciudadanía No 79.688.483
-                                , fue designado como uno de los jurados de la citada convocatoria y se le otorgó como valor del estímulo económico la suma de 
-                                DOS MILLONES QUINIENTOS MIL PESOS ($2.500.000) M/CTE. 
-                                </div>
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                el señor(a)
+                                '.$nombre_participante.' identificado(a) con 
+                                '.$tipo_documento_participante.' No. '.$documento_participante.',                                 
+                                fue designado como uno de los jurados de la citada convocatoria y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE.
+                                </div>                                
                                 <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                      
                     }
                 }
                 else
                 {
-                    //como persona natural
-                    if($request->getPut('tp')=='AGRU')
+                    //Valido para genere solo las propuestas que pasaron el filtro de inscritos
+                    //y el filtro para jurados de Registrado
+                    $participante=false;                
+                    if($propuesta->estado!=7 && $propuesta->estado!=20 && $propuesta->estado!=9)
                     {
-                        $html = '
-                                <br/>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
-                                la agrupación 
-                                “Entretelones Producciones” 
-                                en la convocatoria 
-                                “Agenda Cultural y Artística de Navidad” 
-                                con la propuesta “EN BUSCA DE LA NAVIDAD”
-                                (Código 658-168).
-                                </div>
-                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
-                                la agrupación 
-                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
-                                </div>
-                                <br/>
-                                <table border="1">
-                                    <tr>
-                                        <td bgcolor="#cccccc" align="center">Nombre</td>
-                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
-                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>                            
-                                        <td></td>                            
-                                    </tr>
-                                </table>
-                                <br/>
-                                <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
+                        $participante=true;
                     }
                     
-                    //como persona juridica
-                    if($request->getPut('tp')=='PJ')
+                    if($participante)
                     {
-                        $html = '
-                                <br/>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
-                                la persona jurídica 
-                                “Entretelones Producciones” 
-                                en la convocatoria 
-                                “Agenda Cultural y Artística de Navidad” 
-                                con la propuesta “EN BUSCA DE LA NAVIDAD”
-                                (Código 658-168).
-                                </div>
-                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
-                                la agrupación 
-                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
-                                </div>
-                                <br/>
-                                <table border="1">
-                                    <tr>
-                                        <td bgcolor="#cccccc" align="center">Nombre</td>
-                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
-                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>                            
-                                        <td></td>                            
-                                    </tr>
-                                </table>
-                                <br/>
-                                <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
-                    }
-                    
-                    //como persona natural
-                    if($request->getPut('tp')=='PN')
-                    {
-                        $html = '
-                                <br/>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>LA SUSCRITA DIRECTORA DE FOMENTO DE LA <br/>SECRETARÍA DISTRITAL DE CULTURA, RECREACIÓN Y DEPORTE - SCRD</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
-                                <br/>
-                                <br/>
-                                <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de 
-                                la persona natural
-                                “Entretelones Producciones” 
-                                en la convocatoria 
-                                “Agenda Cultural y Artística de Navidad” 
-                                con la propuesta “EN BUSCA DE LA NAVIDAD”
-                                (Código 658-168).
-                                </div>
-                                <div style="text-align: justify">De acuerdo con la inscripción realizada por 
-                                la agrupación 
-                                en el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON se certifica la siguiente participación:
-                                </div>
-                                <br/>
-                                <table border="1">
-                                    <tr>
-                                        <td bgcolor="#cccccc" align="center">Nombre</td>
-                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
-                                        <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>                            
-                                        <td></td>                            
-                                    </tr>
-                                </table>
-                                <br/>
-                                <br/>
-                                <div>La presente certificación se expide en Bogotá D.C., a los quince (15) días del mes de marzo de 2021.</div>
-                                <br/><br/><br/><br/><br/><br/>
-                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_SCRD.png"  width="100" height="70" border="0" /><br/>
-                                <b>VANESSA BARRENECHE SAMUR</b><br/>
-                                Directora de Fomento</div>
-                                ';                                
-                    }
+                        
+                        //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                        $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
+                        if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
+                            $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;                        
+                        }
 
+
+                        //como persona natural
+                        if($request->getPut('tp')=='PN')
+                        {
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        <tr>
+                                            <td>'.$nombre_participante.'</td>
+                                            <td>'.$tipo_documento_participante.' No. '.$documento_participante.'</td>                            
+                                            <td>Persona Natural</td>                            
+                                        </tr>
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                                                                  
+                        }
+
+                        //como persona natural
+                        if($request->getPut('tp')=='PJ')
+                        {
+
+                            //Integrantes de la PJ
+                            $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
+                            $consulta_integrantes = Participantes::find(([
+                                        'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                        'bind' => $conditions,
+                                        "order" => 'representante DESC'
+                            ]));
+
+                            $i = 1;
+                            $html_integrantes = "";
+                            foreach ($consulta_integrantes as $integrante) {
+                                $value_representante="No";
+                                if($integrante->representante)
+                                {
+                                    $value_representante="Sí";
+                                }
+
+                                $html_integrantes = $html_integrantes . "<tr>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                                $html_integrantes = $html_integrantes . "<td>JUNTA DIRECTIVA</td>";
+                                $html_integrantes = $html_integrantes . "</tr>";                            
+                            }
+
+
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        '.$html_integrantes.'
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                  
+                        }
+
+                        //como persona natural
+                        if($request->getPut('tp')=='AGRU')
+                        {
+                            //Integrantes de la Agrupacion
+                            $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
+                            $consulta_integrantes = Participantes::find(([
+                                        'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                        'bind' => $conditions,
+                                        "order" => 'representante DESC'
+                            ]));
+
+                            $i = 1;
+                            $html_integrantes = "";
+                            foreach ($consulta_integrantes as $integrante) {
+                                $value_representante="No";
+                                if($integrante->representante)
+                                {
+                                    $value_representante="Sí";
+                                }
+
+                                $html_integrantes = $html_integrantes . "<tr>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                                $html_integrantes = $html_integrantes . "<td>INTEGRANTE</td>";
+                                $html_integrantes = $html_integrantes . "</tr>";                            
+                            }
+
+
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        '.$html_integrantes.'
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                 
+                        } 
+
+                        //como persona natural
+                        if($request->getPut('tp')=='JUR')
+                        {
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    '.$nombre_participante.' identificado(a) con 
+                                    '.$tipo_documento_participante.' No. '.$documento_participante.' 
+                                     en el banco de Jurados del Programa Distrital de Estímulos.  
+                                    </div>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                      
+                        }
+                    }
+                
                 
                 }
                 
@@ -454,6 +601,27 @@ $app->post('/certificacion', function () use ($app, $config, $logger) {
             $logger->close();
             echo "error_token";
         }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->get('/validar_certificado/{cod}', function ($cod) use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();    
+    try {
+        $cod = str_replace('ZXXY', '-', $_GET["id"]);
+        $propuesta = Propuestas::findFirst("codigo='".$cod."'");
+
+        if (isset($propuesta->id)) {
+            echo "SICON reporta que es un certificado Valido";
+        } else {
+            echo "SICON reporta que no es un certificado confiable";
+        }        
     } catch (Exception $ex) {
         //Registro la accion en el log de convocatorias           
         $logger->error('"token":"{token}","user":"{user}","message":"Error metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);

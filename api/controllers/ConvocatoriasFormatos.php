@@ -1535,7 +1535,14 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
                             break;
                         }
                     } else {
-
+                        //Elimino todos los registros cargados con anterioridas
+                        if ($linea == 1) {
+                            $phql = "DELETE FROM Entidadescontratistas WHERE entidad=:entidad:";
+                            $app->modelsManager->executeQuery($phql, array(
+                                'entidad' => $request->getPut("entidad")
+                            ));                       
+                        }
+                        
                         //WILLIAM OJO BUSCAR Y SI ESTA EDITAR                                                
                         $comsulta_contratista = Entidadescontratistas::findFirst("numero_documento='" . $datos[0] . "' AND entidad = " . $request->getPut("entidad"));
 
