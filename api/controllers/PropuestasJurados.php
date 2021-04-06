@@ -5682,7 +5682,7 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
         //Instancio los objetos que se van a manejar
         $request = new Request();
         $tokens = new Tokens();
-        $id_convocatorias_postuladas = array(0);
+        $id_convocatorias_postuladas = array(0);//lleva un cero para cuando no tiene ninguna postulación tenga un valor 
 
         //  $fecha_actual = date("d-m-Y");
         $fecha_actual = date("Y-m-d H:i:s");
@@ -5739,10 +5739,14 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                         }
                     }//fin foreach
 
+
                     $query = Convocatorias::query();
 
                     //$convocatorias = Convocatorias::query()
                     $query->join("Convocatoriascronogramas", "Convocatoriascronogramas.convocatoria = Convocatorias.id")
+                            ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
+                    //Se agrega join para establecer convocatoriapadrecategoria
+                    $query->leftJoin("Convocatorias", "cpad.id = Convocatorias.convocatoria_padre_categoria", "cpad")
                             ->where(" Convocatorias.id NOT IN ({idConvocatoria:array}) ");
 
                     if ($request->get('enfoque')) {
@@ -5761,7 +5765,15 @@ $app->get('/postulacion_search_convocatorias', function () use ($app, $config) {
                     //palabra clave tabla
                     //->andWhere(" ( Convocatorias.nombre LIKE '%".$request->get("search")['value']."%' OR Convocatorias.descripcion LIKE '%".$request->get("search")['value']."%') " )
                     //palabra clave formulario
-                    $query->andWhere(" ( lower(Convocatorias.nombre) LIKE '%" . strtolower($request->get("pclave")) . "%' OR lower(Convocatorias.descripcion) LIKE '%" . strtolower($request->get("pclave")) . "%') ")
+                    /*
+                     * 26-03-2021
+                     * Wilmer Gustavo Mogollín Duque
+                     * Se modifica la consulta con el fin de permitir búsquedas sin tildes y en minúsculas 
+                     * o mayúsculas con palabra clave en la descripción o en el nombre de la convocatoria
+                     */
+                    $query->andWhere(" UPPER(TRANSLATE(Convocatorias.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
+                            ->orWhere(" UPPER(TRANSLATE(Convocatorias.descripcion,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
+                            ->orWhere(" UPPER(TRANSLATE(cpad.nombre,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE TRANSLATE(UPPER('%" . $request->get("pclave") . "%'),'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun') ")
                             //5	convocatorias	Publicada
                             ->andWhere(" Convocatorias.estado = 5 ")
                             ->andWhere(" Convocatorias.active = true  ")
@@ -5992,135 +6004,150 @@ $app->post('/new_postulacion', function () use ($app, $config, $logger) {
                 //Consulto el usuario actual
                 $post = $app->request->getPost();
 
-                // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
-                $usuario_perfil = Usuariosperfiles::findFirst(
+
+
+
+                $banco_jurados = Convocatorias::findFirst(
                                 [
-                                    " usuario = " . $user_current["id"] . " AND perfil =17"
+                                    ' id = ' . $request->getPut('idc')
                                 ]
                 );
 
 
-                if ($usuario_perfil->id != null) {
+                if (json_encode($banco_jurados->anio) == date("Y")) {
 
-                    $participante = Participantes::query()
-                            ->join("Usuariosperfiles", "Participantes.usuario_perfil = Usuariosperfiles.id")
-                            ->join("Propuestas", " Participantes.id = Propuestas.participante")
-                            //perfil = 17  perfil de jurado
-                            ->where("Usuariosperfiles.perfil = 17 ")
-                            ->andWhere("Usuariosperfiles.usuario = " . $user_current["id"])
-                            ->andWhere("Propuestas.convocatoria = " . $request->getPut('idc'))
-                            ->execute()
-                            ->getFirst();
+                    // Si el usuario que inicio sesion tine registro de  participante  con el perfil de jurado
+                    $usuario_perfil = Usuariosperfiles::findFirst(
+                                    [
+                                        " usuario = " . $user_current["id"] . " AND perfil =17"
+                                    ]
+                    );
 
-                    //9	jurados	Registrado
-                    if ($participante->propuestas->estado == 9) {
-                        return "error";
-                    }
+                    if ($usuario_perfil->id != null) {
 
-                    $postulaciones = $participante->propuestas->juradospostulados;
+                        $participante = Participantes::query()
+                                ->join("Usuariosperfiles", "Participantes.usuario_perfil = Usuariosperfiles.id")
+                                ->join("Propuestas", " Participantes.id = Propuestas.participante")
+                                //perfil = 17  perfil de jurado
+                                ->where("Usuariosperfiles.perfil = 17 ")
+                                ->andWhere("Usuariosperfiles.usuario = " . $user_current["id"])
+                                ->andWhere("Propuestas.convocatoria = " . $request->getPut('idc'))
+                                ->execute()
+                                ->getFirst();
 
-                    //Calcula el numero de postulaciones del jurado
-                    //echo "cantidad-->".$postulaciones->count();
-                    foreach ($postulaciones as $postulacion) {
-
-                        //la convocatoria está activa y está publicada
-                        if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active && $postulacion->convocatorias->convocatoria_padre_categoria == null) {
-                            $contador1++;
+                        //9	jurados	Registrado
+                        if ($participante->propuestas->estado == 9) {
+                            return "error";
                         }
-                    }
-                    
-                    
-                    
-                    
-                     $postulaciones_categorias = Juradospostulados::query()
-                            ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
-                            ->where("Juradospostulados.propuesta = ". $participante->propuestas->id)
-                            ->andWhere("Juradospostulados.active")
-                            ->andWhere("Convocatorias.active")
-                            ->andWhere("Convocatorias.estado=5")
-                            ->andWhere("Convocatorias.convocatoria_padre_categoria is not null")
-                            ->groupBy("Convocatorias.convocatoria_padre_categoria")
-                            ->columns("count(*)")
-                            ->execute();
-                     
-                     
+
+                        $postulaciones = $participante->propuestas->juradospostulados;
+
+                        //Calcula el numero de postulaciones del jurado
+                        //echo "cantidad-->".$postulaciones->count();
+                        foreach ($postulaciones as $postulacion) {
+
+                            //la convocatoria está activa y está publicada
+                            if ($postulacion->convocatorias->active && $postulacion->convocatorias->estado == 5 && $postulacion->active && $postulacion->convocatorias->convocatoria_padre_categoria == null) {
+                                $contador1++;
+                            }
+                        }
+
+
+
+
+                        $postulaciones_categorias = Juradospostulados::query()
+                                ->join("Convocatorias", "Convocatorias.id=Juradospostulados.convocatoria")
+                                ->where("Juradospostulados.propuesta = " . $participante->propuestas->id)
+                                ->andWhere("Juradospostulados.active")
+                                ->andWhere("Convocatorias.active")
+                                ->andWhere("Convocatorias.estado=5")
+                                ->andWhere("Convocatorias.convocatoria_padre_categoria is not null")
+                                ->groupBy("Convocatorias.convocatoria_padre_categoria")
+                                ->columns("count(*)")
+                                ->execute();
+
+
 //                     return json_encode($postulaciones_categorias);
 
 
 
-                    foreach ($postulaciones_categorias as $postulaciones_categoria) {
-                        $contador2++;
-                    }
-
-
-                    $contador=$contador1+$contador2;
-
-
-                    $nummax = Tablasmaestras::findFirst(
-                                    [
-                                        " nombre = 'numero_maximo_postulaciones_jurado'"
-                                    ]
-                    );
-
-
-                    //Controla el límite de postulaciones
-                    //limite tabla maestra
-                    if ($contador < (int) $nummax->valor) {
-
-
-                        $juradopostulado = new Juradospostulados();
-                        $juradopostulado->propuesta = $participante->propuestas->id;
-                        $juradopostulado->estado = 9; //estado de la propuesta del jurado, 9 jurados	Registrado
-                        $juradopostulado->creado_por = $user_current["id"];
-                        $juradopostulado->fecha_creacion = date("Y-m-d H:i:s");
-                        $juradopostulado->tipo_postulacion = 'Inscrita';
-                        $juradopostulado->perfil = $request->getPut('perfil');
-                        $juradopostulado->active = true;
-
-                        $convocatoria = Convocatorias::findFirst($request->getPut('idregistro'));
-
-                        //caso 3,la convocatoria tiene categoria y las categorias tienen diferente cronograma
-                        if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias) {
-
-                            // $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
-                            $juradopostulado->convocatoria = $convocatoria->id;
-                        }//caso 2,la convocatoria tiene categoria y las categorias tienen igual cronograma
-                        elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias) {
-
-                            $juradopostulado->convocatoria = $convocatoria->id;
-                        }//caso 1, la convocatoria  no tiene categoria
-                        elseif (!$convocatoria->tiene_categorias) {
-
-                            $juradopostulado->convocatoria = $request->getPut('idregistro');
-                        }//end elseif (!$convocatoria->tiene_categorias)
-                        //guardar registro
-                        if ($juradopostulado->save() === false) {
-
-                            //return "error";
-                            //Para auditoria en versión de pruebas
-                            /*  foreach ($juradopostulado->getMessages() as $message) {
-                              echo $message;
-                              } */
-
-                            $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la postulación. ' . json_decode($juradopostulado->getMessages()) . '"',
-                                    ['user' => $user_current, 'token' => $request->get('token')]
-                            );
-                            $logger->close();
-
-                            return "error";
+                        foreach ($postulaciones_categorias as $postulaciones_categoria) {
+                            $contador2++;
                         }
 
-                        return $juradopostulado->id;
-                    } else {
-                        $logger->error('"token":"{token}","user":"{user}","message":"Supera el maximo de postulaciones."', [
-                            'user' => $user_current, 'token' => $request->get('token')]
+
+                        $contador = $contador1 + $contador2;
+
+
+                        $nummax = Tablasmaestras::findFirst(
+                                        [
+                                            " nombre = 'numero_maximo_postulaciones_jurado'"
+                                        ]
                         );
-                        $logger->close();
-                        return "error_limite";
+
+
+                        //Controla el límite de postulaciones
+                        //limite tabla maestra
+                        if ($contador < (int) $nummax->valor) {
+
+
+                            $juradopostulado = new Juradospostulados();
+                            $juradopostulado->propuesta = $participante->propuestas->id;
+                            $juradopostulado->estado = 9; //estado de la propuesta del jurado, 9 jurados	Registrado
+                            $juradopostulado->creado_por = $user_current["id"];
+                            $juradopostulado->fecha_creacion = date("Y-m-d H:i:s");
+                            $juradopostulado->tipo_postulacion = 'Inscrita';
+                            $juradopostulado->perfil = $request->getPut('perfil');
+                            $juradopostulado->active = true;
+
+                            $convocatoria = Convocatorias::findFirst($request->getPut('idregistro'));
+
+                            //caso 3,la convocatoria tiene categoria y las categorias tienen diferente cronograma
+                            if ($convocatoria->tiene_categorias && $convocatoria->diferentes_categorias) {
+
+                                // $juradopostulado->convocatoria = $convocatoria->convocatoria_padre_categoria;
+                                $juradopostulado->convocatoria = $convocatoria->id;
+                            }//caso 2,la convocatoria tiene categoria y las categorias tienen igual cronograma
+                            elseif ($convocatoria->tiene_categorias && !$convocatoria->diferentes_categorias) {
+
+                                $juradopostulado->convocatoria = $convocatoria->id;
+                            }//caso 1, la convocatoria  no tiene categoria
+                            elseif (!$convocatoria->tiene_categorias) {
+
+                                $juradopostulado->convocatoria = $request->getPut('idregistro');
+                            }//end elseif (!$convocatoria->tiene_categorias)
+                            //guardar registro
+                            if ($juradopostulado->save() === false) {
+
+                                //return "error";
+                                //Para auditoria en versión de pruebas
+                                /*  foreach ($juradopostulado->getMessages() as $message) {
+                                  echo $message;
+                                  } */
+
+                                $logger->error('"token":"{token}","user":"{user}","message":"Error al crear la postulación. ' . json_decode($juradopostulado->getMessages()) . '"',
+                                        ['user' => $user_current, 'token' => $request->get('token')]
+                                );
+                                $logger->close();
+
+                                return "error";
+                            }
+
+                            return $juradopostulado->id;
+                        } else {
+                            $logger->error('"token":"{token}","user":"{user}","message":"Supera el maximo de postulaciones."', [
+                                'user' => $user_current, 'token' => $request->get('token')]
+                            );
+                            $logger->close();
+                            return "error_limite";
+                        }
+                    } else {
+                        return "error";
                     }
                 } else {
-                    return "error";
+                    return "error_banco";
                 }
+                //
             } else {
                 $logger->error('"token":"{token}","user":"{user}","message":"Acceso denegado"',
                         ['user' => "", 'token' => $request->get('token')]
@@ -6424,6 +6451,42 @@ $app->get('/download_condiciones', function () use ($app, $config) {
     }
 }
 );
+
+/*
+ * 12-02-2021
+ * Wilmer Gustavo Mogollón Duque
+ * //Se agrega para mostrar documento de tratamiento de datos
+  $("#tratamiento_datos_pdf").attr("src", json.archivo);
+ */
+
+$app->get('/download_tratamiento', function () use ($app, $config) {
+    try {
+        //Instancio los objetos que se van a manejar
+        $request = new Request();
+        $tokens = new Tokens();
+        //  $chemistry_alfresco = new ChemistryPV($config->alfresco->api, $config->alfresco->username, $config->alfresco->password);
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->get('token'));
+
+        //Si el token existe y esta activo
+        if (isset($token_actual->id)) {
+
+            $condiciones = Tablasmaestras::findFirst("active=true AND nombre='Tratamiento de datos'");
+
+            echo json_encode(["archivo" => str_replace("/view?usp=sharing", "/preview", $condiciones->valor)]);
+        } else {
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //retorno el array en json null
+        //  echo "error_metodo";
+
+        return "error_metodo " . $ex->getMessage() . $ex->getTraceAsString();
+    }
+}
+);
+
+
 
 //Busca los registros de postulaciones
 $app->get('/select_categoria', function () use ($app, $config) {

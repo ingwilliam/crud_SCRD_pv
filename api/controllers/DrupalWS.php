@@ -315,7 +315,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
             $where = '';
             if (isset($nombre)) {
-                $where = " LOWER(convocatorias.convocatoria) like LOWER('%" . $nombre . "%') ";
+                $where = " UPPER(TRANSLATE(convocatorias.convocatoria,'ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) LIKE UPPER(TRANSLATE('%" . $nombre . "%','ÁÉÍÓÚÑáéíóúñ','AEIOUNaeioun')) ";
             }
 
             if (isset($anio)) {
@@ -382,56 +382,112 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
                 }
             }
 
-            if (isset($perfiles)) {
-                if (!empty($where)) {
-                    $where .= " and c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
-                } else {
-                    $where .= " c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
-                }
-            }
-
             //se agregan los parametros de ordenamiento
             $orderby = '';
-            if (isset($orden_nombre)) {
-                $orderby .= " order by convocatorias.convocatoria";
+            if (isset($orden_nombre) and isset($orden_fecha)) {
+                if ($orden_nombre == "true") {
+                    $orderby .= " order by convocatorias.convocatoria ASC ";
+                } else {
+                    $orderby .= " order by convocatorias.convocatoria DESC ";
+                }
+
+
+                if ($orden_fecha == "true") {
+                    $orderby .= ", convocatorias.fecha_actualizacion ASC ";
+                } else {
+                    $orderby .= ", convocatorias.fecha_actualizacion DESC ";
+                }
             }
 
-            if (isset($orden_fecha)) {
-                if (!empty($orderby)) {
-                    $orderby .= ", c.fecha_actualizacion";
+            if (isset($orden_nombre) and ! isset($orden_fecha)) {
+                if ($orden_nombre == "true") {
+                    $orderby .= " order by convocatorias.convocatoria ASC ";
                 } else {
-                    $orderby .= " order by c.fecha_actualizacion";
+                    $orderby .= " order by convocatorias.convocatoria DESC ";
                 }
+            }
+
+            if (!isset($orden_nombre) and isset($orden_fecha)) {
+                if (isset($orden_fecha)) {
+                    if ($orden_fecha == "true") {
+                        $orderby .= " order by convocatorias.fecha_actualizacion ASC ";
+                    } else {
+                        $orderby .= " order by convocatorias.fecha_actualizacion DESC ";
+                    }
+                }
+            }
+
+            $perfiles_string = "";
+            if (isset($perfiles)) {
+                $perfiles_string = "and c2.tipo_participante in (" . implode(", ", $perfiles) . ")";
             }
 
             //se agregan los parametros de limit y offset
             $rango = '';
             if (isset($limit) and isset($offset)) {
                 $rango .= " LIMIT " . $limit . " OFFSET " . $offset;
+            } else {
+                $rango .= " LIMIT " . 2 . " OFFSET " . 0;
             }
 
-            $sql = "SELECT distinct convocatorias.id, e.nombre as estado, e2.nombre as entidad, convocatorias.anio, convocatorias.convocatoria as nombre, p.nombre as tipo_programa, convocatorias.categoria, a.nombre as area, e3.nombre as enfoque, l.nombre as linea_estrategica, c.fecha_actualizacion FROM Viewconvocatoriaspublicas convocatorias 
-                    left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id 
-                    left join Estados e on e.id = convocatorias.estado 
-                    left join Entidades e2 on e2.id = convocatorias.entidad 
-                    left join Programas p on p.id = convocatorias.programa 
-                    left join Enfoques e3 on e3.id = convocatorias.enfoque
-                    left join Areas a on a.id = convocatorias.area 
-                    left join Lineasestrategicas l on l.id = convocatorias.linea_estrategica 
-                    left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
-                    . "WHERE c.tipo_evento = 25 and " . $where . $orderby . " " . $rango;
+            $sql = "SELECT
+                convocatorias.id as id,
+                convocatorias.estado_convocatoria,
+                convocatorias.estado,
+                convocatorias.nombre_entidad,
+                convocatorias.anio,
+                convocatorias.convocatoria as nombre,
+                p.nombre as tipo_programa,
+                convocatorias.categoria,
+                a.nombre as area,
+                en.nombre as enfoque,
+                l.nombre as linea_estrategica,
+                convocatorias.id_diferente as id_consultar_cronograma,
+                convocatorias.id as id_ver_detalle_convocatoria,
+                convocatorias.id_diferente,
+                convocatorias.fecha_actualizacion,
+                array_agg(c2.tipo_participante) as participantes
+                FROM Viewconvocatoriaspublicas AS convocatorias
+                INNER JOIN Programas AS p ON p.id = convocatorias.programa
+                LEFT JOIN Areas AS a ON a.id = convocatorias.area
+                LEFT JOIN Lineasestrategicas AS l ON l.id = convocatorias.linea_estrategica
+                LEFT JOIN Enfoques AS en ON en.id = convocatorias.enfoque
+                LEFT JOIN Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id_diferente " . $perfiles_string . " and c2.active "
+                    . "WHERE convocatorias.active and " . $where .
+                    " GROUP by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 " .
+                    $orderby . " " . $rango;
 
-            $sql_total_registros = "SELECT count(*) as total FROM Viewconvocatoriaspublicas convocatorias "
-                    . "left join Convocatoriascronogramas c on c.convocatoria = convocatorias.id "
-                    . "left join Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id "
-                    . "WHERE c.tipo_evento = 25 and " . $where;
+            $sql_total_registros = "SELECT
+                convocatorias.id as id,
+                convocatorias.estado_convocatoria,
+                convocatorias.estado,
+                convocatorias.nombre_entidad,
+                convocatorias.anio,
+                convocatorias.convocatoria as nombre,
+                p.nombre as tipo_programa,
+                convocatorias.categoria,
+                a.nombre as area,
+                en.nombre as enfoque,
+                l.nombre as linea_estrategica,
+                convocatorias.id_diferente as id_consultar_cronograma,
+                convocatorias.id as id_ver_detalle_convocatoria,
+                convocatorias.id_diferente,
+                convocatorias.fecha_actualizacion,
+                array_agg(c2.tipo_participante) as participantes
+                FROM Viewconvocatoriaspublicas AS convocatorias
+                INNER JOIN Programas AS p ON p.id = convocatorias.programa
+                LEFT JOIN Areas AS a ON a.id = convocatorias.area
+                LEFT JOIN Lineasestrategicas AS l ON l.id = convocatorias.linea_estrategica
+                LEFT JOIN Enfoques AS en ON en.id = convocatorias.enfoque
+                LEFT JOIN Convocatoriasparticipantes c2 on c2.convocatoria = convocatorias.id_diferente " . $perfiles_string . " and c2.active "
+                    . "WHERE convocatorias.active and " . $where .
+                    " GROUP by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ";
 
             $convocatorias = $app->modelsManager->executeQuery($sql);
             $total_registros = $app->modelsManager->executeQuery($sql_total_registros);
 
-
             $array_return["error"] = 0;
-            $array_return["total_registros"] = $total_registros[0]->total;
+            $array_return["total_registros"] = count($total_registros);
 
             $respuesta = array();
 
@@ -440,14 +496,33 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
 
                 $sql_cronogramas = "select t2.nombre as tipo_evento, c.fecha_inicio, c.descripcion from Convocatoriascronogramas c 
                 left join Tiposeventos t2 on t2.id = c.tipo_evento 
-                where c.convocatoria = " . $convocatoria->id . " and c.active 
+                where c.convocatoria = " . $convocatoria->id_consultar_cronograma . " and c.active 
                 order by fecha_inicio ASC";
 
                 $cronograma = $app->modelsManager->executeQuery($sql_cronogramas);
 
                 $respuesta[$j]['id'] = $convocatoria->id;
-                $respuesta[$j]['estado'] = $convocatoria->estado;
-                $respuesta[$j]['entidad'] = $convocatoria->entidad;
+
+                if ($convocatoria->estado == 5) {
+                    $fecha_actual = strtotime(date("Y-m-d H:i:s"), time());
+                    $fecha_cierre_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria->id_consultar_cronograma . " AND tipo_evento = 12");
+                    $fecha_cierre = strtotime($fecha_cierre_real->fecha_fin, time());
+                    if ($fecha_actual > $fecha_cierre) {
+                        $respuesta[$j]['estado'] = "Cerrada";
+                    } else {
+                        $fecha_apertura_real = Convocatoriascronogramas::findFirst("convocatoria=" . $convocatoria->id_consultar_cronograma . " AND tipo_evento = 11");
+                        $fecha_apertura = strtotime($fecha_apertura_real->fecha_fin, time());
+                        if ($fecha_actual < $fecha_apertura) {
+                            $respuesta[$j]['estado'] = $convocatoria->estado;
+                        } else {
+                            $respuesta[$j]['estado'] = "Abierta";
+                        }
+                    }
+                } else {
+                    $respuesta[$j]['estado'] = $convocatoria->estado_convocatoria;
+                }
+
+                $respuesta[$j]['entidad'] = $convocatoria->nombre_entidad;
                 $respuesta[$j]['anio'] = $convocatoria->anio;
                 $respuesta[$j]['nombre'] = $convocatoria->nombre;
                 $respuesta[$j]['tipo_programa'] = $convocatoria->tipo_programa;
@@ -468,7 +543,7 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
             $response->setContent(json_encode($array_return));
 
             //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la conculta con éxito en el controlador Intercambio información en el método total_propuestas_barrios"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador DrupalWS en el método convocatorias_publicadas"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
             $logger->close();
             return $response;
         } else {
@@ -479,13 +554,13 @@ $app->post('/convocatorias_publicadas', function () use ($app, $config, $logger)
             $response->setContent(json_encode($array_return));
 
             //Registro la accion en el log de convocatorias
-            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método convocatorias_publicadas"', ['user' => $this->request->getPost('username'), 'token' => 'DrupalWS']);
+            $logger->error('"token":"{token}","user":"{user}","message":"El token no es correcto en el controlador DrupalWS en el método convocatorias_publicadas"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
             $logger->close();
             return $response;
         }
     } catch (Exception $ex) {
         $array_return["error"] = 1;
-        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método convocatorias_publicadas." . $ex->getMessage();
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método convocatorias_publicadas.";
 
         //Set value return
         $response->setContent(json_encode($array_return));
@@ -613,6 +688,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array_convocatoria["convocatoria"] = $convocatoria->nombre;
             $array_convocatoria["entidad"] = $convocatoria->getEntidades()->nombre;
             $array_convocatoria["descripcion"] = $convocatoria->descripcion;
+            $array_convocatoria["justificacion"] = $convocatoria->justificacion;
             $array_convocatoria["estado"] = $convocatoria->getEstados()->nombre;
             $array_convocatoria["linea"] = $convocatoria->getLineasestrategicas()->nombre;
             $array_convocatoria["area"] = $convocatoria->getAreas()->nombre;
@@ -626,6 +702,8 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array_convocatoria["no_pueden_participar"] = $convocatoria->no_pueden_participar;
             $array_convocatoria["derechos_ganadores"] = $convocatoria->derechos_ganadores;
             $array_convocatoria["deberes_ganadores"] = $convocatoria->deberes_ganadores;
+
+            $informacion_categorias = array();
 
             //generar las siglas del programa
             if ($convocatoria->programa == 1) {
@@ -732,9 +810,16 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                 if ($convocatoria->tiene_categorias == true && $convocatoria->diferentes_categorias == false) {
 
                     $tipo_convocatoria = "general";
+                     $j = 1;
+
 
                     //Se crea todo el array de las rondas de evaluacion
                     foreach ($categorias as $categoria) {
+                        
+                        $informacion_categorias[$j]['nombre'] = $categoria->nombre;
+                        $informacion_categorias[$j]['descripcion'] = $categoria->descripcion;
+                        $j++;
+
                         $conditions = ['convocatoria' => $categoria->id, 'active' => true];
                         $consulta_rondas_evaluacion = Convocatoriasrondas::find(([
                                     'conditions' => 'convocatoria=:convocatoria: AND active=:active:',
@@ -777,8 +862,14 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                         $tipo_convocatoria = "especial";
                         if ($convocatoria->diferentes_categorias) {
 
+                            $j = 1;
+
                             //Recorro todas las categorias especiales
                             foreach ($categorias as $categoria) {
+
+                                $informacion_categorias[$j]['nombre'] = $categoria->nombre;
+                                $informacion_categorias[$j]['descripcion'] = $categoria->descripcion;
+                                $j++;
 
                                 //Creo el array del estimulo
                                 $categorias_estimulos[$categoria->id]["categoria"] = $categoria->nombre;
@@ -1059,6 +1150,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
                 "estado" => $array_convocatoria["estado"],
                 "tipo_programa" => $array_convocatoria["programa"],
                 "entidad" => $array_convocatoria["entidad"],
+                "justificacion" => $array_convocatoria["justificacion"]
                     //"total_recursos" => $array_convocatoria["valor_total_estimulos"],
                     //"descripcion_general_recursos_a_otorgar" => $array_convocatoria["descripcion_bolsa"]
             ];
@@ -1071,6 +1163,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array["criterios_evaluacion"] = $rondas_evaluacion;
             $array["derechos_especificos_ganadores"] = $array_convocatoria["derechos_ganadores"];
             $array["deberes_especificos_ganadores"] = $array_convocatoria["deberes_ganadores"];
+            $array["informacion_categorias"] = $informacion_categorias;
             if (!$convocatoria->diferentes_categorias) {
                 $array["distribucion_estimulos"] = [
 //                    $convocatoria->id => [
@@ -1085,8 +1178,10 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
 //                    ]
                 ];
             } else {
+                
                 $array["distribucion_estimulos"] = $categorias_estimulos;
             }
+       
 
 
             //documentos
@@ -1095,6 +1190,7 @@ $app->post('/convocatoria/{id:[0-9]+}', function ($id) use ($app, $config, $logg
             $array["resoluciones"] = $resoluciones;
             $array["listados"] = $listados;
             $array["avisos_modificatorios"] = $avisos;
+
 
             $respuesta["respuesta"] = $array;
 
@@ -1151,10 +1247,15 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
 
             $fechaTruncada = $anio . "-" . $mes . "-" . $dia;
 
-            $sql = "SELECT convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
+            $sql = "SELECT distinct
+                    convocatoriaspublicas.id, 
+                    convocatoriaspublicas.convocatoria, 
+                    convocatoriaspublicas.nombre_entidad, 
+                    convocatoriaspublicas.anio, 
+                    convocatoriaspublicas.estado_convocatoria,
+                    Convocatoriascronogramas.fecha_fin
+                    FROM Viewconvocatoriaspublicas convocatoriaspublicas
                     left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
-                    left join Estados on convocatoriaspublicas.estado = Estados.id 
-                    left join Entidades on convocatoriaspublicas.entidad = Entidades.id
                     where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and Convocatoriascronogramas.fecha_fin > '" . $fecha . "' and date_trunc('day', Convocatoriascronogramas.fecha_fin) = '" . $fechaTruncada . "'";
 
             $array = $app->modelsManager->executeQuery($sql);
@@ -1164,8 +1265,8 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
                 $array_return["respuesta"][] = [
                     "id" => $convocatoria['id'],
                     "convocatoria" => $convocatoria['convocatoria'],
-                    "estado" => $convocatoria['estado'],
-                    "entidad" => $convocatoria['entidad'],
+                    "estado" => $convocatoria['estado_convocatoria'],
+                    "entidad" => $convocatoria['nombre_entidad'],
                     "anio" => $convocatoria['anio'],
                 ];
             }
@@ -1174,7 +1275,7 @@ $app->post('/cierre_convocatoria', function () use ($app, $config, $logger) {
             $response->setContent(json_encode($array_return));
 
             //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador intercambio información en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador DrupalWS en el método convocatorias_publicadas_preview"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
             $logger->close();
             return $response;
         } else {
@@ -1237,12 +1338,19 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
 
             $primerDiaSiguienteMes = date("Y-m-d", strtotime($anio . "-" . $mes . "-01" . "+ 1 month"));
 
-            $sql = "SELECT distinct convocatoriaspublicas.id, convocatoriaspublicas.convocatoria, Estados.nombre as estado, Entidades.nombre as entidad, convocatoriaspublicas.anio, Convocatoriascronogramas.fecha_fin as fecha_fin FROM Viewconvocatoriaspublicas convocatoriaspublicas
-                    left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
-                    left join Estados on convocatoriaspublicas.estado = Estados.id 
-                    left join Entidades on convocatoriaspublicas.entidad = Entidades.id
-                    where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
+            $sql = "SELECT distinct
+                convocatoriaspublicas.id, 
+                convocatoriaspublicas.convocatoria, 
+                convocatoriaspublicas.estado_convocatoria, 
+                convocatoriaspublicas.nombre_entidad, 
+                convocatoriaspublicas.anio, 
+                Convocatoriascronogramas.fecha_fin as fecha_fin 
+                FROM Viewconvocatoriaspublicas convocatoriaspublicas
+                left join Convocatoriascronogramas on Convocatoriascronogramas.convocatoria = convocatoriaspublicas.id_diferente
+                where estado = 5 and Convocatoriascronogramas.tipo_evento = 12 and fecha_fin > '" . $fecha .
                     "' and date_trunc('day', fecha_fin) < '" . $primerDiaSiguienteMes . "'";
+
+//            return $sql;
 
             $array = $app->modelsManager->executeQuery($sql);
 
@@ -1251,8 +1359,8 @@ $app->post('/cierre_convocatoria_mes', function () use ($app, $config, $logger) 
                 $array_return["respuesta"][] = [
                     "id" => $convocatoria['id'],
                     "convocatoria" => $convocatoria['convocatoria'],
-                    "estado" => $convocatoria['estado'],
-                    "entidad" => $convocatoria['entidad'],
+                    "estado" => $convocatoria['estado_convocatoria'],
+                    "entidad" => $convocatoria['nombre_entidad'],
                     "anio" => $convocatoria['anio'],
                     "fecha_cierre" => $convocatoria['fecha_fin']
                 ];
@@ -1361,7 +1469,6 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
         //Valido si existe el token
         if (isset($token_validar->id)) {
 
-
             //de esta forma recibo parametros
             $anio = $this->request->getPost('anio');
             $tipo_programa = $this->request->getPost('tipo_programa');
@@ -1395,7 +1502,7 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
             $respuesta = array();
 
             //(tabla_estados_convocatoria_anio) Convocatorias publicadas
-            if (in_array("tabla_estados_convocatoria_anio", $tipos_graficas)) {
+            if (in_array("7", $tipos_graficas)) {
                 $sql_propuestas = "
                     SELECT 
                         vwc.nombre_entidad AS label,
@@ -1411,11 +1518,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["tabla_estados_convocatoria_anio"] = $convocatorias_anio;
+                $respuesta["tabla_estados_convocatoria_anio"]["id"] = 7;
+                $respuesta["tabla_estados_convocatoria_anio"]["data"] = $convocatorias_anio;
             }
 
             //(tabla_convocatoria_propuestas_anio) Estado de convocatorias
-            if (in_array("tabla_convocatoria_propuestas_anio", $tipos_graficas)) {
+            if (in_array("6", $tipos_graficas)) {
 
                 $sql_propuestas = "
                     SELECT 
@@ -1432,11 +1540,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["tabla_convocatoria_propuestas_anio"] = $convocatorias_anio;
+                $respuesta["tabla_convocatoria_propuestas_anio"]["id"] = 6;
+                $respuesta["tabla_convocatoria_propuestas_anio"]["data"] = $convocatorias_anio;
             }
 
             //(tabla_propuestas_entidad_anio) Estado de convocatorias
-            if (in_array("tabla_propuestas_entidad_anio", $tipos_graficas)) {
+            if (in_array("12", $tipos_graficas)) {
 
                 $sql_propuestas = "
                     SELECT 
@@ -1454,11 +1563,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["tabla_propuestas_entidad_anio"] = $convocatorias_anio;
+                $respuesta["tabla_propuestas_entidad_anio"]["id"] = 12;
+                $respuesta["tabla_propuestas_entidad_anio"]["data"] = $convocatorias_anio;
             }
 
             //(tabla_propuestas_rango_etareo_anio) Rango etario del representante
-            if (in_array("tabla_propuestas_rango_etareo_anio", $tipos_graficas)) {
+            if (in_array("14", $tipos_graficas)) {
 
 
                 $sql_propuestas = "
@@ -1474,11 +1584,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["tabla_propuestas_rango_etareo_anio"] = $convocatorias_anio;
+                $respuesta["tabla_propuestas_rango_etareo_anio"]["id"] = 14;
+                $respuesta["tabla_propuestas_rango_etareo_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_propuestas_area_anio) Propuestas Inscritas por área
-            if (in_array("table_propuestas_area_anio", $tipos_graficas)) {
+            if (in_array("13", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 SELECT 
@@ -1496,11 +1607,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_propuestas_area_anio"] = $convocatorias_anio;
+                $respuesta["table_propuestas_area_anio"]["id"] = 13;
+                $respuesta["table_propuestas_area_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_propuestas_lineaestrategica_anio) Propuestas Inscritas por línea estratégica
-            if (in_array("table_propuestas_lineaestrategica_anio", $tipos_graficas)) {
+            if (in_array("8", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 SELECT 
@@ -1518,11 +1630,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_propuestas_lineaestrategica_anio"] = $convocatorias_anio;
+                $respuesta["table_propuestas_lineaestrategica_anio"]["id"] = 8;
+                $respuesta["table_propuestas_lineaestrategica_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_propuestas_enfoque_anio) Propuestas Inscritas por enfoque
-            if (in_array("table_propuestas_enfoque_anio", $tipos_graficas)) {
+            if (in_array("9", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 SELECT 
@@ -1540,11 +1653,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_propuestas_enfoque_anio"] = $convocatorias_anio;
+                $respuesta["table_propuestas_enfoque_anio"]["id"] = 9;
+                $respuesta["table_propuestas_enfoque_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_propuestas_tipoparticipante_anio) Propuestas Inscritas por tipo de participante
-            if (in_array("table_propuestas_tipoparticipante_anio", $tipos_graficas)) {
+            if (in_array("10", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 SELECT 
@@ -1566,11 +1680,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_propuestas_tipoparticipante_anio"] = $convocatorias_anio;
+                $respuesta["table_propuestas_tipoparticipante_anio"]["id"] = 10;
+                $respuesta["table_propuestas_tipoparticipante_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_propuestas_localidadeje_anio) Propuestas Inscritas por localidad de ejecución
-            if (in_array("table_propuestas_localidadeje_anio", $tipos_graficas)) {
+            if (in_array("11", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1588,11 +1703,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_propuestas_localidadeje_anio"] = $convocatorias_anio;
+                $respuesta["table_propuestas_localidadeje_anio"]["id"] = 11;
+                $respuesta["table_propuestas_localidadeje_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_valor_localidadeje_anio) recursos adjudicados por localidad
-            if (in_array("table_valor_localidadeje_anio", $tipos_graficas)) {
+            if (in_array("4", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1611,11 +1727,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_valor_localidadeje_anio"] = $convocatorias_anio;
+                $respuesta["table_valor_localidadeje_anio"]["id"] = 4;
+                $respuesta["table_valor_localidadeje_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_valor_eje_tipo_participante) recursos adjudicados por tipo de participante
-            if (in_array("table_valor_eje_tipo_participante", $tipos_graficas)) {
+            if (in_array("2", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1638,11 +1755,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_valor_eje_tipo_participante"] = $convocatorias_anio;
+                $respuesta["table_valor_eje_tipo_participante"]["id"] = 2;
+                $respuesta["table_valor_eje_tipo_participante"]["data"] = $convocatorias_anio;
             }
 
             //(table_valor_eje_area) recursos adjudicados por area
-            if (in_array("table_valor_eje_area", $tipos_graficas)) {
+            if (in_array("5", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1662,11 +1780,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_valor_eje_area"] = $convocatorias_anio;
+                $respuesta["table_valor_eje_area"]["id"] = 5;
+                $respuesta["table_valor_eje_area"]["data"] = $convocatorias_anio;
             }
 
             //(table_valor_entidadeje_anio) recursos adjudicados por entidad
-            if (in_array("table_valor_entidadeje_anio", $tipos_graficas)) {
+            if (in_array("3", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1685,12 +1804,12 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_valor_entidadeje_anio"] = $convocatorias_anio;
+                $respuesta["table_valor_entidadeje_anio"]["id"] = 3;
+                $respuesta["table_valor_entidadeje_anio"]["data"] = $convocatorias_anio;
             }
 
             //(table_valor_ofertado_entidad) recursos asignados por entidad
-            if (in_array("table_valor_ofertado_entidad", $tipos_graficas)) {
-
+            if (in_array("1", $tipos_graficas)) {
 
                 $sql_propuestas = "
                 select 
@@ -1707,7 +1826,8 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
                 $convocatorias_anio = $app->modelsManager->executeQuery($sql_propuestas);
 
                 //Agrego la respuesta de la tabla
-                $respuesta[]["table_valor_ofertado_entidad"] = $convocatorias_anio;
+                $respuesta["table_valor_ofertado_entidad"]["id"] = 1;
+                $respuesta["table_valor_ofertado_entidad"]["data"] = $convocatorias_anio;
             }
 
             $array_return["error"] = 0;
@@ -1718,7 +1838,7 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
             $response->setContent(json_encode($array_return));
 
             //Registro la accion en el log de convocatorias
-            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la conculta con éxito en el controlador DrupalWS en el método datos_cifras"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
+            $logger->info('"token":"{token}","user":"{user}","message":"Realiza la consulta con éxito en el controlador DrupalWS en el método datos_cifras"', ['user' => $this->request->getPost('username'), 'token' => $request->getPut('token')]);
             $logger->close();
             return $response;
         } else {
@@ -1735,7 +1855,7 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
         }
     } catch (Exception $ex) {
         $array_return["error"] = 1;
-        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método datos_cifras." . $ex->getMessage();
+        $array_return["respuesta"] = "Error en el controlador DrupalWS en el método datos_cifras.";
 
         //Set value return
         $response->setContent(json_encode($array_return));
@@ -1747,8 +1867,6 @@ $app->post('/datos_cifras', function () use ($app, $config, $logger) {
     }
 }
 );
-
-
 
 try {
     // Gestionar la consulta
