@@ -80,7 +80,7 @@ $app->get('/select_convocatorias', function () use ($app, $logger) {
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
 
-          
+
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
@@ -155,7 +155,7 @@ $app->get('/select_convocatorias_dev', function () use ($app, $logger) {
                  * Se incorpora consulta para listar unicamente las convocatorias a las que 
                  * el jurado este postulado y ademas que haya sido seleccionado
                  */
-                
+
                 $query = 'SELECT
                             j.convocatoria
                             FROM
@@ -371,6 +371,8 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
 
                 if ($request->get('ronda')) {
 
+
+
                     $ronda = Convocatoriasrondas::findFirst('id = ' . $request->get('ronda'));
 
                     /*
@@ -400,13 +402,53 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                     // echo json_encode($postulacion);
                     if (isset($postulacion->id) && isset($ronda->id)) {
 
-                        //valida si el usuario pertenece al grupo de evaluación de la ronda
-                        $evaluador = Evaluadores::findFirst(
+
+                        /*
+                         * 25-02-2021
+                         * Wilmer Gustavo Mogollón Duque
+                         * Se crea el objeto $gruposevaluadoresrondas para ajustar la búsqueda
+                         * obedeciendo al nuevo requerimiento de crear N grupos de evaluación por ronda
+                         */
+
+                        $gruposevaluadoresrondas = Gruposevaluadoresrondas::find(
                                         [
-                                            'juradopostulado = ' . $postulacion->id
-                                            . ' AND grupoevaluador = ' . $ronda->grupoevaluador
+                                            ' convocatoriaronda = ' . $ronda->id
                                         ]
                         );
+
+
+
+                        if ($gruposevaluadoresrondas->count() > 0) {
+
+                            $idgrupos = array();
+
+                            foreach ($gruposevaluadoresrondas as $grupoevaluadorronda) {
+                                //Se construye un array con la información de id de cada $gruposevaluadoresrondas
+                                array_push($idgrupos, $grupoevaluadorronda->grupoevaluador);
+                            }
+
+                            //valida si el usuario pertenece al grupo de evaluación de la ronda
+                            $evaluador = Evaluadores::findFirst(
+                                            [
+                                                'juradopostulado = ' . $postulacion->id
+                                                . ' AND grupoevaluador IN ({idgrupos:array}) ', //25-02-2021 pueden ser N grupos de evaluación
+                                                'bind' => [
+                                                    'idgrupos' => $idgrupos
+                                                ]
+                                            ]
+                            );
+                        } else {
+
+                            $evaluador = Evaluadores::findFirst(
+                                            [
+                                                'juradopostulado = ' . $postulacion->id
+                                                . ' AND grupoevaluador = ' . $ronda->grupoevaluador //02-03-2021 para los grupos que fueron creados anteriormente
+                                            ]
+                            );
+                        }
+
+
+
 
                         if (isset($evaluador->id)) {
 
@@ -428,76 +470,11 @@ $app->get('/all_propuestas', function () use ($app, $logger) {
                                             ]
                             );
 
-                            /* Ajuste de william supervisado por wilmer */
-                            /* 2020-04-28 */
-
-                            $ronda_actual = $rondas[0];
-                            //si es la primera ronda y ronda estado habilitada, es decir en fase de evaluación
-                            if ($ronda_actual->id == $ronda->id && $ronda->getEstado_nombre() == "Habilitada") {
-
-                                //propuestas incluidas por el evaluador
-                                $propuestas_evaluacion = Evaluacionpropuestas::find(
-                                                [
-                                                    "ronda =" . $ronda->id
-                                                    . " AND fase = 'Evaluación' "
-                                                    . " AND evaluador = " . $evaluador->id
-                                                ]
-                                );
-
-                                $array_propuestas = array(-1);
-                                foreach ($propuestas_evaluacion as $key => $evaluacion) {
-                                    array_push($array_propuestas, $evaluacion->propuesta);
-                                }
-
-                                //24	propuestas	Habilitada
-                                $estado_propuesta = Estados::findFirst("tipo_estado = 'propuestas' AND nombre = 'Habilitada'");
-                                //propuestas a incluir por parte del evaluador
-                                $propuestas_incluir = Propuestas::find(
-                                                [
-                                                    " convocatoria = " . $ronda->convocatoria
-                                                    . ' AND estado = ' . $estado_propuesta->id
-                                                    . ' AND id NOT IN ({propuestas:array})',
-                                                    'bind' => [
-                                                        'propuestas' => $array_propuestas
-                                                    ]
-                                                ]
-                                );
-
-                                // se guarda cada propuesta a incluir en la evaluación
-
-                                foreach ($propuestas_incluir as $key => $propuesta) {
-                                    $evaluacion_propuesta = new Evaluacionpropuestas();
-                                    $evaluacion_propuesta->propuesta = $propuesta->id;
-                                    $evaluacion_propuesta->ronda = $ronda->id;
-                                    $evaluacion_propuesta->evaluador = $evaluador->id;
-                                    /* Ajuste de william supervisado por wilmer */
-                                    /* 2020-04-28 */
-                                    $array_estado_actual = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Sin evaluar'");
-                                    $evaluacion_propuesta->estado = $array_estado_actual->id;
-                                    //ronda_estado = habilitada
-                                    $evaluacion_propuesta->fase = 'Evaluación';
-                                    $evaluacion_propuesta->fecha_creacion = date("Y-m-d H:i:s");
-                                    $evaluacion_propuesta->creado_por = $user_current["id"];
-                                    $evaluacion_propuesta->active = true;
-
-                                    if ($evaluacion_propuesta->save() === false) {
-
-
-                                        //Para auditoria en versión de pruebas
-                                        /* foreach ($evaluacion_propuesta->getMessages() as $message) {
-                                          echo $message;
-                                          } */
-                                        $logger->error('"token":"{token}","user":"{user}","message":"PropuestasEvaluacion/all_propuestas Error al crear la evaluación. '
-                                                . json_decode($evaluacion_propuesta->getMessages()) . '"',
-                                                ['user' => $user_current, 'token' => $request->get('token')]
-                                        );
-                                        $logger->close();
-
-                                        return "error";
-                                    }
-                                }//fin foreach
-                            }
-
+                            /*
+                             * 23-04-2021
+                             * Wilmer Gustavo Mogollón Duque
+                             * Se ajusta el método solo para que se listen las evaluacionespropuestas creadas previamente en el metodo habilitar_evaluaciones
+                             */
                             /**
                              * Listar las propuestas que estan registradas para evaluar
                              */
@@ -645,17 +622,17 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
 
                     $ronda = Convocatoriasrondas::findFirst(
                                     [
-                                        'id = '.$evaluacion->ronda
+                                        'id = ' . $evaluacion->ronda
                                     ]
                     );
-                    
-                    
+
+
                     switch ($ronda->tipo_evaluacion) {
                         case 'Técnica':
                             $tipo_requisito = 'Tecnicos';
 
                             break;
-                        
+
                         case 'Administrativa':
                             $tipo_requisito = 'Administrativos';
 
@@ -664,10 +641,9 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
                         default:
                             break;
                     }
-                    
                 }
-                
-               
+
+
 
 
                 //Documentos técnicos de la propuesta
@@ -683,8 +659,8 @@ $app->get('/propuestas/{id:[0-9]+}', function ($id) use ($app) {
                             	ON p.convocatoriadocumento = c.id
                              	INNER JOIN  Requisitos AS r
                              	ON c.requisito = r.id
-                             	AND r.tipo_requisito LIKE " ."'".$tipo_requisito."'".
-                          " WHERE
+                             	AND r.tipo_requisito LIKE " . "'" . $tipo_requisito . "'" .
+                        " WHERE
                               	p.propuesta = " . $propuesta->id
                         . " AND p.active=true ";
 
@@ -878,12 +854,12 @@ $app->post('/evaluar_criterios', function () use ($app, $config) {
                         //evaluacion_propuesta	Sin evaluar
                         //evaluacion_propuesta	En evaluación
                         //05-06-2020 Wilmer Mogollón --- Se agrega el estado Deliberación para quew pueda ajustar puntajes
-                      
+
                         if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación" || $evaluacion->getEstado_nombre() == "En deliberación")) {
-                          
-                            
-                          
-                            
+
+
+
+
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
                                             [
@@ -1073,6 +1049,17 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                         //29	evaluacion_propuesta	En evaluación
                         if ($evaluacion->fase == $fase && ($evaluacion->getEstado_nombre() == "Sin evaluar" || $evaluacion->getEstado_nombre() == "En evaluación")) {
 
+                            /*
+                             * 03-03-2021
+                             * Wilmer Gustavo Mogollón Duque
+                             * Se agrega este condicional pq no se puede confirmar una evaluación que no se haya comenzado
+                             * (Estado sin evaluar)
+                             */
+
+                            if ($evaluacion->getEstado_nombre() == "Sin evaluar") {
+                                return "sin_evaluar";
+                            }
+
                             //Criterios de evaluación de la ronda
                             $criterios = Convocatoriasrondascriterios::find(
                                             [
@@ -1084,6 +1071,15 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                             //Se registra los valores por cada criterio evaluado
                             foreach ($criterios as $criterio) {
 
+
+
+                                /*
+                                 * 02-03-2021
+                                 * Wilmer Gustavo Mogollón Duque
+                                 * Se agregan validaciones al momento de confirmar la evaluación y garantizar que todos los 
+                                 * criterios que deban ser evaluados efectivamente sean evaluados
+                                 */
+
                                 //Consulto el criterio
                                 $evaluacioncriterio = Evaluacioncriterios::findFirst(
                                                 [
@@ -1093,8 +1089,50 @@ $app->post('/confirmar_evaluacion', function () use ($app, $config) {
                                 );
 
                                 //Si no existe el criterioevaluacion se retorna mensaje
+                                //preguntamos si el criterio viene con puntaje null
                                 if ($evaluacioncriterio->puntaje == null) {
-                                    return 'criterio_null';
+
+                                    //Validar si el criterio pertenece a un grupo y si es exclusivo
+                                    if ($criterio->grupo_criterio == "") {
+
+                                        return 'criterio_null';
+                                    } else {
+
+                                        //Si el criterio no es exclusivo debe tener puntaje
+                                        if ($criterio->exclusivo == false) {
+
+                                            return 'criterio_null';
+                                        } else {
+
+                                            $crterios_grupo = Convocatoriasrondascriterios::find(
+                                                            [
+                                                                "convocatoria_ronda = " . $ronda->id
+                                                                . " AND active = true"
+                                                                . " AND grupo_criterio = '" . $criterio->grupo_criterio . "'"
+                                                            ]
+                                            );
+
+                                            //Para verificar si hay por lo menos un criterio del grupo fue seleccionado
+                                            foreach ($crterios_grupo as $crterio_grupo) {
+
+                                                $evaluacioncriteriogrupo = Evaluacioncriterios::findFirst(
+                                                                [
+                                                                    ' evaluacionpropuesta = ' . $evaluacion->id
+                                                                    . ' AND criterio = ' . $crterio_grupo->id
+                                                                    . " AND active = true"
+                                                                ]
+                                                );
+
+                                                if ($evaluacioncriteriogrupo->puntaje >= 0) {
+                                                    break;
+                                                }
+                                            }
+
+                                            if ($evaluacioncriteriogrupo->puntaje == null) {
+                                                return 'criterio_null';
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -1322,9 +1360,9 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                         //28	evaluacion_propuesta	Sin evaluar
                         //29	evaluacion_propuesta	En evaluación
                         //30	evaluacion_propuesta	Evaluada
-                      
-                      
-                      
+
+
+
                         if ($evaluacion->fase == $fase && ( $evaluacion->getEstado_nombre() == 'Sin evaluar' || $evaluacion->getEstado_nombre() == 'En evaluación' || $evaluacion->getEstado_nombre() == 'Evaluada' )) {
 
                             // Start a transaction
@@ -1349,7 +1387,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             $array_estado_actual_5 = Estados::findFirst(" tipo_estado = 'propuestas_evaluacion' AND nombre = 'Impedimento' ");
 
                             $evaluacion->estado = $array_estado_actual_5->id;
-                            
+
 //                            return json_encode($evaluacion->id);
                             // The model failed to save, so rollback the transaction
                             if ($evaluacion->save() === false) {
@@ -1420,7 +1458,7 @@ $app->put('/evaluacionpropuestas/{id:[0-9]+}/impedimentos', function ($id) use (
                             }
 
                             // Commit the transaction
-                            $this->db->commit();                          
+                            $this->db->commit();
                         } else {
                             return 'deshabilitado';
                         }
