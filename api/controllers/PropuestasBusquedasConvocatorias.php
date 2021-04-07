@@ -325,7 +325,7 @@ $app->get('/busqueda_convocatorias', function () use ($app, $logger) {
                 }
             }
 
-            array_sort_by($json_convocatorias, 'programa', $order = SORT_ASC);
+            array_sort_by($json_convocatorias, 'convocatoria', $order = SORT_ASC);
             
             //creo el array
             $json_data = array(

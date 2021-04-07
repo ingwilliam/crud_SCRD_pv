@@ -59,6 +59,577 @@ $logger->setFormatter($formatter);
 
 $app = new Micro($di);
 
+$app->post('/certificacion', function () use ($app, $config, $logger) {
+
+//Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo certificacion para generar reporte de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        //if (isset($token_actual->id)) {
+        if (true) {
+
+            $propuesta = Propuestas::findFirst("codigo = '".$request->getPut('id')."'");
+
+            if (isset($propuesta->id)) {
+                
+                //Valido si fue ganador y que contenga las fechas de ejecución de cada propuesta
+                $ganador=false;                
+                if($propuesta->estado==34 && $propuesta->fecha_inicio_ejecucion != null && $propuesta->fecha_fin_ejecucion != null && $propuesta->nombre_resolucion != "")
+                {
+                    $ganador=true;
+                }
+                
+                //Consulto quien firma por entidad                
+                $sql_firma = "
+                    select u.* from Usuarios as u
+                    inner join Usuariosentidades as ue on ue.usuario=u.id
+                    where u.certifica=true and ue.entidad=".$propuesta->getConvocatorias()->entidad;
+
+                $usuarios_firmas = $app->modelsManager->executeQuery($sql_firma);
+                
+                $cargo_firma="";
+                $nombre_firma="";
+                foreach ($usuarios_firmas as $usuario_firma) {
+                    $cargo_firma=$usuario_firma->cargo;
+                    $nombre_firma=$usuario_firma->primer_nombre." ".$usuario_firma->segundo_nombre." ".$usuario_firma->primer_apellido." ".$usuario_firma->segundo_apellido;
+                }
+                
+                //Meses
+                $meses = array("Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre");
+                
+                //Dia en letras
+                $formatter = new NumeroALetras();
+                $dia_actual = mb_strtolower($formatter->toMoney(date("d")));
+                
+                //Nombre del participante
+                $nombre_participante = $propuesta->getParticipantes()->primer_nombre." ".$propuesta->getParticipantes()->segundo_nombre." ".$propuesta->getParticipantes()->primer_apellido." ".$propuesta->getParticipantes()->segundo_apellido;
+                $documento_participante = $propuesta->getParticipantes()->numero_documento;
+                $tipo_documento_participante = $propuesta->getParticipantes()->getTiposdocumentos()->descripcion;
+                $tipo_participante_participante = $propuesta->getParticipantes()->getUsuariosperfiles()->getPerfiles()->nombre;
+                
+                $valor_letras = mb_strtolower($formatter->toMoney($propuesta->monto_asignado));
+                
+                if($ganador)
+                {
+                    //como persona natural
+                    if($request->getPut('tp')=='PN')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                '.$nombre_participante.' identificado(a) con 
+                                '.$tipo_documento_participante.' No. '.$documento_participante.',                                 
+                                fue seleccionado(a) como ganador de la citada convocatoria por la propuesta 
+                                “'.$propuesta->nombre.'”, (Código '.$propuesta->codigo.'), 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
+                                ejecutados en el proyecto desde 
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
+                                y cumpliendo con los deberes como ganadores del 
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
+                                </div>                                
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                                                                  
+                    }
+
+                    //como persona natural
+                    if($request->getPut('tp')=='PJ')
+                    {
+                        
+                        //Integrantes de la PJ
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'representante DESC'
+                        ]));
+
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";                            
+                        }
+                        
+                        
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                “'.$nombre_participante.'” 
+                                fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
+                                “'.$propuesta->nombre.'”, 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
+                                ejecutados en el proyecto desde 
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
+                                y cumpliendo con los deberes como ganadores del 
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                '.$tipo_participante_participante.'  
+                                en el Sistema de Convocatorias Públicas del 
+                                Sector Cultura, Recreación y Deporte 
+                                -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Rol</td>                            
+                                    </tr>
+                                    '.$html_integrantes.'
+                                </table>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                
+                    }
+
+                    //como persona natural
+                    if($request->getPut('tp')=='AGRU')
+                    {
+                        //Integrantes de la Agrupacion
+                        $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
+                        $consulta_integrantes = Participantes::find(([
+                                    'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                    'bind' => $conditions,
+                                    "order" => 'representante DESC'
+                        ]));
+
+                        $i = 1;
+                        $html_integrantes = "";
+                        foreach ($consulta_integrantes as $integrante) {
+                            $value_representante="No";
+                            if($integrante->representante)
+                            {
+                                $value_representante="Sí";
+                            }
+                            
+                            $html_integrantes = $html_integrantes . "<tr>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                            $html_integrantes = $html_integrantes . "<td>" . $integrante->rol . "</td>";
+                            $html_integrantes = $html_integrantes . "</tr>";                            
+                        }
+                        
+                        
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                la '.$tipo_participante_participante.' 
+                                “'.$nombre_participante.'” 
+                                fue seleccionada como una de las ganadoras de la citada convocatoria por la propuesta 
+                                “'.$propuesta->nombre.'”, 
+                                y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE, 
+                                ejecutados en el proyecto desde 
+                                el '.date("d",strtotime($propuesta->fecha_inicio_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_inicio_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_inicio_ejecucion)).'  al '.date("d",strtotime($propuesta->fecha_fin_ejecucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_fin_ejecucion))-1].' del '.date("Y",strtotime($propuesta->fecha_fin_ejecucion)).' 
+                                y cumpliendo con los deberes como ganadores del 
+                                '.$propuesta->getConvocatorias()->getProgramas()->nombre.'
+                                </div>
+                                <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                '.$tipo_participante_participante.'  
+                                en el Sistema de Convocatorias Públicas del 
+                                Sector Cultura, Recreación y Deporte 
+                                -SICON se certifica la siguiente participación:
+                                </div>
+                                <br/>
+                                <table border="1">
+                                    <tr>
+                                        <td bgcolor="#cccccc" align="center">Nombre</td>
+                                        <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                        <td bgcolor="#cccccc" align="center">Rol</td>                            
+                                    </tr>
+                                    '.$html_integrantes.'
+                                </table>
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                 
+                    } 
+
+                    //como persona natural
+                    if($request->getPut('tp')=='JUR')
+                    {
+                        $html = '
+                                <br/>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                <br/>
+                                <br/>
+                                <div style="text-align: justify">Según Resolución No. 
+                                '.$propuesta->numero_resolucion.' del 
+                                '.date("d",strtotime($propuesta->fecha_resolucion)).' de '.$meses[date("n",strtotime($propuesta->fecha_resolucion))-1].' de '.date("Y",strtotime($propuesta->fecha_resolucion)).'
+                                “'.$propuesta->nombre_resolucion.'”, 
+                                el señor(a)
+                                '.$nombre_participante.' identificado(a) con 
+                                '.$tipo_documento_participante.' No. '.$documento_participante.',                                 
+                                fue designado como uno de los jurados de la citada convocatoria y se le otorgó como valor del estímulo económico la suma de 
+                                '.mb_strtoupper($valor_letras).' DE PESOS ($'.number_format($propuesta->monto_asignado).') M/CTE.
+                                </div>                                
+                                <br/>
+                                <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                <br/><br/>
+                                <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                <b>'.$nombre_firma.'</b><br/>
+                                '.$cargo_firma.'</div>
+                                ';                                      
+                    }
+                }
+                else
+                {
+                    //Valido para genere solo las propuestas que pasaron el filtro de inscritos
+                    //y el filtro para jurados de Registrado
+                    $participante=false;                
+                    if($propuesta->estado!=7 && $propuesta->estado!=20 && $propuesta->estado!=9)
+                    {
+                        $participante=true;
+                    }
+                    
+                    if($participante)
+                    {
+                        
+                        //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+                        $nombre_convocatoria = $propuesta->getConvocatorias()->nombre;
+                        if ($propuesta->getConvocatorias()->convocatoria_padre_categoria > 0) {
+                            $nombre_convocatoria = $propuesta->getConvocatorias()->getConvocatorias()->nombre;                        
+                        }
+
+
+                        //como persona natural
+                        if($request->getPut('tp')=='PN')
+                        {
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        <tr>
+                                            <td>'.$nombre_participante.'</td>
+                                            <td>'.$tipo_documento_participante.' No. '.$documento_participante.'</td>                            
+                                            <td>Persona Natural</td>                            
+                                        </tr>
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                                                                  
+                        }
+
+                        //como persona natural
+                        if($request->getPut('tp')=='PJ')
+                        {
+
+                            //Integrantes de la PJ
+                            $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Junta', 'active' => true];
+                            $consulta_integrantes = Participantes::find(([
+                                        'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                        'bind' => $conditions,
+                                        "order" => 'representante DESC'
+                            ]));
+
+                            $i = 1;
+                            $html_integrantes = "";
+                            foreach ($consulta_integrantes as $integrante) {
+                                $value_representante="No";
+                                if($integrante->representante)
+                                {
+                                    $value_representante="Sí";
+                                }
+
+                                $html_integrantes = $html_integrantes . "<tr>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                                $html_integrantes = $html_integrantes . "<td>JUNTA DIRECTIVA</td>";
+                                $html_integrantes = $html_integrantes . "</tr>";                            
+                            }
+
+
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        '.$html_integrantes.'
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                  
+                        }
+
+                        //como persona natural
+                        if($request->getPut('tp')=='AGRU')
+                        {
+                            //Integrantes de la Agrupacion
+                            $conditions = ['id' => $propuesta->participante, 'participante_padre' => $propuesta->participante, 'tipo' => 'Integrante', 'active' => true];
+                            $consulta_integrantes = Participantes::find(([
+                                        'conditions' => 'id<>:id: AND participante_padre=:participante_padre: AND tipo=:tipo: AND active=:active:',
+                                        'bind' => $conditions,
+                                        "order" => 'representante DESC'
+                            ]));
+
+                            $i = 1;
+                            $html_integrantes = "";
+                            foreach ($consulta_integrantes as $integrante) {
+                                $value_representante="No";
+                                if($integrante->representante)
+                                {
+                                    $value_representante="Sí";
+                                }
+
+                                $html_integrantes = $html_integrantes . "<tr>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->primer_nombre . " " . $integrante->segundo_nombre . " ". $integrante->primer_apellido . " " . $integrante->segundo_apellido . "</td>";
+                                $html_integrantes = $html_integrantes . "<td>" . $integrante->getTiposdocumentos()->nombre ." ".$integrante->numero_documento. "</td>";
+                                $html_integrantes = $html_integrantes . "<td>INTEGRANTE</td>";
+                                $html_integrantes = $html_integrantes . "</tr>";                            
+                            }
+
+
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    la '.$tipo_participante_participante.'                                 
+                                    en la convocatoria 
+                                    “'.$nombre_convocatoria.'” 
+                                    con la propuesta
+                                    “'.$propuesta->nombre.'” (Código '.$propuesta->codigo.').
+                                    </div>
+                                    <div style="text-align: justify">De acuerdo con la inscripción realizada por la 
+                                    '.$tipo_participante_participante.'  
+                                    en el Sistema de Convocatorias Públicas del 
+                                    Sector Cultura, Recreación y Deporte 
+                                    -SICON se certifica la siguiente participación:
+                                    </div>
+                                    <br/>
+                                    <table border="1">
+                                        <tr>
+                                            <td bgcolor="#cccccc" align="center">Nombre</td>
+                                            <td bgcolor="#cccccc" align="center">No Identificación</td>                            
+                                            <td bgcolor="#cccccc" align="center">Tipo de Participación</td>                            
+                                        </tr>
+                                        '.$html_integrantes.'
+                                    </table>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                 
+                        } 
+
+                        //como persona natural
+                        if($request->getPut('tp')=='JUR')
+                        {
+                            $html = '
+                                    <br/>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>LA SUSCRITA '.mb_strtoupper($cargo_firma).' DE LA <br/>'.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->descripcion).' - '.mb_strtoupper($propuesta->getConvocatorias()->getEntidades()->nombre).'</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align:center"><b>CERTIFICA QUE:</b></div>
+                                    <br/>
+                                    <br/>
+                                    <div style="text-align: justify">Una vez revisado el Sistema de Convocatorias Públicas del Sector Cultura, Recreación y Deporte -SICON, se evidencia la participación de
+                                    '.$nombre_participante.' identificado(a) con 
+                                    '.$tipo_documento_participante.' No. '.$documento_participante.' 
+                                     en el banco de Jurados del Programa Distrital de Estímulos.  
+                                    </div>                                
+                                    <br/>
+                                    <div>La presente certificación se expide en Bogotá D.C., a los '.$dia_actual.' ('.date("d").') días del mes de '.$meses[date('n')-1].' de '.date("Y").'.</div>
+                                    <br/><br/>
+                                    <div style="text-align:center"><img src="http://localhost/report_SCRD_pv/images/firma_'.$propuesta->getConvocatorias()->getEntidades()->nombre.'.png"  width="100" height="70" border="0" /><br/>
+                                    <b>'.$nombre_firma.'</b><br/>
+                                    '.$cargo_firma.'</div>
+                                    ';                                      
+                        }
+                    }
+                
+                
+                }
+                
+                
+                
+
+                $logger->info('"token":"{token}","user":"{user}","message":"Se genero el reporte de certificacion de la propuesta (' . $request->getPut('id') . ')', ['user' => $user_current["username"], 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo $html;
+            } else {
+                //Registro la accion en el log de convocatorias           
+                $logger->error('"token":"{token}","user":"{user}","message":"La propuesta (' . $request->getPut('id') . ') no existe en el metodo certificacion', ['user' => "", 'token' => $request->getPut('token')]);
+                $logger->close();
+                echo "error_propuesta";
+            }
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->get('/validar_certificado/{cod}', function ($cod) use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();    
+    try {
+        $codigo = str_replace('ZXXY', '-', $cod);
+        $propuesta = Propuestas::findFirst("codigo='".$codigo."'");
+
+        if (isset($propuesta->id)) {
+            echo "SICON reporta que es un certificado Valido";
+        } else {
+            echo "SICON reporta que no es un certificado confiable";
+        }        
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo certificacion al generar el reporte de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
 $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logger) {
 
 //Instancio los objetos que se van a manejar

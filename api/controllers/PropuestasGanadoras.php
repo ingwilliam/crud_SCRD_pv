@@ -691,6 +691,16 @@ $app->post('/editar_propuesta', function () use ($app, $config, $logger) {
                     $post["actualizado_por"] = $user_current["id"];
                     $post["fecha_actualizacion"] = date("Y-m-d H:i:s");                    
                     
+                    if($post["fecha_inicio_ejecucion"]=="")
+                    {
+                        unset($post["fecha_inicio_ejecucion"]);
+                    }
+                    
+                    if($post["fecha_fin_ejecucion"]=="")
+                    {
+                        unset($post["fecha_fin_ejecucion"]);
+                    }                    
+                    
                     if ($propuesta->save($post) === false) {
                         //Registro la accion en el log de convocatorias
                         $logger->error('"token":"{token}","user":"{user}","message":"Error en el controller PropuestasGanadoras en el método editar_propuesta, al crear y/o editar la propuesta"', ['user' => $user_current["username"], 'token' => $request->get('token')]);
