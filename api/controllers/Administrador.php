@@ -901,6 +901,11 @@ $app->post('/menu', function () use ($app,$config) {
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
+                        <!--
+                        <li>
+                            <a href="../propuestas/certificaciones.html"><i class="fa  fa-download fa-fw"></i> Generar Certificaciones</a>                                                        
+                        </li>
+                        -->
                         <?php
                         }
                         ?>
@@ -1008,8 +1013,6 @@ $app->post('/menu', function () use ($app,$config) {
                         }
                         ?>
                         <!--Fin Deliberación-->
-                        
-
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

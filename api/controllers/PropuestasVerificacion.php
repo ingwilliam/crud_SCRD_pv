@@ -927,10 +927,12 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                     $nombre_convocatoria_pn = $convocatoria_pn->nombre;
                     $nombre_categoria_pn = "";
                     $anio_convocatoria_pn = $convocatoria_pn->anio;
+                    $nombre_entidad_pn = $convocatoria_pn->getEntidades()->nombre;
                     if ($convocatoria_pn->convocatoria_padre_categoria > 0) {                
                         $nombre_convocatoria_pn = $convocatoria_pn->getConvocatorias()->nombre;
                         $nombre_categoria_pn = $convocatoria_pn->nombre;                                
                         $anio_convocatoria_pn = $convocatoria_pn->getConvocatorias()->anio;
+                        $nombre_entidad_pn = $convocatoria_pn->getConvocatorias()->getEntidades()->nombre;
                     }
 
                     if($anio_convocatoria_pn==$anio_convocatoria)
@@ -957,6 +959,21 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                             $html_propuestas = $html_propuestas . "<td>" . $pn->estado_propuesta . "</td>";
                             $html_propuestas = $html_propuestas . "</tr>";
                         }                
+                    }
+                    else{
+                        if($pn->estado_propuesta=="Ganadora")
+                        {
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<tr class='tr_ganador_anio_anterior'>";
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $anio_convocatoria_pn . "</td>";                    
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $nombre_entidad_pn . "</td>";                    
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $nombre_convocatoria_pn . "</td>";                    
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $nombre_categoria_pn . "</td>";                    
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $pn->codigo . " - " . $pn->estado_propuesta . " - " . $pn->nombre_propuesta . "</td>";                                                                                                    
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $pn->tipo_participante . "</td>";
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "<td>" . $pn->tipo_rol . "</td>";
+                            $html_ganadoras_anios_anteriores = $html_ganadoras_anios_anteriores . "</tr>";
+                        }
                     }
                 }
                 

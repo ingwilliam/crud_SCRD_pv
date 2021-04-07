@@ -268,7 +268,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
 
@@ -276,12 +276,12 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
             require_once("../library/phpspreadsheet/autoload.php");
 
             $entidad = Entidades::findFirst($request->getPut('entidad'));
-            
+
             $anio = $request->getPut('anio');
 
 
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio = " . $anio . " AND vlb.entidad_id = " . $entidad->id ." LIMIT 10";
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio = " . $anio . " AND vlb.entidad_id = " . $entidad->id . " LIMIT 10";
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
 
@@ -350,7 +350,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
             $hoja->setCellValueByColumnAndRow(34, 5, "CDP");
             $hoja->setCellValueByColumnAndRow(35, 5, "CRP");
             $fila = 6;
-            
+
             foreach ($convocatorias as $convocatoria) {
 
 
@@ -363,7 +363,7 @@ $app->post('/reporte_linea_base_jurados_xls', function () use ($app, $config, $l
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
                 $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->codigo);
-                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->primer_nombre);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->primer_nombre);
                 $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->segundo_nombre);
                 $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->primer_apellido);
                 $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->segundo_apellido);
@@ -446,7 +446,7 @@ $app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $co
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
 
@@ -458,7 +458,7 @@ $app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $co
 
 
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=" . $anio." LIMIT 10";
+            $sql_convocatorias = "SELECT * from Viewlineabasejuradosgenerals as vlb WHERE vlb.anio=" . $anio . " LIMIT 10";
 
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
@@ -542,7 +542,7 @@ $app->post('/reporte_linea_base_jurados_general_xls', function () use ($app, $co
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->tipo_documento);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->numero_documento);
                 $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->codigo);
-                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->primer_nombre);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->primer_nombre);
                 $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->segundo_nombre);
                 $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->primer_apellido);
                 $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->segundo_apellido);
@@ -626,7 +626,7 @@ $app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $conf
 
         //Si el token existe y esta activo entra a realizar la tabla
         if (isset($token_actual->id)) {
-            
+
             //Le permito mas memoria a la accion
             ini_set('memory_limit', '-1');
 
@@ -636,9 +636,9 @@ $app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $conf
 //            $entidad = Entidades::findFirst($request->getPut('entidad'));
             $anio = $request->getPut('anio');
 
-            
+
             //Genero reporte invocando a la vista
-            $sql_convocatorias = "SELECT * from Viewlineasbases as vlb WHERE vlb.anio=" . $anio." LIMIT 10";
+            $sql_convocatorias = "SELECT * from Viewlineasbases as vlb WHERE vlb.anio=" . $anio . " LIMIT 10";
 
 
             $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
@@ -722,7 +722,7 @@ $app->post('/reporte_linea_base_convocatorias_xls', function () use ($app, $conf
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->linea_estrategica);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->enfoque);
                 $hoja->setCellValueByColumnAndRow(9, $fila, $convocatoria->estado_propuesta);
-                $hoja->setCellValueByColumnAndRow(10, $fila,  $convocatoria->codigo);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $convocatoria->codigo);
                 $hoja->setCellValueByColumnAndRow(11, $fila, $convocatoria->nombre_propuesta);
                 $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->localidad_ejecucion_propuesta);
                 $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->upz_ejecucion_propuesta);
@@ -1535,7 +1535,14 @@ $app->post('/cargar_contratistas_csv', function () use ($app, $config, $logger) 
                             break;
                         }
                     } else {
-
+                        //Elimino todos los registros cargados con anterioridas
+                        if ($linea == 1) {
+                            $phql = "DELETE FROM Entidadescontratistas WHERE entidad=:entidad:";
+                            $app->modelsManager->executeQuery($phql, array(
+                                'entidad' => $request->getPut("entidad")
+                            ));                       
+                        }
+                        
                         //WILLIAM OJO BUSCAR Y SI ESTA EDITAR                                                
                         $comsulta_contratista = Entidadescontratistas::findFirst("numero_documento='" . $datos[0] . "' AND entidad = " . $request->getPut("entidad"));
 
@@ -3034,7 +3041,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
                 $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
                 $nombre_categoria = $convocatoria->nombre;
             }
-            
+
             //Cabezote de la tabla
             $hoja->setCellValueByColumnAndRow(1, 1, "Listado de propuestas Guardada - No Inscrita");
 
@@ -3047,7 +3054,7 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
             $hoja->setCellValueByColumnAndRow(2, 3, $anio);
             $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
             $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
-            
+
             //Convocatoria
             $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
             $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
@@ -3057,24 +3064,736 @@ $app->post('/reporte_listado_entidades_convocatorias_no_inscritas_xls', function
             //Cabezote de la tabla
             $hoja->setCellValueByColumnAndRow(1, 5, "Número de Documento");
             $hoja->setCellValueByColumnAndRow(2, 5, "Participante");
-            $hoja->setCellValueByColumnAndRow(3, 5, "Propuesta");            
+            $hoja->setCellValueByColumnAndRow(3, 5, "Propuesta");
             $hoja->setCellValueByColumnAndRow(4, 5, "Usuario de registro");
             $hoja->setCellValueByColumnAndRow(5, 5, "Número celular");
             $hoja->setCellValueByColumnAndRow(6, 5, "Número celular tercero");
             $hoja->setCellValueByColumnAndRow(7, 5, "Teléfono fijo");
-            $hoja->setCellValueByColumnAndRow(8, 5, "Correo electrónico");            
+            $hoja->setCellValueByColumnAndRow(8, 5, "Correo electrónico");
 
             //Registros de la base de datos
             $fila = 6;
             foreach ($convocatorias as $convocatoria) {
                 $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->numero_documento);
                 $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->participante);
-                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->propuesta);                
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->propuesta);
                 $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->usuario_registro);
                 $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->numero_celular);
                 $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->numero_celular_tercero);
                 $hoja->setCellValueByColumnAndRow(7, $fila, $convocatoria->numero_telefono);
                 $hoja->setCellValueByColumnAndRow(8, $fila, $convocatoria->correo_electronico);
+                $fila++;
+            }
+
+
+            $nombreDelDocumento = "listado_entidades_convocatorias_listado_no_inscritas_" . $entidad->id . "_" . $anio . ".xlsx";
+
+            // Redirect output to a client’s web browser (Xlsx)
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $nombreDelDocumento . '"');
+            header('Cache-Control: max-age=0');
+            // If you're serving to IE 9, then the following may be needed
+            header('Cache-Control: max-age=1');
+
+            // If you're serving to IE over SSL, then the following may be needed
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+            header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+            header('Pragma: public'); // HTTP/1.0
+            # Le pasamos la ruta de guardado
+            $writer = IOFactory::createWriter($documento, "Xlsx"); //Xls is also possible
+            $writer->save('php://output');
+        } else {
+            //Registro la accion en el log de convocatorias           
+            $logger->error('"token":"{token}","user":"{user}","message":"Token caduco en el metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')', ['user' => "", 'token' => $request->getPut('token')]);
+            $logger->close();
+            echo "error_token";
+        }
+    } catch (Exception $ex) {
+        //Registro la accion en el log de convocatorias           
+        $logger->error('"token":"{token}","user":"{user}","message":"Error metodo reporte_listado_entidades_convocatorias_listado_jurados_xls al generar el reporte listado de la propuesta (' . $request->getPut('id') . ')' . $ex->getMessage() . '"', ['user' => "", 'token' => $request->getPut('token')]);
+        $logger->close();
+        echo "error_metodo";
+    }
+});
+
+$app->post('/reporte_convocatorias_listado_inscritas_pdac_xls', function () use ($app, $config, $logger) {
+
+    //Instancio los objetos que se van a manejar
+    $request = new Request();
+    $tokens = new Tokens();
+
+    try {
+        //Consulto si al menos hay un token
+        $token_actual = $tokens->verificar_token($request->getPut('token'));
+
+        //Registro la accion en el log de convocatorias
+        $logger->info('"token":"{token}","user":"{user}","message":"Ingresa al metodo reporte_listado_entidades_convocatorias_listado_jurados_xls para generar reporte de listado de inscripcion de la propuesta (' . $request->getPut('id') . ')"', ['user' => '', 'token' => $request->getPut('token')]);
+
+        //Si el token existe y esta activo entra a realizar la tabla
+        if (isset($token_actual->id)) {
+
+
+            require_once("../library/phpspreadsheet/autoload.php");
+
+            $entidad = Entidades::findFirst($request->getPut('entidad'));
+            $anio = $request->getPut('anio');
+
+            //Genero propuestas
+            $sql_convocatorias = "                           	
+                            SELECT     		
+                                    vcon.anio,
+                                    vcon.convocatoria,
+                                    vcon.categoria,
+                                    est.nombre as estado,
+                                    p.nombre AS nombre_propuesta,
+                                    p.codigo,
+                                    p.primera_vez_pdac,
+                                    p.alianza_sectorial,
+                                    p.relacion_plan,
+                                    p.linea_estrategica,
+                                    p.area,
+                                    p.trayectoria_entidad,
+                                    p.problema_necesidad,
+                                    p.diagnostico_problema,
+                                    p.justificacion,
+                                    p.atencedente,
+                                    p.metodologia,
+                                    p.impacto,
+                                    p.mecanismos_cualitativa,
+                                    p.mecanismos_cuantitativa,
+                                    p.porque_medio,
+                                    p.ejecucion_menores_edad,    
+                                    p.proyeccion_reconocimiento,
+                                    p.impacto_proyecto,
+                                    p.alcance_territorial,
+                                    td.nombre as tipo_identificacion,
+                                    par.numero_documento,
+                                    CONCAT(par.primer_nombre,' ',par.segundo_nombre,' ',par.primer_apellido,' ',par.segundo_apellido) AS participante,
+                                    u.username AS usuario_registro,    
+                                    par.numero_celular,                                    
+                                    par.numero_telefono,
+                                    par.correo_electronico
+                                FROM Propuestas AS p
+                                        INNER JOIN Viewconvocatorias AS vcon ON vcon.id_categoria=p.convocatoria
+                                        INNER JOIN Estados AS est ON est.id=p.estado
+                                    INNER JOIN Participantes AS par ON par.id=p.participante
+                                    LEFT JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                                    INNER JOIN Usuarios AS u ON u.id=p.creado_por
+                                WHERE p.convocatoria=" . $request->getPut('convocatoria') . " AND p.estado not in (7,20)";
+
+            $convocatorias = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            $documento = new Spreadsheet();
+            $documento
+                    ->getProperties()
+                    ->setCreator("SICON")
+                    ->setLastModifiedBy('SICON') // última vez modificado por
+                    ->setTitle('Propuestas Inscritas PDAC - ' . $anio)
+                    ->setSubject('SICON')
+                    ->setDescription('Propuestas Inscritas PDAC')
+                    ->setKeywords('SICON')
+                    ->setCategory('La categoría');
+
+            $hoja = $documento->getActiveSheet();
+            $hoja->setTitle("Propuestas Inscritas PDAC");
+
+            //Consulto la convocatoria
+            $convocatoria = Convocatorias::findFirst($request->getPut('convocatoria'));
+            //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
+            $nombre_convocatoria = $convocatoria->nombre;
+            $nombre_categoria = "";
+            if ($convocatoria->convocatoria_padre_categoria > 0) {
+                $nombre_convocatoria = $convocatoria->getConvocatorias()->nombre;
+                $nombre_categoria = $convocatoria->nombre;
+            }
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 1, "Propuestas Inscritas PDAC");
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 2, "Fecha de corte");
+            $hoja->setCellValueByColumnAndRow(2, 2, date("Y-m-d H:i:s"));
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 3, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 3, $anio);
+            $hoja->setCellValueByColumnAndRow(3, 3, "Entidad");
+            $hoja->setCellValueByColumnAndRow(4, 3, $entidad->descripcion);
+
+            //Convocatoria
+            $hoja->setCellValueByColumnAndRow(1, 4, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(2, 4, $nombre_convocatoria);
+            $hoja->setCellValueByColumnAndRow(3, 4, "Categoría");
+            $hoja->setCellValueByColumnAndRow(4, 4, $nombre_categoria);
+
+            //Cabezote de la tabla
+            $hoja->setCellValueByColumnAndRow(1, 5, "Año");
+            $hoja->setCellValueByColumnAndRow(2, 5, "Convocatoria");
+            $hoja->setCellValueByColumnAndRow(3, 5, "Categoría");
+            $hoja->setCellValueByColumnAndRow(4, 5, "Estado");
+            $hoja->setCellValueByColumnAndRow(5, 5, "Nombre de la propuesta");
+            $hoja->setCellValueByColumnAndRow(6, 5, "Código");
+            $hoja->setCellValueByColumnAndRow(7, 5, "¿Es la primera vez que la propuesta se presenta al PDAC?");
+            $hoja->setCellValueByColumnAndRow(8, 5, "¿El proyecto es el resultado de una alianza sectorial?");
+            $hoja->setCellValueByColumnAndRow(9, 5, "Relación del proyecto con el Plan de Desarrollo de Bogotá");
+            $hoja->setCellValueByColumnAndRow(10, 5, "Línea estratégica del proyecto");
+            $hoja->setCellValueByColumnAndRow(11, 5, "Área del proyecto");
+            $hoja->setCellValueByColumnAndRow(12, 5, "Trayectoria de la entidad participante");
+            $hoja->setCellValueByColumnAndRow(13, 5, "Problema o necesidad");
+            $hoja->setCellValueByColumnAndRow(14, 5, "¿Cómo se diagnosticó el problema o necesidad?");
+            $hoja->setCellValueByColumnAndRow(15, 5, "Justificación");
+            $hoja->setCellValueByColumnAndRow(16, 5, "Antecedentes generales del proyecto");
+            $hoja->setCellValueByColumnAndRow(17, 5, "Metodología");
+            $hoja->setCellValueByColumnAndRow(18, 5, "Impacto esperado");
+            $hoja->setCellValueByColumnAndRow(19, 5, "Mecanismos de evaluación cualitativa: objetivos e impactos");
+            $hoja->setCellValueByColumnAndRow(20, 5, "Mecanismos de evaluación cuantitativa: cobertura poblacional y territorial");
+            $hoja->setCellValueByColumnAndRow(21, 5, "Medio por el cual se enteró de esta convocatoria");
+            $hoja->setCellValueByColumnAndRow(22, 5, "¿En la ejecución de la propuesta o proyecto participarán menores de edad?");
+            $hoja->setCellValueByColumnAndRow(23, 5, "Proyección y reconocimiento nacional o internacional");
+            $hoja->setCellValueByColumnAndRow(24, 5, "Impacto que ha tenido el proyecto");
+            $hoja->setCellValueByColumnAndRow(25, 5, "Alcance territorial del proyecto");
+            $hoja->setCellValueByColumnAndRow(26, 5, "Tipo identificación");
+            $hoja->setCellValueByColumnAndRow(27, 5, "Número identificación");
+            $hoja->setCellValueByColumnAndRow(28, 5, "Participante");
+            $hoja->setCellValueByColumnAndRow(29, 5, "Usuario registrado");
+            $hoja->setCellValueByColumnAndRow(30, 5, "Celular");
+            $hoja->setCellValueByColumnAndRow(31, 5, "Teléfono");
+            $hoja->setCellValueByColumnAndRow(32, 5, "Correo electrónico");
+
+
+            $utf8_ansi2 = array(
+                "\u00c0" => "À",
+                "\u00c1" => "Á",
+                "\u00c2" => "Â",
+                "\u00c3" => "Ã",
+                "\u00c4" => "Ä",
+                "\u00c5" => "Å",
+                "\u00c6" => "Æ",
+                "\u00c7" => "Ç",
+                "\u00c8" => "È",
+                "\u00c9" => "É",
+                "\u00ca" => "Ê",
+                "\u00cb" => "Ë",
+                "\u00cc" => "Ì",
+                "\u00cd" => "Í",
+                "\u00ce" => "Î",
+                "\u00cf" => "Ï",
+                "\u00d1" => "Ñ",
+                "\u00d2" => "Ò",
+                "\u00d3" => "Ó",
+                "\u00d4" => "Ô",
+                "\u00d5" => "Õ",
+                "\u00d6" => "Ö",
+                "\u00d8" => "Ø",
+                "\u00d9" => "Ù",
+                "\u00da" => "Ú",
+                "\u00db" => "Û",
+                "\u00dc" => "Ü",
+                "\u00dd" => "Ý",
+                "\u00df" => "ß",
+                "\u00e0" => "à",
+                "\u00e1" => "á",
+                "\u00e2" => "â",
+                "\u00e3" => "ã",
+                "\u00e4" => "ä",
+                "\u00e5" => "å",
+                "\u00e6" => "æ",
+                "\u00e7" => "ç",
+                "\u00e8" => "è",
+                "\u00e9" => "é",
+                "\u00ea" => "ê",
+                "\u00eb" => "ë",
+                "\u00ec" => "ì",
+                "\u00ed" => "í",
+                "\u00ee" => "î",
+                "\u00ef" => "ï",
+                "\u00f0" => "ð",
+                "\u00f1" => "ñ",
+                "\u00f2" => "ò",
+                "\u00f3" => "ó",
+                "\u00f4" => "ô",
+                "\u00f5" => "õ",
+                "\u00f6" => "ö",
+                "\u00f8" => "ø",
+                "\u00f9" => "ù",
+                "\u00fa" => "ú",
+                "\u00fb" => "û",
+                "\u00fc" => "ü",
+                "\u00fd" => "ý",
+                "\u00ff" => "ÿ");
+
+            //Registros de la base de datos
+            $fila = 6;
+            foreach ($convocatorias as $convocatoria) {
+                $hoja->setCellValueByColumnAndRow(1, $fila, $convocatoria->anio);
+                $hoja->setCellValueByColumnAndRow(2, $fila, $convocatoria->convocatoria);
+                $hoja->setCellValueByColumnAndRow(3, $fila, $convocatoria->categoria);
+                $hoja->setCellValueByColumnAndRow(4, $fila, $convocatoria->estado);
+                $hoja->setCellValueByColumnAndRow(5, $fila, $convocatoria->nombre_propuesta);
+                $hoja->setCellValueByColumnAndRow(6, $fila, $convocatoria->codigo);
+                $primera_vez_pdac = "No";
+                if ($convocatoria->primera_vez_pdac) {
+                    $primera_vez_pdac = "Sí";
+                }
+                $alianza_sectorial = "No";
+                if ($convocatoria->alianza_sectorial) {
+                    $alianza_sectorial = "Sí";
+                }
+                $hoja->setCellValueByColumnAndRow(7, $fila, $primera_vez_pdac);
+                $hoja->setCellValueByColumnAndRow(8, $fila, $alianza_sectorial);
+                
+                //Limpieza de variables
+                $relacion_plan=str_replace('","', " , ", $convocatoria->relacion_plan);
+                $relacion_plan=str_replace('["', "", $relacion_plan);
+                $relacion_plan=str_replace('"]', "", $relacion_plan); 
+                
+                $relacion_plan = strtr($relacion_plan, $utf8_ansi2);
+                
+                $linea_estrategica=str_replace('","', " , ", $convocatoria->linea_estrategica );
+                $linea_estrategica=str_replace('["', "", $linea_estrategica);
+                $linea_estrategica=str_replace('"]', "", $linea_estrategica);
+
+                $linea_estrategica = strtr($linea_estrategica, $utf8_ansi2);
+                
+                $porque_medio=str_replace('","', " , ", $convocatoria->porque_medio );
+                $porque_medio=str_replace('["', "", $porque_medio);
+                $porque_medio=str_replace('"]', "", $porque_medio);                        
+
+                $porque_medio = strtr($porque_medio, $utf8_ansi2);
+                
+                $area=str_replace('","', " , ", $convocatoria->area );
+                $area=str_replace('["', "", $area);
+                $area=str_replace('"]', "", $area);    
+
+                $area = strtr($area, $utf8_ansi2);
+                
+                $hoja->setCellValueByColumnAndRow(9, $fila, $relacion_plan);
+                $hoja->setCellValueByColumnAndRow(10, $fila, $linea_estrategica);
+                $hoja->setCellValueByColumnAndRow(11, $fila, $area);
+                $hoja->setCellValueByColumnAndRow(12, $fila, $convocatoria->trayectoria_entidad);
+                $hoja->setCellValueByColumnAndRow(13, $fila, $convocatoria->problema_necesidad);
+                $hoja->setCellValueByColumnAndRow(14, $fila, $convocatoria->diagnostico_problema);
+                $hoja->setCellValueByColumnAndRow(15, $fila, $convocatoria->justificacion);
+                $hoja->setCellValueByColumnAndRow(16, $fila, $convocatoria->atencedente);
+                $hoja->setCellValueByColumnAndRow(17, $fila, $convocatoria->metodologia);
+                $hoja->setCellValueByColumnAndRow(18, $fila, $convocatoria->impacto);
+                $hoja->setCellValueByColumnAndRow(19, $fila, $convocatoria->mecanismos_cualitativa);
+                $hoja->setCellValueByColumnAndRow(20, $fila, $convocatoria->mecanismos_cuantitativa);
+                $hoja->setCellValueByColumnAndRow(21, $fila, $porque_medio);
+                
+                
+                $ejecucion_menores_edad = "No";
+                if ($convocatoria->ejecucion_menores_edad) {
+                    $ejecucion_menores_edad = "Sí";
+                }
+                $hoja->setCellValueByColumnAndRow(22, $fila, $ejecucion_menores_edad);
+                
+                $hoja->setCellValueByColumnAndRow(23, $fila, $convocatoria->proyeccion_reconocimiento);
+                $hoja->setCellValueByColumnAndRow(24, $fila, $convocatoria->impacto_proyecto);
+                
+                $alcance_territorial=str_replace('","', " , ", $convocatoria->alcance_territorial );
+                $alcance_territorial=str_replace('["', "", $alcance_territorial);
+                $alcance_territorial=str_replace('"]', "", $alcance_territorial); 
+                
+                $alcance_territorial = strtr($alcance_territorial, $utf8_ansi2);
+                
+                
+                $hoja->setCellValueByColumnAndRow(25, $fila, $alcance_territorial);
+                $hoja->setCellValueByColumnAndRow(26, $fila, $convocatoria->tipo_identificacion);
+                $hoja->setCellValueByColumnAndRow(27, $fila, $convocatoria->numero_documento);
+                $hoja->setCellValueByColumnAndRow(28, $fila, $convocatoria->participante);
+                $hoja->setCellValueByColumnAndRow(29, $fila, $convocatoria->usuario_registro);
+                $hoja->setCellValueByColumnAndRow(30, $fila, $convocatoria->numero_celular);
+                $hoja->setCellValueByColumnAndRow(31, $fila, $convocatoria->numero_telefono);
+                $hoja->setCellValueByColumnAndRow(32, $fila, $convocatoria->correo_electronico);
+                $fila++;
+            }
+
+            //Genero la junta directiva
+            $sql_convocatorias = "                           	
+                            select 
+                                pro.codigo,
+                                par.rol,
+                                par.representante,
+                                td.nombre as tipo_identificacion,
+                                par.numero_documento,
+                                par.primer_nombre,
+                                par.segundo_nombre,
+                                par.primer_apellido,
+                                par.segundo_apellido,
+                                par.tiene_rut,
+                                cii.nombre as ciiu,
+                                par.tiene_matricula,
+                                sex.nombre as sexo,
+                                orisex.nombre as orientacion_sexual,
+                                idege.nombre as identidad_genero,
+                                gret.nombre as grupo_etnico,
+                                tide.nombre as discapacidad,
+                                par.regimen_salud,
+                                par.es_victima,
+                                par.fecha_nacimiento,
+                                ciun.nombre as ciudad_nacimiento,
+                                ciur.nombre as ciudad_residencia,
+                                locr.nombre as localidad_residencia,
+                                bar.nombre as barrio_residencia,
+                                par.direccion_residencia,
+                                par.direccion_correspondencia,
+                                par.estrato,
+                                par.area,
+                                par.numero_telefono,
+                                par.numero_celular,
+                                par.correo_electronico,
+                                par.tiene_redes,
+                                par.instagram,
+                                par.twitter,
+                                par.facebook,
+                                par.tik_tok,
+                                par.linked_in,
+                                par.tiene_paginas,
+                                par.pagina_web,
+                                par.you_tube,
+                                par.vimeo,
+                                par.blog,
+                                par.podcast,
+                                par.tipo
+                            from Participantes as par
+                                inner join Propuestas as pro on pro.participante=par.participante_padre
+                                inner JOIN Tiposdocumentos AS td ON td.id=par.tipo_documento
+                                LEFT JOIN Ciius AS cii ON cii.id=par.ciiu
+                                LEFT JOIN Sexos AS sex ON sex.id=par.sexo
+                                LEFT JOIN Orientacionessexuales AS orisex ON orisex.id=par.orientacion_sexual
+                                LEFT JOIN Identidadesgeneros AS idege ON idege.id=par.identidad_genero
+                                LEFT JOIN Gruposetnicos AS gret ON gret.id=par.grupo_etnico
+                                LEFT JOIN Tiposdiscapacidades AS tide ON tide.id=par.discapacidad
+                                LEFT JOIN Ciudades AS ciun ON ciun.id=par.ciudad_nacimiento
+                                LEFT JOIN Ciudades AS ciur ON ciur.id=par.ciudad_residencia
+                                LEFT JOIN Localidades AS locr ON locr.id=par.localidad_residencia
+                                LEFT JOIN Barrios AS bar ON bar.id=par.barrio_residencia
+                            where 
+                                pro.convocatoria=" . $request->getPut('convocatoria') . " AND pro.estado not in (7,20) AND par.active = TRUE
+                            ORDER BY pro.codigo
+                            ";
+
+            $juntas = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            $hoja2 = $documento->createSheet();
+            $hoja2->setTitle("Junta directiva");
+
+            $hoja3 = $documento->createSheet();
+            $hoja3->setTitle("Equipo de trabajo");
+
+            //Cabezote de la tabla
+            $hoja2->setCellValueByColumnAndRow(1, 1, "Código propuesta");
+            $hoja2->setCellValueByColumnAndRow(2, 1, "Rol que desempeña o ejecuta en la propuesta");
+            $hoja2->setCellValueByColumnAndRow(3, 1, "¿Representante?");
+            $hoja2->setCellValueByColumnAndRow(4, 1, "Tipo de documento de identificación");
+            $hoja2->setCellValueByColumnAndRow(5, 1, "Número de documento de identificación");
+            $hoja2->setCellValueByColumnAndRow(6, 1, "Primer nombre");
+            $hoja2->setCellValueByColumnAndRow(7, 1, "Segundo nombre");
+            $hoja2->setCellValueByColumnAndRow(8, 1, "Primer apellido");
+            $hoja2->setCellValueByColumnAndRow(9, 1, "Segundo apellido");
+            $hoja2->setCellValueByColumnAndRow(10, 1, "¿Tiene RUT?");
+            $hoja2->setCellValueByColumnAndRow(11, 1, "¿cuál es el código CIIU de su actividad principal?");
+            $hoja2->setCellValueByColumnAndRow(12, 1, "¿Cuenta usted con matrícula mercantil?");
+            $hoja2->setCellValueByColumnAndRow(13, 1, "Sexo");
+            $hoja2->setCellValueByColumnAndRow(14, 1, "Orientación Sexual");
+            $hoja2->setCellValueByColumnAndRow(15, 1, "Identidad de género");
+            $hoja2->setCellValueByColumnAndRow(16, 1, "Grupo étnico");
+            $hoja2->setCellValueByColumnAndRow(17, 1, "¿Tiene usted algún tipo de discapacidad?");
+            $hoja2->setCellValueByColumnAndRow(18, 1, "¿A qué régimen de salud pertenece?");
+            $hoja2->setCellValueByColumnAndRow(19, 1, "¿Es usted víctima del conflicto armado?");
+            $hoja2->setCellValueByColumnAndRow(20, 1, "Fecha de nacimiento");
+            $hoja2->setCellValueByColumnAndRow(21, 1, "Ciudad de nacimiento");
+            $hoja2->setCellValueByColumnAndRow(22, 1, "Ciudad de residencia");
+            $hoja2->setCellValueByColumnAndRow(23, 1, "Localidad de residencia");
+            $hoja2->setCellValueByColumnAndRow(24, 1, "Barrio de residencia");
+            $hoja2->setCellValueByColumnAndRow(25, 1, "Dirección de residencia");
+            $hoja2->setCellValueByColumnAndRow(26, 1, "Dirección correspondencia");
+            $hoja2->setCellValueByColumnAndRow(27, 1, "Estrato");
+            $hoja2->setCellValueByColumnAndRow(28, 1, "Área");
+            $hoja2->setCellValueByColumnAndRow(29, 1, "Teléfono fijo");
+            $hoja2->setCellValueByColumnAndRow(30, 1, "Número de celular personal");
+            $hoja2->setCellValueByColumnAndRow(31, 1, "Correo electrónico");
+            $hoja2->setCellValueByColumnAndRow(32, 1, "¿Tiene redes sociales personales?");
+            $hoja2->setCellValueByColumnAndRow(33, 1, "Instagram");
+            $hoja2->setCellValueByColumnAndRow(34, 1, "Twitter");
+            $hoja2->setCellValueByColumnAndRow(35, 1, "Facebook");
+            $hoja2->setCellValueByColumnAndRow(36, 1, "Tik ToK");
+            $hoja2->setCellValueByColumnAndRow(37, 1, "LinkedIn");
+            $hoja2->setCellValueByColumnAndRow(38, 1, "¿Cuenta con espacios de circulación de contenidos en línea?");
+            $hoja2->setCellValueByColumnAndRow(39, 1, "Página web");
+            $hoja2->setCellValueByColumnAndRow(40, 1, "YouTube");
+            $hoja2->setCellValueByColumnAndRow(41, 1, "Vimeo");
+            $hoja2->setCellValueByColumnAndRow(42, 1, "Blog");
+            $hoja2->setCellValueByColumnAndRow(43, 1, "Podcast");
+
+            //Cabezote de la tabla
+            $hoja3->setCellValueByColumnAndRow(1, 1, "Código propuesta");
+            $hoja3->setCellValueByColumnAndRow(2, 1, "Rol que desempeña o ejecuta en la propuesta");
+            $hoja3->setCellValueByColumnAndRow(3, 1, "¿Representante?");
+            $hoja3->setCellValueByColumnAndRow(4, 1, "Tipo de documento de identificación");
+            $hoja3->setCellValueByColumnAndRow(5, 1, "Número de documento de identificación");
+            $hoja3->setCellValueByColumnAndRow(6, 1, "Primer nombre");
+            $hoja3->setCellValueByColumnAndRow(7, 1, "Segundo nombre");
+            $hoja3->setCellValueByColumnAndRow(8, 1, "Primer apellido");
+            $hoja3->setCellValueByColumnAndRow(9, 1, "Segundo apellido");
+            $hoja3->setCellValueByColumnAndRow(10, 1, "¿Tiene RUT?");
+            $hoja3->setCellValueByColumnAndRow(11, 1, "¿cuál es el código CIIU de su actividad principal?");
+            $hoja3->setCellValueByColumnAndRow(12, 1, "¿Cuenta usted con matrícula mercantil?");
+            $hoja3->setCellValueByColumnAndRow(13, 1, "Sexo");
+            $hoja3->setCellValueByColumnAndRow(14, 1, "Orientación Sexual");
+            $hoja3->setCellValueByColumnAndRow(15, 1, "Identidad de género");
+            $hoja3->setCellValueByColumnAndRow(16, 1, "Grupo étnico");
+            $hoja3->setCellValueByColumnAndRow(17, 1, "¿Tiene usted algún tipo de discapacidad?");
+            $hoja3->setCellValueByColumnAndRow(18, 1, "¿A qué régimen de salud pertenece?");
+            $hoja3->setCellValueByColumnAndRow(19, 1, "¿Es usted víctima del conflicto armado?");
+            $hoja3->setCellValueByColumnAndRow(20, 1, "Fecha de nacimiento");
+            $hoja3->setCellValueByColumnAndRow(21, 1, "Ciudad de nacimiento");
+            $hoja3->setCellValueByColumnAndRow(22, 1, "Ciudad de residencia");
+            $hoja3->setCellValueByColumnAndRow(23, 1, "Localidad de residencia");
+            $hoja3->setCellValueByColumnAndRow(24, 1, "Barrio de residencia");
+            $hoja3->setCellValueByColumnAndRow(25, 1, "Dirección de residencia");
+            $hoja3->setCellValueByColumnAndRow(26, 1, "Dirección correspondencia");
+            $hoja3->setCellValueByColumnAndRow(27, 1, "Estrato");
+            $hoja3->setCellValueByColumnAndRow(28, 1, "Área");
+            $hoja3->setCellValueByColumnAndRow(29, 1, "Teléfono fijo");
+            $hoja3->setCellValueByColumnAndRow(30, 1, "Número de celular personal");
+            $hoja3->setCellValueByColumnAndRow(31, 1, "Correo electrónico");
+            $hoja3->setCellValueByColumnAndRow(32, 1, "¿Tiene redes sociales personales?");
+            $hoja3->setCellValueByColumnAndRow(33, 1, "Instagram");
+            $hoja3->setCellValueByColumnAndRow(34, 1, "Twitter");
+            $hoja3->setCellValueByColumnAndRow(35, 1, "Facebook");
+            $hoja3->setCellValueByColumnAndRow(36, 1, "Tik ToK");
+            $hoja3->setCellValueByColumnAndRow(37, 1, "LinkedIn");
+            $hoja3->setCellValueByColumnAndRow(38, 1, "¿Cuenta con espacios de circulación de contenidos en línea?");
+            $hoja3->setCellValueByColumnAndRow(39, 1, "Página web");
+            $hoja3->setCellValueByColumnAndRow(40, 1, "YouTube");
+            $hoja3->setCellValueByColumnAndRow(41, 1, "Vimeo");
+            $hoja3->setCellValueByColumnAndRow(42, 1, "Blog");
+            $hoja3->setCellValueByColumnAndRow(43, 1, "Podcast");
+
+            //Registros de la base de datos
+            $filaj = 2;
+            $filae = 2;
+            foreach ($juntas as $junta) {
+                if ($junta->tipo == 'Junta') {
+                    $hoja2->setCellValueByColumnAndRow(1, $filaj, $junta->codigo);
+                    $hoja2->setCellValueByColumnAndRow(2, $filaj, $junta->rol);
+                    $representante = "No";
+                    if ($convocatoria->representante) {
+                        $representante = "Sí";
+                    }
+                    $hoja2->setCellValueByColumnAndRow(3, $filaj, $representante);
+                    $hoja2->setCellValueByColumnAndRow(4, $filaj, $junta->tipo_identificacion);
+                    $hoja2->setCellValueByColumnAndRow(5, $filaj, $junta->numero_documento);
+                    $hoja2->setCellValueByColumnAndRow(6, $filaj, $junta->primer_nombre);
+                    $hoja2->setCellValueByColumnAndRow(7, $filaj, $junta->segundo_nombre);
+                    $hoja2->setCellValueByColumnAndRow(8, $filaj, $junta->primer_apellido);
+                    $hoja2->setCellValueByColumnAndRow(9, $filaj, $junta->segundo_apellido);
+                    $hoja2->setCellValueByColumnAndRow(10, $filaj, $junta->tiene_rut);
+                    $hoja2->setCellValueByColumnAndRow(11, $filaj, $junta->ciiu);
+                    $hoja2->setCellValueByColumnAndRow(12, $filaj, $junta->tiene_matricula);
+                    $hoja2->setCellValueByColumnAndRow(13, $filaj, $junta->sexo);
+                    $hoja2->setCellValueByColumnAndRow(14, $filaj, $junta->orientacion_sexual);
+                    $hoja2->setCellValueByColumnAndRow(15, $filaj, $junta->identidad_genero);
+                    $hoja2->setCellValueByColumnAndRow(16, $filaj, $junta->grupo_etnico);
+                    $hoja2->setCellValueByColumnAndRow(17, $filaj, $junta->discapacidad);
+                    $hoja2->setCellValueByColumnAndRow(18, $filaj, $junta->regimen_salud);
+                    $hoja2->setCellValueByColumnAndRow(19, $filaj, $junta->es_victima);
+                    $hoja2->setCellValueByColumnAndRow(20, $filaj, $junta->fecha_nacimiento);
+                    $hoja2->setCellValueByColumnAndRow(21, $filaj, $junta->ciudad_nacimiento);
+                    $hoja2->setCellValueByColumnAndRow(22, $filaj, $junta->ciudad_residencia);
+                    $hoja2->setCellValueByColumnAndRow(23, $filaj, $junta->localidad_residencia);
+                    $hoja2->setCellValueByColumnAndRow(24, $filaj, $junta->barrio_residencia);
+                    $hoja2->setCellValueByColumnAndRow(25, $filaj, $junta->direccion_residencia);
+                    $hoja2->setCellValueByColumnAndRow(26, $filaj, $junta->direccion_correspondencia);
+                    $hoja2->setCellValueByColumnAndRow(27, $filaj, $junta->estrato);
+                    $hoja2->setCellValueByColumnAndRow(28, $filaj, $junta->area);
+                    $hoja2->setCellValueByColumnAndRow(29, $filaj, $junta->numero_telefono);
+                    $hoja2->setCellValueByColumnAndRow(30, $filaj, $junta->numero_celular);
+                    $hoja2->setCellValueByColumnAndRow(31, $filaj, $junta->correo_electronico);
+                    $hoja2->setCellValueByColumnAndRow(32, $filaj, $junta->tiene_redes);
+                    $hoja2->setCellValueByColumnAndRow(33, $filaj, $junta->instagram);
+                    $hoja2->setCellValueByColumnAndRow(34, $filaj, $junta->twitter);
+                    $hoja2->setCellValueByColumnAndRow(35, $filaj, $junta->facebook);
+                    $hoja2->setCellValueByColumnAndRow(36, $filaj, $junta->tik_tok);
+                    $hoja2->setCellValueByColumnAndRow(37, $filaj, $junta->linked_in);
+                    $hoja2->setCellValueByColumnAndRow(38, $filaj, $junta->tiene_paginas);
+                    $hoja2->setCellValueByColumnAndRow(39, $filaj, $junta->pagina_web);
+                    $hoja2->setCellValueByColumnAndRow(40, $filaj, $junta->you_tube);
+                    $hoja2->setCellValueByColumnAndRow(41, $filaj, $junta->vimeo);
+                    $hoja2->setCellValueByColumnAndRow(42, $filaj, $junta->blog);
+                    $hoja2->setCellValueByColumnAndRow(43, $filaj, $junta->podcast);
+                    $filaj++;
+                } else {
+                    $hoja3->setCellValueByColumnAndRow(1, $filae, $junta->codigo);
+                    $hoja3->setCellValueByColumnAndRow(2, $filae, $junta->rol);
+                    $representante = "No";
+                    if ($convocatoria->representante) {
+                        $representante = "Sí";
+                    }
+                    $hoja3->setCellValueByColumnAndRow(3, $filae, $representante);
+                    $hoja3->setCellValueByColumnAndRow(4, $filae, $junta->tipo_identificacion);
+                    $hoja3->setCellValueByColumnAndRow(5, $filae, $junta->numero_documento);
+                    $hoja3->setCellValueByColumnAndRow(6, $filae, $junta->primer_nombre);
+                    $hoja3->setCellValueByColumnAndRow(7, $filae, $junta->segundo_nombre);
+                    $hoja3->setCellValueByColumnAndRow(8, $filae, $junta->primer_apellido);
+                    $hoja3->setCellValueByColumnAndRow(9, $filae, $junta->segundo_apellido);
+                    $hoja3->setCellValueByColumnAndRow(10, $filae, $junta->tiene_rut);
+                    $hoja3->setCellValueByColumnAndRow(11, $filae, $junta->ciiu);
+                    $hoja3->setCellValueByColumnAndRow(12, $filae, $junta->tiene_matricula);
+                    $hoja3->setCellValueByColumnAndRow(13, $filae, $junta->sexo);
+                    $hoja3->setCellValueByColumnAndRow(14, $filae, $junta->orientacion_sexual);
+                    $hoja3->setCellValueByColumnAndRow(15, $filae, $junta->identidad_genero);
+                    $hoja3->setCellValueByColumnAndRow(16, $filae, $junta->grupo_etnico);
+                    $hoja3->setCellValueByColumnAndRow(17, $filae, $junta->discapacidad);
+                    $hoja3->setCellValueByColumnAndRow(18, $filae, $junta->regimen_salud);
+                    $hoja3->setCellValueByColumnAndRow(19, $filae, $junta->es_victima);
+                    $hoja3->setCellValueByColumnAndRow(20, $filae, $junta->fecha_nacimiento);
+                    $hoja3->setCellValueByColumnAndRow(21, $filae, $junta->ciudad_nacimiento);
+                    $hoja3->setCellValueByColumnAndRow(22, $filae, $junta->ciudad_residencia);
+                    $hoja3->setCellValueByColumnAndRow(23, $filae, $junta->localidad_residencia);
+                    $hoja3->setCellValueByColumnAndRow(24, $filae, $junta->barrio_residencia);
+                    $hoja3->setCellValueByColumnAndRow(25, $filae, $junta->direccion_residencia);
+                    $hoja3->setCellValueByColumnAndRow(26, $filae, $junta->direccion_correspondencia);
+                    $hoja3->setCellValueByColumnAndRow(27, $filae, $junta->estrato);
+                    $hoja3->setCellValueByColumnAndRow(28, $filae, $junta->area);
+                    $hoja3->setCellValueByColumnAndRow(29, $filae, $junta->numero_telefono);
+                    $hoja3->setCellValueByColumnAndRow(30, $filae, $junta->numero_celular);
+                    $hoja3->setCellValueByColumnAndRow(31, $filae, $junta->correo_electronico);
+                    $hoja3->setCellValueByColumnAndRow(32, $filae, $junta->tiene_redes);
+                    $hoja3->setCellValueByColumnAndRow(33, $filae, $junta->instagram);
+                    $hoja3->setCellValueByColumnAndRow(34, $filae, $junta->twitter);
+                    $hoja3->setCellValueByColumnAndRow(35, $filae, $junta->facebook);
+                    $hoja3->setCellValueByColumnAndRow(36, $filae, $junta->tik_tok);
+                    $hoja3->setCellValueByColumnAndRow(37, $filae, $junta->linked_in);
+                    $hoja3->setCellValueByColumnAndRow(38, $filae, $junta->tiene_paginas);
+                    $hoja3->setCellValueByColumnAndRow(39, $filae, $junta->pagina_web);
+                    $hoja3->setCellValueByColumnAndRow(40, $filae, $junta->you_tube);
+                    $hoja3->setCellValueByColumnAndRow(41, $filae, $junta->vimeo);
+                    $hoja3->setCellValueByColumnAndRow(42, $filae, $junta->blog);
+                    $hoja3->setCellValueByColumnAndRow(43, $filae, $junta->podcast);
+                    $filae++;
+                }
+            }
+
+            $hoja4 = $documento->createSheet();
+            $hoja4->setTitle("Objetivos, metas y actividades");
+
+
+            //Cabezote de la tabla
+            $hoja4->setCellValueByColumnAndRow(1, 1, "Código propuesta");
+            $hoja4->setCellValueByColumnAndRow(2, 1, "Objetivo general");
+            $hoja4->setCellValueByColumnAndRow(3, 1, "Objetivo específico");
+            $hoja4->setCellValueByColumnAndRow(4, 1, "Meta");
+            $hoja4->setCellValueByColumnAndRow(5, 1, "Actividad");
+            $hoja4->setCellValueByColumnAndRow(6, 1, "Semana de ejecución");
+            $hoja4->setCellValueByColumnAndRow(7, 1, "Insumo");
+            $hoja4->setCellValueByColumnAndRow(8, 1, "Cantidad");
+            $hoja4->setCellValueByColumnAndRow(9, 1, "Unidad de medida");
+            $hoja4->setCellValueByColumnAndRow(10, 1, "Valor unitario");
+            $hoja4->setCellValueByColumnAndRow(11, 1, "Valor Total");
+            $hoja4->setCellValueByColumnAndRow(12, 1, "Aporte solicitado concertación");
+            $hoja4->setCellValueByColumnAndRow(13, 1, "Aporte cofinanciado por terceros");
+            $hoja4->setCellValueByColumnAndRow(14, 1, "Aporte recursos propios");
+
+            //Genero la objetivos
+            $sql_convocatorias = "                           	
+                            select 
+                                    pro.codigo,
+                                    pro.objetivo_general,
+                                    po.objetivo,
+                                    po.meta,
+                                    pa.actividad,
+                                    pc.fecha,
+                                    pp.insumo,
+                                    pp.cantidad,
+                                    pp.unidadmedida,
+                                    pp.valorunitario,
+                                    pp.valortotal,
+                                    pp.aportesolicitado,
+                                    pp.aportecofinanciado,
+                                    pp.aportepropio
+                            from Propuestasobjetivos as po 
+                                inner join Propuestas as pro on pro.id=po.propuesta
+                                inner join Propuestasactividades as pa on pa.propuestaobjetivo=po.id
+                                inner join Propuestascronogramas as pc on pc.propuestaactividad=pa.id
+                                inner join Propuestaspresupuestos as pp on pp.propuestaactividad=pa.id
+                            WHERE pro.convocatoria=" . $request->getPut('convocatoria') . " AND pro.estado not in (7,20) and po.active=true and pa.active=true and pc.active=true and pp.active=true
+                            ORDER BY pro.codigo
+                            ";
+
+            $objetivos = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            //Registros de la base de datos
+            $fila = 2;
+            foreach ($objetivos as $objetivo) {
+                $hoja4->setCellValueByColumnAndRow(1, $fila, $objetivo->codigo);
+                $hoja4->setCellValueByColumnAndRow(2, $fila, $objetivo->objetivo_general);
+                $hoja4->setCellValueByColumnAndRow(3, $fila, $objetivo->objetivo);
+                $hoja4->setCellValueByColumnAndRow(4, $fila, $objetivo->meta);
+                $hoja4->setCellValueByColumnAndRow(5, $fila, $objetivo->actividad);
+                $hoja4->setCellValueByColumnAndRow(6, $fila, $objetivo->fecha);
+                $hoja4->setCellValueByColumnAndRow(7, $fila, $objetivo->insumo);
+                $hoja4->setCellValueByColumnAndRow(8, $fila, $objetivo->cantidad);
+                $hoja4->setCellValueByColumnAndRow(9, $fila, $objetivo->unidadmedida);
+                $hoja4->setCellValueByColumnAndRow(10, $fila, $objetivo->valorunitario);
+                $hoja4->setCellValueByColumnAndRow(11, $fila, $objetivo->valortotal);
+                $hoja4->setCellValueByColumnAndRow(12, $fila, $objetivo->aportesolicitado);
+                $hoja4->setCellValueByColumnAndRow(13, $fila, $objetivo->aportecofinanciado);
+                $hoja4->setCellValueByColumnAndRow(14, $fila, $objetivo->aportepropio);
+                $fila++;
+            }
+
+            $hoja5 = $documento->createSheet();
+            $hoja5->setTitle("Territorios y población");
+
+
+            //Cabezote de la tabla
+            $hoja5->setCellValueByColumnAndRow(1, 1, "Código propuesta");
+            $hoja5->setCellValueByColumnAndRow(2, 1, "Localidad");
+            $hoja5->setCellValueByColumnAndRow(3, 1, "Localidades");
+            $hoja5->setCellValueByColumnAndRow(4, 1, "Describa brevemente la población objetivo del proyecto");
+            $hoja5->setCellValueByColumnAndRow(5, 1, "¿Cómo se concertó el proyecto con la comunidad objetivo?");
+            $hoja5->setCellValueByColumnAndRow(6, 1, "Estimado total de beneficiarios o participantes");
+            $hoja5->setCellValueByColumnAndRow(7, 1, "¿Cómo se estableció esta cifra?");
+            $hoja5->setCellValueByColumnAndRow(8, 1, "Población");
+            $hoja5->setCellValueByColumnAndRow(9, 1, "Valor");
+
+            //Genero la territorios
+            $sql_convocatorias = "                           	
+                            select 
+                                    pro.codigo,
+                                    lo.nombre as localidad,
+                                    pro.localidades,
+                                    pro.poblacion_objetivo,
+                                    pro.comunidad_objetivo,
+                                    pro.total_beneficiario,
+                                    pro.establecio_cifra,
+                                    pt.variable,
+                                    pt.valor
+                            from Propuestasterritorios as pt 
+                                inner join Propuestas as pro on pro.id=pt.propuesta
+                                left join Localidades as lo on lo.id=pro.localidad
+                            WHERE pro.convocatoria=" . $request->getPut('convocatoria') . " AND pro.estado not in (7,20)
+                            ORDER BY pro.codigo
+                            ";
+
+            $territorios = $app->modelsManager->executeQuery($sql_convocatorias);
+
+            //Registros de la base de datos
+            $fila = 2;
+            foreach ($territorios as $territorio) {
+                $hoja5->setCellValueByColumnAndRow(1, $fila, $territorio->codigo);
+                $hoja5->setCellValueByColumnAndRow(2, $fila, $territorio->localidad);
+                $hoja5->setCellValueByColumnAndRow(3, $fila, $territorio->localidades);
+                $hoja5->setCellValueByColumnAndRow(4, $fila, $territorio->poblacion_objetivo);
+                $hoja5->setCellValueByColumnAndRow(5, $fila, $territorio->comunidad_objetivo);
+                $hoja5->setCellValueByColumnAndRow(6, $fila, $territorio->total_beneficiario);
+                $hoja5->setCellValueByColumnAndRow(7, $fila, $territorio->establecio_cifra);
+                $hoja5->setCellValueByColumnAndRow(8, $fila, $territorio->variable);
+                $hoja5->setCellValueByColumnAndRow(9, $fila, $territorio->valor);
                 $fila++;
             }
 
