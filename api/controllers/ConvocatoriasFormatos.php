@@ -2650,6 +2650,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             $sql_jurados_seleccionado = "
                         SELECT 
                                 en.nombre AS entidad,
+                                c.anio,
                                 cp.nombre AS convocatoria,
                                 c.nombre AS categoria,	
                                 par.tipo AS rol_participante,	
@@ -2685,10 +2686,11 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 }
 
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr>";
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->anio . "</td>";
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->entidad . "</td>";
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';
-                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="3">' . $jurado->participante . '</td>';
+                $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td colspan="2">' . $jurado->participante . '</td>';
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Seleccionado - ' . $jurado->rol_jurado . '</td>';
                 $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "</tr>";
             }
@@ -2697,6 +2699,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             $sql_jurados_proceso = "
                         SELECT 
                             en.nombre AS entidad,
+                            c.anio,	
                             cp.nombre AS convocatoria,
                             c.nombre AS categoria,	
                             par.tipo AS rol_participante,	
@@ -2730,10 +2733,11 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                 }
 
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<tr>";
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->anio . "</td>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->entidad . "</td>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';
-                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="3">' . $jurado->participante . '</td>';
+                $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td colspan="2">' . $jurado->participante . '</td>';
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';
                 $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "</tr>";
             }
@@ -2742,6 +2746,7 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
             $sql_pn = "
                         SELECT 
                                 e.nombre AS entidad,
+                                vwp.anio,
                                 vwp.convocatoria,
                                 vwp.id_convocatoria,
                                 vwp.codigo,
@@ -2804,16 +2809,17 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
 
                     if ($pn->estado_propuesta == "Ganadora") {
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr>";
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->anio . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->entidad . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $estado_convocatoria . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->primer_nombre . " " . $pn->segundo_nombre . " " . $pn->primer_apellido . " " . $pn->segundo_apellido . "</td>";
-                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . "</td>";
-                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->estado_propuesta . "</td>";
+                        $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->codigo . " - " . $pn->estado_propuesta . "</td>";                        
                         $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
                     } else {
                         $html_propuestas = $html_propuestas . "<tr>";
+                        $html_propuestas = $html_propuestas . "<td>" . $pn->anio . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $pn->entidad . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria . "" . $nombre_categoria . "</td>";
                         $html_propuestas = $html_propuestas . "<td>" . $estado_convocatoria . "</td>";
@@ -2891,23 +2897,24 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA PRESENTADO PROPUESTA </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                        <td align="center">Año</td>
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>   
                         <td align="center">Estado Convocatoria</td>
                         <td align="center">Tipo Rol</td>                        
                         <td align="center">Participante</td>
-                        <td align="center">Propuesta código</td>                                                                                                                   
-                        <td align="center">Estado propuesta</td>                                                                                                                   
+                        <td align="center">Propuesta código - Estado propuesta</td>                        
                     </tr>
                     ' . $html_propuestas . '
                     <tr>
                         <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE ESTA EN PROCESO PARA SER JURADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                        <td align="center">Año</td>
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>                        
                         <td align="center">Tipo Rol</td>                        
-                        <td align="center" colspan="3">Participante</td>                        
+                        <td align="center" colspan="2">Participante</td>                        
                         <td align="center">Estado postulación</td>                                                                                                                   
                     </tr>
                     ' . $html_propuestas_jurados_proceso . '        
@@ -2915,28 +2922,29 @@ $app->post('/reporte_persona_natural', function () use ($app, $config, $logger) 
                         <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS QUE HA GANADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                        <td align="center">Año</td>
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>   
                         <td align="center">Estado Convocatoria</td>
                         <td align="center">Tipo Rol</td>                        
                         <td align="center">Participante</td>
-                        <td align="center">Propuesta código</td>                                                                                                                   
-                        <td align="center">Estado propuesta</td>                                                                                                                   
+                        <td align="center">Propuesta código / Estado propuesta</td>                        
                     </tr>
                     ' . $html_propuestas_ganadoras . '                          
                     <tr>
                         <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS EN LAS QUE HA SIDO JURADO </td>
                     </tr>
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
+                        <td align="center">Año</td>
                         <td align="center">Entidad</td>
                         <td align="center">Convocatoria - Categoría</td>                           
                         <td align="center">Tipo Rol</td>                        
-                        <td align="center" colspan="3">Participante</td>                        
+                        <td align="center" colspan="2">Participante</td>                        
                         <td align="center">Estado postulación</td>                                                                                                                   
                     </tr>
                     ' . $html_propuestas_jurados_seleccionados . '                        
                     <tr>
-                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> CONVOCATORIAS COMO GANADOR AÑOS ANTERIORES </td>
+                        <td colspan="7" align="center" style="background-color:#BDBDBD;color:#OOOOOO;font-weight:bold"> GANADOR Y/O JURADOS SELECCIONADO AÑOS ANTERIORES (SISTEMA DE CONVOCATORIAS v1)</td>
                     </tr>    
                     <tr style="background-color:#D8D8D8;color:#OOOOOO;">
                         <td align="center">Año</td>

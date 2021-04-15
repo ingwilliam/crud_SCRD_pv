@@ -835,7 +835,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 $sql_contratistas = "
                     SELECT 
                             concat(p.numero_documento,' ',p.primer_nombre,' ',p.segundo_nombre,' ',p.primer_apellido,' ',p.segundo_apellido) AS participante,
-                            concat(e.nombre,' ',ec.numero_documento,' ',ec.primer_nombre,' ',ec.segundo_nombre,' ',ec.primer_apellido,' ',ec.segundo_apellido) AS contratista
+                            concat(e.nombre,' - ',ec.numero_documento,' ',ec.primer_nombre,' ',ec.segundo_nombre,' ',ec.primer_apellido,' ',ec.segundo_apellido,' - ',ec.observaciones) AS contratista
                     FROM Participantes AS p
                     INNER JOIN Entidadescontratistas AS ec ON REPLACE(REPLACE(TRIM(ec.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM(p.numero_documento),'.',''),' ', '')
                     INNER JOIN Entidades AS e ON e.id=ec.entidad
@@ -940,6 +940,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         if($pn->estado_propuesta=="Ganadora")
                         {
                             $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr class='tr_propuestas_ganadoras'>";
+                            $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $anio_convocatoria_pn . "</td>";
                             $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria_pn . "</td>";
                             $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_categoria_pn . "</td>";                
                             $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
@@ -951,6 +952,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         else
                         {
                             $html_propuestas = $html_propuestas . "<tr class='tr_propuestas'>";
+                            $html_propuestas = $html_propuestas . "<td>" . $anio_convocatoria_pn . "</td>";
                             $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria_pn . "</td>";
                             $html_propuestas = $html_propuestas . "<td>" . $nombre_categoria_pn . "</td>";                
                             $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";

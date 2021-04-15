@@ -381,8 +381,8 @@ $app->get('/buscar_propuestas', function () use ($app, $config, $logger) {
                     }
                     $array_usuarios_areas = substr($array_usuarios_areas, 0, -1);
                                         
-                    //Consulto todas las propuestas menos la del estado registrada
-                    $where .= " WHERE p.active=true AND p.estado IN (23)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
+                    //Consulto todas las propuestas rechazadas y por subsanar
+                    $where .= " WHERE p.active=true AND p.estado IN (23,21)  AND ( c.area IN ($array_usuarios_areas) OR c.area IS NULL) ";
                     
                     
                     if($params["convocatoria"]!="")
