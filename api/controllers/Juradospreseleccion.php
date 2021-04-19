@@ -85,7 +85,7 @@ $app->get('/init', function () use ($app, $config) {
                                     "modalidad = 2" //busca las convocatorias de jurados
                                     . " AND active = true"
                                     . " AND estado =  5" //publicada
-                                    . " AND anio =  ".date("Y") //solo listar el banco de jurados correspondiente al año en curso
+                                    . " AND anio =  " . date("Y") //solo listar el banco de jurados correspondiente al año en curso
                                 ]
                 );
 
@@ -717,6 +717,7 @@ $app->get('/search_info_basica_jurado', function () use ($app, $config) {
                     //Asigno el participante al array
                     $array["participante"] = $participante;
                     $array["propuesta_resumen"] = $participante->propuestas->resumen;
+                    $array["modalidad_participa_jurado"] = $participante->propuestas->modalidad_participa;
 
                     //  $array["perfiles_covocatoria"] = Convocatoriasparticipantes::find("convocatoria = " $participante->propuestas->convocatorias->id
                 } else {
@@ -1406,31 +1407,31 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
 
                 if ($postulacion->tipo_postulacion == 'Inscrita') {
                     $experienciajurados = Experienciajurado::find(
-                                [
-                                    " propuesta = " . $participante->propuestas->id
-                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR entidad LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
-                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
-                }else{
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR entidad LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
                     $experienciajurados = Experienciajurado::find(
-                                [
-                                    " propuesta = " . $participante->propuestas->id
-                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR entidad LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
+                                    [
+                                        " propuesta = " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR entidad LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
                 }
-                
+
 
                 foreach ($experienciajurados as $experienciajurado) {
 
@@ -1552,7 +1553,7 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                 $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
 
                 $plazocargar = date('Y-m-j H:i:s', $plazocargar);
-                
+
                 /*
                  * 17-11-2020
                  * Wilmer Gustavo Mogollón Duque
@@ -1561,32 +1562,32 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
 
                 if ($postulacion->tipo_postulacion == 'Inscrita') {
                     $reconocimientos = Propuestajuradoreconocimiento::find(
-                                [
-                                    " propuesta= " . $participante->propuestas->id
-                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR institucion LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
-                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
-                }else{
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
                     $reconocimientos = Propuestajuradoreconocimiento::find(
-                                [
-                                    " propuesta= " . $participante->propuestas->id
-                                    . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR institucion LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( nombre LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR institucion LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
                 }
 
-                
+
 
                 foreach ($reconocimientos as $reconocimiento) {
 
@@ -1707,7 +1708,7 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                 $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
 
                 $plazocargar = date('Y-m-j H:i:s', $plazocargar);
-                
+
                 /*
                  * 17-11-2020
                  * Wilmer Gustavo Mogollón Duque
@@ -1716,32 +1717,32 @@ $app->get('/all_publicacion', function () use ($app, $config) {
 
                 if ($postulacion->tipo_postulacion == 'Inscrita') {
                     $publicaciones = Propuestajuradopublicacion::find(
-                                [
-                                    " propuesta= " . $participante->propuestas->id
-                                    . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR tema LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
-                                    . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
-                }else{
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR tema LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )"
+                                        . " AND fecha_creacion <= '" . $plazocargar . "'", //Se agrega la condición a la consulta
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
+                } else {
                     $publicaciones = Propuestajuradopublicacion::find(
-                                [
-                                    " propuesta= " . $participante->propuestas->id
-                                    . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR tema LIKE '%" . $request->get("search")['value'] . "%'"
-                                    . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
-                                    "order" => 'id ASC',
-                                    "limit" => $request->get('length'),
-                                    "offset" => $request->get('start'),
-                                ]
-                );
+                                    [
+                                        " propuesta= " . $participante->propuestas->id
+                                        . " AND ( titulo LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR tema LIKE '%" . $request->get("search")['value'] . "%'"
+                                        . " OR anio LIKE '%" . $request->get("search")['value'] . "%' )",
+                                        "order" => 'id ASC',
+                                        "limit" => $request->get('length'),
+                                        "offset" => $request->get('start'),
+                                    ]
+                    );
                 }
 
-                
+
 
                 foreach ($publicaciones as $publicacion) {
 
@@ -3067,7 +3068,8 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                     $sql_jurados_seleccionado = "
                             SELECT 
                                     cp.nombre AS convocatoria,
-                                    c.nombre AS categoria,	
+                                    c.nombre AS categoria,
+                                    c.anio as anio,
                                     par.tipo AS rol_participante,	
                                     jp.rol AS rol_jurado,
                                     par.numero_documento,
@@ -3085,7 +3087,7 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                                     jp.active=true AND
                                 ev.active = true AND	                            
                                     REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '') = '" . $participante->numero_documento . "'"
-//                            . " group by (cp.nombre,c.nombre,jp.rol,par.tipo,par.numero_documento,pro.codigo,e.nombre,par.primer_nombre,par.segundo_nombre,par.primer_apellido,par.segundo_apellido)"
+                            . " ORDER BY (c.anio) DESC"
                     ;
 
                     $jurados_seleccionados = $app->modelsManager->executeQuery($sql_jurados_seleccionado);
@@ -3096,7 +3098,10 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                             $jurado->convocatoria = $jurado->categoria;
                             $jurado->categoria = "";
                         }
+
+
                         $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr class='tr_jurados_seleccionados'>";
+                        $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->anio . "</td>";
                         $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . "</td>";
                         $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->categoria . '</td>';
                         $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';
@@ -3107,6 +3112,59 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
 
 
                     $array["html_propuestas_jurados_seleccionados"] = $html_propuestas_jurados_seleccionados;
+
+
+                    //Genero reporte de jurados proceso
+                    $sql_jurados_proceso = "
+                        SELECT 
+                            c.anio AS anio,
+                            en.nombre AS entidad,
+                            cp.nombre AS convocatoria,
+                            c.nombre AS categoria,	
+                            par.tipo AS rol_participante,	
+                            jp.rol AS rol_jurado,
+                            par.numero_documento,
+                            concat(par.primer_nombre, ' ' ,par.segundo_nombre, ' ' ,par.primer_apellido, ' ' ,par.segundo_apellido ) AS participante,
+                            pro.codigo AS codigo_propuesta,
+                            e.nombre AS estado_de_la_postulacion
+                        FROM Juradospostulados as jp
+                            INNER JOIN Propuestas AS pro ON jp.propuesta = pro.id
+                            INNER JOIN Participantes AS par ON pro.participante = par.id
+                            INNER JOIN Convocatorias AS c ON jp.convocatoria = c.id
+                            INNER JOIN Entidades AS en ON en.id=c.entidad
+                            LEFT JOIN Convocatorias AS cp ON c.convocatoria_padre_categoria = cp.id
+                            LEFT JOIN Estados AS e ON jp.estado=e.id
+                        WHERE 
+                            jp.active=TRUE AND  
+                            REPLACE(REPLACE(TRIM(par.numero_documento),'.',''),' ', '')=REPLACE(REPLACE(TRIM('" . $participante->numero_documento . "'),'.',''),' ', '')
+                        ORDER BY 1,2,3,4,5,6,7,8";
+
+                    $jurados_procesos = $app->modelsManager->executeQuery($sql_jurados_proceso);
+
+                    foreach ($jurados_procesos as $jurado) {
+                        if ($jurado->convocatoria == "") {
+                            $jurado->convocatoria = $jurado->categoria;
+                            $jurado->categoria = "";
+                        }
+
+                        if ($jurado->categoria != "") {
+                            $jurado->categoria = "- " . $jurado->categoria;
+                        }
+                        
+
+                        if (json_encode($jurado->anio) == date("Y")) {
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<tr>";
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->anio . "</td>";
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->entidad . "</td>";
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "<td>" . $jurado->convocatoria . " " . $jurado->categoria . "</td>";
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>Jurado</td>';
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->participante . '</td>';
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . '<td>' . $jurado->estado_de_la_postulacion . '</td>';
+                            $html_propuestas_jurados_proceso = $html_propuestas_jurados_proceso . "</tr>";
+                        }
+                    }
+
+                    $array["html_propuestas_jurados_proceso"] = $html_propuestas_jurados_proceso;
 
 
                     //Genero reporte personas naturales
@@ -3125,23 +3183,25 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                                     vwp.segundo_apellido,
                                     vwp.estado_propuesta                                
                             FROM Viewparticipantes AS vwp                                
-                            WHERE vwp.codigo <> '" . $participante->propuestas->codigo . "' AND vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '" . $participante->numero_documento . "'"
+                            WHERE vwp.tipo_participante <> 'Jurados' AND REPLACE(REPLACE(TRIM(vwp.numero_documento),'.',''),' ', '')  = '" . $participante->numero_documento . "'"
                     ;
+
 
                     $personas_naturales = $app->modelsManager->executeQuery($sql_pn);
 
 
-
+//                    return json_encode($personas_naturales);
                     foreach ($personas_naturales as $pn) {
 
                         //Consulto la convocatoria -- Se ajusta la consulta, pues no siempre traia la información correcta.
                         $convocatoria_pn = Convocatorias::findFirst([" nombre = '" . $pn->convocatoria . "'"]);
 
-//                         return json_encode($convocatoria_pn);
+
                         //Si la convocatoria seleccionada es categoria, debo invertir los nombres la convocatoria con la categoria
                         $nombre_convocatoria_pn = $convocatoria_pn->nombre;
                         $nombre_categoria_pn = "";
                         $anio_convocatoria_pn = $convocatoria_pn->anio;
+
                         if ($convocatoria_pn->convocatoria_padre_categoria > 0) {
                             $nombre_convocatoria_pn = $convocatoria_pn->getConvocatorias()->nombre;
                             $nombre_categoria_pn = $convocatoria_pn->nombre;
@@ -3151,6 +3211,7 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                         if ($anio_convocatoria_pn == $anio_convocatoria_pn) {
                             if ($pn->estado_propuesta == "Ganadora") {
                                 $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<tr class='tr_propuestas_ganadoras'>";
+                                $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $anio_convocatoria_pn . "</td>";
                                 $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_convocatoria_pn . "</td>";
                                 $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $nombre_categoria_pn . "</td>";
                                 $html_propuestas_ganadoras = $html_propuestas_ganadoras . "<td>" . $pn->tipo_rol . "</td>";
@@ -3160,6 +3221,7 @@ $app->get('/search_info_inhabilidades', function () use ($app, $config) {
                                 $html_propuestas_ganadoras = $html_propuestas_ganadoras . "</tr>";
                             } else {
                                 $html_propuestas = $html_propuestas . "<tr class='tr_propuestas'>";
+                                $html_propuestas = $html_propuestas . "<td>" . $anio_convocatoria_pn . "</td>";
                                 $html_propuestas = $html_propuestas . "<td>" . $nombre_convocatoria_pn . "</td>";
                                 $html_propuestas = $html_propuestas . "<td>" . $nombre_categoria_pn . "</td>";
                                 $html_propuestas = $html_propuestas . "<td>" . $pn->tipo_rol . "</td>";
