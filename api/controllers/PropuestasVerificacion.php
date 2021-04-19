@@ -857,6 +857,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                 //Genero reporte de jurados seleccionados
                 $sql_jurados_seleccionado = "
                             SELECT 
+                                    c.anio,	
                                     cp.nombre AS convocatoria,
                                     c.nombre AS categoria,	
                                     par.tipo AS rol_participante,	
@@ -887,6 +888,7 @@ $app->post('/cargar_propuesta/{id:[0-9]+}', function ($id) use ($app, $config, $
                         $jurado->categoria="";
                     }
                     $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<tr class='tr_jurados_seleccionados'>";
+                    $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->anio . "</td>";
                     $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . "<td>" . $jurado->convocatoria . "</td>";
                     $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>' . $jurado->categoria . '</td>';                
                     $html_propuestas_jurados_seleccionados = $html_propuestas_jurados_seleccionados . '<td>Jurado</td>';                
