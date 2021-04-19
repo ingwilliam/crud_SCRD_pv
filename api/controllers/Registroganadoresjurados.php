@@ -135,7 +135,6 @@ $app->get('/select_convocatorias', function () use ($app) {
                                 [
                                     " entidad = " . $request->get('entidad')
                                     . " AND anio = " . $request->get('anio')
-                                    . " AND estado = 5 "
                                     . " AND modalidad != 2 " //2	Jurados
                                     . " AND active = true "
                                     . " AND convocatoria_padre_categoria is NULL"
