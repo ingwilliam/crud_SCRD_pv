@@ -147,21 +147,28 @@ $app->get('/select_convocatorias', function () use ($app) {
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
+                /*
+                 * 20-04-2021
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se agregan estados a la consulta para que liste todas las convocatorias
+                 * 5	convocatorias	Publicada
+                 * 6	convocatorias	Adjudicada
+                 * 32	convocatorias	Cancelada
+                 * 43	convocatorias	Desierta
+                 * 45	convocatorias	Suspendida
+                 */
+                
                 $rs = Convocatorias::find(
                                 [
                                     " entidad = " . $request->get('entidad')
                                     . " AND anio = " . $request->get('anio')
-                                    . " AND estado = 5 "
+                                    . " AND estado in (5, 6, 32, 43, 45) "
                                     . " AND modalidad != 2 " //2	Jurados
                                     . " AND active = true "
                                     . " AND convocatoria_padre_categoria is NULL"
                                 ]
                 );
 
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
 
                 foreach ($rs as $convocatoria) {
                     array_push($convocatorias, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
@@ -910,14 +917,22 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                 }
 
                 /*
-                 * 09-11-2020
+                 * 21-04-2021
                  * Wilmer Gustavo Mogollón Duque
                  * Se incorpora a la funcionalidad la condición de que muestre unicamente 
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
@@ -931,13 +946,17 @@ $app->get('/all_educacion_formal', function () use ($app, $config) {
                                     . ' AND active = true'
                                 ]
                 );
+                
+//                return json_encode($cronograma);
 
                 //Se establece el plazo de cargar información de 48 horas antes de cerrar la convocatoria
                 $plazocargar = strtotime('-48 hour', strtotime($cronograma->fecha_fin));
+                
+//                return json_encode($plazocargar);
 
                 $plazocargar = date('Y-m-j H:i:s', $plazocargar);
 
-//                return json_encode($convocatoria->id);
+//                return json_encode($plazocargar);
 
 
                 /*
@@ -1073,9 +1092,17 @@ $app->get('/all_educacion_no_formal', function () use ($app, $config) {
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
 
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
@@ -1223,9 +1250,17 @@ $app->get('/all_experiencia_laboral', function () use ($app, $config) {
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
 
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
@@ -1376,9 +1411,17 @@ $app->get('/all_experiencia_jurado', function () use ($app, $config) {
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
 
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
@@ -1532,9 +1575,17 @@ $app->get('/all_reconocimiento', function () use ($app, $config) {
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
 
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
@@ -1687,9 +1738,17 @@ $app->get('/all_publicacion', function () use ($app, $config) {
                  * los documentos que el jurado adjuntó hasta 48 horas antes de cerrar la convocatoria 
                  */
 
-                //se agrega este if para validar la fecha de cierre, ya que las categorias no tienen fecha de cierre asociada, la convocatoria si!
+                //se agrega este if para validar la fecha de cierre, dependiendo de la nauraleza de la convocatoria
+                
                 if ($convocatoria->convocatoria_padre_categoria != null) {
-                    $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    
+                    $convocatoria_padre= Convocatorias::findFirst([' id = '.$convocatoria->convocatoria_padre_categoria]);
+                    
+                    if($convocatoria_padre->diferentes_categorias==false){
+                        $id_convocatoria = $convocatoria->convocatoria_padre_categoria;
+                    }else{
+                       $id_convocatoria = $convocatoria->id; 
+                    }
                 } else {
                     $id_convocatoria = $convocatoria->id;
                 }
