@@ -434,45 +434,44 @@ $app->put('/notificar', function () use ($app, $config) {
                         $html_solicitud_usuario = str_replace("**enlace_rechazar**", $config->sistema->url_admin . "pages/jurados/notificacion.html?key=" . $jurado_notificacion->key . "&opc=r", $html_solicitud_usuario);
 
                         //servidor smtp ambiente de prueba
-                          $mail = new PHPMailer();
-                          $mail->IsSMTP();
-                          $mail->SMTPAuth = true;
-                          $mail->Host = "smtp.gmail.com";
-                          $mail->SMTPSecure = 'ssl';
-                          $mail->Username = "cesar.augusto.britto@gmail.com";
-                          $mail->Password = "Guarracuco2016";
-                          $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
-                          $mail->CharSet = "UTF-8";
-                          $mail->IsHTML(true); // El correo se env  a como HTML
-                          $mail->From = "convocatorias@scrd.gov.co";
-                          //$mail->From = "cesar.augusto.britto@gmail.com";
-                          $mail->FromName = "Sistema de Convocatorias";
-//                          $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-                          $mail->AddAddress("wilmer.mogollonadr2017@gmail.com");//direccion de prueba
-                          //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-                          //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
-                          $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
-                          $mail->Body = $html_solicitud_usuario; 
+//                          $mail = new PHPMailer();
+//                          $mail->IsSMTP();
+//                          $mail->SMTPAuth = true;
+//                          $mail->Host = "smtp.gmail.com";
+//                          $mail->SMTPSecure = 'ssl';
+//                          $mail->Username = "cesar.augusto.britto@gmail.com";
+//                          $mail->Password = "Guarracuco2016";
+//                          $mail->Port = 465;//25 o 587 (algunos alojamientos web bloquean el puerto 25)
+//                          $mail->CharSet = "UTF-8";
+//                          $mail->IsHTML(true); // El correo se env  a como HTML
+//                          $mail->From = "convocatorias@scrd.gov.co";
+//                          //$mail->From = "cesar.augusto.britto@gmail.com";
+//                          $mail->FromName = "Sistema de Convocatorias";
+////                          $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
+//                          $mail->AddAddress("wilmer.mogollonadr2017@gmail.com");//direccion de prueba
+//                          //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+//                          //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
+//                          $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
+//                          $mail->Body = $html_solicitud_usuario; 
 
 
                         /* Servidor SMTP producción */
-//                        $mail = new PHPMailer();
-//                        $mail->IsSMTP();
-//                        $mail->Host = "smtp-relay.gmail.com";
-//                        $mail->Port = 25;
-//                        $mail->CharSet = "UTF-8";
-//                        $mail->IsHTML(true); // El correo se env  a como HTML
-//                        $mail->From = "convocatorias@scrd.gov.co";
-//                        $mail->FromName = "Sistema de Convocatorias";
-//                        $mail->AddAddress($participante->correo_electronico);
-//                        $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
-//                        $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
-//                        $mail->Body = $html_solicitud_usuario;
+                        $mail = new PHPMailer();
+                        $mail->IsSMTP();
+                        $mail->Host = "smtp-relay.gmail.com";
+                        $mail->Port = 25;
+                        $mail->CharSet = "UTF-8";
+                        $mail->IsHTML(true); // El correo se env  a como HTML
+                        $mail->From = "convocatorias@scrd.gov.co";
+                        $mail->FromName = "Sistema de Convocatorias";
+                        $mail->AddAddress($participante->correo_electronico);
+                        $mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
+                        $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
+                        $mail->Body = $html_solicitud_usuario;
 
                         // Envia el correo.
 
-//                        if ($mail->Send()) {
-                        if (1==1) {
+                        if ($mail->Send()) {
 
                             // Commit the transaction
                             /*
