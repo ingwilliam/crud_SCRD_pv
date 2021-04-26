@@ -131,21 +131,28 @@ $app->get('/select_convocatorias', function () use ($app) {
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
+                /*
+                 * 20-04-2021
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se agregan estados a la consulta para que liste todas las convocatorias
+                 * 5	convocatorias	Publicada
+                 * 6	convocatorias	Adjudicada
+                 * 32	convocatorias	Cancelada
+                 * 43	convocatorias	Desierta
+                 * 45	convocatorias	Suspendida
+                 */
+
                 $rs = Convocatorias::find(
                                 [
                                     " entidad = " . $request->get('entidad')
                                     . " AND anio = " . $request->get('anio')
-                                    . " AND estado = 5 "
+                                    . " AND estado in (5, 6, 32, 43, 45) "
                                     . " AND modalidad != 2 " //2	Jurados
                                     . " AND active = true "
                                     . " AND convocatoria_padre_categoria is NULL"
                                 ]
                 );
 
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
 
                 foreach ($rs as $convocatoria) {
                     array_push($convocatorias, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
@@ -526,6 +533,9 @@ $app->put('/registrar_ganador_jurado/postulacion/{id:[0-9]+}', function ($id) us
 
                         $notificacion->numero_resolucion = $request->getPut('numero_resolucion');
                         $notificacion->fecha_resolucion = $request->getPut('fecha_resolucion');
+                        $notificacion->fecha_inicio_ejecucion = $request->getPut('fecha_inicio_ejecucion');
+                        $notificacion->fecha_fin_ejecucion = $request->getPut('fecha_fin_ejecucion');
+                        $notificacion->nombre_resolucion = $request->getPut('nombre_resolucion');
                         $notificacion->codigo_presupuestal = $request->getPut('codigo_presupuestal');
                         $notificacion->codigo_proyecto_inversion = $request->getPut('codigo_proyecto_inversion');
                         $notificacion->cdp = $request->getPut('cdp');

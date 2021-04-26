@@ -119,21 +119,28 @@ $app->get('/select_convocatorias', function () use ($app) {
             //Si existe consulto la convocatoria
             if ($request->get('entidad') && $request->get('anio')) {
 
+                 /*
+                 * 20-04-2021
+                 * Wilmer Gustavo Mogollón Duque
+                 * Se agregan estados a la consulta para que liste todas las convocatorias
+                 * 5	convocatorias	Publicada
+                 * 6	convocatorias	Adjudicada
+                 * 32	convocatorias	Cancelada
+                 * 43	convocatorias	Desierta
+                 * 45	convocatorias	Suspendida
+                 */
+                
                 $rs = Convocatorias::find(
                                 [
                                     " entidad = " . $request->get('entidad')
                                     . " AND anio = " . $request->get('anio')
-                                    . " AND estado = 5 "
+                                    . " AND estado in (5, 6, 32, 43, 45) "
                                     . " AND modalidad != 2 " //2	Jurados
                                     . " AND active = true "
                                     . " AND convocatoria_padre_categoria is NULL"
                                 ]
                 );
 
-                //Se construye un array con la información de id y nombre de cada convocatoria para establece rel componente select
-                //foreach ( $rs as $key => $value) {
-                //      $nucleosbasicos[$key]= array("id"=>$value->id, "nombre"=>$value->nombre);
-                //}
 
                 foreach ($rs as $convocatoria) {
                     array_push($convocatorias, ["id" => $convocatoria->id, "nombre" => $convocatoria->nombre]);
@@ -440,8 +447,8 @@ $app->put('/notificar', function () use ($app, $config) {
 //                          $mail->From = "convocatorias@scrd.gov.co";
 //                          //$mail->From = "cesar.augusto.britto@gmail.com";
 //                          $mail->FromName = "Sistema de Convocatorias";
-//                          $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
-//                          //$mail->AddAddress("cesar.augusto.britto@gmail.com");//direccion de prueba
+////                          $mail->AddAddress($participante->correo_electronico);//direccion de correo del jurado participante
+//                          $mail->AddAddress("wilmer.mogollonadr2017@gmail.com");//direccion de prueba
 //                          //$mail->AddBCC($user_current["username"]); //con copia al misional que realiza la invitación
 //                          //$mail->AddBCC("cesar.augusto.britto@gmail.com");//direccion de prueba
 //                          $mail->Subject = "Sistema de Convocatorias - Invitación designación de jurado";
