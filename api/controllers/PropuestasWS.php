@@ -991,7 +991,12 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
 </table>
 ';
                     }
-
+                   
+$nombre_estado=$propuesta->getEstados()->nombre;
+if($propuesta->estado<>8)                    
+{
+    $nombre_estado="Inscrita";
+}
 
                     $html = '<!-- EXAMPLE OF CSS STYLE -->
 <style>
@@ -1026,7 +1031,7 @@ $app->post('/reporte_propuesta_inscrita', function () use ($app, $config, $logge
     </tr>    
     <tr>
         <td><b>Estado</b></td>
-        <td><b>' . $propuesta->getEstados()->nombre . '</b></td>
+        <td><b>' . $nombre_estado . '</b></td>
         <td>Nombre de la propuesta</td>
         <td>' . $propuesta->nombre . '</td>
     </tr>    
